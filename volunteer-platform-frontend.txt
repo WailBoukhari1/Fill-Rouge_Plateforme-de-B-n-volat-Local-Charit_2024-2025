@@ -1,0 +1,72 @@
+volunteer-platform-frontend/
+├── src/
+│   ├── app/
+│   │   ├── core/
+│   │   │   ├── auth/
+│   │   │   │   ├── auth.service.ts
+│   │   │   │   ├── auth.guard.ts
+│   │   │   │   └── jwt.interceptor.ts
+│   │   │   ├── services/
+│   │   │   │   ├── user.service.ts
+│   │   │   │   ├── opportunity.service.ts
+│   │   │   │   ├── application.service.ts
+│   │   │   │   ├── message.service.ts
+│   │   │   │   └── analytics.service.ts
+│   │   │   ├── models/
+│   │   │   │   ├── user.model.ts
+│   │   │   │   ├── opportunity.model.ts
+│   │   │   │   ├── application.model.ts
+│   │   │   │   └── message.model.ts
+│   │   │   └── interceptors/
+│   │   │       ├── error.interceptor.ts
+│   │   │       └── loading.interceptor.ts
+│   │   ├── shared/
+│   │   │   ├── components/
+│   │   │   │   ├── header/
+│   │   │   │   ├── footer/
+│   │   │   │   ├── loading-spinner/
+│   │   │   │   └── error-message/
+│   │   │   ├── pipes/
+│   │   │   │   └── date-format.pipe.ts
+│   │   │   └── directives/
+│   │   │       └── highlight.directive.ts
+│   │   ├── features/
+│   │   │   ├── auth/
+│   │   │   │   ├── login/
+│   │   │   │   │   ├── login.component.ts
+│   │   │   │   │   ├── login.component.html
+│   │   │   │   │   └── login.component.scss
+│   │   │   │   └── register/
+│   │   │   │       ├── register.component.ts
+│   │   │   │       ├── register.component.html
+│   │   │   │       └── register.component.scss
+│   │   │   ├── opportunities/
+│   │   │   │   ├── opportunity-list/
+│   │   │   │   ├── opportunity-detail/
+│   │   │   │   └── opportunity-create/
+│   │   │   ├── applications/
+│   │   │   │   ├── application-list/
+│   │   │   │   └── application-detail/
+│   │   │   └── dashboard/
+│   │   │       ├── volunteer-dashboard/
+│   │   │       └── organization-dashboard/
+│   │   ├── app.component.ts
+│   │   ├── app.component.html
+│   │   ├── app.component.scss
+│   │   ├── app.module.ts
+│   │   └── app-routing.module.ts
+│   ├── assets/
+│   │   ├── images/
+│   │   └── styles/
+│   │       └── _variables.scss
+│   ├── environments/
+│   │   ├── environment.ts
+│   │   └── environment.prod.ts
+│   ├── index.html
+│   └── styles.scss
+├── angular.json
+├── package.json
+├── tsconfig.json
+├── tailwind.config.js
+├── Dockerfile
+└── .gitignore
