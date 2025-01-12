@@ -1,5 +1,9 @@
 package com.backend.volunteering.exception;
 
-public class OAuth2AuthenticationProcessingException extends RuntimeException {
-    // Will implement OAuth2 authentication processing exception
+import org.springframework.security.core.AuthenticationException;
+
+public class OAuth2AuthenticationProcessingException extends AuthenticationException {
+    public OAuth2AuthenticationProcessingException(String msg) {
+        super(msg);
+    }
 } 

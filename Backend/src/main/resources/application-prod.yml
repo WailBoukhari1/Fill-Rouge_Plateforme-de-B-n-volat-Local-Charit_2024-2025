@@ -9,6 +9,48 @@ spring:
   security:
     jwt:
       secret: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION}
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+    # Production security settings
+    basic:
+      enabled: true
+    csrf:
+      enabled: true
+    headers:
+      frame: deny
+      hsts: true
+      xss: true
+      content-security-policy: "default-src 'self'"
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${SERVER_PORT}
+
+app:
+  frontend-url: ${APP_FRONTEND_URL}
+  oauth2:
+    redirectUri: ${OAUTH2_REDIRECT_URI}
+  security:
+    permit-all: false  # Strict security in prod
+    cors:
+      allowed-origins: ${ALLOWED_ORIGINS}
+      allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+      allowed-headers: "Authorization,Content-Type"
 
 logging:
   level:

@@ -1,5 +1,11 @@
 package com.backend.volunteering.dto.response;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
 public class ApiResponse {
-    // Will define generic API response
+    private boolean success;
+    private String message;
 } 
