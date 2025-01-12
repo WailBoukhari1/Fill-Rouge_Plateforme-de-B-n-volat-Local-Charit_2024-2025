@@ -40,23 +40,7 @@ public final class ValidationUtil {
 
     public static void validatePassword(String password) {
         if (password == null || password.length() < 8) {
-            throw new BadRequestException("Password must be at least 8 characters long");
-        }
-        
-        if (!password.matches(".*[A-Z].*")) {
-            throw new BadRequestException("Password must contain at least one uppercase letter");
-        }
-        
-        if (!password.matches(".*[a-z].*")) {
-            throw new BadRequestException("Password must contain at least one lowercase letter");
-        }
-        
-        if (!password.matches(".*\\d.*")) {
-            throw new BadRequestException("Password must contain at least one number");
-        }
-        
-        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
-            throw new BadRequestException("Password must contain at least one special character");
+            throw new IllegalArgumentException("Password must be at least 8 characters long");
         }
     }
 } 

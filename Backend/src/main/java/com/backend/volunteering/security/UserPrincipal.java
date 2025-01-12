@@ -1,42 +1,33 @@
 package com.backend.volunteering.security;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import com.backend.volunteering.model.User;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
-import java.util.List;
-import java.util.Map;
 
-@Data
-@Builder
+@Getter
 @AllArgsConstructor
-public class UserPrincipal implements UserDetails, OAuth2User {
+public class UserPrincipal implements UserDetails {
     private String id;
     private String email;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
-    private Map<String, Object> attributes;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
+    public static UserPrincipal create(User user) {
+        return new UserPrincipal(
+            user.getId(),
+            user.getEmail(),
+            user.getPassword(),
+            user.getAuthorities()
+        );
     }
 
     @Override
     public String getUsername() {
-        return email;
+        return email; // Use email as username
     }
 
     @Override
@@ -59,30 +50,7 @@ public class UserPrincipal implements UserDetails, OAuth2User {
         return true;
     }
 
-    public static UserPrincipal create(User user) {
-        return UserPrincipal.builder()
-            .id(user.getId())
-            .email(user.getEmail())
-            .password(user.getPassword())
-            .authorities(user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toList()))
-            .build();
-    }
-
-    public static UserPrincipal create(User user, Map<String, Object> attributes) {
-        UserPrincipal userPrincipal = create(user);
-        userPrincipal.setAttributes(attributes);
-        return userPrincipal;
-    }
-
-    @Override
-    public Map<String, Object> getAttributes() {
-        return attributes;
-    }
-
-    @Override
     public String getName() {
-        return id;
+        return email;  // or return the name if you store it in UserPrincipal
     }
 } 

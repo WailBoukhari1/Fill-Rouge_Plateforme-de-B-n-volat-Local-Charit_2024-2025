@@ -1,68 +1,97 @@
 package com.backend.volunteering.security;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.backend.volunteering.dto.response.ApiResponse;
+import com.backend.volunteering.exception.ErrorCode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 @Slf4j
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
+    private static final int MAX_REQUESTS_PER_HOUR = 100; // Increased for testing
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final LoadingCache<String, Integer> requestCountsPerIpAddress;
 
-    @Value("${spring.profiles.active:dev}")
-    private String activeProfile;
-
-    private final LoadingCache<String, Integer> requestCountsPerIp = CacheBuilder.newBuilder()
+    public RateLimitFilter() {
+        super();
+        requestCountsPerIpAddress = CacheBuilder.newBuilder()
             .expireAfterWrite(1, TimeUnit.HOURS)
-            .build(new CacheLoader<>() {
-                @Override
+            .build(new CacheLoader<String, Integer>() {
                 public Integer load(String key) {
                     return 0;
                 }
             });
+    }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
-            FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, 
+                                  HttpServletResponse response, 
+                                  FilterChain filterChain)
+            throws ServletException, IOException {
         
-        // Skip rate limiting in dev profile
-        if ("dev".equals(activeProfile)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String clientIp = getClientIP(request);
         try {
-            int requests = requestCountsPerIp.get(clientIp);
-            if (requests >= 100) { // Rate limit only in prod
-                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-                response.getWriter().write("Too many requests");
+            String clientIpAddress = getClientIP(request);
+            if (isAuthenticationEndpoint(request) && isMaximumRequestsPerHourExceeded(clientIpAddress)) {
+                ApiResponse.ErrorDetails errorDetails = new ApiResponse.ErrorDetails(
+                    ErrorCode.RATE_LIMIT_EXCEEDED.getCode(),
+                    "Too many requests. Please try again later."
+                );
+                
+                ApiResponse<?> apiResponse = ApiResponse.error(
+                    "Rate limit exceeded",
+                    errorDetails
+                );
+
+                response.setStatus(ErrorCode.RATE_LIMIT_EXCEEDED.getStatus().value());
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                objectMapper.writeValue(response.getWriter(), apiResponse);
                 return;
             }
             
-            requestCountsPerIp.put(clientIp, requests + 1);
             filterChain.doFilter(request, response);
-            
-        } catch (ExecutionException e) {
-            log.error("Error processing rate limit", e);
-            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        } catch (Exception e) {
+            log.error("Error in rate limit filter", e);
+            throw e;
+        }
+    }
+
+    private boolean isAuthenticationEndpoint(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/auth/");
+    }
+
+    private boolean isMaximumRequestsPerHourExceeded(String clientIpAddress) {
+        try {
+            int requests = requestCountsPerIpAddress.get(clientIpAddress);
+            if (requests >= MAX_REQUESTS_PER_HOUR) {
+                return true;
+            }
+            requestCountsPerIpAddress.put(clientIpAddress, requests + 1);
+            return false;
+        } catch (Exception e) {
+            log.error("Error checking rate limit", e);
+            return false;
         }
     }
 
     private String getClientIP(HttpServletRequest request) {
         String xfHeader = request.getHeader("X-Forwarded-For");
-        return xfHeader == null ? request.getRemoteAddr() : xfHeader.split(",")[0];
+        if (xfHeader == null) {
+            return request.getRemoteAddr();
+        }
+        return xfHeader.split(",")[0];
     }
 }

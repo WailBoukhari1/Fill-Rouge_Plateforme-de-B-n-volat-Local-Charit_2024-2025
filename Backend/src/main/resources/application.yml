@@ -10,13 +10,23 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
 
 app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}
   oauth2:
-    redirectUri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+    redirectUri: ${APP_FRONTEND_URL}/oauth2/redirect
   file:
     upload-dir: ${FILE_UPLOAD_DIR:./uploads}
 

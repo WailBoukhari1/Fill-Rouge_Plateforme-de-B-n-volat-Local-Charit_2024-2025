@@ -19,4 +19,6 @@ public interface IUserService {
     void sendVerificationEmail(User user);
     void resendVerificationEmail(String email);
     void sendPasswordResetEmail(User user, String token);
+    boolean existsByEmail(String email);
+    boolean existsByUsername(String username);
 } 

@@ -39,6 +39,9 @@ public class User extends DateAudit {
 
     private boolean enabled = true;
 
+    @Indexed(unique = true)
+    private String username;
+
     public Set<GrantedAuthority> getAuthorities() {
         Set<GrantedAuthority> authorities = new HashSet<>();
         roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));

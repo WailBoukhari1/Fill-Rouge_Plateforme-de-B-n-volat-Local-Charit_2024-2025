@@ -1,6 +1,10 @@
 package com.backend.volunteering.config;
 
 import com.backend.volunteering.security.JwtAuthenticationFilter;
+import com.backend.volunteering.security.RateLimitFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.backend.volunteering.dto.response.ApiResponse;
+import com.backend.volunteering.exception.ErrorCode;
 import com.backend.volunteering.security.JwtAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +26,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 
 @Slf4j
 @Configuration
@@ -32,6 +41,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
+    private final RateLimitFilter rateLimitFilter;
+    private final ObjectMapper objectMapper;
 
     @Bean
     @Profile("dev")
@@ -103,5 +114,45 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, ex) -> {
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+
+            ApiResponse.ErrorDetails errorDetails = new ApiResponse.ErrorDetails(
+                ErrorCode.INVALID_CREDENTIALS.getCode(),
+                ex.getMessage()
+            );
+            
+            ApiResponse<?> apiResponse = ApiResponse.error(
+                "Authentication failed",
+                errorDetails
+            );
+
+            objectMapper.writeValue(response.getOutputStream(), apiResponse);
+        };
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, ex) -> {
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setStatus(HttpStatus.FORBIDDEN.value());
+
+            ApiResponse.ErrorDetails errorDetails = new ApiResponse.ErrorDetails(
+                ErrorCode.INSUFFICIENT_PERMISSIONS.getCode(),
+                "Access denied"
+            );
+            
+            ApiResponse<?> apiResponse = ApiResponse.error(
+                "Access denied",
+                errorDetails
+            );
+
+            objectMapper.writeValue(response.getOutputStream(), apiResponse);
+        };
     }
 }

@@ -23,10 +23,17 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider tokenProvider;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) 
+            throws IOException {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        
+        String token = tokenProvider.generateToken(authentication);
+        
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
-                .queryParam("token", tokenProvider.generateToken(authentication))
+                .queryParam("token", token)
+                .queryParam("userId", userPrincipal.getId())
+                .queryParam("email", userPrincipal.getEmail())
+                .queryParam("name", userPrincipal.getName())
                 .build().toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);

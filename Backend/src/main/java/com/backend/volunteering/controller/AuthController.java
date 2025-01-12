@@ -5,6 +5,7 @@ import com.backend.volunteering.dto.request.SignupRequest;
 import com.backend.volunteering.dto.request.PasswordResetRequest;
 import com.backend.volunteering.dto.response.ApiResponse;
 import com.backend.volunteering.dto.response.AuthResponse;
+import com.backend.volunteering.exception.BadRequestException;
 import com.backend.volunteering.service.interfaces.IAuthService;
 import com.backend.volunteering.service.interfaces.IUserService;
 import jakarta.validation.Valid;
@@ -26,27 +27,30 @@ public class AuthController {
     private final IUserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        log.info("Login request received for user: {}", loginRequest.getEmail());
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
+        log.info("Login request received for user: {}", loginRequest.getLoginId());
         AuthResponse response = authService.login(loginRequest);
-        log.info("Login successful for user: {}", loginRequest.getEmail());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<ApiResponse<AuthResponse>> signup(@Valid @RequestBody SignupRequest signupRequest) {
         log.info("Signup request received for email: {}", signupRequest.getEmail());
         AuthResponse response = authService.signup(signupRequest);
-        log.info("Signup successful for email: {}", signupRequest.getEmail());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success("Registration successful", response));
     }
 
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(@RequestParam String refreshToken) {
         log.info("Refresh token request received");
-        AuthResponse response = authService.refreshToken(refreshToken);
-        log.info("Refresh token successful");
-        return ResponseEntity.ok(response);
+        try {
+            AuthResponse response = authService.refreshToken(refreshToken);
+            log.info("Refresh token successful");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Refresh token failed", e);
+            throw new BadRequestException("Invalid refresh token");
+        }
     }
 
     @PostMapping("/logout")
@@ -59,34 +63,43 @@ public class AuthController {
 
     @GetMapping("/verify-email")
     public ResponseEntity<ApiResponse> verifyEmail(@RequestParam String token) {
-        log.info("Email verification request received for token: {}", token);
-        userService.verifyEmail(token);
-        log.info("Email verification successful for token: {}", token);
-        return ResponseEntity.ok(new ApiResponse(true, "Email verified successfully"));
+        log.info("Email verification request received");
+        try {
+            userService.verifyEmail(token);
+            log.info("Email verification successful");
+            return ResponseEntity.ok(new ApiResponse(true, "Email verified successfully"));
+        } catch (Exception e) {
+            log.error("Email verification failed", e);
+            throw new BadRequestException("Invalid or expired verification token");
+        }
     }
 
     @PostMapping("/resend-verification-email")
     public ResponseEntity<ApiResponse> resendVerificationEmail(@RequestParam @Email String email) {
-        log.info("Resend verification email request received for email: {}", email);
+        log.info("Resend verification email request received");
         userService.resendVerificationEmail(email);
-        log.info("Verification email resent to: {}", email);
-        return ResponseEntity.ok(new ApiResponse(true, "Verification email sent"));
+        return ResponseEntity.ok(new ApiResponse(true, 
+            "If an account exists with this email, a verification email will be sent"));
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse> forgotPassword(@RequestParam @Email String email) {
-        log.info("Forgot password request received for email: {}", email);
+        log.info("Forgot password request received");
         userService.requestPasswordReset(email);
-        log.info("Password reset instructions sent to: {}", email);
         return ResponseEntity.ok(new ApiResponse(true,
-                "If an account exists with this email, you will receive password reset instructions"));
+            "If an account exists with this email, password reset instructions will be sent"));
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
-        log.info("Password reset request received for token: {}", request.getToken());
-        userService.resetPassword(request.getToken(), request.getNewPassword());
-        log.info("Password reset successful for token: {}", request.getToken());
-        return ResponseEntity.ok(new ApiResponse(true, "Password has been reset successfully"));
+        log.info("Password reset request received");
+        try {
+            userService.resetPassword(request.getToken(), request.getNewPassword());
+            log.info("Password reset successful");
+            return ResponseEntity.ok(new ApiResponse(true, "Password has been reset successfully"));
+        } catch (Exception e) {
+            log.error("Password reset failed", e);
+            throw new BadRequestException("Invalid or expired reset token");
+        }
     }
 }

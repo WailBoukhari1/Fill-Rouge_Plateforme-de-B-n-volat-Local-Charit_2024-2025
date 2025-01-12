@@ -1,11 +1,7 @@
 package com.backend.volunteering.exception;
 
-public class StorageException extends RuntimeException {
-    public StorageException(String message) {
-        super(message);
-    }
-
+public class StorageException extends BaseException {
     public StorageException(String message, Throwable cause) {
-        super(message, cause);
+        super(ErrorCode.INTERNAL_ERROR, message);
     }
 } 
