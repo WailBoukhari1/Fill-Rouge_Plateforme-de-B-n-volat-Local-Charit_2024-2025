@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/volunteering_dev
+  
+logging:
+  level:
+    com.backend.volunteering: DEBUG
+    org.springframework.security: DEBUG

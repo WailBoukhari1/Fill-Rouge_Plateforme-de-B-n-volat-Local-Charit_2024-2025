@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: volunteering-platform
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/volunteering
+  elasticsearch:
+    uris: http://localhost:9200
+    username: elastic
+    password: changeme
+  security:
+    jwt:
+      secret: your-256-bit-secret
+      expiration: 86400000 # 24 hours
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+logging:
+  level:
+    root: INFO
+    com.backend.volunteering: DEBUG
