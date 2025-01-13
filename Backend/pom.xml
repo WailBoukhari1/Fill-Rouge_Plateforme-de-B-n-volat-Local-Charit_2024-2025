@@ -14,12 +14,14 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>Volunteering Platform</name>
     <description>Local Volunteering and Charity Platform</description>
-    
+
     <properties>
         <java.version>17</java.version>
         <mongodb.version>4.11.0</mongodb.version>
         <jwt.version>0.11.5</jwt.version>
         <elasticsearch.version>8.11.0</elasticsearch.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
     
     <dependencies>
@@ -119,6 +121,12 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>32.1.3-jre</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

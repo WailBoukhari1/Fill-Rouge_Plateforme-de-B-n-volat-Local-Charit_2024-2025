@@ -1,14 +1,14 @@
 package com.backend.volunteering.config;
 
-import com.backend.volunteering.security.JwtAuthenticationFilter;
-import com.backend.volunteering.security.RateLimitFilter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.backend.volunteering.dto.response.ApiResponse;
-import com.backend.volunteering.exception.ErrorCode;
-import com.backend.volunteering.security.JwtAuthenticationEntryPoint;
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -17,20 +17,23 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import com.backend.volunteering.dto.response.ApiResponse;
+import com.backend.volunteering.exception.ErrorCode;
+import com.backend.volunteering.security.JwtAuthenticationEntryPoint;
+import com.backend.volunteering.security.JwtAuthenticationFilter;
+import com.backend.volunteering.security.RateLimitFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.access.AccessDeniedHandler;
 
 @Slf4j
 @Configuration
@@ -43,6 +46,15 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final RateLimitFilter rateLimitFilter;
     private final ObjectMapper objectMapper;
+
+    @Value("${app.security.cors.allowed-origins}")
+    private String allowedOrigins;
+
+    @Value("${app.security.cors.allowed-methods}")
+    private String allowedMethods;
+
+    @Value("${app.security.cors.allowed-headers}")
+    private String allowedHeaders;
 
     @Bean
     @Profile("dev")
@@ -95,12 +107,16 @@ public class SecurityConfig {
     @Profile("prod")
     public CorsConfigurationSource prodCorsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(System.getenv("APP_FRONTEND_URL")));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(true);
         
+        // Split the comma-separated strings into lists
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
+        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+        
+        // Additional recommended settings
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

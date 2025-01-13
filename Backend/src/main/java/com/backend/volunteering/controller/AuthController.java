@@ -3,6 +3,7 @@ package com.backend.volunteering.controller;
 import com.backend.volunteering.dto.request.LoginRequest;
 import com.backend.volunteering.dto.request.SignupRequest;
 import com.backend.volunteering.dto.request.PasswordResetRequest;
+import com.backend.volunteering.dto.request.RefreshTokenRequest;
 import com.backend.volunteering.dto.response.ApiResponse;
 import com.backend.volunteering.dto.response.AuthResponse;
 import com.backend.volunteering.exception.BadRequestException;
@@ -41,10 +42,10 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(@RequestParam String refreshToken) {
+    public ResponseEntity<AuthResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         log.info("Refresh token request received");
         try {
-            AuthResponse response = authService.refreshToken(refreshToken);
+            AuthResponse response = authService.refreshToken(request.getRefreshToken());
             log.info("Refresh token successful");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -54,9 +55,9 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logout(@RequestParam String refreshToken) {
+    public ResponseEntity<ApiResponse> logout(@RequestBody RefreshTokenRequest request) {
         log.info("Logout request received");
-        authService.logout(refreshToken);
+        authService.logout(request.getRefreshToken());
         log.info("Logout successful");
         return ResponseEntity.ok(new ApiResponse(true, "Logged out successfully"));
     }
