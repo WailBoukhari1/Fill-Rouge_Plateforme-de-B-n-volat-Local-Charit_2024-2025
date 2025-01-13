@@ -5,15 +5,19 @@ spring:
       database: volunteering_dev
   mail:
     host: sandbox.smtp.mailtrap.io
-    port: 587
-    username: 4b8f489e24ceaf
-    password: 3902504165f5f9
+    port: 2525
+    username: ee98594ded4802
+    password: 97108c4ca2db77
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+          debug: true
     from: noreply@yourapp.com
     personal: Volunteering Platform
 
