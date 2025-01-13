@@ -1,22 +1,11 @@
 spring:
-  data:
-    mongodb:
-      uri: ${MONGODB_URI}
-  elasticsearch:
-    uris: ${ELASTICSEARCH_URI}
-    username: ${ELASTICSEARCH_USERNAME}
-    password: ${ELASTICSEARCH_PASSWORD}
   security:
-    jwt:
-      secret: ${JWT_SECRET}
-      expiration: ${JWT_EXPIRATION}
     oauth2:
       client:
         registration:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-    # Production security settings
     basic:
       enabled: true
     csrf:
@@ -34,25 +23,26 @@ spring:
     properties:
       mail:
         smtp:
-          auth: true
+          auth: ${MAIL_PROPERTIES_MAIL_SMTP_AUTH}
           starttls:
-            enable: true
-
-server:
-  port: ${SERVER_PORT}
+            enable: ${MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE}
+    from: ${MAIL_FROM}
+    personal: ${MAIL_PERSONAL}
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:volunteering_prod}
 
 app:
-  frontend-url: ${APP_FRONTEND_URL}
-  oauth2:
-    redirectUri: ${OAUTH2_REDIRECT_URI}
   security:
-    permit-all: false  # Strict security in prod
+    permit-all: false
     cors:
-      allowed-origins: ${ALLOWED_ORIGINS}
-      allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
-      allowed-headers: "Authorization,Content-Type"
+      allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: Authorization,Content-Type,Cache-Control,Accept,Origin,X-Requested-With
 
 logging:
   level:
     root: WARN
     com.backend.volunteering: INFO
+    org.springframework.data.mongodb: INFO

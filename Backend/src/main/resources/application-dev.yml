@@ -1,26 +1,25 @@
 spring:
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/volunteering_dev}
+      uri: mongodb://localhost:27017/volunteering_dev
+      database: volunteering_dev
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    host: sandbox.smtp.mailtrap.io
+    port: 587
+    username: 4b8f489e24ceaf
+    password: 3902504165f5f9
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-
-server:
-  port: ${SERVER_PORT:8080}
+    from: noreply@yourapp.com
+    personal: Volunteering Platform
 
 app:
-  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
   security:
-    permit-all: true  # Allow all endpoints in dev
+    permit-all: true
     cors:
       allowed-origins: "*"
       allowed-methods: "*"
@@ -28,5 +27,8 @@ app:
 
 logging:
   level:
+    root: INFO
     com.backend.volunteering: DEBUG
     org.springframework.security: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.mongodb: DEBUG
