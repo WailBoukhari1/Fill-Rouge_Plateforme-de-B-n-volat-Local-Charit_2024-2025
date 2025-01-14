@@ -2,6 +2,8 @@ package com.backend.volunteering.model;
 
 import com.backend.volunteering.model.audit.DateAudit;
 import com.backend.volunteering.model.enums.AuthProvider;
+import com.backend.volunteering.model.enums.UserRole;
+import com.backend.volunteering.model.enums.UserStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
@@ -20,7 +22,7 @@ public class User extends DateAudit {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, sparse = true, name = "idx_user_email")
     private String email;
 
     private String password;
@@ -39,8 +41,14 @@ public class User extends DateAudit {
 
     private boolean enabled = true;
 
-    @Indexed(unique = true)
     private String username;
+
+    private UserRole role;
+
+    private UserStatus status;
+
+    @Indexed(name = "idx_verification_token")
+    private String verificationToken;
 
     public Set<GrantedAuthority> getAuthorities() {
         Set<GrantedAuthority> authorities = new HashSet<>();

@@ -1,5 +1,6 @@
 package com.backend.volunteering.security.oauth2;
 
+import com.backend.volunteering.model.User;
 import com.backend.volunteering.security.JwtTokenProvider;
 import com.backend.volunteering.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,8 +27,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) 
             throws IOException {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        
-        String token = tokenProvider.generateToken(authentication);
+        User user = userPrincipal.getUser();
+                    
+        String token = tokenProvider.generateAccessToken(user);
         
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("token", token)

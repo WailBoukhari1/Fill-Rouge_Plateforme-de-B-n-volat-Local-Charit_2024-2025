@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { VerifyEmailComponent } from './verify-email/verify-email.component';
 
 export const AUTH_ROUTES: Routes = [
   {
@@ -24,5 +25,9 @@ export const AUTH_ROUTES: Routes = [
     path: 'reset-password',
     loadComponent: () => import('./reset-password/reset-password.component')
       .then(m => m.ResetPasswordComponent)
+  },
+  {
+    path: 'verify-email',
+    component: VerifyEmailComponent
   }
 ]; 

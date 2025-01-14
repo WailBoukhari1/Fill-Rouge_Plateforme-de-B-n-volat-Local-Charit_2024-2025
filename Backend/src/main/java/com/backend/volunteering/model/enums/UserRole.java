@@ -1,5 +1,9 @@
 package com.backend.volunteering.model.enums;
 
 public enum UserRole {
-    // Will define user roles
+    ADMIN,
+    USER,
+    VOLUNTEER,
+    ORGANIZATION,
+    SUPER_ADMIN
 } 

@@ -35,10 +35,18 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<AuthResponse>> signup(@Valid @RequestBody SignupRequest signupRequest) {
-        log.info("Signup request received for email: {}", signupRequest.getEmail());
-        AuthResponse response = authService.signup(signupRequest);
-        return ResponseEntity.ok(ApiResponse.success("Registration successful", response));
+    public ResponseEntity<ApiResponse<AuthResponse>> signup(@Valid @RequestBody SignupRequest request) {
+        try {
+            AuthResponse response = authService.signup(request);
+            return ResponseEntity.ok(new ApiResponse<>(
+                true, 
+                "Registration successful. Please check your email to verify your account.",
+                response
+            ));
+        } catch (Exception e) {
+            log.error("Registration failed: ", e);
+            throw new RuntimeException("Registration failed: " + e.getMessage());
+        }
     }
 
     @PostMapping("/refresh-token")
@@ -64,13 +72,13 @@ public class AuthController {
 
     @GetMapping("/verify-email")
     public ResponseEntity<ApiResponse> verifyEmail(@RequestParam String token) {
-        log.info("Email verification request received");
+        log.info("Email verification request received for token: {}", token);
         try {
             userService.verifyEmail(token);
             log.info("Email verification successful");
             return ResponseEntity.ok(new ApiResponse(true, "Email verified successfully"));
         } catch (Exception e) {
-            log.error("Email verification failed", e);
+            log.error("Email verification failed. Error: {}", e.getMessage(), e);
             throw new BadRequestException("Invalid or expired verification token");
         }
     }

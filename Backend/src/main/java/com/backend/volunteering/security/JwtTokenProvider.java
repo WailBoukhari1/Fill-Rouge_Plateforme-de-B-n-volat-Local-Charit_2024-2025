@@ -1,164 +1,104 @@
 package com.backend.volunteering.security;
 
-import com.backend.volunteering.exception.TokenException;
-import com.backend.volunteering.exception.ErrorCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import com.backend.volunteering.model.User;
+
+import java.security.Key;
 import java.util.Date;
 
 @Slf4j
 @Component
 public class JwtTokenProvider {
 
-    @Value("${app.jwt.secret}")
+    @Value("${JWT_SECRET}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration}")
-    private int jwtExpirationInMs;
+    @Value("${JWT_EXPIRATION}")
+    private long jwtExpirationMs;
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        // Generate a secure key from the JWT secret
+        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
     public String generateToken(Authentication authentication) {
-        try {
-            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            return generateToken(userPrincipal.getEmail());
-        } catch (Exception e) {
-            log.error("Error generating token: ", e);
-            throw new TokenException(
-                ErrorCode.INTERNAL_ERROR,
-                "Failed to generate access token"
-            );
-        }
-    }
-
-    public String generateRefreshToken(Authentication authentication) {
-        try {
-            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            return generateRefreshToken(userPrincipal.getEmail());
-        } catch (Exception e) {
-            log.error("Error generating refresh token: ", e);
-            throw new TokenException(
-                ErrorCode.INTERNAL_ERROR,
-                "Failed to generate refresh token"
-            );
-        }
-    }
-
-    private String generateToken(String subject) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-        try {
-            return Jwts.builder()
-                    .setSubject(subject)
-                    .setIssuedAt(now)
-                    .setExpiration(expiryDate)
-                    .signWith(getSigningKey())
-                    .compact();
-        } catch (Exception e) {
-            log.error("Error generating token: ", e);
-            throw new TokenException(
-                ErrorCode.INTERNAL_ERROR,
-                "Failed to generate token"
-            );
-        }
-    }
-
-    private String generateRefreshToken(String subject) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + (jwtExpirationInMs * 24)); // 24 times longer than access token
-
-        try {
-            return Jwts.builder()
-                    .setSubject(subject)
-                    .setIssuedAt(now)
-                    .setExpiration(expiryDate)
-                    .signWith(getSigningKey())
-                    .compact();
-        } catch (Exception e) {
-            log.error("Error generating refresh token: ", e);
-            throw new TokenException(
-                ErrorCode.INTERNAL_ERROR,
-                "Failed to generate refresh token"
-            );
-        }
-    }
-
-    public String getUserEmailFromToken(String token) {
-        return getUsernameFromToken(token);
+        return Jwts.builder()
+                .setSubject(authentication.getName())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key)
+                .compact();
     }
 
     public String getUsernameFromToken(String token) {
-        try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
 
-            return claims.getSubject();
-        } catch (ExpiredJwtException ex) {
-            log.error("JWT token is expired: {}", ex.getMessage());
-            throw new TokenException(
-                ErrorCode.TOKEN_EXPIRED,
-                "Token has expired"
-            );
-        } catch (Exception ex) {
-            log.error("Error parsing token: ", ex);
-            throw new TokenException(
-                ErrorCode.INVALID_TOKEN,
-                "Invalid token"
-            );
-        }
+        return claims.getSubject();
     }
 
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
+                    .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (SignatureException ex) {
-            log.error("Invalid JWT signature: {}", ex.getMessage());
-            throw new TokenException(
-                ErrorCode.INVALID_TOKEN,
-                "Invalid token signature"
-            );
+        } catch (SecurityException ex) {
+            log.error("Invalid JWT signature");
         } catch (MalformedJwtException ex) {
-            log.error("Invalid JWT token: {}", ex.getMessage());
-            throw new TokenException(
-                ErrorCode.INVALID_TOKEN,
-                "Malformed token"
-            );
+            log.error("Invalid JWT token");
         } catch (ExpiredJwtException ex) {
-            log.error("JWT token is expired: {}", ex.getMessage());
-            throw new TokenException(
-                ErrorCode.TOKEN_EXPIRED,
-                "Token has expired"
-            );
+            log.error("Expired JWT token");
         } catch (UnsupportedJwtException ex) {
-            log.error("JWT token is unsupported: {}", ex.getMessage());
-            throw new TokenException(
-                ErrorCode.INVALID_TOKEN,
-                "Unsupported token type"
-            );
+            log.error("Unsupported JWT token");
         } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty: {}", ex.getMessage());
-            throw new TokenException(
-                ErrorCode.INVALID_TOKEN,
-                "Empty token"
-            );
+            log.error("JWT claims string is empty");
         }
+        return false;
+    }
+
+    public String generateAccessToken(User user) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key)
+                .compact();
+    }
+
+    public String generateRefreshToken(User user) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + (jwtExpirationMs * 2)); // Refresh token lives twice as long
+
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key)
+                .compact();
+    }
+
+    public String getUserEmailFromToken(String token) {
+        return getUsernameFromToken(token); // Reuse existing method since username is email
     }
 } 

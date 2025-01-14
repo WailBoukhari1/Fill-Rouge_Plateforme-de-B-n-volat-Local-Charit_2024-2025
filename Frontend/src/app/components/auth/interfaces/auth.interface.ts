@@ -20,4 +20,15 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+}
+
+export interface EmailVerificationRequest {
+  code: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: any;
 } 

@@ -1,6 +1,7 @@
 package com.backend.volunteering.service.impl;
 
 import com.backend.volunteering.model.VerificationToken;
+import com.backend.volunteering.model.enums.UserStatus;
 import com.backend.volunteering.repository.UserRepository;
 import com.backend.volunteering.repository.VerificationTokenRepository;
 import com.backend.volunteering.service.interfaces.IEmailService;
@@ -17,18 +18,26 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.backend.volunteering.util.ValidationUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.Random;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
     private final UserRepository userRepository;
     private final VerificationTokenRepository tokenRepository;
     private final IEmailService emailService;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Override
     public UserResponse getUserById(String id) {
@@ -98,51 +107,35 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional
-    public void verifyEmail(String token) {
-        VerificationToken verificationToken = tokenRepository.findByToken(token)
-            .orElseThrow(() -> new BadRequestException("Invalid verification token"));
+    public void verifyEmail(String code) {
+        User user = userRepository.findByVerificationToken(code)
+            .orElseThrow(() -> new BadRequestException("Invalid verification code"));
 
-        if (verificationToken.isExpired()) {
-            throw new BadRequestException("Token has expired");
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("Email is already verified");
         }
-
-        if (verificationToken.isUsed()) {
-            throw new BadRequestException("Token has already been used");
-        }
-
-        if (verificationToken.getType() != VerificationToken.TokenType.EMAIL_VERIFICATION) {
-            throw new BadRequestException("Invalid token type");
-        }
-
-        User user = userRepository.findById(verificationToken.getUserId())
-            .orElseThrow(() -> new ResourceNotFoundException("User", "id", verificationToken.getUserId()));
 
         user.setEmailVerified(true);
+        user.setStatus(UserStatus.ACTIVE);
+        user.setVerificationToken(null);
         userRepository.save(user);
-
-        verificationToken.setUsed(true);
-        tokenRepository.save(verificationToken);
+        
+        log.info("User email verified successfully: {}", user.getEmail());
     }
 
+    private String generateVerificationCode() {
+        // Generate a 6-digit code
+        return String.format("%06d", new Random().nextInt(999999));
+    }
+
+    @Async
+    @Override
     public void sendVerificationEmail(User user) {
-        // Delete any existing verification tokens for this user
-        tokenRepository.findByUserIdAndType(user.getId(), VerificationToken.TokenType.EMAIL_VERIFICATION)
-            .ifPresent(tokenRepository::delete);
-
-        // Create new verification token
-        VerificationToken verificationToken = new VerificationToken();
-        verificationToken.setToken(generateToken());
-        verificationToken.setUserId(user.getId());
-        verificationToken.setType(VerificationToken.TokenType.EMAIL_VERIFICATION);
-        verificationToken.setExpiryDate(Instant.now().plus(24, ChronoUnit.HOURS));
-        tokenRepository.save(verificationToken);
-
-        // Send verification email
-        emailService.sendVerificationEmail(user.getEmail(), verificationToken.getToken());
-    }
-
-    private String generateToken() {
-        return UUID.randomUUID().toString();
+        String code = generateVerificationCode();
+        user.setVerificationToken(code); // Reuse verificationToken field for the code
+        user = userRepository.save(user);
+        
+        emailService.sendVerificationEmail(user.getEmail(), user.getName(), code);
     }
 
     @Override
@@ -156,10 +149,10 @@ public class UserServiceImpl implements IUserService {
 
         // Create new password reset token
         VerificationToken resetToken = new VerificationToken();
-        resetToken.setToken(generateToken());
+        resetToken.setToken(generateVerificationCode());
         resetToken.setUserId(user.getId());
         resetToken.setType(VerificationToken.TokenType.PASSWORD_RESET);
-        resetToken.setExpiryDate(Instant.now().plus(1, ChronoUnit.HOURS)); // 1 hour expiry for password reset
+        resetToken.setExpiryDate(Instant.now().plus(1, ChronoUnit.HOURS));
         tokenRepository.save(resetToken);
 
         // Send password reset email

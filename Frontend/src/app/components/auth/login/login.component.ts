@@ -1,47 +1,47 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterLink, Router, ActivatedRoute } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { CommonModule } from '@angular/common';
 import { faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '../../../core/services/auth.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
+  templateUrl: './login.component.html',
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     ReactiveFormsModule,
+    MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatCardModule,
-    MatProgressSpinnerModule,
     MatIconModule,
     MatCheckboxModule,
-    FontAwesomeModule
-  ],
-  templateUrl: './login.component.html'
+    MatProgressSpinnerModule,
+    FontAwesomeModule,
+    RouterLink
+  ]
 })
 export class LoginComponent {
+  loginForm: FormGroup;
+  error: string = '';
+  loading: boolean = false;
+  hidePassword = true;
   faEnvelope = faEnvelope;
   faLock = faLock;
-  loginForm: FormGroup;
-  isLoading = false;
-  error: string | null = null;
-  hidePassword = true;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute
+    private router: Router
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -49,21 +49,19 @@ export class LoginComponent {
     });
   }
 
-  onSubmit() {
+  onSubmit(): void {
     if (this.loginForm.valid) {
-      this.isLoading = true;
-      this.error = null;
+      this.loading = true;
+      this.error = '';
       
-      const { email, password } = this.loginForm.value;
-      
-      this.authService.login(email, password).subscribe({
-        next: () => {
-          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/app/dashboard';
-          this.router.navigateByUrl(returnUrl);
+      this.authService.login(this.loginForm.value).subscribe({
+        next: (response) => {
+          this.loading = false;
+          this.router.navigate(['/dashboard']);
         },
-        error: (error: { error: { message: string } }) => {
-          this.error = error.error.message || 'An error occurred during login';
-          this.isLoading = false;
+        error: (error) => {
+          this.loading = false;
+          this.error = error.error?.message || 'An error occurred during login';
         }
       });
     }

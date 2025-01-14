@@ -28,7 +28,7 @@ app:
       allowed-origins: "*"
       allowed-methods: "*"
       allowed-headers: "*"
-  frontend-base-url: http://localhost:3000
+  frontend-base-url: http://localhost:4200
 
 logging:
   level:

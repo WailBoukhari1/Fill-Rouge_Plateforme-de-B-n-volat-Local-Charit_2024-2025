@@ -57,18 +57,27 @@ public class EmailServiceImpl implements IEmailService {
     }
 
     @Override
-    public void sendVerificationEmail(String to, String token) {
+    public void sendVerificationEmail(String email, String name, String verificationCode) {
         try {
-            Template template = freeMarkerConfig.getTemplate("/email/verification-email.html");
-            Map<String, Object> model = new HashMap<>();
-            model.put("userName", to.split("@")[0]); // Using email prefix as username
-            model.put("verificationLink", frontendUrl + "/verify-email?token=" + token);
-
-            String html = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
-            sendSimpleEmail(to, "Verify Your Email", html);
+            String subject = "Verify Your Email";
+            String content = String.format("""
+                <div style='font-family: Arial, sans-serif; padding: 20px;'>
+                    <h2>Welcome to Our Platform!</h2>
+                    <p>Hi %s,</p>
+                    <p>Your verification code is:</p>
+                    <h1 style='color: #4CAF50; font-size: 32px; letter-spacing: 2px;'>%s</h1>
+                    <p>This code will expire in 15 minutes.</p>
+                    <p>If you didn't create an account, please ignore this email.</p>
+                </div>
+                """, 
+                name, verificationCode
+            );
+            
+            sendSimpleEmail(email, subject, content);
+            log.info("Verification code sent successfully to: {}", email);
         } catch (Exception e) {
-            log.error("Error sending verification email: {}", e.getMessage(), e);
-            throw new RuntimeException("Error sending verification email", e);
+            log.error("Failed to send verification code to {}: {}", email, e.getMessage());
+            throw new RuntimeException("Failed to send verification code", e);
         }
     }
 
