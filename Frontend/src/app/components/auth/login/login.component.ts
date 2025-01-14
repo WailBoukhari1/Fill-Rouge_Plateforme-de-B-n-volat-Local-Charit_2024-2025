@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
 import { RouterLink } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-login',
@@ -28,7 +29,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatCheckboxModule,
     MatProgressSpinnerModule,
     FontAwesomeModule,
-    RouterLink
+    RouterLink,
+    MatDividerModule
   ]
 })
 export class LoginComponent {
@@ -69,5 +71,9 @@ export class LoginComponent {
         }
       });
     }
+  }
+
+  loginWithGoogle(): void {
+    this.authService.loginWithGoogle();
   }
 }

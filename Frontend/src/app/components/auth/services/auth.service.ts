@@ -83,4 +83,27 @@ export class AuthService {
       }
     }
   }
+
+  loginWithGoogle(): void {
+    const googleAuthUrl = `${this.apiUrl}/oauth2/authorization/google`;
+    
+    const currentUrl = window.location.href;
+    localStorage.setItem('redirectUrl', currentUrl);
+    
+    window.location.href = googleAuthUrl;
+  }
+
+  // Handle OAuth2 redirect
+  handleOAuth2Redirect(token: string): void {
+    if (token) {
+      localStorage.setItem('token', token);
+      const decodedToken = this.decodeToken(token);
+      this.currentUserSubject.next(decodedToken);
+      
+      // Get redirect URL or default to home
+      const redirectUrl = localStorage.getItem('redirectUrl') || '/';
+      localStorage.removeItem('redirectUrl');
+      window.location.href = redirectUrl;
+    }
+  }
 } 
