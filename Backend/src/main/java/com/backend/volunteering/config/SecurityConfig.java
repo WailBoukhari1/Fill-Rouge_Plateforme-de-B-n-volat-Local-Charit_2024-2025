@@ -31,6 +31,9 @@ import com.backend.volunteering.security.JwtAuthenticationEntryPoint;
 import com.backend.volunteering.security.JwtAuthenticationFilter;
 import com.backend.volunteering.security.RateLimitFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.backend.volunteering.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.backend.volunteering.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.backend.volunteering.security.oauth2.OAuth2UserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +49,9 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final RateLimitFilter rateLimitFilter;
     private final ObjectMapper objectMapper;
+    private final OAuth2UserService oAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,8 +65,20 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/oauth2/**").permitAll()
+                        .requestMatchers("/oauth2/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> oauth2
+                    .authorizationEndpoint(authorization -> authorization
+                        .baseUri("/oauth2/authorization"))
+                    .redirectionEndpoint(redirection -> redirection
+                        .baseUri("/oauth2/callback/*"))
+                    .userInfoEndpoint(userInfo -> userInfo
+                        .userService(oAuth2UserService))
+                    .successHandler(oAuth2AuthenticationSuccessHandler)
+                    .failureHandler(oAuth2AuthenticationFailureHandler)
+                )
                 .build();
     }
 
