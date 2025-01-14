@@ -58,4 +58,12 @@ public class User extends DateAudit {
         roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
         return authorities;
     }
+
+    public void setProvider(String provider) {
+        this.provider = AuthProvider.valueOf(provider.toUpperCase());
+    }
+
+    public void setProvider(AuthProvider provider) {
+        this.provider = provider;
+    }
 } 

@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
     <mat-toolbar class="bg-white shadow-sm">
       <div class="container mx-auto px-4 flex items-center justify-between h-16">
         <div class="flex items-center">
-          <a routerLink="/" class="text-xl font-bold text-gray-800">
+          <a  class="text-xl font-bold text-gray-800">
             Volunteering Platform
           </a>
         </div>
