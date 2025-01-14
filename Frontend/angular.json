@@ -39,6 +39,11 @@
             "outputMode": "server",
             "ssr": {
               "entry": "src/server.ts"
+            },
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "node_modules/"
+              ]
             }
           },
           "configurations": {
@@ -96,6 +101,7 @@
               }
             ],
             "styles": [
+              "@angular/material/prebuilt-themes/azure-blue.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -103,5 +109,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "e33072ef-c4e6-4a81-a269-9db77b14f9bf"
   }
 }

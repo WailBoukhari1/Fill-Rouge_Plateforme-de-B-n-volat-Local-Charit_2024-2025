@@ -1,0 +1,56 @@
+<div class="auth-container">
+  <div class="w-full max-w-md space-y-8">
+    <div>
+      <h2 class="auth-title">Welcome back</h2>
+      <p class="auth-subtitle">Sign in to your account</p>
+    </div>
+
+    <div class="auth-card">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" required>
+          <mat-icon matPrefix class="mr-2"><fa-icon [icon]="faEnvelope"></fa-icon></mat-icon>
+          <mat-error *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</mat-error>
+          <mat-error *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Password</mat-label>
+          <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" required>
+          <mat-icon matPrefix class="mr-2"><fa-icon [icon]="faLock"></fa-icon></mat-icon>
+          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+            <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
+          <mat-error *ngIf="loginForm.get('password')?.errors?.['required']">Password is required</mat-error>
+          <mat-error *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</mat-error>
+        </mat-form-field>
+
+        <div class="flex items-center justify-between">
+          <mat-checkbox color="primary" class="text-sm">Remember me</mat-checkbox>
+          <a routerLink="/auth/forgot-password" class="text-sm text-primary hover:text-primary-dark">
+            Forgot password?
+          </a>
+        </div>
+
+        <div *ngIf="error" class="text-red-500 text-sm text-center">
+          {{ error }}
+        </div>
+
+        <button mat-raised-button color="primary" type="submit" 
+                [disabled]="!loginForm.valid || isLoading"
+                class="w-full">
+          <mat-spinner *ngIf="isLoading" [diameter]="20" class="mx-auto"></mat-spinner>
+          <span *ngIf="!isLoading">Sign in</span>
+        </button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <span class="text-sm text-gray-600">Don't have an account?</span>
+        <a routerLink="/auth/signup" class="ml-1 text-sm text-primary hover:text-primary-dark font-medium">
+          Sign up
+        </a>
+      </div>
+    </div>
+  </div>
+</div> 

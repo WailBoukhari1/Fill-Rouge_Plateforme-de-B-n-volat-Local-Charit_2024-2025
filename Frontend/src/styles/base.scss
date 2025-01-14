@@ -1,0 +1,95 @@
+// Typography
+.text-h1 {
+  @apply text-4xl font-bold mb-6;
+}
+
+.text-h2 {
+  @apply text-3xl font-bold mb-4;
+}
+
+.text-h3 {
+  @apply text-2xl font-semibold mb-3;
+}
+
+.text-body1 {
+  @apply text-base leading-relaxed;
+}
+
+.text-body2 {
+  @apply text-sm leading-relaxed;
+}
+
+// Cards
+.app-card {
+  @apply bg-white rounded-lg shadow-md overflow-hidden;
+  border: 1px solid var(--border);
+
+  &-header {
+    @apply p-6 border-b border-gray-200;
+  }
+
+  &-content {
+    @apply p-6;
+  }
+
+  &-footer {
+    @apply p-6 border-t border-gray-200;
+  }
+}
+
+// Buttons
+.btn {
+  @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+
+  &-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+  }
+
+  &-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+
+  &-outline {
+    @apply border-2 border-primary-600 text-primary-600 hover:bg-primary-50;
+  }
+}
+
+// Form fields
+.form-field {
+  @apply mb-4;
+
+  label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .mat-mdc-form-field {
+    @apply w-full;
+  }
+}
+
+// Layout utilities
+.page-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+}
+
+.section {
+  @apply mb-8;
+}
+
+// Custom Material overrides
+.mat-mdc-form-field {
+  &.mat-focused {
+    .mat-form-field-label {
+      color: var(--primary);
+    }
+  }
+}
+
+.mat-mdc-raised-button.mat-primary {
+  background-color: var(--primary);
+}
+
+.mat-mdc-card {
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+} 

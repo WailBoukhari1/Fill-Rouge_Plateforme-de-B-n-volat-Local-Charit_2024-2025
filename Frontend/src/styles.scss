@@ -1,1 +1,60 @@
-/* You can add global styles to this file, and also import other style files */
+@use 'tailwindcss/base' as *;
+@use 'tailwindcss/components' as *;
+@use 'tailwindcss/utilities' as *;
+
+@use './styles/theme';
+@use './styles/base';
+
+// Global styles
+body {
+  @apply bg-gray-50 text-gray-900 font-sans;
+  margin: 0;
+}
+
+// Auth pages specific styles
+.auth-container {
+  @apply min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8;
+
+  .auth-card {
+    @apply max-w-md w-full bg-white rounded-lg shadow-md p-8;
+  }
+
+  .auth-title {
+    @apply text-3xl font-extrabold text-gray-900 text-center mb-2;
+  }
+
+  .auth-subtitle {
+    @apply text-sm text-gray-600 text-center mb-8;
+  }
+
+  .form-field {
+    @apply mb-6;
+  }
+
+  .auth-footer {
+    @apply mt-6 text-center text-sm text-gray-600;
+
+    a {
+      @apply text-primary-600 hover:text-primary-700 font-medium;
+    }
+  }
+}
+
+// Material Design overrides
+.mat-mdc-form-field {
+  &.mat-form-field-appearance-outline {
+    .mat-form-field-outline {
+      background-color: white;
+    }
+  }
+}
+
+.mat-mdc-raised-button {
+  &.mat-primary {
+    @apply shadow-md hover:shadow-lg transition-shadow duration-200;
+  }
+}
+
+.mat-mdc-card {
+  @apply shadow-md;
+}
