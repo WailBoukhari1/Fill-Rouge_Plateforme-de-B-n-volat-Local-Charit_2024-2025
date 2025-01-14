@@ -1,0 +1,34 @@
+<div class="min-h-screen bg-gray-50">
+  
+  <div class="py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+      <div class="px-6 py-8">
+        <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">User Profile</h2>
+        
+        <div *ngIf="user" class="space-y-4">
+          
+          <div class="border-b pb-4">
+            <p class="text-sm text-gray-500">Role</p>
+            <p class="text-lg font-medium text-gray-900">{{user.role}}</p>
+          </div>
+          
+          <div>
+            <p class="text-sm text-gray-500">Status</p>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-green-100 text-green-800': user.status === 'ACTIVE',
+                    'bg-yellow-100 text-yellow-800': user.status === 'PENDING',
+                    'bg-red-100 text-red-800': user.status === 'DISABLED'
+                  }">
+              {{user.status}}
+            </span>
+          </div>
+        </div>
+
+        <div *ngIf="!user" class="text-center text-gray-500">
+          No user data available
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

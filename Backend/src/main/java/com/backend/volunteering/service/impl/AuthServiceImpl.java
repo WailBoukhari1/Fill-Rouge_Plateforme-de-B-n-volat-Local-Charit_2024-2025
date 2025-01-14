@@ -5,6 +5,8 @@ import com.backend.volunteering.dto.request.SignupRequest;
 import com.backend.volunteering.dto.response.AuthResponse;
 import com.backend.volunteering.exception.AuthenticationException;
 import com.backend.volunteering.model.User;
+import com.backend.volunteering.model.enums.UserRole;
+import com.backend.volunteering.model.enums.UserStatus;
 import com.backend.volunteering.repository.UserRepository;
 import com.backend.volunteering.security.JwtTokenProvider;
 import com.backend.volunteering.security.TokenBlacklistService;
@@ -26,6 +28,8 @@ import com.backend.volunteering.exception.BaseException;
 import com.backend.volunteering.exception.ErrorCode;
 import com.backend.volunteering.exception.ResourceNotFoundException;
 import com.backend.volunteering.exception.ValidationException;
+import com.backend.volunteering.exception.BadRequestException;
+import org.springframework.dao.DuplicateKeyException;
 
 @Service
 @RequiredArgsConstructor
@@ -96,58 +100,37 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Override
-    public AuthResponse signup(SignupRequest signupRequest) {
+    public AuthResponse signup(SignupRequest request) {
+        log.info("Processing signup request for email: {}", request.getEmail());
+        
         try {
-            if (userRepository.existsByEmail(signupRequest.getEmail())) {
-                throw new ValidationException(
-                    ErrorCode.RESOURCE_ALREADY_EXISTS,
-                    "Email is already registered",
-                    "email"
-                );
-            }
-
-            validatePassword(signupRequest.getPassword());
-
             User user = new User();
-            user.setName(signupRequest.getName());
-            user.setEmail(signupRequest.getEmail());
-            user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
-            user.getRoles().add("USER");
-            user.setEmailVerified(false);
-            user.setEnabled(true);
-
-            try {
-                user = userRepository.save(user);
-            } catch (DataIntegrityViolationException e) {
-                throw new ValidationException(
-                    ErrorCode.RESOURCE_CONFLICT,
-                    "Database constraint violation",
-                    "email"
-                );
-            }
-
-            try {
-                userService.sendVerificationEmail(user);
-            } catch (Exception e) {
-                log.error("Failed to send verification email", e);
-                // Continue with signup even if email fails
-            }
-
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                UserPrincipal.create(user),
-                null,
-                user.getAuthorities()
-            );
-
-            return generateAuthResponse(authentication);
-        } catch (BaseException e) {
-            throw e;
+            user.setName(request.getName());
+            user.setEmail(request.getEmail());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setRole(UserRole.USER);
+            user.setStatus(UserStatus.PENDING);
+            
+            user = userRepository.save(user);
+            
+            // Async email sending
+            userService.sendVerificationEmail(user);
+            
+            String accessToken = tokenProvider.generateAccessToken(user);
+            String refreshToken = tokenProvider.generateRefreshToken(user);
+            
+            return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .build();
+            
+        } catch (DuplicateKeyException e) {
+            log.error("Duplicate key error during registration", e);
+            throw new BadRequestException("Email already registered");
         } catch (Exception e) {
-            log.error("Signup error: ", e);
-            throw new AuthenticationException(
-                ErrorCode.INTERNAL_ERROR,
-                "Registration failed"
-            );
+            log.error("Error during registration", e);
+            throw new RuntimeException("Registration failed");
         }
     }
 
@@ -210,48 +193,18 @@ public class AuthServiceImpl implements IAuthService {
             );
         }
     }
-
-    private void validatePassword(String password) {
-        if (password == null || password.length() < 8) {
-            throw new ValidationException(
-                ErrorCode.PASSWORD_POLICY_VIOLATION,
-                "Password must be at least 8 characters long",
-                "password"
-            );
-        }
-        if (!password.matches(".*[A-Z].*")) {
-            throw new ValidationException(
-                ErrorCode.PASSWORD_POLICY_VIOLATION,
-                "Password must contain at least one uppercase letter",
-                "password"
-            );
-        }
-        if (!password.matches(".*[a-z].*")) {
-            throw new ValidationException(
-                ErrorCode.PASSWORD_POLICY_VIOLATION,
-                "Password must contain at least one lowercase letter",
-                "password"
-            );
-        }
-        if (!password.matches(".*\\d.*")) {
-            throw new ValidationException(
-                ErrorCode.PASSWORD_POLICY_VIOLATION,
-                "Password must contain at least one number",
-                "password"
-            );
-        }
-        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
-            throw new ValidationException(
-                ErrorCode.PASSWORD_POLICY_VIOLATION,
-                "Password must contain at least one special character",
-                "password"
-            );
-        }
-    }
-
     private AuthResponse generateAuthResponse(Authentication authentication) {
-        String accessToken = tokenProvider.generateToken(authentication);
-        String refreshToken = tokenProvider.generateRefreshToken(authentication);
-        return new AuthResponse(accessToken, refreshToken);
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        User user = userRepository.findById(userPrincipal.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
+        
+        String accessToken = tokenProvider.generateAccessToken(user);
+        String refreshToken = tokenProvider.generateRefreshToken(user);
+        
+        return AuthResponse.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .tokenType("Bearer")
+            .build();
     }
 } 

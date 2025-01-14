@@ -6,20 +6,34 @@ spring:
   data:
     mongodb:
       auto-index-creation: true
+      database: volunteering_db
+      host: localhost
+      port: 27017
+      authentication-database: admin
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: 8080
+  servlet:
+    context-path: /
 
 app:
+  frontend-base-url: http://localhost:4200
+  frontend-url: http://localhost:4200
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:QzVDMkM4QTgyNjBGNDM0Q0E3OUZBM0Q2ODM3RjRGOTk2NDk4NDhBNDZFNzQ0NDQzMzY0NkM2NTY1NzA2MTcyNzQ2QQ==}
     expiration: ${JWT_EXPIRATION:86400000}
   oauth2:
-    redirectUri: ${APP_FRONTEND_URL}/oauth2/redirect
-  frontend-url: ${APP_FRONTEND_URL}
+    redirectUri: ${APP_FRONTEND_URL:http://localhost:4200}/oauth2/redirect
   file:
     upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+
+# Add CORS configuration
+cors:
+  allowed-origins: http://localhost:4200
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true

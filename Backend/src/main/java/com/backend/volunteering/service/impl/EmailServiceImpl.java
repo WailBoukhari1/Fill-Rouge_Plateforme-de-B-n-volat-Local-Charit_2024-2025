@@ -10,7 +10,13 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
+import java.io.UnsupportedEncodingException;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -19,11 +25,15 @@ import java.util.Map;
 public class EmailServiceImpl implements IEmailService {
 
     private final JavaMailSender emailSender;
+    private final Configuration freeMarkerConfig;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.from}")
     private String fromEmail;
 
-    @Value("${app.frontend-url}")
+    @Value("${spring.mail.personal}")
+    private String personalName;
+
+    @Value("${app.frontend-base-url}")
     private String frontendUrl;
 
     @Async
@@ -33,73 +43,130 @@ public class EmailServiceImpl implements IEmailService {
             MimeMessage message = emailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
-            helper.setFrom(fromEmail);
+            helper.setFrom(fromEmail, personalName);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, true);
             
             emailSender.send(message);
             log.info("Email sent successfully to: {}", to);
-        } catch (MessagingException e) {
+        } catch (MessagingException | UnsupportedEncodingException e) {
             log.error("Failed to send email to: {}", to, e);
             throw new RuntimeException("Failed to send email", e);
         }
     }
 
     @Override
-    public void sendTemplateEmail(String to, String subject, String template, Map<String, Object> variables) {
-        // Simple string replacement instead of using Thymeleaf
-        for (Map.Entry<String, Object> entry : variables.entrySet()) {
-            template = template.replace("${" + entry.getKey() + "}", entry.getValue().toString());
+    public void sendVerificationEmail(String email, String name, String verificationCode) {
+        try {
+            String subject = "Verify Your Email";
+            String content = String.format("""
+                <div style='font-family: Arial, sans-serif; padding: 20px;'>
+                    <h2>Welcome to Our Platform!</h2>
+                    <p>Hi %s,</p>
+                    <p>Your verification code is:</p>
+                    <h1 style='color: #4CAF50; font-size: 32px; letter-spacing: 2px;'>%s</h1>
+                    <p>This code will expire in 15 minutes.</p>
+                    <p>If you didn't create an account, please ignore this email.</p>
+                </div>
+                """, 
+                name, verificationCode
+            );
+            
+            sendSimpleEmail(email, subject, content);
+            log.info("Verification code sent successfully to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send verification code to {}: {}", email, e.getMessage());
+            throw new RuntimeException("Failed to send verification code", e);
         }
-        sendSimpleEmail(to, subject, template);
-    }
-
-    @Override
-    public void sendVerificationEmail(String to, String token) {
-        String verificationUrl = frontendUrl + "/verify-email?token=" + token;
-        String content = String.format(
-            "Please verify your email by clicking this link: <a href='%s'>Verify Email</a>",
-            verificationUrl
-        );
-        sendSimpleEmail(to, "Verify Your Email", content);
     }
 
     @Override
     public void sendPasswordResetEmail(String to, String token) {
-        String resetUrl = frontendUrl + "/reset-password?token=" + token;
-        String content = String.format(
-            "Reset your password by clicking this link: <a href='%s'>Reset Password</a>",
-            resetUrl
-        );
-        sendSimpleEmail(to, "Reset Your Password", content);
+        try {
+            Template template = freeMarkerConfig.getTemplate("/email/reset-password.html");
+            Map<String, Object> model = new HashMap<>();
+            model.put("userName", to.split("@")[0]); // Using email prefix as username
+            model.put("resetLink", frontendUrl + "/reset-password?token=" + token);
+
+            String html = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
+            sendSimpleEmail(to, "Reset Your Password", html);
+        } catch (Exception e) {
+            log.error("Error sending password reset email: {}", e.getMessage(), e);
+            throw new RuntimeException("Error sending password reset email", e);
+        }
     }
 
     @Override
     public void sendOpportunityApplicationEmail(String to, String opportunityTitle, String organizationName) {
-        String content = String.format(
-            "Your application for %s at %s has been received.",
-            opportunityTitle,
-            organizationName
-        );
-        sendSimpleEmail(to, "Application Received", content);
+        try {
+            String content = String.format("""
+                <div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>
+                    <h2 style='color: #4CAF50;'>Application Received</h2>
+                    <p>Your application for <strong>%s</strong> at <strong>%s</strong> has been received.</p>
+                    <p>We will review your application and get back to you soon.</p>
+                    <p>Thank you for your interest!</p>
+                </div>
+                """, 
+                opportunityTitle, 
+                organizationName
+            );
+            sendSimpleEmail(to, "Application Received", content);
+        } catch (Exception e) {
+            log.error("Error sending application email: {}", e.getMessage(), e);
+            throw new RuntimeException("Error sending application email", e);
+        }
     }
 
     @Override
     public void sendApplicationStatusUpdateEmail(String to, String opportunityTitle, String status) {
-        String content = String.format(
-            "Your application status for %s has been updated to: %s",
-            opportunityTitle,
-            status
-        );
-        sendSimpleEmail(to, "Application Status Update", content);
+        try {
+            String content = String.format("""
+                <div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>
+                    <h2 style='color: #2196F3;'>Application Status Update</h2>
+                    <p>Your application status for <strong>%s</strong> has been updated to: <strong>%s</strong></p>
+                    <p>If you have any questions, please don't hesitate to contact us.</p>
+                </div>
+                """, 
+                opportunityTitle, 
+                status
+            );
+            sendSimpleEmail(to, "Application Status Update", content);
+        } catch (Exception e) {
+            log.error("Error sending status update email: {}", e.getMessage(), e);
+            throw new RuntimeException("Error sending status update email", e);
+        }
     }
 
     @Override
     public void send2FACode(String to, String code) {
-        // Implementation to send 2FA code via email
-        String subject = "Your Two-Factor Authentication Code";
-        String content = String.format("Your verification code is: %s\nThis code will expire in 5 minutes.", code);
-        sendSimpleEmail(to, subject, content);
+        try {
+            String content = String.format("""
+                <div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>
+                    <h2 style='color: #FF9800;'>Two-Factor Authentication Code</h2>
+                    <p>Your verification code is: <strong style='font-size: 24px;'>%s</strong></p>
+                    <p>This code will expire in 5 minutes.</p>
+                    <p>If you didn't request this code, please ignore this email.</p>
+                </div>
+                """, 
+                code
+            );
+            sendSimpleEmail(to, "Your Two-Factor Authentication Code", content);
+        } catch (Exception e) {
+            log.error("Error sending 2FA code: {}", e.getMessage(), e);
+            throw new RuntimeException("Error sending 2FA code", e);
+        }
+    }
+
+    @Override
+    public void sendTemplateEmail(String to, String subject, String templatePath, Map<String, Object> model) {
+        try {
+            Template template = freeMarkerConfig.getTemplate(templatePath);
+            String html = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
+            sendSimpleEmail(to, subject, html);
+        } catch (Exception e) {
+            log.error("Error sending template email: {}", e.getMessage(), e);
+            throw new RuntimeException("Error sending template email", e);
+        }
     }
 } 

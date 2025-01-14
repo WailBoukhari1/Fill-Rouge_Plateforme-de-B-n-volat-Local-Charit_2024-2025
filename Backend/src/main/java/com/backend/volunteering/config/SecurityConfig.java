@@ -47,49 +47,11 @@ public class SecurityConfig {
     private final RateLimitFilter rateLimitFilter;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.security.cors.allowed-origins}")
-    private String allowedOrigins;
-
-    @Value("${app.security.cors.allowed-methods}")
-    private String allowedMethods;
-
-    @Value("${app.security.cors.allowed-headers}")
-    private String allowedHeaders;
-
     @Bean
-    @Profile("dev")
-    public SecurityFilterChain devFilterChain(HttpSecurity http) throws Exception {
-        log.info("Configuring development security filter chain");
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        log.info("Configuring security filter chain");
         return http
-                .cors(cors -> cors.configurationSource(devCorsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().permitAll())
-                .build();
-    }
-
-    @Bean
-    @Profile("dev")
-    public CorsConfigurationSource devCorsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
-    @Bean
-    @Profile("prod")
-    public SecurityFilterChain prodFilterChain(HttpSecurity http) throws Exception {
-        log.info("Configuring production security filter chain");
-        http
-                .cors(cors -> cors.configurationSource(prodCorsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session
@@ -98,27 +60,21 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
     @Bean
-    @Profile("prod")
-    public CorsConfigurationSource prodCorsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Split the comma-separated strings into lists
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
-        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
-        
-        // Additional recommended settings
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/api/**", configuration);
         return source;
     }
 

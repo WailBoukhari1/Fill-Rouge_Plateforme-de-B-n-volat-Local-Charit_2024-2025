@@ -40,6 +40,11 @@ app:
       allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
       allowed-methods: GET,POST,PUT,DELETE,OPTIONS
       allowed-headers: Authorization,Content-Type,Cache-Control,Accept,Origin,X-Requested-With
+  frontend-base-url: ${APP_FRONTEND_URL}
+  frontend-url: ${APP_FRONTEND_URL}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000}
 
 logging:
   level:
