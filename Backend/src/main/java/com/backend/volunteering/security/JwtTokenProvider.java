@@ -80,6 +80,8 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .setSubject(user.getEmail())
+                .claim("role", user.getRole().toString())
+                .claim("status", user.getStatus().toString())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key)

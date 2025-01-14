@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Router, type CanActivateFn } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { AuthService } from '../../components/auth/services/auth.service';
 
 @Injectable({
@@ -8,14 +8,12 @@ import { AuthService } from '../../components/auth/services/auth.service';
 export class AuthGuard {
   constructor(private authService: AuthService, private router: Router) {}
 
-  canActivate: CanActivateFn = (route, state) => {
+  canActivate(): boolean | UrlTree {
     if (this.authService.isAuthenticated()) {
       return true;
     }
-
-    this.router.navigate(['/auth/login'], {
-      queryParams: { returnUrl: state.url }
-    });
-    return false;
+    
+    // Redirect to login page if not authenticated
+    return this.router.createUrlTree(['/auth/login']);
   }
 } 

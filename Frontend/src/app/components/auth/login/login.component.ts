@@ -12,6 +12,7 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { CommonModule } from '@angular/common';
 import { faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
 import { RouterLink } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-login',
@@ -41,7 +42,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -56,12 +58,14 @@ export class LoginComponent {
       
       this.authService.login(this.loginForm.value).subscribe({
         next: (response) => {
-          this.loading = false;
-          this.router.navigate(['/dashboard']);
+          if (response.success) {
+            this.loading = false;
+            this.router.navigate(['/test']);
+          }
         },
         error: (error) => {
+          this.snackBar.open(error.error.message || 'Login failed', 'Close', { duration: 3000 });
           this.loading = false;
-          this.error = error.error?.message || 'An error occurred during login';
         }
       });
     }

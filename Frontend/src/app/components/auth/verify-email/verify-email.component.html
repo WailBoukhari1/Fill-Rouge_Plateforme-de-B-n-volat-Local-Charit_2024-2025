@@ -4,51 +4,8 @@
       <div class="text-center">
         <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Verify Your Email</h2>
         <p class="mt-2 text-sm text-gray-600">
-          We've sent a verification code to {{ email }}
+          Verifying your email...
         </p>
-      </div>
-
-      <div class="mt-8">
-        <div class="mt-6">
-          <form [formGroup]="verificationForm" (ngSubmit)="onSubmit()" class="space-y-6">
-            <div>
-              <label for="code" class="block text-sm font-medium text-gray-700">
-                Verification Code
-              </label>
-              <div class="mt-1">
-                <input
-                  id="code"
-                  type="text"
-                  formControlName="code"
-                  required
-                  class="block w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm appearance-none focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
-                  placeholder="Enter 6-digit code"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                [disabled]="!verificationForm.valid || loading"
-                class="flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              >
-                <span *ngIf="!loading">Verify Email</span>
-                <mat-spinner *ngIf="loading" [diameter]="20"></mat-spinner>
-              </button>
-            </div>
-          </form>
-
-          <div class="mt-4 text-center">
-            <button
-              (click)="resendCode()"
-              [disabled]="loading"
-              class="text-sm text-primary-600 hover:text-primary-500"
-            >
-              Didn't receive the code? Resend
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>

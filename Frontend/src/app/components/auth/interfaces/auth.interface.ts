@@ -31,4 +31,17 @@ export interface ApiResponse<T> {
   message: string;
   data?: T;
   error?: any;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  data: {
+    accessToken: string;
+    user: {
+      name: string;
+      email: string;
+      role: string;
+      status: string;
+    }
+  };
 } 

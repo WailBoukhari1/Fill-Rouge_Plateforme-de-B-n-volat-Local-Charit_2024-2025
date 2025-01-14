@@ -2,8 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
-import { EmailVerificationRequest, ApiResponse } from '../interfaces/auth.interface';
+import { EmailVerificationRequest, ApiResponse, LoginResponse } from '../interfaces/auth.interface';
 import { tap as rxjsTap } from 'rxjs/operators';
+import { jwtDecode } from 'jwt-decode';
 
 @Injectable({
   providedIn: 'root'
@@ -24,12 +25,24 @@ export class AuthService {
     );
   }
 
-  login(credentials: { email: string; password: string }): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/login`, credentials);
+  login(credentials: { email: string; password: string }): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, {
+      loginId: credentials.email,
+      password: credentials.password
+    }).pipe(
+      tap(response => {
+        if (response.success) {
+          localStorage.setItem('token', response.data.accessToken);
+          const decodedToken = this.decodeToken(response.data.accessToken);
+          this.currentUserSubject.next(decodedToken);
+        }
+      })
+    );
   }
 
   logout(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     this.currentUserSubject.next(null);
   }
 
@@ -51,5 +64,23 @@ export class AuthService {
     return this.http.post<ApiResponse<void>>(`${this.apiUrl}/auth/resend-verification`, null, {
       params: { email }
     });
+  }
+
+  private decodeToken(token: string): any {
+    try {
+      return jwtDecode(token);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  loadStoredUser(): void {
+    const token = this.getAuthToken();
+    if (token) {
+      const decodedToken = this.decodeToken(token);
+      if (decodedToken) {
+        this.currentUserSubject.next(decodedToken);
+      }
+    }
   }
 } 
