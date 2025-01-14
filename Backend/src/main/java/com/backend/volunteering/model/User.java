@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -33,8 +34,10 @@ public class User extends DateAudit {
 
     private boolean emailVerified = false;
 
-    private AuthProvider provider = AuthProvider.local;
+    @Field("provider")
+    private AuthProvider provider = AuthProvider.LOCAL;
 
+    @Field("provider_id")
     private String providerId;
 
     private Set<String> roles = new HashSet<>();

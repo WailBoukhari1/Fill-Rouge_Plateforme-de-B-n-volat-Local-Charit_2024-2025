@@ -1,53 +1,70 @@
 package com.backend.volunteering.security;
 
 import com.backend.volunteering.model.User;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-@Getter
-@AllArgsConstructor
-public class UserPrincipal implements UserDetails, OAuth2User {
+public class UserPrincipal implements OAuth2User, UserDetails {
     private String id;
     private String email;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
     private Map<String, Object> attributes;
-    private User user;
 
-    public UserPrincipal(String id, String email, String password, 
-                        Collection<? extends GrantedAuthority> authorities,
-                        User user) {
+    public UserPrincipal(String id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.authorities = authorities;
-        this.user = user;
     }
 
     public static UserPrincipal create(User user) {
-        List<GrantedAuthority> authorities = user.getAuthorities().stream()
-                .collect(Collectors.toList());
+        List<GrantedAuthority> authorities = Collections.singletonList(
+            new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+        );
 
         return new UserPrincipal(
             user.getId(),
             user.getEmail(),
             user.getPassword(),
-            authorities,
-            user
+            authorities
         );
+    }
+
+    public static UserPrincipal create(User user, Map<String, Object> attributes) {
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        userPrincipal.setAttributes(attributes);
+        return userPrincipal;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, Object> attributes) {
+        this.attributes = attributes;
     }
 
     @Override
     public String getUsername() {
-        return email; // Use email as username
+        return email;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
     }
 
     @Override
@@ -70,7 +87,13 @@ public class UserPrincipal implements UserDetails, OAuth2User {
         return true;
     }
 
+    @Override
     public String getName() {
-        return email;  // or return the name if you store it in UserPrincipal
+        return String.valueOf(id);
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
     }
 } 

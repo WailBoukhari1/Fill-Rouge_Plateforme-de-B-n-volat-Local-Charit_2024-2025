@@ -85,10 +85,9 @@ export class AuthService {
   }
 
   loginWithGoogle(): void {
-    const googleAuthUrl = `${this.apiUrl}/oauth2/authorization/google`;
+    const googleAuthUrl = `${environment.apiUrl.replace('/api', '')}/oauth2/authorization/google`;
     
-    const currentUrl = window.location.href;
-    localStorage.setItem('redirectUrl', currentUrl);
+    localStorage.setItem('redirectUrl', 'http://localhost:4200/oauth2/redirect');
     
     window.location.href = googleAuthUrl;
   }
