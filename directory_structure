@@ -1,0 +1,25 @@
+src/main/java/com/backend/backend/
+├── config/                     # Configuration classes
+│   └── SecurityConfig.java
+├── controller/                 # REST controllers
+│   └── AuthController.java
+├── domain/                     # Domain models
+│   └── model/
+│       ├── User.java
+│       └── UserRole.java
+├── dto/                        # DTOs
+│   ├── request/
+│   │   └── LoginRequest.java
+│   └── response/
+│       └── LoginResponse.java
+├── exception/                  # Custom exceptions
+│   └── CustomException.java
+├── repository/                 # Repository interfaces
+│   └── UserRepository.java
+├── service/                    # Service layer
+│   ├── interfaces/
+│   │   └── AuthService.java
+│   └── impl/
+│       └── AuthServiceImpl.java
+└── util/                      # Utility classes
+    └── JwtUtil.java 

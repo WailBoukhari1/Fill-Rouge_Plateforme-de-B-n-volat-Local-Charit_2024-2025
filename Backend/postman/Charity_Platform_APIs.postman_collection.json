@@ -1,0 +1,563 @@
+{
+  "info": {
+    "name": "Charity Platform APIs",
+    "description": "Collection for Local Volunteering and Charity Platform APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"Test@12345\",\n    \"name\": \"John Doe\",\n    \"role\": \"VOLUNTEER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"Test@12345\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify-email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "verify-email"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com"
+                },
+                {
+                  "key": "code",
+                  "value": "123456"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "forgot-password"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "reset-password"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com"
+                },
+                {
+                  "key": "code",
+                  "value": "123456"
+                },
+                {
+                  "key": "newPassword",
+                  "value": "NewPassword123!"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/logout"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Refresh-Token",
+                "value": "{{refresh_token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/refresh"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Beach Cleanup\",\n    \"description\": \"Community beach cleanup event\",\n    \"dateTime\": \"2024-03-15T10:00:00\",\n    \"location\": \"Miami Beach\",\n    \"requiredSkills\": [\"physical work\", \"teamwork\"],\n    \"volunteersNeeded\": 20,\n    \"latitude\": 25.7617,\n    \"longitude\": -80.1918\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/events/{{event_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Updated Beach Cleanup\",\n    \"description\": \"Updated description\",\n    \"dateTime\": \"2024-03-15T11:00:00\",\n    \"location\": \"South Miami Beach\",\n    \"requiredSkills\": [\"physical work\", \"teamwork\", \"environmental\"],\n    \"volunteersNeeded\": 25,\n    \"latitude\": 25.7617,\n    \"longitude\": -80.1918\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/events/{{event_id}}"
+          }
+        },
+        {
+          "name": "Get Event",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/events/{{event_id}}"
+          }
+        },
+        {
+          "name": "Get All Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/events"
+          }
+        },
+        {
+          "name": "Get Events by Organization",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/events/organization/{{organization_id}}"
+          }
+        },
+        {
+          "name": "Search Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/search",
+              "query": [
+                {
+                  "key": "location",
+                  "value": "Miami"
+                },
+                {
+                  "key": "skills",
+                  "value": "teamwork"
+                },
+                {
+                  "key": "radius",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Publish Event",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/events/{{event_id}}/publish"
+          }
+        },
+        {
+          "name": "Cancel Event",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/events/{{event_id}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/organizations",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Green Earth NGO\",\n    \"description\": \"Environmental conservation organization\",\n    \"contactEmail\": \"contact@greenearth.org\",\n    \"contactPhone\": \"+1234567890\",\n    \"logo\": \"https://example.com/logo.png\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Organization",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/organizations/{{organization_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Green Earth NGO\",\n    \"description\": \"Updated description\",\n    \"contactEmail\": \"new@greenearth.org\",\n    \"contactPhone\": \"+1987654321\",\n    \"logo\": \"https://example.com/new-logo.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Organization",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/organizations/{{organization_id}}"
+          }
+        },
+        {
+          "name": "Get Organization",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/organizations/{{organization_id}}"
+          }
+        },
+        {
+          "name": "Verify Organization",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/organizations/{{organization_id}}/verify"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Volunteers",
+      "item": [
+        {
+          "name": "Create Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"bio\": \"Passionate about community service\",\n    \"skills\": [\"teaching\", \"organizing\"],\n    \"location\": \"Miami, FL\",\n    \"phoneNumber\": \"+1234567890\",\n    \"interests\": [\"environment\", \"education\"],\n    \"availability\": \"weekends\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"bio\": \"Updated bio\",\n    \"skills\": [\"teaching\", \"organizing\", \"leadership\"],\n    \"location\": \"North Miami, FL\",\n    \"phoneNumber\": \"+1987654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Profile",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/profile"
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/profile"
+          }
+        },
+        {
+          "name": "Search by Skill",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/search/skills/{{skill}}"
+          }
+        },
+        {
+          "name": "Search by Location",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/search/location/{{location}}"
+          }
+        },
+        {
+          "name": "Register for Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/events/{{event_id}}/register"
+          }
+        },
+        {
+          "name": "Cancel Event Registration",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/events/{{event_id}}/register"
+          }
+        },
+        {
+          "name": "Get Registered Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/volunteers/events/registered"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+} 

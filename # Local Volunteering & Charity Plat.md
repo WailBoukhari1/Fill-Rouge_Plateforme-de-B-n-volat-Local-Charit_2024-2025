@@ -1,321 +1,162 @@
-# Enhanced Local Volunteering & Charity Platform
-
-## Project Overview
-A comprehensive web-based platform that connects volunteers with charitable organizations and community initiatives, featuring advanced social features, gamification, and impact tracking. The platform supports both individual volunteers and organizations while fostering community engagement through various interactive features.
+### **Specifications Document**  
+**Local Volunteering and Charity Platform**  
 
 ---
 
-## Business Objectives
-- Create a vibrant volunteering ecosystem with social networking capabilities
-- Enable comprehensive volunteer program management and impact tracking
-- Provide advanced analytics and reporting for stakeholders
-- Foster community engagement through gamification and social features
-- Support both virtual and in-person volunteering opportunities
-- Enable corporate volunteering programs and CSR initiatives
+### **1. Context and Objectives**  
+**Context**:  
+The platform aims to connect **local organizations** (associations, NGOs) with **volunteers** for volunteering events. It should be simple, intuitive, and offer a seamless user experience.  
+
+**Objectives**:  
+- Allow organizations to post volunteering events.  
+- Enable volunteers to find and join events.  
+- Simplify the management of registrations and user profiles.  
+- Integrate Google Sign-In to streamline user registration.  
 
 ---
 
-## Technical Stack
+### **2. Main Features**  
 
-### Backend Technologies
-- **Core Framework**: Spring Boot 3.2
-- **Build Tool**: Maven
-- **Database**: MongoDB
-- **Search Engine**: Elasticsearch for advanced search capabilities
-- **Cache**: Redis for session management and caching
-- **Message Queue**: RabbitMQ for async processing
-- **Authentication**: Spring Security with JWT
-- **Real-time Communications**: WebSocket with STOMP
-- **API Documentation**: SpringDoc OpenAPI 3
-- **Email Service**: SendGrid API integration
-- **Storage**: MinIO for scalable object storage
-- **PDF Generation**: Apache PDFBox
-- **Analytics**: MongoDB Aggregation Pipeline + Elasticsearch
+#### **2.1. Authentication and User Management**  
+- **Google Sign-In**:  
+  - Use OAuth2 to let users log in with their Google accounts.  
+  - Alternative: Traditional email/password registration.  
+- **Roles**:  
+  - **Volunteer**: Can search and join events.  
+  - **Organization**: Can create and manage events.  
+  - **Admin**: Validates organizations and moderates content.  
+- **User Profiles**:  
+  - **Volunteers**: Profile picture, skills, availability, event participation history.  
+  - **Organizations**: Logo, description, contact details, “Verified” badge.  
 
-### Frontend Technologies
-- **Core Framework**: Angular 17
-- **UI Components**: Angular Material + Custom Components
-- **State Management**: NgRx for complex state
-- **Real-time Updates**: Socket.io client
-- **Maps**: Mapbox GL JS
-- **Charts**: D3.js + Chart.js
-- **Rich Text Editor**: TinyMCE
-- **Video Calls**: WebRTC integration
-- **CSS**: Tailwind CSS + Custom Design System
-- **Animations**: GSAP
+#### **2.2. Event Management**  
+- **Event Creation**:  
+  - Title, description, date/time, location (Google Maps integration).  
+  - Required skills (tags), number of volunteers needed.  
+- **Search and Filters**:  
+  - Filters by location (search radius), date, and skills.  
+  - Display events as cards.  
+- **Event Registration (RSVP)**:  
+  - Volunteers can register with a single click.  
+  - Participant limits for events.  
 
-### DevOps & Tools
-- **Containerization**: Docker + Kubernetes
-- **CI/CD**: Jenkins
-- **Monitoring**: Prometheus + Grafana
-- **Logging**: ELK Stack
-- **API Gateway**: Spring Cloud Gateway
-- **Service Mesh**: Istio
+#### **2.3. Notifications**  
+- **Email Alerts**:  
+  - Event registration confirmation.  
+  - Reminder 24 hours before the event.  
+  - Notification of event cancellation or changes.  
 
----
-
-## Enhanced Features & Functionalities
-
-### 1. Advanced User Management
-- **Multi-factor Authentication**
-- **Social Login** (Google, Facebook, LinkedIn)
-- **Role-based Access Control** with customizable permissions
-- **Organization Hierarchies** for large nonprofits
-- **Team Management** for group volunteering
-- **Corporate Accounts** with employee management
-- **Volunteer Verification System** with background check integration
-
-### 2. Comprehensive Profiles
-- **Skills Marketplace**
-  - Skill validation system
-  - Endorsements from organizations
-  - Certification uploads and verification
-- **Impact Portfolio**
-  - Visual timeline of volunteer work
-  - Impact metrics and statistics
-  - Downloadable volunteer resume
-  - Digital certificates and badges
-- **Social Features**
-  - Activity feed
-  - Volunteer connections
-  - Group memberships
-  - Public profile pages
-
-### 3. Enhanced Opportunity Management
-- **Advanced Search & Matching**
-  - AI-powered opportunity recommendations
-  - Skills-based matching
-  - Availability matching
-  - Geographic matching with radius search
-- **Opportunity Types**
-  - One-time events
-  - Recurring positions
-  - Virtual opportunities
-  - Skills-based volunteering
-  - Emergency response opportunities
-  - Corporate volunteering programs
-- **Application Management**
-  - Custom application forms
-  - Bulk volunteer management
-  - Automated screening
-  - Interview scheduling
-  - Background check integration
-
-### 4. Gamification & Recognition
-- **Achievement System**
-  - Custom badges and certifications
-  - Level progression
-  - Impact milestones
-  - Skill tree advancement
-- **Rewards Program**
-  - Community points
-  - Volunteer rewards marketplace
-  - Partner discounts and perks
-- **Leaderboards**
-  - Individual rankings
-  - Organization rankings
-  - Team competitions
-  - Impact challenges
-
-### 5. Communication & Collaboration
-- **Messaging System**
-  - Direct messages
-  - Group chats
-  - Organization broadcasts
-  - Automated notifications
-- **Virtual Volunteering Tools**
-  - Video conferencing
-  - Document collaboration
-  - Project management tools
-  - Time tracking
-- **Community Forums**
-  - Discussion boards
-  - Knowledge base
-  - Best practices sharing
-  - Success stories
-
-### 6. Advanced Analytics & Reporting
-- **Individual Analytics**
-  - Personal impact dashboard
-  - Skills development tracking
-  - Time contribution analysis
-  - Goal tracking
-- **Organization Analytics**
-  - Volunteer engagement metrics
-  - Impact measurement
-  - Program effectiveness
-  - Custom report builder
-- **Community Impact**
-  - SDG alignment tracking
-  - Economic impact calculation
-  - Social return on investment
-  - Community needs assessment
-
-### 7. Event & Calendar Management
-- **Advanced Scheduling**
-  - Recurring event management
-  - Availability matching
-  - Shift management
-  - Calendar integration
-- **Event Tools**
-  - QR code check-in
-  - Mobile attendance tracking
-  - Photo/video galleries
-  - Post-event surveys
-
-### 8. Resource Management
-- **Document Management**
-  - Policy documents
-  - Training materials
-  - Volunteer handbooks
-  - Impact reports
-- **Asset Tracking**
-  - Equipment management
-  - Resource allocation
-  - Donation tracking
-  - Inventory management
-
-### 9. Integration Capabilities
-- **API Framework**
-  - REST API
-  - GraphQL API
-  - Webhook system
-- **Third-party Integrations**
-  - CRM systems
-  - HRIS platforms
-  - Background check services
-  - Payment processors
-  - Social media platforms
+#### **2.4. Dashboard**  
+- **For Volunteers**:  
+  - Upcoming events, participation history.  
+- **For Organizations**:  
+  - List of registered volunteers, event management tools.  
+- **For Admin**:  
+  - Organization validation, content moderation tools.  
 
 ---
 
-## MongoDB Schema Design
+### **3. Technologies**  
 
-```javascript
-// Users Collection
-{
-  _id: ObjectId,
-  email: String,
-  passwordHash: String,
-  role: String,
-  profile: {
-    firstName: String,
-    lastName: String,
-    avatar: String,
-    bio: String,
-    skills: [String],
-    interests: [String],
-    location: {
-      type: "Point",
-      coordinates: [Number] // [longitude, latitude]
-    }
-  },
-  verification: {
-    emailVerified: Boolean,
-    phoneVerified: Boolean,
-    backgroundCheck: {
-      status: String,
-      completedAt: Date,
-      provider: String
-    }
-  },
-  metrics: {
-    totalHours: Number,
-    impactScore: Number,
-    lastActive: Date
-  },
-  settings: {
-    notifications: Object,
-    privacy: Object
-  },
-  created: Date,
-  updated: Date
-}
+#### **Backend (Spring Boot)**  
+- **Language**: Java 17+.  
+- **Framework**: Spring Boot, Spring Security, Spring Data JPA.  
+- **Database**: MongoDB.  
+- **Authentication**: JWT + OAuth2 (Google).  
+- **API**: RESTful API.  
 
-// Organizations Collection
-{
-  _id: ObjectId,
-  name: String,
-  type: String,
-  status: String,
-  profile: {
-    logo: String,
-    description: String,
-    mission: String,
-    website: String,
-    socialLinks: Object
-  },
-  location: {
-    address: String,
-    coordinates: {
-      type: "Point",
-      coordinates: [Number]
-    }
-  },
-  contacts: [{
-    name: String,
-    role: String,
-    email: String,
-    phone: String
-  }],
-  metrics: {
-    totalVolunteers: Number,
-    totalHours: Number,
-    impactScore: Number
-  },
-  verification: {
-    status: String,
-    documents: [String],
-    verifiedAt: Date
-  },
-  settings: Object,
-  created: Date,
-  updated: Date
-}
+#### **Frontend (Angular 17)**  
+- **Framework**: Angular 17 (Standalone Components).  
+- **UI Library**: Angular Material.  
+- **State Management**: NgRx.  
+- **Maps**: Google Maps integration.  
 
-// Opportunities Collection
-{
-  _id: ObjectId,
-  organizationId: ObjectId,
-  title: String,
-  type: String,
-  status: String,
-  description: String,
-  requirements: {
-    skills: [String],
-    minimumAge: Number,
-    background: Boolean
-  },
-  schedule: {
-    type: String,
-    startDate: Date,
-    endDate: Date,
-    recurringPattern: String,
-    shifts: [{
-      startTime: Date,
-      endTime: Date,
-      capacity: Number
-    }]
-  },
-  location: {
-    type: String,
-    address: String,
-    coordinates: {
-      type: "Point",
-      coordinates: [Number]
-    },
-    virtual: Boolean
-  },
-  impact: {
-    category: String,
-    metrics: Object,
-    sdgGoals: [String]
-  },
-  applications: {
-    total: Number,
-    approved: Number,
-    pending: Number
-  },
-  created: Date,
-  updated: Date
-}
+#### **Additional Tools**  
+- **Email Sending**: SendGrid or Mailtrap.  
+- **Deployment**: Docker + Docker Compose (optional).  
+
+---
+
+### **4. State Management with NgRx**  
+- **Auth State**:  
+  ```typescript  
+  interface AuthState {
+    user: User | null;
+    token: string | null;
+    isLoggedIn: boolean;
+  }  
+  ```  
+- **Events State**:  
+  ```typescript  
+  interface EventsState {
+    events: Event[];
+    filters: { location: string; skills: string[] };
+    loading: boolean;
+  }  
+  ```  
+- **Volunteers State**:  
+  ```typescript  
+  interface VolunteersState {
+    upcomingEvents: Event[];
+    pastEvents: Event[];
+  }  
+  ```  
+
+---
+
+### **5. Design and User Experience**  
+- **Homepage**:  
+  - Search bar with filters.  
+  - Carousel for popular events.  
+  - Statistics (e.g., "500 Active Volunteers").  
+- **Event Cards**:  
+  - Image, title, date, location, required skills.  
+  - "Register" button (disabled if event is full).  
+- **Responsive Design**:  
+  - Mobile and tablet compatibility.  
+
+---
+
+### **6. Security**  
+- **Backend**:  
+  - Input validation (e.g., event dates must be in the future).  
+  - API rate-limiting.  
+  - Role-based access control (e.g., only admins can validate organizations).  
+- **Frontend**:  
+  - Route guards for protected pages (e.g., `/dashboard`).  
+  - User input sanitization (e.g., event descriptions).  
+
+---
+
+### **7. Timeline**  
+
+#### **Phase 1 (4 Weeks)**  
+- Authentication (Google + email/password).  
+- Event creation and listing.  
+- User profiles (volunteers and organizations).  
+
+#### **Phase 2 (3 Weeks)**  
+- Event RSVP system.  
+- Email notifications.  
+- Organization dashboard.  
+
+#### **Phase 3 (2 Weeks)**  
+- Google Maps integration for event locations.  
+- UI/UX improvements.  
+- Testing and bug fixes.  
+
+---
+
+### **8. Resources**  
+- **Spring Boot Documentation**: [Spring Boot Docs](https://spring.io/projects/spring-boot).  
+- **Angular Documentation**: [Angular Docs](https://angular.io/docs).  
+- **NgRx**: [NgRx Docs](https://ngrx.io/guide/store).  
+
+---
+
+### **9. Deliverables**  
+- **Source Code**: Backend (Spring Boot) + Frontend (Angular).  
+- **Database**: SQL scripts for PostgreSQL.  
+- **Documentation**: Installation and user guide.  
+
+---

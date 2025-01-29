@@ -1,39 +1,55 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://localhost:27017/volunteering_dev
-      database: volunteering_dev
+      host: localhost
+      port: 27017
+      database: volunteer_platform_dev
+      auto-index-creation: true
+      transactional: false
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 2525
-    username: ee98594ded4802
-    password: 97108c4ca2db77
+    username: 8bfd7e920462df
+    password: 24e6ab85cfad44
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
-          debug: true
-    from: noreply@yourapp.com
-    personal: Volunteering Platform
-
-app:
-  security:
-    permit-all: true
-    cors:
-      allowed-origins: "*"
-      allowed-methods: "*"
-      allowed-headers: "*"
-  frontend-base-url: http://localhost:4200
+          ssl:
+            trust: sandbox.smtp.mailtrap.io
+        transport:
+          protocol: smtp
 
 logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   level:
     root: INFO
-    com.backend.volunteering: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.data.mongodb: DEBUG
-    org.mongodb: DEBUG
+    com.backend: DEBUG
+    org.springframework.security: INFO
+    org.springframework.data.mongodb: INFO
+    org.springframework.web: INFO
+
+spring.security:
+  jwt:
+    secret: 9a4f2c8d3b7e1a5f8c2d4e6b9a3f7c1e5b2d8a4c6f9e3b7d1c5a8e2f4b6d9c7a3f1e5b8a2c4f6d9e7b3c1a5f8e2d4b6c9a7f3e1b5d8a2c4f6
+    expiration: 86400000 
+    refresh-token:
+      expiration: 604800000 
+
+security:
+  cors:
+    allowed-origins: http://localhost:4200
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: Authorization,Content-Type
+    exposed-headers: Authorization
+    allow-credentials: true
+
+google:
+  maps:
+    api:
+      key: AIzaSyC3-0-00000000000000000000000000000000
+
+ 

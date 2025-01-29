@@ -1,53 +1,47 @@
 spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-    basic:
-      enabled: true
-    csrf:
-      enabled: true
-    headers:
-      frame: deny
-      hsts: true
-      xss: true
-      content-security-policy: "default-src 'self'"
+  data:
+    mongodb:
+      uri: mongodb://prod-mongodb-uri:27017
+      database: volunteer_platform_prod
+      auto-index-creation: true
   mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: smtp.gmail.com
+    port: 587
+    username: prod-email@example.com
+    password: prod-email-password
     properties:
       mail:
         smtp:
-          auth: ${MAIL_PROPERTIES_MAIL_SMTP_AUTH}
+          auth: true
           starttls:
-            enable: ${MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE}
-    from: ${MAIL_FROM}
-    personal: ${MAIL_PERSONAL}
-  data:
-    mongodb:
-      uri: ${MONGODB_URI}
-      database: ${MONGODB_DATABASE:volunteering_prod}
-
-app:
-  security:
-    permit-all: false
-    cors:
-      allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
-      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-      allowed-headers: Authorization,Content-Type,Cache-Control,Accept,Origin,X-Requested-With
-  frontend-base-url: ${APP_FRONTEND_URL}
-  frontend-url: ${APP_FRONTEND_URL}
-  jwt:
-    secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION:86400000}
+            enable: true
 
 logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level - %msg%n"
   level:
     root: WARN
-    com.backend.volunteering: INFO
-    org.springframework.data.mongodb: INFO
+    com.backend: INFO
+
+spring.security:
+  jwt:
+    secret: your-production-jwt-secret-key
+    expiration: 86400000
+    refresh-token:
+      expiration: 604800000
+
+security:
+  cors:
+    allowed-origins: https://your-frontend-domain.com
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: Authorization,Content-Type
+    exposed-headers: Authorization
+    allow-credentials: true
+
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+
+app:
+  frontend:
+    url: https://your-frontend-domain.com  # Production frontend URL 
