@@ -18,6 +18,7 @@ public class OrganizationController {
     private final OrganizationService organizationService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ORGANIZATION')")
     public ResponseEntity<ApiResponse<OrganizationResponse>> createOrganization(
             @Valid @RequestBody OrganizationRequest request,
             @RequestHeader("User-Id") String userId) {
@@ -28,11 +29,13 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<OrganizationResponse>> getOrganization(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(organizationService.getOrganization(id)));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isOrganizationOwner(#id, principal)")
     public ResponseEntity<ApiResponse<OrganizationResponse>> updateOrganization(
             @PathVariable String id,
             @Valid @RequestBody OrganizationRequest request) {
@@ -43,7 +46,7 @@ public class OrganizationController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZATION')")
+    @PreAuthorize("(hasRole('ORGANIZATION') and @securityService.isOrganizationOwner(#id, principal)) or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteOrganization(@PathVariable String id) {
         organizationService.deleteOrganization(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Organization deleted successfully"));

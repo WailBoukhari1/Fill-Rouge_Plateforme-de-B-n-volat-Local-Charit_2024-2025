@@ -1,0 +1,58 @@
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      Sign in to your account
+    </h2>
+  </div>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <mat-form-field class="w-full">
+          <mat-label>Email address</mat-label>
+          <input matInput formControlName="email" type="email" required>
+          <mat-error *ngIf="loginForm.get('email')?.errors?.['required']">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="loginForm.get('email')?.errors?.['email']">
+            Please enter a valid email
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+          <mat-label>Password</mat-label>
+          <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" required>
+          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+            <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
+          <mat-error *ngIf="loginForm.get('password')?.errors?.['required']">
+            Password is required
+          </mat-error>
+          <mat-error *ngIf="loginForm.get('password')?.errors?.['minlength']">
+            Password must be at least 6 characters
+          </mat-error>
+        </mat-form-field>
+
+        <div>
+          <button mat-raised-button color="primary" class="w-full" type="submit" [disabled]="loginForm.invalid">
+            Sign in
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-6">
+        <div class="text-sm text-center">
+          <a routerLink="/auth/reset-password" class="font-medium text-primary hover:text-primary-dark">
+            Forgot your password?
+          </a>
+        </div>
+        <div class="mt-2 text-sm text-center text-gray-600">
+          Don't have an account?
+          <a routerLink="/auth/register" class="font-medium text-primary hover:text-primary-dark ml-1">
+            Register now
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

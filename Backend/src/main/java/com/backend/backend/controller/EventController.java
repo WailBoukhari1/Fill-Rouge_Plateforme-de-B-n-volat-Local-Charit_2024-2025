@@ -7,6 +7,7 @@ import com.backend.backend.service.interfaces.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
@@ -19,6 +20,7 @@ public class EventController {
     private final EventService eventService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ORGANIZATION')")
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(
             @Valid @RequestBody EventRequest request,
             @RequestHeader("Organization-Id") String organizationId) {
@@ -29,11 +31,13 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(eventService.getEvent(id)));
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvents() {
         return ResponseEntity.ok(ApiResponse.success(eventService.getAllEvents()));
     }
@@ -47,6 +51,7 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
     public ResponseEntity<ApiResponse<EventResponse>> updateEvent(
             @PathVariable String id,
             @Valid @RequestBody EventRequest request) {
@@ -57,12 +62,14 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
     public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable String id) {
         eventService.deleteEvent(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Event deleted successfully"));
     }
 
     @PatchMapping("/{id}/publish")
+    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
     public ResponseEntity<ApiResponse<EventResponse>> publishEvent(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(
             eventService.publishEvent(id),
@@ -71,6 +78,7 @@ public class EventController {
     }
 
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
     public ResponseEntity<ApiResponse<EventResponse>> cancelEvent(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(
             eventService.cancelEvent(id),

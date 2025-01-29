@@ -1,0 +1,28 @@
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
+      @if (isLoading) {
+        <mat-spinner class="mx-auto"></mat-spinner>
+        <p class="mt-4 text-gray-600">Verifying your email...</p>
+      } @else if (isVerified) {
+        <div class="text-center">
+          <mat-icon class="text-6xl text-green-500">check_circle</mat-icon>
+          <h2 class="mt-4 text-2xl font-bold text-gray-900">Email Verified!</h2>
+          <p class="mt-2 text-gray-600">Your email has been successfully verified.</p>
+          <button mat-raised-button color="primary" class="mt-6" routerLink="/auth/login">
+            Proceed to Login
+          </button>
+        </div>
+      } @else {
+        <div class="text-center">
+          <mat-icon class="text-6xl text-red-500">error</mat-icon>
+          <h2 class="mt-4 text-2xl font-bold text-gray-900">Verification Failed</h2>
+          <p class="mt-2 text-gray-600">{{error}}</p>
+          <button mat-raised-button color="primary" class="mt-6" routerLink="/auth/login">
+            Back to Login
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div> 

@@ -18,6 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -57,8 +58,28 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints
                 .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                
+                // Admin only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/organizations/*/verify").hasRole("ADMIN")
+                
+                // Organization endpoints
+                .requestMatchers(HttpMethod.POST, "/api/events").hasRole("ORGANIZATION")
+                .requestMatchers(HttpMethod.PUT, "/api/events/*").hasRole("ORGANIZATION")
+                .requestMatchers(HttpMethod.DELETE, "/api/events/*").hasRole("ORGANIZATION")
+                .requestMatchers(HttpMethod.PATCH, "/api/events/*/publish").hasRole("ORGANIZATION")
+                .requestMatchers(HttpMethod.PATCH, "/api/events/*/cancel").hasRole("ORGANIZATION")
+                
+                // Mixed access endpoints
+                .requestMatchers(HttpMethod.GET, "/api/events/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/organizations/**").authenticated()
+                
+                // Volunteer endpoints
+                .requestMatchers("/api/volunteers/**").hasRole("VOLUNTEER")
+                
+                // Default
                 .anyRequest().authenticated()
             );
 
