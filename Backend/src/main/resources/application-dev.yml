@@ -1,11 +1,17 @@
 spring:
   data:
     mongodb:
-      host: localhost
-      port: 27017
-      database: volunteer_platform_dev
-      auto-index-creation: true
-      transactional: false
+      uri: ${MONGODB_URI:mongodb://localhost:27017/volunteer_platform_dev}
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+           client-id: 298009711197-jkuj27rigq9r1ilmtel1961km4m59ooq.apps.googleusercontent.com
+            client-secret: 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
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 2525
@@ -17,10 +23,6 @@ spring:
           auth: true
           starttls:
             enable: true
-          ssl:
-            trust: sandbox.smtp.mailtrap.io
-        transport:
-          protocol: smtp
 
 logging:
   pattern:
@@ -28,7 +30,7 @@ logging:
   level:
     root: INFO
     com.backend: DEBUG
-    org.springframework.security: INFO
+    org.springframework.security: DEBUG
     org.springframework.data.mongodb: INFO
     org.springframework.web: INFO
 
@@ -51,5 +53,15 @@ google:
   maps:
     api:
       key: AIzaSyC3-0-00000000000000000000000000000000
+
+app:
+  frontend:
+    url: http://localhost:4200
+  email:
+    from: no-reply@volunteer-platform-dev.com
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 3600000 # 1 hour
+    refresh-expiration: 86400000 # 24 hours
 
  

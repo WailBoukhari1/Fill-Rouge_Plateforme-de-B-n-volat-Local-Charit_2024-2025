@@ -13,14 +13,10 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
           github:
-            client-id: ${GITHUB_CLIENT_ID}
-            client-secret: ${GITHUB_CLIENT_SECRET}
             scope:
               - user:email
               - read:user
@@ -45,7 +41,12 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      show-details: when_authorized
+
+app:
+  email:
+    verification-expiry-hours: 24
+    reset-password-expiry-hours: 1
 
 security:
   cors:
@@ -60,5 +61,5 @@ app:
     url: ${FRONTEND_URL:http://localhost:4200}
   email:
     from: ${EMAIL_FROM:no-reply@volunteer-platform.com}
-    verification-expiry-hours: 24
-    reset-password-expiry-hours: 1 
+
+    
