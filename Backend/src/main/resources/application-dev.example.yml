@@ -1,17 +1,11 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://localhost:27017/volunteer_platform_dev
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: your-google-client-id
-            client-secret: your-google-client-secret
-          github:
-            client-id: your-github-client-id
-            client-secret: your-github-client-secret
+      host: localhost
+      port: 27017
+      database: volunteer_platform_dev
+      auto-index-creation: true
+      transactional: false
   mail:
     host: smtp.example.com
     port: 587
@@ -23,6 +17,10 @@ spring:
           auth: true
           starttls:
             enable: true
+          ssl:
+            trust: smtp.example.com
+        transport:
+          protocol: smtp
 
 logging:
   pattern:
@@ -30,16 +28,16 @@ logging:
   level:
     root: INFO
     com.backend: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
     org.springframework.data.mongodb: INFO
     org.springframework.web: INFO
 
 spring.security:
   jwt:
-    secret: your-dev-jwt-secret-key
-    expiration: 3600000 # 1 hour
+    secret: your-dev-jwt-secret-key-replace-this-with-a-secure-value
+    expiration: 86400000 # 24 hours
     refresh-token:
-      expiration: 86400000 # 24 hours
+      expiration: 604800000 # 7 days
 
 security:
   cors:
@@ -58,6 +56,4 @@ app:
   frontend:
     url: http://localhost:4200
   email:
-    from: no-reply@volunteer-platform-dev.com
-
-# ... rest of your dev configuration with example values 
+    from: no-reply@your-domain.com

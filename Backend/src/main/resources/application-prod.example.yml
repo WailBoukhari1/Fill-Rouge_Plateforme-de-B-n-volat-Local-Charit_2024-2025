@@ -2,16 +2,8 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI}
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-          github:
-            client-id: ${GITHUB_CLIENT_ID}
-            client-secret: ${GITHUB_CLIENT_SECRET}
+      database: ${MONGODB_DATABASE}
+      auto-index-creation: true
   mail:
     host: ${MAIL_HOST}
     port: ${MAIL_PORT}
@@ -25,17 +17,18 @@ spring:
             enable: true
 
 logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level - %msg%n"
   level:
-    root: ERROR
-    org.springframework.web: WARN
+    root: WARN
     com.backend: INFO
 
 spring.security:
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION:3600000}
+    expiration: ${JWT_EXPIRATION:86400000}
     refresh-token:
-      expiration: ${JWT_REFRESH_EXPIRATION:86400000}
+      expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 security:
   cors:
@@ -50,10 +43,12 @@ google:
     api:
       key: ${GOOGLE_MAPS_API_KEY}
 
+sendgrid:
+  api:
+    key: ${SENDGRID_API_KEY}
+
 app:
   frontend:
     url: ${FRONTEND_URL}
   email:
     from: ${EMAIL_FROM}
-
-# ... rest of your prod configuration with environment variables 
