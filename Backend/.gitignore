@@ -40,6 +40,5 @@ build/
 logs/
 
 ### Application Properties ###
-application-*.yml
-!application.yml
-!application-example.yml 
+/src/main/resources/application-dev.yml
+/src/main/resources/application-prod.yml

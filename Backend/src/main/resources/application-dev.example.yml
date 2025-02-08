@@ -1,0 +1,27 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/volunteer_platform_dev
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: your-google-client-id
+            client-secret: your-google-client-secret
+          github:
+            client-id: your-github-client-id
+            client-secret: your-github-client-secret
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: your-username
+    password: your-password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# ... rest of your dev configuration with example values 
