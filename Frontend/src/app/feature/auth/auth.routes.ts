@@ -1,24 +1,44 @@
 import { Routes } from '@angular/router';
+import { LoginComponent } from './components/login/login.component';
+import { RegisterComponent } from './components/register/register.component';
+import { VerifyEmailComponent } from './components/verify-email/verify-email.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
+import { OAuthCallbackComponent } from './components/oauth-callback/oauth-callback.component';
+import { noAuthGuard } from '../../core/guards/auth.guard';
 
-export const authRoutes: Routes = [
+export const AUTH_ROUTES: Routes = [
   {
     path: 'login',
-    loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent)
+    component: LoginComponent,
+    canActivate: [noAuthGuard]
   },
   {
     path: 'register',
-    loadComponent: () => import('./components/register/register.component').then(m => m.RegisterComponent)
+    component: RegisterComponent,
+    canActivate: [noAuthGuard]
   },
   {
     path: 'verify-email',
-    loadComponent: () => import('./components/email-verification/email-verification.component').then(m => m.EmailVerificationComponent)
+    component: VerifyEmailComponent
   },
   {
     path: 'forgot-password',
-    loadComponent: () => import('./components/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+    component: ForgotPasswordComponent,
+    canActivate: [noAuthGuard]
   },
   {
     path: 'reset-password',
-    loadComponent: () => import('./components/password-reset/password-reset.component').then(m => m.PasswordResetComponent)
+    component: ResetPasswordComponent,
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: 'oauth2/callback/:provider',
+    component: OAuthCallbackComponent
+  },
+  {
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full'
   }
 ]; 

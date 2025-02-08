@@ -21,11 +21,13 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        ErrorResponse errorResponse = new ErrorResponse(
-            HttpServletResponse.SC_UNAUTHORIZED,
-            "Unauthorized access",
-            LocalDateTime.now()
-        );
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpServletResponse.SC_UNAUTHORIZED)
+            .error("Unauthorized")
+            .message("Unauthorized access")
+            .path(request.getRequestURI())
+            .build();
 
         new ObjectMapper().writeValue(response.getOutputStream(), errorResponse);
     }

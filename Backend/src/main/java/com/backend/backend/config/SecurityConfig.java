@@ -19,6 +19,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.http.HttpMethod;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.config.oauth2.client.CommonOAuth2Provider;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import com.backend.backend.security.oauth2.CustomOAuth2UserService;
 
 @Configuration
 @EnableWebSecurity
@@ -31,6 +37,14 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomUserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
+    private final CustomAuthenticationProvider customAuthenticationProvider;
+    private final CustomOAuth2UserService oauth2UserService;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+    private String googleClientSecret;
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -55,8 +69,16 @@ public class SecurityConfig {
                 .accessDeniedHandler(accessDeniedHandler))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authenticationProvider(authenticationProvider())
+            .authenticationProvider(customAuthenticationProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(authorization -> authorization
+                    .baseUri("/api/auth/oauth2/authorize"))
+                .redirectionEndpoint(redirection -> redirection
+                    .baseUri("/api/auth/oauth2/callback/*"))
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(oauth2UserService))
+            )
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -79,10 +101,29 @@ public class SecurityConfig {
                 // Volunteer endpoints
                 .requestMatchers("/api/volunteers/**").hasRole("VOLUNTEER")
                 
+                // Add OAuth2 endpoints to permitted URLs
+                .requestMatchers("/api/auth/oauth2/**").permitAll()
+                
                 // Default
                 .anyRequest().authenticated()
             );
 
         return http.build();
+    }
+
+    @Bean
+    public ClientRegistrationRepository clientRegistrationRepository() {
+        return new InMemoryClientRegistrationRepository(
+            googleClientRegistration()
+            // Add more providers here as needed
+        );
+    }
+
+    private ClientRegistration googleClientRegistration() {
+        return CommonOAuth2Provider.GOOGLE.getBuilder("google")
+            .clientId(googleClientId)
+            .clientSecret(googleClientSecret)
+            .scope("email", "profile")
+            .build();
     }
 } 

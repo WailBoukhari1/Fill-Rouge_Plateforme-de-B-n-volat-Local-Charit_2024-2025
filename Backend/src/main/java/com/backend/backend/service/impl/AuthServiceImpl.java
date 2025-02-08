@@ -12,6 +12,8 @@ import com.backend.backend.security.jwt.JwtTokenProvider;
 import com.backend.backend.service.interfaces.AuthService;
 import com.backend.backend.service.interfaces.EmailService;
 import com.backend.backend.service.interfaces.TokenBlacklistService;
+import com.backend.backend.service.interfaces.OAuth2Service;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -46,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
     private final VerificationTokenRepository tokenRepository;
     private final EmailService emailService;
     private final Set<String> blacklistedTokens = ConcurrentHashMap.newKeySet();
+    private final OAuth2Service oauth2Service;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -164,6 +167,23 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+
+        if (user.isEmailVerified()) {
+            throw new CustomException("Email already verified", HttpStatus.BAD_REQUEST);
+        }
+
+        String verificationCode = generateVerificationCode();
+        user.setVerificationCode(verificationCode);
+        user.setVerificationCodeExpiryDate(LocalDateTime.now().plusHours(24));
+        userRepository.save(user);
+
+        emailService.sendVerificationEmail(email, verificationCode);
+    }
+
+    @Override
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
@@ -215,21 +235,24 @@ public class AuthServiceImpl implements AuthService {
         tokenRepository.deleteByExpiryDateBefore(now);
     }
 
+    @Override
+    public AuthResponse handleOAuth2Callback(String provider, String code, String state) {
+        OAuth2User oauth2User = oauth2Service.processOAuthPostLogin(code);
+        String email = oauth2User.getAttribute("email");
+        String token = jwtTokenProvider.generateToken(email);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(email);
+        
+        return AuthResponse.builder()
+                .accessToken(token)
+                .refreshToken(refreshToken)
+                .email(email)
+                .build();
+    }
+
     private String generateVerificationCode() {
         return String.format("%06d", new Random().nextInt(999999));
     }
 
-    private void sendVerificationEmail(String email, String token) {
-        String subject = "Please verify your email";
-        String url = "http://localhost:4200/verify-email?token=" + token;
-        String text = "Please click on the link below to verify your email:\n" + url;
-        
-        emailService.sendEmail(email, subject, text);
-    }
-
-    private void sendPasswordResetEmail(String email, String code) {
-        emailService.sendPasswordResetEmail(email, code);
-    }
 
     public void blacklistToken(String token) {
         blacklistedTokens.add(token);

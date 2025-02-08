@@ -1,11 +1,16 @@
 package com.backend.backend.dto.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ApiResponse<T> {
     private boolean success;
     private String message;
@@ -13,28 +18,36 @@ public class ApiResponse<T> {
     private LocalDateTime timestamp;
     
     public static <T> ApiResponse<T> success(T data) {
-        return success(data, null);
+        return ApiResponse.<T>builder()
+            .success(true)
+            .data(data)
+            .timestamp(LocalDateTime.now())
+            .build();
     }
     
     public static <T> ApiResponse<T> success(T data, String message) {
         return ApiResponse.<T>builder()
-                .success(true)
-                .message(message)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .build();
+            .success(true)
+            .message(message)
+            .data(data)
+            .timestamp(LocalDateTime.now())
+            .build();
+    }
+    
+    public static ApiResponse<Map<String, String>> error(Map<String, String> errors) {
+        return ApiResponse.<Map<String, String>>builder()
+            .success(false)
+            .message("Validation failed")
+            .data(errors)
+            .timestamp(LocalDateTime.now())
+            .build();
     }
     
     public static <T> ApiResponse<T> error(String message) {
-        return error(message, null);
-    }
-    
-    public static <T> ApiResponse<T> error(String message, T data) {
         return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .build();
+            .success(false)
+            .message(message)
+            .timestamp(LocalDateTime.now())
+            .build();
     }
 } 

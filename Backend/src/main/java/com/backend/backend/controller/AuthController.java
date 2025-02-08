@@ -5,6 +5,7 @@ import com.backend.backend.dto.request.RegisterRequest;
 import com.backend.backend.dto.response.ApiResponse;
 import com.backend.backend.dto.response.AuthResponse;
 import com.backend.backend.service.interfaces.AuthService;
+import com.backend.backend.service.interfaces.OAuth2Service;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import com.backend.backend.exception.CustomException;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,6 +27,7 @@ import com.backend.backend.exception.CustomException;
 public class AuthController {
 
     private final AuthService authService;
+    private final OAuth2Service oauth2Service;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
@@ -63,6 +70,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Email verified successfully"));
     }
 
+    @PostMapping("/resend-verification-email")
+    public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(
+            @RequestParam @jakarta.validation.constraints.Email String email) {
+        authService.resendVerificationEmail(email);
+        return ResponseEntity.ok(ApiResponse.success(null, "Verification email resent successfully"));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @RequestParam @jakarta.validation.constraints.Email String email) {
@@ -77,5 +91,24 @@ public class AuthController {
             @RequestParam @Size(min = 8, max = 32) String newPassword) {
         authService.resetPassword(email, code, newPassword);
         return ResponseEntity.ok(ApiResponse.success(null, "Password reset successful"));
+    }
+
+    @GetMapping("/oauth2/callback/{provider}")
+    public ResponseEntity<ApiResponse<AuthResponse>> oauth2Callback(
+            @PathVariable String provider,
+            @RequestParam String code,
+            @RequestParam(required = false) String state) {
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            authService.handleOAuth2Callback(provider, code, state),
+            "OAuth2 login successful"
+        ));
+    }
+
+    @GetMapping("/oauth2/current-user")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<OAuth2User>> getCurrentUser(
+            @AuthenticationPrincipal OAuth2User oauth2User) {
+        return ResponseEntity.ok(ApiResponse.success(oauth2User));
     }
 } 

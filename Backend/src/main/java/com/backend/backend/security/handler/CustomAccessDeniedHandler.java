@@ -21,11 +21,13 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
-        ErrorResponse errorResponse = new ErrorResponse(
-            HttpServletResponse.SC_FORBIDDEN,
-            "Access denied",
-            LocalDateTime.now()
-        );
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpServletResponse.SC_FORBIDDEN)
+            .error("Forbidden")
+            .message("Access denied")
+            .path(request.getRequestURI())
+            .build();
 
         new ObjectMapper().writeValue(response.getOutputStream(), errorResponse);
     }

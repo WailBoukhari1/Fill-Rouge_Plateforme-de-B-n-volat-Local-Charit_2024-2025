@@ -148,6 +148,55 @@
             ],
             "url": "{{base_url}}/api/auth/refresh"
           }
+        },
+        {
+          "name": "OAuth2 Google Login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/auth/oauth2/authorize/google"
+          }
+        },
+        {
+          "name": "OAuth2 Callback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/oauth2/callback/google?code={{oauth_code}}&state={{oauth_state}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "auth",
+                "oauth2",
+                "callback",
+                "google"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{oauth_code}}"
+                },
+                {
+                  "key": "state",
+                  "value": "{{oauth_state}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OAuth2 User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/oauth2/current-user"
+          }
         }
       ]
     },
@@ -556,6 +605,16 @@
     },
     {
       "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "oauth_code",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "oauth_state",
       "value": "",
       "type": "string"
     }

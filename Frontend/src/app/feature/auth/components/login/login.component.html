@@ -3,14 +3,26 @@
     <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
       Sign in to your account
     </h2>
+    <p class="mt-2 text-center text-sm text-gray-600">
+      Or
+      <a (click)="navigateToRegister()" class="font-medium text-primary hover:text-primary-dark cursor-pointer">
+        create a new account
+      </a>
+    </p>
   </div>
 
   <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+    <div class="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+      <div *ngIf="error$ | async as error" 
+           class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-200">
+        {{ error }}
+      </div>
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <mat-form-field class="w-full">
+        <mat-form-field  class="w-full">
           <mat-label>Email address</mat-label>
           <input matInput formControlName="email" type="email" required>
+          <mat-icon matPrefix class="mr-2 text-gray-400">email</mat-icon>
           <mat-error *ngIf="loginForm.get('email')?.errors?.['required']">
             Email is required
           </mat-error>
@@ -19,40 +31,57 @@
           </mat-error>
         </mat-form-field>
 
-        <mat-form-field class="w-full">
+        <mat-form-field  class="w-full">
           <mat-label>Password</mat-label>
-          <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" required>
+          <input matInput [type]="hidePassword ? 'password' : 'text'" 
+                 formControlName="password" required>
+          <mat-icon matPrefix class="mr-2 text-gray-400">lock</mat-icon>
           <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
             <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
           </button>
           <mat-error *ngIf="loginForm.get('password')?.errors?.['required']">
             Password is required
           </mat-error>
-          <mat-error *ngIf="loginForm.get('password')?.errors?.['minlength']">
-            Password must be at least 6 characters
-          </mat-error>
         </mat-form-field>
 
+        <div class="flex items-center justify-between">
+          <div class="text-sm">
+            <a (click)="navigateToForgotPassword()" 
+               class="font-medium text-primary hover:text-primary-dark cursor-pointer">
+              Forgot your password?
+            </a>
+          </div>
+        </div>
+
         <div>
-          <button mat-raised-button color="primary" class="w-full" type="submit" [disabled]="loginForm.invalid">
-            Sign in
+          <button mat-raised-button color="primary" 
+                  class="w-full flex justify-center py-2 px-4"
+                  [disabled]="loginForm.invalid || (loading$ | async)"
+                  type="submit">
+            <mat-spinner diameter="20" *ngIf="loading$ | async" class="mr-2"></mat-spinner>
+            {{ (loading$ | async) ? 'Signing in...' : 'Sign in' }}
           </button>
         </div>
       </form>
 
       <div class="mt-6">
-        <div class="text-sm text-center">
-          <a routerLink="/auth/reset-password" class="font-medium text-primary hover:text-primary-dark">
-            Forgot your password?
-          </a>
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <mat-divider></mat-divider>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
         </div>
-        <div class="mt-2 text-sm text-center text-gray-600">
-          Don't have an account?
-          <a routerLink="/auth/register" class="font-medium text-primary hover:text-primary-dark ml-1">
-            Register now
-          </a>
+
+        <div class="mt-6">
+          <button mat-stroked-button (click)="loginWithGoogle()" 
+                  class="w-full flex items-center justify-center py-2 px-4">
+            <img src="assets/icons/google.svg" class="h-5 w-5 mr-2" alt="Google logo">
+            Sign in with Google
+          </button>
         </div>
       </div>
     </div>
   </div>
-</div> 
+</div>
