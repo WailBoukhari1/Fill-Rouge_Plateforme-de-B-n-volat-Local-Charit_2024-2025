@@ -2,7 +2,7 @@ package com.backend.backend.controller;
 
 import com.backend.backend.dto.request.OrganizationRequest;
 import com.backend.backend.dto.response.ApiResponse;
-import com.backend.backend.dto.response.EventResponse;
+import com.backend.backend.dto.EventResponse;
 import com.backend.backend.dto.response.OrganizationResponse;
 import com.backend.backend.service.interfaces.OrganizationService;
 import jakarta.validation.Valid;

@@ -20,8 +20,10 @@ export interface Event {
 export enum EventStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED'
+  UPCOMING = 'UPCOMING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
 }
 
 export interface EventFilters {

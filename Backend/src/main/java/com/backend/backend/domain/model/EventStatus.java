@@ -1,8 +1,8 @@
 package com.backend.backend.domain.model;
 
 public enum EventStatus {
-    DRAFT,
-    PUBLISHED,
-    CANCELLED,
-    COMPLETED
+    UPCOMING,
+    IN_PROGRESS,
+    COMPLETED,
+    CANCELLED
 } 

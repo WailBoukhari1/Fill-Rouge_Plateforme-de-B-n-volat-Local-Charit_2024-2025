@@ -6,7 +6,7 @@ import com.google.maps.model.GeocodingResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import com.backend.backend.domain.model.Event;
+import com.backend.backend.domain.Event;
 import com.backend.backend.repository.EventRepository;
 
 import java.util.List;

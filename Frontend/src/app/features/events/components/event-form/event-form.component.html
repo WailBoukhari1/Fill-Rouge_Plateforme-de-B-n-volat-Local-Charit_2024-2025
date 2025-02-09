@@ -1,7 +1,7 @@
 <div class="container mx-auto p-4">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold">{{ isEditMode ? 'Edit Event' : 'Create Event' }}</h1>
-    <button mat-stroked-button routerLink="/events">
+    <button mat-stroked-button [routerLink]="['/dashboard/events']">
       <mat-icon>arrow_back</mat-icon>
       Back to Events
     </button>
@@ -86,7 +86,8 @@
                     <mat-icon>cancel</mat-icon>
                   </button>
                 </mat-chip-row>
-                <input [matChipInputFor]="chipGrid"
+                <input placeholder="New skill..."
+                       [matChipInputFor]="chipGrid"
                        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
                        (matChipInputTokenEnd)="addSkill($event)">
               </mat-chip-grid>
@@ -94,9 +95,10 @@
 
             <!-- Common Skills Suggestions -->
             <div class="flex flex-wrap gap-2">
-              <button mat-button
+              <button mat-stroked-button
                       *ngFor="let skill of commonSkills"
-                      (click)="addCommonSkill(skill)">
+                      (click)="addCommonSkill(skill)"
+                      type="button">
                 {{skill}}
               </button>
             </div>
@@ -120,42 +122,29 @@
 
           <!-- Map -->
           <div class="h-[400px] mb-4">
-            <google-map
-              width="100%"
-              height="100%"
-              [center]="{ 
-                lat: eventForm.get('latitude')?.value || 0, 
-                lng: eventForm.get('longitude')?.value || 0 
-              }"
-              [zoom]="15"
-              (mapClick)="onMapClick($event)">
-              <map-marker
-                *ngIf="eventForm.get('latitude')?.value && eventForm.get('longitude')?.value"
-                [position]="{ 
-                  lat: eventForm.get('latitude')?.value, 
-                  lng: eventForm.get('longitude')?.value 
-                }">
-              </map-marker>
-            </google-map>
+            <div id="map" class="h-full w-full"></div>
           </div>
 
           <!-- Coordinates -->
           <div class="grid grid-cols-2 gap-4">
             <mat-form-field appearance="outline">
               <mat-label>Latitude</mat-label>
-              <input matInput type="number" formControlName="latitude">
+              <input matInput type="number" formControlName="latitude" readonly>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Longitude</mat-label>
-              <input matInput type="number" formControlName="longitude">
+              <input matInput type="number" formControlName="longitude" readonly>
             </mat-form-field>
           </div>
         </mat-card-content>
       </mat-card>
 
       <!-- Submit Button -->
-      <div class="flex justify-end mt-4">
+      <div class="flex justify-end mt-4 gap-4">
+        <button mat-stroked-button type="button" [routerLink]="['/dashboard/events']">
+          Cancel
+        </button>
         <button 
           mat-raised-button 
           color="primary" 

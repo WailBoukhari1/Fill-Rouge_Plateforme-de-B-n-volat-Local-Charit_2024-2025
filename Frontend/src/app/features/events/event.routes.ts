@@ -37,19 +37,19 @@ export const DASHBOARD_EVENT_ROUTES: Routes = [
       },
       {
         path: 'pending',
-        loadComponent: () => import('./components/event-management/pending-events.component')
+        loadComponent: () => import('./components/pending-events/pending-events.component')
           .then(m => m.PendingEventsComponent),
         title: 'Pending Events'
       },
       {
         path: 'past',
-        loadComponent: () => import('./components/event-management/past-events.component')
+        loadComponent: () => import('./components/past-events/past-events.component')
           .then(m => m.PastEventsComponent),
         title: 'Past Events'
       },
       {
         path: 'drafts',
-        loadComponent: () => import('./components/event-management/draft-events.component')
+        loadComponent: () => import('./components/draft-events/draft-events.component')
           .then(m => m.DraftEventsComponent),
         title: 'Draft Events'
       },

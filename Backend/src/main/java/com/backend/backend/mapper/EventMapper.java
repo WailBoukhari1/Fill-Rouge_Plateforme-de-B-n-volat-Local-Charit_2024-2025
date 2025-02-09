@@ -1,19 +1,21 @@
 package com.backend.backend.mapper;
 
-import com.backend.backend.domain.model.Event;
-import com.backend.backend.dto.request.EventRequest;
-import com.backend.backend.dto.response.EventResponse;
-import org.mapstruct.*;
+import com.backend.backend.domain.Event;
+import com.backend.backend.dto.EventRequest;
+import com.backend.backend.dto.EventResponse;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface EventMapper {
     
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", constant = "DRAFT")
     Event toEntity(EventRequest request);
     
+    @Mapping(target = "isRegistered", ignore = true)
+    @Mapping(target = "availableSpots", expression = "java(event.getMaxParticipants() - event.getRegisteredParticipants().size())")
     EventResponse toResponse(Event event);
     
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEventFromRequest(EventRequest request, @MappingTarget Event event);
 } 

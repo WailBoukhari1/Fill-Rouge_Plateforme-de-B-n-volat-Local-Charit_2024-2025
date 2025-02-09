@@ -1,6 +1,6 @@
 package com.backend.backend.security;
 
-import com.backend.backend.domain.model.Event;
+import com.backend.backend.domain.Event;
 import com.backend.backend.domain.model.Organization;
 import com.backend.backend.repository.EventRepository;
 import com.backend.backend.repository.OrganizationRepository;

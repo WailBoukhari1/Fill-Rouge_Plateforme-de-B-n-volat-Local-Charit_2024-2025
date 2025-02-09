@@ -1,6 +1,6 @@
 package com.backend.backend.service.impl;
 
-import com.backend.backend.domain.model.Event;
+import com.backend.backend.domain.Event;
 import com.backend.backend.domain.model.EventRegistration;
 import com.backend.backend.repository.EventRegistrationRepository;
 import com.backend.backend.repository.EventRepository;
@@ -23,7 +23,7 @@ public class EventReminderService {
     @Scheduled(cron = "0 0 8 * * *") // Run at 8 AM every day
     public void sendEventReminders() {
         LocalDateTime tomorrow = LocalDateTime.now().plusDays(1);
-        List<Event> upcomingEvents = eventRepository.findByDateTimeBetween(
+        List<Event> upcomingEvents = eventRepository.findByStartDateBetween(
             tomorrow.withHour(0).withMinute(0),
             tomorrow.withHour(23).withMinute(59)
         );
@@ -36,7 +36,7 @@ public class EventReminderService {
                 emailService.sendEmail(
                     registration.getVolunteerId(),
                     event.getTitle(),
-                    event.getDateTime().toString()
+                    event.getStartDate().toString()
                 );
             }
         }

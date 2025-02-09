@@ -1,12 +1,12 @@
 package com.backend.backend.service.impl;
 
-import com.backend.backend.domain.model.Event;
+import com.backend.backend.domain.Event;
 import com.backend.backend.domain.model.Organization;
 import com.backend.backend.domain.model.User;
 import com.backend.backend.domain.model.UserRole;
 import com.backend.backend.dto.request.OrganizationRequest;
 import com.backend.backend.dto.response.OrganizationResponse;
-import com.backend.backend.dto.response.EventResponse;
+import com.backend.backend.dto.EventResponse;
 import com.backend.backend.exception.ResourceNotFoundException;
 import com.backend.backend.exception.ValidationException;
 import com.backend.backend.repository.OrganizationRepository;
@@ -15,12 +15,14 @@ import com.backend.backend.repository.EventRepository;
 import com.backend.backend.repository.EventRegistrationRepository;
 import com.backend.backend.service.interfaces.OrganizationService;
 import com.backend.backend.mapper.OrganizationMapper;
+import com.backend.backend.mapper.EventMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +33,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     private final EventRepository eventRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
     private final OrganizationMapper organizationMapper;
+    private final EventMapper eventMapper;
 
     @Override
     @Transactional
@@ -87,7 +90,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     public List<EventResponse> getOrganizationEvents(String id) {
         findOrganizationById(id); // Verify organization exists
         return eventRepository.findByOrganizationId(id).stream()
-                .map(this::mapToEventResponse)
+                .map(eventMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -120,18 +123,5 @@ public class OrganizationServiceImpl implements OrganizationService {
     private Organization findOrganizationById(String id) {
         return organizationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
-    }
-
-    private EventResponse mapToEventResponse(Event event) {
-        return EventResponse.builder()
-                .id(event.getId())
-                .title(event.getTitle())
-                .description(event.getDescription())
-                .dateTime(event.getDateTime())
-                .location(event.getLocation())
-                .requiredSkills(event.getRequiredSkills())
-                .volunteersNeeded(event.getVolunteersNeeded())
-                .status(event.getStatus())
-                .build();
     }
 } 

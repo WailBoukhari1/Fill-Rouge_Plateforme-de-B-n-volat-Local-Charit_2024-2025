@@ -1,96 +1,80 @@
 package com.backend.backend.controller;
 
-import com.backend.backend.dto.request.EventRequest;
-import com.backend.backend.dto.response.ApiResponse;
-import com.backend.backend.dto.response.EventResponse;
+import com.backend.backend.dto.EventRequest;
+import com.backend.backend.dto.EventResponse;
 import com.backend.backend.service.interfaces.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.Set;
+import java.util.HashSet;
 
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
 public class EventController {
-
     private final EventService eventService;
 
-    @PostMapping
-    @PreAuthorize("hasRole('ORGANIZATION')")
-    public ResponseEntity<ApiResponse<EventResponse>> createEvent(
-            @Valid @RequestBody EventRequest request,
-            @RequestHeader("Organization-Id") String organizationId) {
-        return ResponseEntity.ok(ApiResponse.success(
-            eventService.createEvent(request, organizationId),
-            "Event created successfully"
-        ));
+    @GetMapping
+    public ResponseEntity<List<EventResponse>> getAllEvents() {
+        return ResponseEntity.ok(eventService.getAllEvents());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.success(eventService.getEvent(id)));
+    public ResponseEntity<EventResponse> getEvent(@PathVariable String id) {
+        return ResponseEntity.ok(eventService.getEvent(id));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvents() {
-        return ResponseEntity.ok(ApiResponse.success(eventService.getAllEvents()));
-    }
-
-    @GetMapping("/organization/{organizationId}")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getEventsByOrganization(
-            @PathVariable String organizationId) {
-        return ResponseEntity.ok(ApiResponse.success(
-            eventService.getEventsByOrganization(organizationId)
-        ));
+    @PostMapping
+    public ResponseEntity<EventResponse> createEvent(
+            @Valid @RequestBody EventRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(eventService.createEvent(request, userDetails.getUsername()));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
-    public ResponseEntity<ApiResponse<EventResponse>> updateEvent(
+    public ResponseEntity<EventResponse> updateEvent(
             @PathVariable String id,
             @Valid @RequestBody EventRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(
-            eventService.updateEvent(id, request),
-            "Event updated successfully"
-        ));
+        return ResponseEntity.ok(eventService.updateEvent(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
-    public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable String id) {
+    public ResponseEntity<Void> deleteEvent(@PathVariable String id) {
         eventService.deleteEvent(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "Event deleted successfully"));
+        return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/publish")
-    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
-    public ResponseEntity<ApiResponse<EventResponse>> publishEvent(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.success(
-            eventService.publishEvent(id),
-            "Event published successfully"
-        ));
-    }
-
-    @PatchMapping("/{id}/cancel")
-    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isEventOwner(#id, principal)")
-    public ResponseEntity<ApiResponse<EventResponse>> cancelEvent(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.success(
-            eventService.cancelEvent(id),
-            "Event cancelled successfully"
-        ));
+    @GetMapping("/organization/{organizationId}")
+    public ResponseEntity<List<EventResponse>> getEventsByOrganization(
+            @PathVariable String organizationId) {
+        return ResponseEntity.ok(eventService.getEventsByOrganization(organizationId));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> searchEvents(
+    public ResponseEntity<List<EventResponse>> searchEvents(
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) Set<String> skills,
-            @RequestParam(required = false) Double radius) {
-        return ResponseEntity.ok(ApiResponse.success(
-            eventService.searchEvents(location, skills, radius)
-        ));
+            @RequestParam(required = false) List<String> skills,
+            @RequestParam(required = false, defaultValue = "10.0") Double radius) {
+        return ResponseEntity.ok(eventService.searchEvents(location, new HashSet<>(skills != null ? skills : List.of()), radius));
+    }
+
+    @PostMapping("/{eventId}/register")
+    public ResponseEntity<EventResponse> registerForEvent(
+            @PathVariable String eventId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(eventService.registerForEvent(eventId, userDetails.getUsername()));
+    }
+
+    @DeleteMapping("/{eventId}/register")
+    public ResponseEntity<Void> cancelRegistration(
+            @PathVariable String eventId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        eventService.cancelRegistration(eventId, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
     }
 } 

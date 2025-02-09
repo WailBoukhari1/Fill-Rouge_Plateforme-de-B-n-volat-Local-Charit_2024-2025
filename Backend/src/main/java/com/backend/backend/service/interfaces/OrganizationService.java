@@ -1,8 +1,8 @@
 package com.backend.backend.service.interfaces;
 
+import com.backend.backend.dto.EventResponse;
 import com.backend.backend.dto.request.OrganizationRequest;
 import com.backend.backend.dto.response.OrganizationResponse;
-import com.backend.backend.dto.response.EventResponse;
 import java.util.List;
 
 public interface OrganizationService {
