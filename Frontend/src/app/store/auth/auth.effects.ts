@@ -66,7 +66,7 @@ export class AuthEffects {
                     localStorage.setItem('token', response.token);
                     localStorage.setItem('refresh_token', response.refreshToken!);
                     localStorage.setItem('user', JSON.stringify(response.user));
-                    this.router.navigate(['/events']);
+                    this.router.navigate(['/']);
                     this.notificationService.success('Logged in successfully');
                 }
             })
@@ -212,7 +212,7 @@ export class AuthEffects {
         this.actions$.pipe(
             ofType(AuthActions.oAuthSuccess),
             tap(() => {
-                this.router.navigate(['/events']);
+                this.router.navigate(['/']);
                 this.notificationService.success('Logged in successfully with OAuth');
             })
         ),

@@ -20,6 +20,6 @@ export const noAuthGuard: CanActivateFn = (route, state) => {
 
   return store.select(selectIsAuthenticated).pipe(
     take(1),
-    map(isAuthenticated => !isAuthenticated || router.createUrlTree(['/events']))
+    map(isAuthenticated => !isAuthenticated || router.createUrlTree(['/']))
   );
 }; 

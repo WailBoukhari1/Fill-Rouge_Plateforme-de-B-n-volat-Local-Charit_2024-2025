@@ -1,5 +1,10 @@
 import { Routes } from '@angular/router';
 
-export const ORGANIZATION_ROUTES: Routes = [
+export const PUBLIC_ORGANIZATION_ROUTES: Routes = [
+  // TODO: Implement organization routes
+];
+
+
+export const DASHBOARD_ORGANIZATION_ROUTES: Routes = [
   // TODO: Implement organization routes
 ]; 

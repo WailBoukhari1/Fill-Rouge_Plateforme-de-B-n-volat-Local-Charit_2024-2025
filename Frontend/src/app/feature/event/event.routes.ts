@@ -1,5 +1,9 @@
 import { Routes } from '@angular/router';
 
-export const EVENT_ROUTES: Routes = [
+export const PUBLIC_EVENT_ROUTES: Routes = [
+  // TODO: Implement event routes
+];
+
+export const DASHBOARD_EVENT_ROUTES: Routes = [
   // TODO: Implement event routes
 ]; 
