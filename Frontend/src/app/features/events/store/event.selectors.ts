@@ -25,10 +25,10 @@ export const selectEventsError = createSelector(
 
 export const selectPastEvents = createSelector(
   selectAllEvents,
-  (events) => events.filter(event => new Date(event.dateTime) < new Date())
+  (events) => events.filter(event => new Date(event.startDate) < new Date())
 );
 
 export const selectUpcomingEvents = createSelector(
   selectAllEvents,
-  (events) => events.filter(event => new Date(event.dateTime) >= new Date())
+  (events) => events.filter(event => new Date(event.startDate) >= new Date())
 );

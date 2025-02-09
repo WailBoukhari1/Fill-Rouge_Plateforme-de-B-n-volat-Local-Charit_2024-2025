@@ -51,7 +51,7 @@ public class AuthController {
         throw new CustomException("Invalid token format", HttpStatus.BAD_REQUEST);
     }
 
-    @PostMapping("/refresh")
+    @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
             @RequestHeader("Refresh-Token") String refreshToken) {
         return ResponseEntity.ok(ApiResponse.success(

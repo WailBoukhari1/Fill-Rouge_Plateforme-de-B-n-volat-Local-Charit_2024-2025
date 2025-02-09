@@ -11,10 +11,11 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../../services/event.service';
 import { AuthService } from '@core/services/auth.service';
-import { Event, EventStatus } from '../../models/event.model';
+import { EventStatus } from '../../../../core/models/event-status.enum';
 import { UserRole } from '@core/models/user.model';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { Observable, of, combineLatest } from 'rxjs';
+import { EventResponse } from '@core/models/event.model';
 
 @Component({
   selector: 'app-event-details',
@@ -33,13 +34,14 @@ import { Observable, of, combineLatest } from 'rxjs';
   ]
 })
 export class EventDetailsComponent implements OnInit {
-  event$: Observable<Event | null>;
+  event$: Observable<EventResponse | null>;
   loading = true;
   error: string | null = null;
   isVolunteer$ = this.authService.hasRole(UserRole.VOLUNTEER);
   isOrganizer$: Observable<boolean>;
   
-  EventStatus = EventStatus; // For template usage
+  EventStatus = EventStatus;
+
 
   constructor(
     private route: ActivatedRoute,

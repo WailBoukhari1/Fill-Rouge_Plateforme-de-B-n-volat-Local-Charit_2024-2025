@@ -1,20 +1,18 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { Event, EventStatus } from '../../models/event.model';
+import { EventStatus } from '../../../../core/models/event-status.enum';
+import { EventResponse } from '@core/models/event.model';
 import { EventService } from '../../services/event.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '@core/services/auth.service';
 import { UserRole } from '@core/models/user.model';
-import { map, shareReplay } from 'rxjs/operators';
 
 @Component({
   selector: 'app-event-card',
-  templateUrl: './event-card.component.html',
   standalone: true,
   imports: [
     CommonModule,
@@ -23,33 +21,27 @@ import { map, shareReplay } from 'rxjs/operators';
     MatButtonModule,
     MatIconModule,
     MatChipsModule
-  ]
+  ],
+  templateUrl: './event-card.component.html'
 })
 export class EventCardComponent {
-  @Input() event!: Event;
+  @Input() event!: EventResponse;
   
-  isVolunteer$ = this.authService.getCurrentUser().pipe(
-    map(user => user?.roles?.includes(UserRole.VOLUNTEER)),
-    shareReplay(1)
-  );
-  EventStatus = EventStatus; // For template usage
+  EventStatus = EventStatus;
+  isVolunteer$ = this.authService.hasRole(UserRole.VOLUNTEER);
 
   constructor(
     private eventService: EventService,
-    private authService: AuthService,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private authService: AuthService
   ) {}
 
   onRegister(): void {
     this.eventService.registerForEvent(this.event.id).subscribe({
-      next: () => {
-        this.event.isRegistered = true;
-        this.event.registeredVolunteers++;
-        this.snackBar.open('Successfully registered for event', 'Close', { duration: 3000 });
+      next: (updatedEvent) => {
+        this.event = updatedEvent;
       },
       error: (error) => {
-        this.snackBar.open('Failed to register for event', 'Close', { duration: 3000 });
+        console.error('Failed to register for event:', error);
       }
     });
   }
@@ -59,22 +51,18 @@ export class EventCardComponent {
       next: () => {
         this.event.isRegistered = false;
         this.event.registeredVolunteers--;
-        this.snackBar.open('Registration cancelled', 'Close', { duration: 3000 });
       },
       error: (error) => {
-        this.snackBar.open('Failed to cancel registration', 'Close', { duration: 3000 });
+        console.error('Failed to cancel registration:', error);
       }
     });
   }
 
   formatDate(date: string): string {
     return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   }
 } 

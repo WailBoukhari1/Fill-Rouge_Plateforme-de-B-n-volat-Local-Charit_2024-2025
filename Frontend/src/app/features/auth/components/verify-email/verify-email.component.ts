@@ -14,6 +14,7 @@ import { selectAuthError, selectAuthLoading, selectAuthUser } from '../../../../
 import { map, take } from 'rxjs/operators';
 import { AuthState } from '../../../../core/models/auth.model';
 
+
 @Component({
   selector: 'app-verify-email',
   standalone: true,

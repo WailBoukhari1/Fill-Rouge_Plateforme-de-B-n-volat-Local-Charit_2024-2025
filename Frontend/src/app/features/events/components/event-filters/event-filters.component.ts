@@ -9,7 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { EventFilters } from '../../models/event.model';
+import { EventFilters } from '@core/models/event.model';
+
 
 @Component({
   selector: 'app-event-filters',

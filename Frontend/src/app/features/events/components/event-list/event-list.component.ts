@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { EventService } from '../../services/event.service';
 import { AuthService } from '@core/services/auth.service';
-import { Event, EventFilters } from '../../models/event.model';
+import { EventFilters } from '@core/models/event.model';
+import { EventResponse } from '@core/models/event.model';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserRole } from '@core/models/user.model';
 import { CommonModule } from '@angular/common';
@@ -31,7 +32,7 @@ import { EventCardComponent } from '../event-card/event-card.component';
   standalone: true,
 })
 export class EventListComponent implements OnInit {
-  events: Event[] = [];
+  events: EventResponse[] = [];
   loading = false;
   error: string | null = null;
   isOrganization$ = this.authService.hasRole(UserRole.ORGANIZATION);

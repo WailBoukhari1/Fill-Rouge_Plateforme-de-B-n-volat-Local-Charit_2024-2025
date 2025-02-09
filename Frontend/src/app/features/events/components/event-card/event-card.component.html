@@ -1,71 +1,59 @@
-<mat-card class="h-full flex flex-col">
+<mat-card class="event-card">
   <mat-card-header>
+    <mat-card-subtitle>{{ formatDate(event.startDate) }}</mat-card-subtitle>
     <mat-card-title>{{ event.title }}</mat-card-title>
-    <mat-card-subtitle>{{ formatDate(event.dateTime) }}</mat-card-subtitle>
   </mat-card-header>
 
-  <mat-card-content class="flex-grow">
-    <div class="mb-4">
-      <p class="line-clamp-3">{{ event.description }}</p>
-    </div>
+  <img *ngIf="event.imageUrl" mat-card-image [src]="event.imageUrl" [alt]="event.title">
 
-    <div class="flex items-center mb-2">
-      <mat-icon class="mr-2">location_on</mat-icon>
+  <mat-card-content>
+    <p>{{ event.description }}</p>
+    
+    <!-- Location -->
+    <div class="location">
+      <mat-icon>location_on</mat-icon>
       <span>{{ event.location }}</span>
     </div>
 
-    <div class="flex items-center mb-2">
-      <mat-icon class="mr-2">group</mat-icon>
-      <span>{{ event.registeredVolunteers }}/{{ event.volunteersNeeded }} volunteers</span>
+    <!-- Participants -->
+    <div class="participants">
+      <mat-icon>group</mat-icon>
+      <span>{{ event.registeredVolunteers }}/{{ event.maxParticipants }} volunteers</span>
     </div>
 
-    <div class="flex flex-wrap gap-2 mb-4">
-      <mat-chip-set>
-        <mat-chip *ngFor="let skill of event.requiredSkills">
-          {{ skill }}
-        </mat-chip>
-      </mat-chip-set>
+    <!-- Skills -->
+    <div class="skills">
+      <mat-chip-listbox>
+        <mat-chip *ngFor="let skill of event.requiredSkills">{{ skill }}</mat-chip>
+      </mat-chip-listbox>
     </div>
 
-    <div class="flex items-center text-sm text-gray-600">
-      <mat-icon class="mr-1 text-sm">business</mat-icon>
-      <span>{{ event.organizationName }}</span>
+    <!-- Status -->
+    <div class="status">
+      <mat-chip [color]="event.status === EventStatus.PUBLISHED ? 'accent' : 'primary'">
+        {{ event.status }}
+      </mat-chip>
     </div>
   </mat-card-content>
 
-  <mat-card-actions align="end">
-    <button mat-button [routerLink]="['/events', event.id]">
-      Details
-    </button>
+  <mat-card-actions>
+    <button mat-button [routerLink]="['/events', event.id]">VIEW DETAILS</button>
     
     <ng-container *ngIf="isVolunteer$ | async">
-      <button 
-        *ngIf="!event.isRegistered" 
-        mat-raised-button 
-        color="primary"
-        [disabled]="event.status !== EventStatus.PUBLISHED || 
-                   event.registeredVolunteers >= event.volunteersNeeded"
-        (click)="onRegister()">
-        Register
+      <button mat-raised-button 
+              color="primary" 
+              *ngIf="!event.isRegistered"
+              (click)="onRegister()"
+              [disabled]="event.registeredVolunteers >= event.maxParticipants">
+        {{ event.registeredVolunteers >= event.maxParticipants ? 'FULL' : 'REGISTER' }}
       </button>
       
-      <button 
-        *ngIf="event.isRegistered" 
-        mat-stroked-button 
-        color="warn"
-        (click)="onCancelRegistration()">
-        Cancel Registration
+      <button mat-raised-button 
+              color="warn" 
+              *ngIf="event.isRegistered"
+              (click)="onCancelRegistration()">
+        CANCEL REGISTRATION
       </button>
     </ng-container>
   </mat-card-actions>
-
-  <mat-card-footer *ngIf="event.status !== EventStatus.PUBLISHED">
-    <div [ngClass]="{
-      'bg-yellow-100 text-yellow-800': event.status === EventStatus.DRAFT,
-      'bg-red-100 text-red-800': event.status === EventStatus.CANCELLED,
-      'bg-green-100 text-green-800': event.status === EventStatus.COMPLETED
-    }" class="px-4 py-2 text-center text-sm">
-      {{ event.status }}
-    </div>
-  </mat-card-footer>
 </mat-card> 

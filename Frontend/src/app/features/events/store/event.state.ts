@@ -1,8 +1,8 @@
-import { Event } from '../../../core/models/event.model';
+import { EventResponse } from '@core/models/event.model';
 
 export interface EventState {
-  events: Event[];
-  selectedEvent: Event | null;
+  events: EventResponse[];
+  selectedEvent: EventResponse | null;
   loading: boolean;
   error: string | null;
 }

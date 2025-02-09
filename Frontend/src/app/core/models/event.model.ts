@@ -1,34 +1,48 @@
-import { EventStatus } from '../../features/events/models/event.model';
+import { EventStatus } from './event-status.enum';
 
-export interface Event {
+// Base interface with common properties
+interface BaseEvent {
   id: string;
   title: string;
   description: string;
-  dateTime: string;
+  startDate: string;
+  endDate: string;
   location: string;
-  latitude: number;
-  longitude: number;
-  requiredSkills: string[];
-  volunteersNeeded: number;
-  registeredVolunteers: number;
-  status: EventStatus;
+  maxParticipants: number;
   organizationId: string;
   organizationName: string;
-  isRegistered: boolean;
+  requiredSkills: string[];
+  registeredParticipants: string[];
+  imageUrl?: string;
+  status: EventStatus;
+  latitude: number;
+  longitude: number;
   createdAt: string;
   updatedAt: string;
+  isRegistered: boolean;
+  availableSpots: number;
+  registeredVolunteers: number;
 }
 
+// Event type used in components
+export type Event = BaseEvent;
+
+// Request type for creating/updating events
 export interface EventRequest {
   title: string;
   description: string;
-  dateTime: string;
+  startDate: string;
+  endDate: string;
   location: string;
+  maxParticipants: number;
+  requiredSkills: string[];
+  imageUrl?: string;
   latitude: number;
   longitude: number;
-  requiredSkills: string[];
-  volunteersNeeded: number;
 }
+
+// Response type from API
+export type EventResponse = BaseEvent;
 
 export interface EventFilters {
   location?: string;

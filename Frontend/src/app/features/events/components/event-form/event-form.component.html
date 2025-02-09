@@ -1,158 +1,361 @@
-<div class="container mx-auto p-4">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold">{{ isEditMode ? 'Edit Event' : 'Create Event' }}</h1>
-    <button mat-stroked-button [routerLink]="['/dashboard/events']">
-      <mat-icon>arrow_back</mat-icon>
-      Back to Events
-    </button>
-  </div>
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
+    <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">{{ isEditing ? 'Edit Event' : 'Create New Event' }}</h1>
+        <p class="mt-2 text-sm text-gray-600">Fill in the details below to {{ isEditing ? 'update' : 'create' }} your event</p>
+      </div>
 
-  <div *ngIf="loading" class="flex justify-center">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+      <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="space-y-8">
+        <!-- Progress Stepper -->
+        <div class="flex justify-between mb-8">
+          <div *ngFor="let step of ['Basic Info', 'Location', 'Skills', 'Image']; let i = index" 
+               class="flex items-center">
+            <div [class]="'rounded-full h-8 w-8 flex items-center justify-center ' + 
+                         (currentStep > i ? 'bg-green-500 text-white' : 
+                          currentStep === i ? 'bg-blue-500 text-white' : 
+                          'bg-gray-200 text-gray-600')">
+              {{ i + 1 }}
+            </div>
+            <div *ngIf="i < 3" class="h-1 w-12 mx-2" 
+                 [class.bg-green-500]="currentStep > i"
+                 [class.bg-gray-200]="currentStep <= i"></div>
+          </div>
+        </div>
 
-  <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    <!-- Left Column - Event Details -->
-    <div>
-      <mat-card>
-        <mat-card-content>
-          <div class="flex flex-col gap-4">
-            <!-- Title -->
-            <mat-form-field appearance="outline">
-              <mat-label>Event Title</mat-label>
-              <input matInput formControlName="title" placeholder="Enter event title">
-              <mat-error *ngIf="eventForm.get('title')?.errors?.['required']">
-                Title is required
-              </mat-error>
-              <mat-error *ngIf="eventForm.get('title')?.errors?.['minlength']">
-                Title must be at least 3 characters
-              </mat-error>
-              <mat-error *ngIf="eventForm.get('title')?.errors?.['maxlength']">
-                Title cannot exceed 100 characters
-              </mat-error>
-            </mat-form-field>
+        <!-- Basic Info Section -->
+        <div [hidden]="currentStep !== 0" class="space-y-6">
+          <!-- Title -->
+          <div class="form-group">
+            <label for="title" class="block text-sm font-medium text-gray-700">Event Title</label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+              <input
+                type="text"
+                id="title"
+                formControlName="title"
+                class="block w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 pl-4 pr-10 py-2"
+                [class.border-red-300]="isFieldInvalid('title')"
+                placeholder="Enter a descriptive title"
+                aria-describedby="title-error"
+              >
+              <div *ngIf="isFieldInvalid('title')" 
+                   class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <mat-icon class="text-red-500">error</mat-icon>
+              </div>
+            </div>
+            <p *ngIf="isFieldInvalid('title')" 
+               class="mt-2 text-sm text-red-600" 
+               id="title-error">
+              {{ getErrorMessage('title') }}
+            </p>
+          </div>
 
-            <!-- Description -->
-            <mat-form-field appearance="outline">
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" rows="5" 
-                        placeholder="Describe the event and what volunteers will do">
-              </textarea>
-              <mat-error *ngIf="eventForm.get('description')?.errors?.['required']">
-                Description is required
-              </mat-error>
-              <mat-error *ngIf="eventForm.get('description')?.errors?.['minlength']">
-                Description must be at least 10 characters
-              </mat-error>
-              <mat-error *ngIf="eventForm.get('description')?.errors?.['maxlength']">
-                Description cannot exceed 1000 characters
-              </mat-error>
-            </mat-form-field>
+          <!-- Description -->
+          <div class="form-group">
+            <label for="description" class="block text-sm font-medium text-gray-700">
+              Event Description
+              <span class="text-gray-500 text-xs ml-1">(Markdown supported)</span>
+            </label>
+            <div class="mt-1">
+              <textarea
+                id="description"
+                formControlName="description"
+                rows="4"
+                class="block w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                [class.border-red-300]="isFieldInvalid('description')"
+                placeholder="Describe your event in detail..."
+                aria-describedby="description-error"
+              ></textarea>
+              <div class="mt-1 text-xs text-gray-500 flex justify-between">
+                <span>{{ eventForm.get('description')?.value?.length || 0 }}/1000 characters</span>
+                <span *ngIf="eventForm.get('description')?.value">
+                  {{ getWordCount(eventForm.get('description')?.value) }} words
+                </span>
+              </div>
+            </div>
+            <p *ngIf="isFieldInvalid('description')" 
+               class="mt-2 text-sm text-red-600" 
+               id="description-error">
+              {{ getErrorMessage('description') }}
+            </p>
+          </div>
 
-            <!-- Date and Time -->
-            <mat-form-field appearance="outline">
-              <mat-label>Date and Time</mat-label>
-              <input matInput [matDatepicker]="picker" formControlName="dateTime">
-              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-              <mat-error *ngIf="eventForm.get('dateTime')?.errors?.['required']">
-                Date and time is required
-              </mat-error>
-            </mat-form-field>
+          <!-- Dates Section -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Start Date -->
+            <div class="form-group">
+              <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date & Time</label>
+              <div class="mt-1 relative rounded-md shadow-sm">
+                <input
+                  type="datetime-local"
+                  id="startDate"
+                  formControlName="startDate"
+                  class="block w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                  [class.border-red-300]="isFieldInvalid('startDate')"
+                  [min]="minDate"
+                  aria-describedby="startDate-error"
+                >
+              </div>
+              <p *ngIf="isFieldInvalid('startDate')" 
+                 class="mt-2 text-sm text-red-600" 
+                 id="startDate-error">
+                {{ getErrorMessage('startDate') }}
+              </p>
+            </div>
 
-            <!-- Volunteers Needed -->
-            <mat-form-field appearance="outline">
-              <mat-label>Number of Volunteers Needed</mat-label>
-              <input matInput type="number" formControlName="volunteersNeeded">
-              <mat-error *ngIf="eventForm.get('volunteersNeeded')?.errors?.['required']">
-                Number of volunteers is required
-              </mat-error>
-              <mat-error *ngIf="eventForm.get('volunteersNeeded')?.errors?.['min']">
-                At least 1 volunteer is required
-              </mat-error>
-              <mat-error *ngIf="eventForm.get('volunteersNeeded')?.errors?.['max']">
-                Maximum 1000 volunteers allowed
-              </mat-error>
-            </mat-form-field>
-
-            <!-- Required Skills -->
-            <mat-form-field appearance="outline">
-              <mat-label>Required Skills</mat-label>
-              <mat-chip-grid #chipGrid>
-                <mat-chip-row *ngFor="let skill of eventForm.get('requiredSkills')?.value || []"
-                  (removed)="removeSkill(skill)">
-                  {{skill}}
-                  <button matChipRemove>
-                    <mat-icon>cancel</mat-icon>
-                  </button>
-                </mat-chip-row>
-                <input placeholder="New skill..."
-                       [matChipInputFor]="chipGrid"
-                       [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                       (matChipInputTokenEnd)="addSkill($event)">
-              </mat-chip-grid>
-            </mat-form-field>
-
-            <!-- Common Skills Suggestions -->
-            <div class="flex flex-wrap gap-2">
-              <button mat-stroked-button
-                      *ngFor="let skill of commonSkills"
-                      (click)="addCommonSkill(skill)"
-                      type="button">
-                {{skill}}
-              </button>
+            <!-- End Date -->
+            <div class="form-group">
+              <label for="endDate" class="block text-sm font-medium text-gray-700">End Date & Time</label>
+              <div class="mt-1 relative rounded-md shadow-sm">
+                <input
+                  type="datetime-local"
+                  id="endDate"
+                  formControlName="endDate"
+                  class="block w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                  [class.border-red-300]="isFieldInvalid('endDate')"
+                  [min]="eventForm.get('startDate')?.value"
+                  aria-describedby="endDate-error"
+                >
+              </div>
+              <p *ngIf="isFieldInvalid('endDate')" 
+                 class="mt-2 text-sm text-red-600" 
+                 id="endDate-error">
+                {{ getErrorMessage('endDate') }}
+              </p>
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
 
-    <!-- Right Column - Location -->
-    <div>
-      <mat-card>
-        <mat-card-content>
-          <!-- Location Input -->
-          <mat-form-field appearance="outline" class="w-full mb-4">
-            <mat-label>Location</mat-label>
-            <input matInput formControlName="location" placeholder="Enter event location">
-            <mat-error *ngIf="eventForm.get('location')?.errors?.['required']">
-              Location is required
-            </mat-error>
-          </mat-form-field>
+          <!-- Max Participants -->
+          <div class="form-group">
+            <label for="maxParticipants" class="block text-sm font-medium text-gray-700">Maximum Participants</label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+              <input
+                type="number"
+                id="maxParticipants"
+                formControlName="maxParticipants"
+                min="1"
+                max="1000"
+                class="block w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                [class.border-red-300]="isFieldInvalid('maxParticipants')"
+                aria-describedby="maxParticipants-error"
+              >
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <span class="text-gray-500 sm:text-sm">people</span>
+              </div>
+            </div>
+            <p *ngIf="isFieldInvalid('maxParticipants')" 
+               class="mt-2 text-sm text-red-600" 
+               id="maxParticipants-error">
+              {{ getErrorMessage('maxParticipants') }}
+            </p>
+          </div>
+        </div>
 
-          <!-- Map -->
-          <div class="h-[400px] mb-4">
-            <div id="map" class="h-full w-full"></div>
+        <!-- Location Section -->
+        <div [hidden]="currentStep !== 1" class="space-y-6">
+          <div class="form-group">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Event Location</label>
+            <div class="relative">
+              <div #map class="h-[400px] rounded-lg shadow-inner border border-gray-300"></div>
+              <div class="absolute top-4 right-4 bg-white rounded-lg shadow-md p-4">
+                <p class="text-sm text-gray-600 mb-2">Click on the map to set location</p>
+                <div *ngIf="marker" class="text-xs text-gray-500">
+                  <p>Latitude: {{ eventForm.get('latitude')?.value | number:'1.6-6' }}</p>
+                  <p>Longitude: {{ eventForm.get('longitude')?.value | number:'1.6-6' }}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Coordinates -->
-          <div class="grid grid-cols-2 gap-4">
-            <mat-form-field appearance="outline">
-              <mat-label>Latitude</mat-label>
-              <input matInput type="number" formControlName="latitude" readonly>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Longitude</mat-label>
-              <input matInput type="number" formControlName="longitude" readonly>
-            </mat-form-field>
+          <!-- Location Description -->
+          <div class="form-group">
+            <label for="location" class="block text-sm font-medium text-gray-700">Location Details</label>
+            <div class="mt-1">
+              <input
+                type="text"
+                id="location"
+                formControlName="location"
+                class="block w-full rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                [class.border-red-300]="isFieldInvalid('location')"
+                placeholder="e.g., Main entrance of City Park, near the fountain"
+                aria-describedby="location-error"
+              >
+            </div>
+            <p *ngIf="isFieldInvalid('location')" 
+               class="mt-2 text-sm text-red-600" 
+               id="location-error">
+              {{ getErrorMessage('location') }}
+            </p>
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
 
-      <!-- Submit Button -->
-      <div class="flex justify-end mt-4 gap-4">
-        <button mat-stroked-button type="button" [routerLink]="['/dashboard/events']">
-          Cancel
-        </button>
-        <button 
-          mat-raised-button 
-          color="primary" 
-          type="submit"
-          [disabled]="eventForm.invalid || loading">
-          {{ isEditMode ? 'Update Event' : 'Create Event' }}
-        </button>
+        <!-- Skills Section -->
+        <div [hidden]="currentStep !== 2" class="space-y-6">
+          <div class="form-group">
+            <label class="block text-sm font-medium text-gray-700 mb-4">Required Skills</label>
+            
+            <!-- Selected Skills -->
+            <div class="mb-4">
+              <div class="flex flex-wrap gap-2 mb-2">
+                <div *ngFor="let skill of requiredSkills"
+                     class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  {{ skill }}
+                  <button type="button" 
+                          (click)="removeSkill(skill)"
+                          class="ml-2 inline-flex items-center"
+                          aria-label="Remove skill">
+                    <mat-icon class="h-4 w-4">close</mat-icon>
+                  </button>
+                </div>
+              </div>
+              <p class="text-sm text-gray-500">
+                {{ requiredSkills.length }}/{{ maxSkills }} skills selected
+              </p>
+            </div>
+
+            <!-- Skill Search -->
+            <mat-form-field class="w-full">
+              <mat-chip-grid #chipGrid>
+                <input placeholder="Search skills..."
+                       [matChipInputFor]="chipGrid"
+                       [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                       [matAutocomplete]="auto"
+                       [formControl]="skillInputCtrl"
+                       [disabled]="requiredSkills.length >= maxSkills">
+              </mat-chip-grid>
+              <mat-autocomplete #auto="matAutocomplete" (optionSelected)="addSkill($event)">
+                <mat-option *ngFor="let skill of filteredSkills" [value]="skill">
+                  {{ skill }}
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+
+            <!-- Skill Categories -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div *ngFor="let category of skillCategories" 
+                   class="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                <h3 class="font-medium text-gray-900 mb-3">{{ category.name }}</h3>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let skill of category.skills"
+                    type="button"
+                    (click)="addSkill({value: skill})"
+                    [disabled]="requiredSkills.includes(skill) || requiredSkills.length >= maxSkills"
+                    class="px-3 py-1 text-sm rounded-full transition-colors duration-200"
+                    [ngClass]="{
+                      'bg-blue-100 text-blue-800': requiredSkills.includes(skill),
+                      'bg-white text-gray-700 hover:bg-gray-100': !requiredSkills.includes(skill) && requiredSkills.length < maxSkills,
+                      'bg-gray-100 text-gray-400 cursor-not-allowed': requiredSkills.length >= maxSkills && !requiredSkills.includes(skill)
+                    }"
+                  >
+                    {{ skill }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Image Section -->
+        <div [hidden]="currentStep !== 3" class="space-y-6">
+          <div class="form-group">
+            <label class="block text-sm font-medium text-gray-700 mb-4">Event Image</label>
+            
+            <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+              <div class="space-y-4 text-center">
+                <input type="file" 
+                       #fileInput
+                       class="hidden"
+                       accept="image/*"
+                       (change)="onFileSelected($event)">
+                
+                <!-- Image Preview -->
+                <div *ngIf="imagePreview" class="relative inline-block">
+                  <img [src]="imagePreview" 
+                       class="max-h-64 rounded-lg shadow-md"
+                       alt="Event image preview">
+                  <button type="button"
+                          (click)="removeImage()"
+                          class="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors duration-200"
+                          aria-label="Remove image">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+
+                <!-- Upload Prompt -->
+                <div *ngIf="!imagePreview" class="flex flex-col items-center">
+                  <mat-icon class="text-gray-400 text-4xl mb-2">image</mat-icon>
+                  <p class="text-sm text-gray-600">Drag and drop an image here or</p>
+                </div>
+                
+                <button type="button"
+                        (click)="triggerFileInput()"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  {{ imagePreview ? 'Change Image' : 'Upload Image' }}
+                </button>
+                
+                <p class="text-xs text-gray-500">
+                  PNG, JPG, GIF up to 10MB
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            *ngIf="currentStep > 0"
+            (click)="previousStep()"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <mat-icon class="mr-2">arrow_back</mat-icon>
+            Previous
+          </button>
+          
+          <div class="flex space-x-4">
+            <button
+              type="button"
+              (click)="onCancel()"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Cancel
+            </button>
+            
+            <button
+              *ngIf="currentStep < 3"
+              type="button"
+              (click)="nextStep()"
+              [disabled]="!isStepValid(currentStep)"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+              Next
+              <mat-icon class="ml-2">arrow_forward</mat-icon>
+            </button>
+            
+            <button
+              *ngIf="currentStep === 3"
+              type="submit"
+              [disabled]="!eventForm.valid || isSubmitting"
+              class="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+              <span *ngIf="isSubmitting" class="mr-2">
+                <mat-spinner diameter="20"></mat-spinner>
+              </span>
+              {{ isSubmitting ? 'Saving...' : (isEditing ? 'Update Event' : 'Create Event') }}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" 
+           class="mt-4 p-4 rounded-md bg-red-50 border border-red-200">
+        <div class="flex">
+          <mat-icon class="text-red-400 mr-3">error</mat-icon>
+          <div class="text-sm text-red-700">
+            {{ errorMessage }}
+          </div>
+        </div>
       </div>
     </div>
-  </form>
+  </div>
 </div> 

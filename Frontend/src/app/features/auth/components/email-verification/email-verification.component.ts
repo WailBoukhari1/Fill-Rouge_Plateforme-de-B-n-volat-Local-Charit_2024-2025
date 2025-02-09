@@ -44,7 +44,7 @@ export class EmailVerificationComponent implements OnInit {
   }
 
   private verifyEmail(token: string): void {
-    this.authService.verifyEmail(token).subscribe({
+    this.authService.verifyEmail({ code: token, email: '' }).subscribe({
       next: () => {
         this.isVerified = true;
         this.isLoading = false;

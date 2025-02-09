@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of, timer } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Router } from '@angular/router';
-import { tap, catchError, map, filter, take, switchMap } from 'rxjs/operators';
+import { tap, catchError, map, filter, take } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
 import {
   AuthResponse,
