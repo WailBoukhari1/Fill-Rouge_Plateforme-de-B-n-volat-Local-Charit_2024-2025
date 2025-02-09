@@ -1,6 +1,5 @@
 package com.backend.backend.security.jwt;
 
-import com.backend.backend.security.jwt.JwtTokenProvider;
 import com.backend.backend.service.interfaces.TokenBlacklistService;
 
 import jakarta.servlet.FilterChain;

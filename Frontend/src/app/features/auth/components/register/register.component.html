@@ -1,0 +1,111 @@
+<div class="min-h-screen flex flex-col justify-center p-4">
+  <div class="absolute top-4 left-4">
+    <button mat-icon-button routerLink="/">
+      <mat-icon>home</mat-icon>
+    </button>
+  </div>
+
+  <div class="text-center max-w-md mx-auto w-full">
+    <h2 class="text-3xl font-bold">Create your account</h2>
+    <p class="mt-2 text-sm">
+      Or
+      <a (click)="navigateToLogin()" class="cursor-pointer">
+        sign in to your account
+      </a>
+    </p>
+  </div>
+
+  <div class="max-w-md mx-auto w-full mt-8 p-8 bg-white rounded-lg">
+    <div *ngIf="error$ | async as error" class="mb-6 flex items-center">
+      <mat-icon class="mr-2">error_outline</mat-icon>
+      {{ error }}
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <div class="flex gap-4">
+        <mat-form-field class="w-full">
+          <mat-label>First Name</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input matInput formControlName="firstName" required>
+          <mat-error *ngIf="registerForm.get('firstName')?.errors?.['required']">
+            First name is required
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+          <mat-label>Last Name</mat-label>
+          <mat-icon matPrefix>person_outline</mat-icon>
+          <input matInput formControlName="lastName" required>
+          <mat-error *ngIf="registerForm.get('lastName')?.errors?.['required']">
+            Last name is required
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field class="w-full">
+        <mat-label>Email address</mat-label>
+        <mat-icon matPrefix>email</mat-icon>
+        <input matInput formControlName="email" type="email" required>
+        <mat-error *ngIf="registerForm.get('email')?.errors?.['required']">
+          Email is required
+        </mat-error>
+        <mat-error *ngIf="registerForm.get('email')?.errors?.['email']">
+          Please enter a valid email
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Password</mat-label>
+        <mat-icon matPrefix>lock</mat-icon>
+        <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" required>
+        <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+          <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+        </button>
+        <mat-error *ngIf="registerForm.get('password')?.errors?.['required']">
+          Password is required
+        </mat-error>
+        <mat-error *ngIf="registerForm.get('password')?.errors?.['minlength']">
+          Password must be at least 6 characters
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>Confirm Password</mat-label>
+        <mat-icon matPrefix>lock_outline</mat-icon>
+        <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" required>
+        <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword" type="button">
+          <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+        </button>
+        <mat-error *ngIf="registerForm.get('confirmPassword')?.errors?.['required']">
+          Please confirm your password
+        </mat-error>
+        <mat-error *ngIf="registerForm.errors?.['mismatch']">
+          Passwords do not match
+        </mat-error>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" type="submit" class="w-full"
+              [disabled]="registerForm.invalid || (loading$ | async)">
+        <div class="flex items-center justify-center">
+          <mat-spinner diameter="24" *ngIf="loading$ | async" class="mr-2"></mat-spinner>
+          <span>{{ (loading$ | async) ? 'Creating account...' : 'Create account' }}</span>
+        </div>
+      </button>
+    </form>
+
+    <div class="mt-8">
+      <div class="relative text-center">
+        <span class="bg-white px-2">Or continue with</span>
+      </div>
+
+      <div class="mt-6">
+        <button mat-stroked-button (click)="loginWithGoogle()" class="w-full">
+          <div class="flex items-center justify-center">
+            <img src="assets/icons/google.svg" class="h-5 w-5 mr-2" alt="Google logo">
+            <span>Sign up with Google</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div> 

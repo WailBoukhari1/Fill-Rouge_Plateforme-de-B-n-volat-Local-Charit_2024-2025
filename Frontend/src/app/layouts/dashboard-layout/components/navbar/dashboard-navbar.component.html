@@ -1,0 +1,44 @@
+<mat-toolbar>
+  <div class="flex items-center justify-between w-full">
+    <button mat-icon-button (click)="onToggleSidebar()">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <div class="flex-1 px-4">
+      <h1>Dashboard</h1>
+    </div>
+
+    <div class="flex items-center">
+      <button mat-icon-button [matMenuTriggerFor]="notificationMenu">
+        <mat-icon>notifications</mat-icon>
+      </button>
+      
+      <button mat-icon-button [matMenuTriggerFor]="profileMenu">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+
+      <mat-menu #notificationMenu="matMenu">
+        <div class="p-4">
+          <h3>Notifications</h3>
+          <div>No new notifications</div>
+        </div>
+      </mat-menu>
+
+      <mat-menu #profileMenu="matMenu">
+        <a mat-menu-item routerLink="/dashboard/profile">
+          <mat-icon>person</mat-icon>
+          <span>Profile</span>
+        </a>
+        <a mat-menu-item routerLink="/dashboard/settings">
+          <mat-icon>settings</mat-icon>
+          <span>Settings</span>
+        </a>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>exit_to_app</mat-icon>
+          <span>Logout</span>
+        </button>
+      </mat-menu>
+    </div>
+  </div>
+</mat-toolbar>

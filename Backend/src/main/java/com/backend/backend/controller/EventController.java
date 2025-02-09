@@ -31,13 +31,11 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(eventService.getEvent(id)));
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvents() {
         return ResponseEntity.ok(ApiResponse.success(eventService.getAllEvents()));
     }

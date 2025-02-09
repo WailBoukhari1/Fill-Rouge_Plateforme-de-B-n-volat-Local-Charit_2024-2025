@@ -2,7 +2,6 @@ package com.backend.backend.security;
 
 import com.backend.backend.domain.model.User;
 import com.backend.backend.repository.UserRepository;
-import com.backend.backend.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
 public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private final UserRepository userRepository;
-    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
     @Override

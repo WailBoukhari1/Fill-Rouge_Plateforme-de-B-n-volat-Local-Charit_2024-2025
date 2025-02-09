@@ -2,6 +2,7 @@ package com.backend.backend.controller;
 
 import com.backend.backend.dto.request.OrganizationRequest;
 import com.backend.backend.dto.response.ApiResponse;
+import com.backend.backend.dto.response.EventResponse;
 import com.backend.backend.dto.response.OrganizationResponse;
 import com.backend.backend.service.interfaces.OrganizationService;
 import jakarta.validation.Valid;
@@ -9,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/organizations")
@@ -29,9 +32,24 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<OrganizationResponse>> getOrganization(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(organizationService.getOrganization(id)));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<OrganizationResponse>>> searchOrganizations(
+            @RequestParam String query) {
+        return ResponseEntity.ok(ApiResponse.success(
+            organizationService.searchOrganizations(query)
+        ));
+    }
+
+    @GetMapping("/{id}/events")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getOrganizationEvents(
+            @PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(
+            organizationService.getOrganizationEvents(id)
+        ));
     }
 
     @PutMapping("/{id}")

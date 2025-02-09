@@ -1,8 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { DashboardNavbarComponent } from './components/dashboard-navbar.component';
-import { DashboardSidebarComponent } from './components/dashboard-sidebar.component';
+import { DashboardNavbarComponent } from './components/navbar/dashboard-navbar.component';
+import { DashboardSidebarComponent } from './components/sidebar/dashboard-sidebar.component';
 import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 
 @Component({
@@ -15,23 +15,7 @@ import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
     DashboardSidebarComponent,
     MatSidenavModule
   ],
-  template: `
-    <div class="h-screen flex flex-col">
-      <app-dashboard-navbar (toggleSidebar)="sidenav.toggle()"></app-dashboard-navbar>
-      
-      <mat-sidenav-container class="flex-grow">
-        <mat-sidenav #sidenav mode="side" opened class="border-r">
-          <app-dashboard-sidebar></app-dashboard-sidebar>
-        </mat-sidenav>
-        
-        <mat-sidenav-content>
-          <div class="p-6">
-            <router-outlet></router-outlet>
-          </div>
-        </mat-sidenav-content>
-      </mat-sidenav-container>
-    </div>
-  `,
+  templateUrl: './dashboard-layout.component.html',
   styles: [`
     :host {
       display: block;

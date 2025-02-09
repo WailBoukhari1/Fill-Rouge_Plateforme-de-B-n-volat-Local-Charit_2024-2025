@@ -19,7 +19,12 @@ public interface UserMapper {
     @Mapping(target = "skills", ignore = true)
     @Mapping(target = "interests", ignore = true)
     @Mapping(target = "location", ignore = true)
+    @Mapping(target = "resetPasswordCode", ignore = true)
+    @Mapping(target = "resetPasswordCodeExpiryDate", ignore = true)
+    @Mapping(target = "verificationCode", ignore = true)
+    @Mapping(target = "verificationCodeExpiryDate", ignore = true)
     User toEntity(RegisterRequest request);
+
 
     UserResponse toResponse(User user);
 } 

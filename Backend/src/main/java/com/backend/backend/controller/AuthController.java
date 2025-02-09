@@ -5,7 +5,6 @@ import com.backend.backend.dto.request.RegisterRequest;
 import com.backend.backend.dto.response.ApiResponse;
 import com.backend.backend.dto.response.AuthResponse;
 import com.backend.backend.service.interfaces.AuthService;
-import com.backend.backend.service.interfaces.OAuth2Service;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +13,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import com.backend.backend.exception.CustomException;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,7 +24,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 public class AuthController {
 
     private final AuthService authService;
-    private final OAuth2Service oauth2Service;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {

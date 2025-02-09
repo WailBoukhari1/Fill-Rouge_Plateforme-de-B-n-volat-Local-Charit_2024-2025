@@ -11,23 +11,23 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule],
   template: `
-    <div class="p-6">
+    <div class="p-4">
       <!-- Admin Dashboard -->
       <div *ngIf="(authService.getCurrentUser() | async)?.role === 'ADMIN'">
-        <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
+        <h1>Admin Dashboard</h1>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <mat-card>
             <mat-card-header>
               <mat-icon mat-card-avatar>event</mat-icon>
               <mat-card-title>Events</mat-card-title>
               <mat-card-subtitle>Manage all events</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">150</p>
-              <p class="text-gray-600">Total Events</p>
+            <mat-card-content>
+              <p>150</p>
+              <p>Total Events</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/events">View All</a>
             </mat-card-actions>
           </mat-card>
@@ -38,11 +38,11 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-card-title>Organizations</mat-card-title>
               <mat-card-subtitle>Manage organizations</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">45</p>
-              <p class="text-gray-600">Active Organizations</p>
+            <mat-card-content>
+              <p>45</p>
+              <p>Active Organizations</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/organizations">View All</a>
             </mat-card-actions>
           </mat-card>
@@ -53,11 +53,11 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-card-title>Volunteers</mat-card-title>
               <mat-card-subtitle>Manage volunteers</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">320</p>
-              <p class="text-gray-600">Registered Volunteers</p>
+            <mat-card-content>
+              <p>320</p>
+              <p>Registered Volunteers</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/volunteers">View All</a>
             </mat-card-actions>
           </mat-card>
@@ -66,20 +66,20 @@ import { AuthService } from '../../core/services/auth.service';
 
       <!-- Organization Dashboard -->
       <div *ngIf="(authService.getCurrentUser() | async)?.role === 'ORGANIZATION'">
-        <h1 class="text-2xl font-bold mb-6">Organization Dashboard</h1>
+        <h1>Organization Dashboard</h1>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <mat-card>
             <mat-card-header>
               <mat-icon mat-card-avatar>event</mat-icon>
               <mat-card-title>My Events</mat-card-title>
               <mat-card-subtitle>Manage your events</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">12</p>
-              <p class="text-gray-600">Active Events</p>
+            <mat-card-content>
+              <p>12</p>
+              <p>Active Events</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/events">View Events</a>
             </mat-card-actions>
           </mat-card>
@@ -90,11 +90,11 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-card-title>Applications</mat-card-title>
               <mat-card-subtitle>Manage volunteer applications</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">25</p>
-              <p class="text-gray-600">Pending Applications</p>
+            <mat-card-content>
+              <p>25</p>
+              <p>Pending Applications</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/applications">View Applications</a>
             </mat-card-actions>
           </mat-card>
@@ -105,11 +105,11 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-card-title>Analytics</mat-card-title>
               <mat-card-subtitle>View your impact</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">150</p>
-              <p class="text-gray-600">Total Volunteers</p>
+            <mat-card-content>
+              <p>150</p>
+              <p>Total Volunteers</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/analytics">View Analytics</a>
             </mat-card-actions>
           </mat-card>
@@ -118,20 +118,20 @@ import { AuthService } from '../../core/services/auth.service';
 
       <!-- Volunteer Dashboard -->
       <div *ngIf="(authService.getCurrentUser() | async)?.role === 'VOLUNTEER'">
-        <h1 class="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
+        <h1>Volunteer Dashboard</h1>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <mat-card>
             <mat-card-header>
               <mat-icon mat-card-avatar>event_available</mat-icon>
               <mat-card-title>My Events</mat-card-title>
               <mat-card-subtitle>View your registered events</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">3</p>
-              <p class="text-gray-600">Upcoming Events</p>
+            <mat-card-content>
+              <p>3</p>
+              <p>Upcoming Events</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/my-events">View Events</a>
             </mat-card-actions>
           </mat-card>
@@ -142,11 +142,11 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-card-title>History</mat-card-title>
               <mat-card-subtitle>Past volunteer activities</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">15</p>
-              <p class="text-gray-600">Total Hours</p>
+            <mat-card-content>
+              <p>15</p>
+              <p>Total Hours</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/history">View History</a>
             </mat-card-actions>
           </mat-card>
@@ -157,11 +157,11 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-card-title>Achievements</mat-card-title>
               <mat-card-subtitle>Your volunteer milestones</mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="p-4">
-              <p class="text-2xl font-bold">5</p>
-              <p class="text-gray-600">Badges Earned</p>
+            <mat-card-content>
+              <p>5</p>
+              <p>Badges Earned</p>
             </mat-card-content>
-            <mat-card-actions class="p-4">
+            <mat-card-actions>
               <a mat-button color="primary" routerLink="/dashboard/achievements">View Achievements</a>
             </mat-card-actions>
           </mat-card>

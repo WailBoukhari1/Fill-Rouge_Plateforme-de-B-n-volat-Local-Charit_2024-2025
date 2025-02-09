@@ -7,6 +7,11 @@ import { HomeComponent } from './pages/home/home.component';
 
 export const routes: Routes = [
   {
+    path: 'auth',
+    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
+  },
+
+  {
     path: '',
     component: MainLayoutComponent,
     children: [
@@ -15,21 +20,20 @@ export const routes: Routes = [
         component: HomeComponent
       },
       {
-        path: 'auth',
-        loadChildren: () => import('./feature/auth/auth.routes').then(m => m.AUTH_ROUTES)
-      },
-      {
         path: 'events',
-        loadChildren: () => import('./feature/event/event.routes').then(m => m.PUBLIC_EVENT_ROUTES)
+        loadChildren: () => import('./features/events/event.routes').then(m => m.PUBLIC_EVENT_ROUTES)
       },
+
       {
         path: 'organizations',
-        loadChildren: () => import('./feature/organization/organization.routes').then(m => m.PUBLIC_ORGANIZATION_ROUTES)
+        loadChildren: () => import('./features/organizations/organization.routes').then(m => m.PUBLIC_ORGANIZATION_ROUTES)
       },
+
       {
         path: 'volunteer',
-        loadChildren: () => import('./feature/volunteer/volunteer.routes').then(m => m.PUBLIC_VOLUNTEER_ROUTES)
+        loadChildren: () => import('./features/volunteers/volunteer.routes').then(m => m.PUBLIC_VOLUNTEER_ROUTES)
       },
+
       {
         path: '',
         redirectTo: 'events',
@@ -45,17 +49,20 @@ export const routes: Routes = [
       {
         path: 'events',
         canActivate: [() => roleGuard(['ADMIN', 'ORGANIZATION'])],
-        loadChildren: () => import('./feature/event/event.routes').then(m => m.DASHBOARD_EVENT_ROUTES),
+        loadChildren: () => import('./features/events/event.routes').then(m => m.DASHBOARD_EVENT_ROUTES),
+
       },
       {
         path: 'organizations',
         canActivate: [() => roleGuard(['ADMIN', 'ORGANIZATION'])],
-        loadChildren: () => import('./feature/organization/organization.routes').then(m => m.DASHBOARD_ORGANIZATION_ROUTES),
+        loadChildren: () => import('./features/organizations/organization.routes').then(m => m.DASHBOARD_ORGANIZATION_ROUTES),
       },
+
       {
         path: 'volunteer',
         canActivate: [() => roleGuard(['VOLUNTEER'])],
-        loadChildren: () => import('./feature/volunteer/volunteer.routes').then(m => m.DASHBOARD_VOLUNTEER_ROUTES),
+        loadChildren: () => import('./features/volunteers/volunteer.routes').then(m => m.DASHBOARD_VOLUNTEER_ROUTES),
+
       }
     ]
   },

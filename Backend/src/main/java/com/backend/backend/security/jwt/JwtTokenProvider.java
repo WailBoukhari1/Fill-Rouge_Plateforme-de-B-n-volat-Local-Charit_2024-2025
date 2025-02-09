@@ -1,20 +1,27 @@
 package com.backend.backend.security.jwt;
 
 import com.backend.backend.security.UserPrincipal;
+import com.backend.backend.domain.model.User;
+import com.backend.backend.repository.UserRepository;
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 import java.security.Key;
 import io.jsonwebtoken.security.Keys;
 
 @Service
+@RequiredArgsConstructor
 public class JwtTokenProvider {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+
+    private final UserRepository userRepository;
 
     @Value("${spring.security.jwt.secret}")
     private String jwtSecret;
@@ -35,7 +42,7 @@ public class JwtTokenProvider {
                 .setSubject(userPrincipal.getUsername())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .claim("role", userPrincipal.getAuthorities().iterator().next().getAuthority())
+                .claim("roles", userPrincipal.getAuthorities().iterator().next().getAuthority())
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS512)
                 .compact();
     }
@@ -99,10 +106,15 @@ public class JwtTokenProvider {
         byte[] keyBytes = jwtSecret.getBytes();
         Key key = Keys.hmacShaKeyFor(keyBytes);
         
+        // Get user role from repository
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .claim("roles", List.of(user.getRole().name()))
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }

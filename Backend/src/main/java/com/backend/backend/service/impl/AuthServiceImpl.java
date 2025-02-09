@@ -1,7 +1,6 @@
 package com.backend.backend.service.impl;
 
 import com.backend.backend.domain.model.User;
-import com.backend.backend.domain.model.VerificationToken;
 import com.backend.backend.dto.request.LoginRequest;
 import com.backend.backend.dto.request.RegisterRequest;
 import com.backend.backend.dto.response.AuthResponse;
@@ -21,7 +20,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +28,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.UUID;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Random;
@@ -63,44 +61,46 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
         
-        // Generate distinct tokens with different purposes
         String accessToken = jwtTokenProvider.generateAccessToken(savedUser.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.getEmail());
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole())
-                .emailVerified(false)
+                .user(AuthResponse.UserDetails.builder()
+                    .id(savedUser.getId())
+                    .email(savedUser.getEmail())
+                    .roles(List.of(savedUser.getRole()))
+                    .emailVerified(false)
+                    .build())
                 .build();
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        try {
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException("Invalid email/password", HttpStatus.UNAUTHORIZED));
 
-            authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
-
-            // Generate distinct tokens
-            String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail());
-            String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
-
-            return AuthResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .email(user.getEmail())
-                    .role(user.getRole())
-                    .emailVerified(user.isEmailVerified())
-                    .build();
-
-        } catch (BadCredentialsException e) {
-            throw new CustomException("Invalid email or password", HttpStatus.UNAUTHORIZED);
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new CustomException("Invalid email/password", HttpStatus.UNAUTHORIZED);
         }
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .user(AuthResponse.UserDetails.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .roles(List.of(user.getRole()))
+                    .emailVerified(user.isEmailVerified())
+                    .profilePicture(user.getProfilePicture())
+                    .build())
+                .build();
     }
 
     @Override
@@ -118,19 +118,21 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-            UserPrincipal.create(user),
-            null,
-            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
-
-        String newToken = jwtTokenProvider.generateToken(authentication);
+        String newAccessToken = jwtTokenProvider.generateAccessToken(email);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(email);
 
         return AuthResponse.builder()
-                .accessToken(newToken)
-                .email(user.getEmail())
-                .role(user.getRole())
-                .emailVerified(user.isEmailVerified())
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .user(AuthResponse.UserDetails.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .roles(List.of(user.getRole()))
+                    .emailVerified(user.isEmailVerified())
+                    .profilePicture(user.getProfilePicture())
+                    .build())
                 .build();
     }
 
@@ -238,14 +240,24 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse handleOAuth2Callback(String provider, String code, String state) {
         OAuth2User oauth2User = oauth2Service.processOAuthPostLogin(code);
-        String email = oauth2User.getAttribute("email");
-        String token = jwtTokenProvider.generateToken(email);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(email);
+        User user = userRepository.findByEmail(oauth2User.getAttribute("email"))
+                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
         
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .email(email)
+                .user(AuthResponse.UserDetails.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .roles(List.of(user.getRole()))
+                    .emailVerified(user.isEmailVerified())
+                    .profilePicture(user.getProfilePicture())
+                    .build())
                 .build();
     }
 

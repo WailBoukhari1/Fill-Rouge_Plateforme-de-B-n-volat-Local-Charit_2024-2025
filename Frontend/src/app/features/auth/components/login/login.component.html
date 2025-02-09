@@ -1,0 +1,107 @@
+<div class="min-h-screen flex flex-col justify-center p-4">
+  <!-- Home button -->
+  <div class="absolute top-4 left-4">
+    <button mat-icon-button routerLink="/">
+      <mat-icon>home</mat-icon>
+    </button>
+  </div>
+
+  <!-- Header -->
+  <div class="text-center max-w-md mx-auto w-full">
+    <h2 class="text-3xl font-bold">Welcome back</h2>
+    <p class="mt-2 text-sm">
+      Or
+      <a (click)="navigateToRegister()" class="cursor-pointer">
+        create a new account
+      </a>
+    </p>
+  </div>
+
+  <!-- Main Form Container -->
+  <div class="max-w-md mx-auto w-full mt-8 p-8 bg-white rounded-lg">
+    <!-- Error Message -->
+    <div *ngIf="error$ | async as error" class="mb-6 flex items-center">
+      <mat-icon class="mr-2">error_outline</mat-icon>
+      {{ error }}
+    </div>
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Email Field -->
+      <mat-form-field class="w-full">
+        <mat-label>Email address</mat-label>
+        <mat-icon matPrefix>email</mat-icon>
+        <input matInput 
+               formControlName="email" 
+               type="email" 
+               required>
+        <mat-error *ngIf="loginForm.get('email')?.errors?.['required']">
+          Email is required
+        </mat-error>
+        <mat-error *ngIf="loginForm.get('email')?.errors?.['email']">
+          Please enter a valid email
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Password Field -->
+      <mat-form-field class="w-full">
+        <mat-label>Password</mat-label>
+        <mat-icon matPrefix>lock</mat-icon>
+        <input matInput 
+               [type]="hidePassword ? 'password' : 'text'"
+               formControlName="password" 
+               required>
+        <button mat-icon-button 
+                matSuffix 
+                (click)="hidePassword = !hidePassword" 
+                type="button">
+          <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+        </button>
+        <mat-error *ngIf="loginForm.get('password')?.errors?.['required']">
+          Password is required
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Forgot Password Link -->
+      <div class="text-right">
+        <a (click)="navigateToForgotPassword()" class="text-sm cursor-pointer">
+          Forgot your password?
+        </a>
+      </div>
+
+      <!-- Submit Button -->
+      <button mat-raised-button 
+              color="primary"
+              type="submit"
+              [disabled]="loginForm.invalid || (loading$ | async)"
+              class="w-full">
+        <div class="flex items-center justify-center">
+          <mat-spinner diameter="24" *ngIf="loading$ | async" class="mr-2"></mat-spinner>
+          <span>{{ (loading$ | async) ? 'Signing in...' : 'Sign in' }}</span>
+        </div>
+      </button>
+    </form>
+
+    <!-- Social Login Section -->
+    <div class="mt-8">
+      <!-- Divider -->
+      <div class="relative text-center">
+        <span class="bg-white px-2">Or continue with</span>
+      </div>
+
+      <!-- Google Login Button -->
+      <div class="mt-6">
+        <button mat-stroked-button 
+                (click)="loginWithGoogle()"
+                class="w-full">
+          <div class="flex items-center justify-center">
+            <img src="assets/icons/google.svg" 
+                 class="h-5 w-5 mr-2"
+                 alt="Google logo">
+            <span>Sign in with Google</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

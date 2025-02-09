@@ -37,7 +37,7 @@ public class User implements UserDetails {
     private List<String> skills;
     private List<String> interests;
     private String location;
-    private boolean enabled = true;
+    private boolean enabled;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

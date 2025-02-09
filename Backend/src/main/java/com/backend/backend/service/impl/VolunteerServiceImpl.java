@@ -1,6 +1,5 @@
 package com.backend.backend.service.impl;
 
-import com.backend.backend.domain.model.Event;
 import com.backend.backend.domain.model.EventRegistration;
 import com.backend.backend.domain.model.User;
 import com.backend.backend.domain.model.Volunteer;
@@ -87,7 +86,7 @@ public class VolunteerServiceImpl implements VolunteerService {
     @Transactional
     public void registerForEvent(String email, String eventId) {
         Volunteer volunteer = getVolunteerByEmail(email);
-        Event event = eventRepository.findById(eventId)
+        eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
 
         if (eventRegistrationRepository.existsByVolunteerIdAndEventId(volunteer.getId(), eventId)) {

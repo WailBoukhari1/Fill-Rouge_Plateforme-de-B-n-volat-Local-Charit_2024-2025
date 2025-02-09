@@ -62,7 +62,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors().and()
+            .cors(cors -> cors.configure(http))
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(unauthorizedHandler)
@@ -82,6 +82,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/organizations/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/volunteers/**").permitAll()
                 
                 // Admin only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -94,12 +97,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/events/*/publish").hasRole("ORGANIZATION")
                 .requestMatchers(HttpMethod.PATCH, "/api/events/*/cancel").hasRole("ORGANIZATION")
                 
-                // Mixed access endpoints
-                .requestMatchers(HttpMethod.GET, "/api/events/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/organizations/**").authenticated()
-                
                 // Volunteer endpoints
-                .requestMatchers("/api/volunteers/**").hasRole("VOLUNTEER")
+                .requestMatchers(HttpMethod.POST, "/api/volunteers/**").hasRole("VOLUNTEER")
+                .requestMatchers(HttpMethod.PUT, "/api/volunteers/**").hasRole("VOLUNTEER")
+                .requestMatchers(HttpMethod.DELETE, "/api/volunteers/**").hasRole("VOLUNTEER")
                 
                 // Add OAuth2 endpoints to permitted URLs
                 .requestMatchers("/api/auth/oauth2/**").permitAll()

@@ -8,12 +8,18 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
-
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+
+    private final ObjectMapper objectMapper;
+
+    public CustomAccessDeniedHandler(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
@@ -21,14 +27,16 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
+        String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+
         ErrorResponse errorResponse = ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(timestamp)
             .status(HttpServletResponse.SC_FORBIDDEN)
             .error("Forbidden")
             .message("Access denied")
-            .path(request.getRequestURI())
+            .path(request.getServletPath())
             .build();
 
-        new ObjectMapper().writeValue(response.getOutputStream(), errorResponse);
+        objectMapper.writeValue(response.getOutputStream(), errorResponse);
     }
 } 

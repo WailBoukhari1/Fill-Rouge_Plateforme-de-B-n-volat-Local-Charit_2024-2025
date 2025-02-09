@@ -14,17 +14,16 @@ export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => {
       take(1),
       map(user => {
         if (!user) {
-
           return router.createUrlTree(['/auth/login']);
         }
 
-        if (allowedRoles.includes(user.role as UserRole)) {
+        const hasAllowedRole = user.roles.some(role => allowedRoles.includes(role as UserRole));
+        if (hasAllowedRole) {
           return true;
         }
 
         // Redirect to home page or unauthorized page
         return router.createUrlTree(['/']);
-
       })
     );
   };

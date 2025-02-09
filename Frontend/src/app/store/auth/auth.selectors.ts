@@ -1,49 +1,61 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { AuthState } from './auth.state';
+import { AuthState, UserRole } from '../../core/models/auth.model';
 
 export const selectAuthState = createFeatureSelector<AuthState>('auth');
 
-export const selectUser = createSelector(
-  selectAuthState,
-  (state) => state.user
-);
+export const selectAuth = (state: { auth: AuthState }) => state.auth;
 
-export const selectIsAuthenticated = createSelector(
-  selectAuthState,
-  (state) => state.isAuthenticated
-);
-
-export const selectAuthLoading = createSelector(
-  selectAuthState,
-  (state) => state.loading
-);
-
-export const selectAuthError = createSelector(
-  selectAuthState,
-  (state) => state.error
+export const selectAuthUser = createSelector(
+  selectAuth,
+  (state: AuthState) => state.user
 );
 
 export const selectToken = createSelector(
-  selectAuthState,
-  (state) => state.token
+  selectAuth,
+  (state: AuthState) => state.token
+);
+
+export const selectIsAuthenticated = createSelector(
+  selectAuth,
+  (state: AuthState) => state.isAuthenticated
+);
+
+export const selectAuthLoading = createSelector(
+  selectAuth,
+  (state: AuthState) => state.loading
+);
+
+export const selectAuthError = createSelector(
+  selectAuth,
+  (state: AuthState) => state.error
 );
 
 export const selectRefreshToken = createSelector(
   selectAuthState,
-  (state) => state.refreshToken
+  (state) => state.token?.refreshToken
+);
+
+export const selectUserRoles = createSelector(
+  selectAuthUser,
+  (user) => user?.roles || []
+);
+
+export const selectHasRole = (role: UserRole) => createSelector(
+  selectUserRoles,
+  (roles) => roles.includes(role)
 );
 
 export const selectIsEmailVerified = createSelector(
-  selectUser,
-  (user) => user?.emailVerified ?? false
+  selectAuthUser,
+  (user) => user?.emailVerified || false
 );
 
 export const selectUserRole = createSelector(
-  selectUser,
-  (user) => user?.role
+  selectAuthUser,
+  (user) => user?.roles[0]
 );
 
 export const selectUserFullName = createSelector(
-  selectUser,
+  selectAuthUser,
   (user) => user ? `${user.firstName} ${user.lastName}` : null
 ); 

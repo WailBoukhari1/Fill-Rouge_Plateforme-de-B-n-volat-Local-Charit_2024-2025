@@ -1,0 +1,169 @@
+<div class="container mx-auto p-4">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">{{ isEditMode ? 'Edit Event' : 'Create Event' }}</h1>
+    <button mat-stroked-button routerLink="/events">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Events
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Left Column - Event Details -->
+    <div>
+      <mat-card>
+        <mat-card-content>
+          <div class="flex flex-col gap-4">
+            <!-- Title -->
+            <mat-form-field appearance="outline">
+              <mat-label>Event Title</mat-label>
+              <input matInput formControlName="title" placeholder="Enter event title">
+              <mat-error *ngIf="eventForm.get('title')?.errors?.['required']">
+                Title is required
+              </mat-error>
+              <mat-error *ngIf="eventForm.get('title')?.errors?.['minlength']">
+                Title must be at least 3 characters
+              </mat-error>
+              <mat-error *ngIf="eventForm.get('title')?.errors?.['maxlength']">
+                Title cannot exceed 100 characters
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Description -->
+            <mat-form-field appearance="outline">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="5" 
+                        placeholder="Describe the event and what volunteers will do">
+              </textarea>
+              <mat-error *ngIf="eventForm.get('description')?.errors?.['required']">
+                Description is required
+              </mat-error>
+              <mat-error *ngIf="eventForm.get('description')?.errors?.['minlength']">
+                Description must be at least 10 characters
+              </mat-error>
+              <mat-error *ngIf="eventForm.get('description')?.errors?.['maxlength']">
+                Description cannot exceed 1000 characters
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Date and Time -->
+            <mat-form-field appearance="outline">
+              <mat-label>Date and Time</mat-label>
+              <input matInput [matDatepicker]="picker" formControlName="dateTime">
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-error *ngIf="eventForm.get('dateTime')?.errors?.['required']">
+                Date and time is required
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Volunteers Needed -->
+            <mat-form-field appearance="outline">
+              <mat-label>Number of Volunteers Needed</mat-label>
+              <input matInput type="number" formControlName="volunteersNeeded">
+              <mat-error *ngIf="eventForm.get('volunteersNeeded')?.errors?.['required']">
+                Number of volunteers is required
+              </mat-error>
+              <mat-error *ngIf="eventForm.get('volunteersNeeded')?.errors?.['min']">
+                At least 1 volunteer is required
+              </mat-error>
+              <mat-error *ngIf="eventForm.get('volunteersNeeded')?.errors?.['max']">
+                Maximum 1000 volunteers allowed
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Required Skills -->
+            <mat-form-field appearance="outline">
+              <mat-label>Required Skills</mat-label>
+              <mat-chip-grid #chipGrid>
+                <mat-chip-row *ngFor="let skill of eventForm.get('requiredSkills')?.value || []"
+                  (removed)="removeSkill(skill)">
+                  {{skill}}
+                  <button matChipRemove>
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                </mat-chip-row>
+                <input [matChipInputFor]="chipGrid"
+                       [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                       (matChipInputTokenEnd)="addSkill($event)">
+              </mat-chip-grid>
+            </mat-form-field>
+
+            <!-- Common Skills Suggestions -->
+            <div class="flex flex-wrap gap-2">
+              <button mat-button
+                      *ngFor="let skill of commonSkills"
+                      (click)="addCommonSkill(skill)">
+                {{skill}}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Right Column - Location -->
+    <div>
+      <mat-card>
+        <mat-card-content>
+          <!-- Location Input -->
+          <mat-form-field appearance="outline" class="w-full mb-4">
+            <mat-label>Location</mat-label>
+            <input matInput formControlName="location" placeholder="Enter event location">
+            <mat-error *ngIf="eventForm.get('location')?.errors?.['required']">
+              Location is required
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Map -->
+          <div class="h-[400px] mb-4">
+            <google-map
+              width="100%"
+              height="100%"
+              [center]="{ 
+                lat: eventForm.get('latitude')?.value || 0, 
+                lng: eventForm.get('longitude')?.value || 0 
+              }"
+              [zoom]="15"
+              (mapClick)="onMapClick($event)">
+              <map-marker
+                *ngIf="eventForm.get('latitude')?.value && eventForm.get('longitude')?.value"
+                [position]="{ 
+                  lat: eventForm.get('latitude')?.value, 
+                  lng: eventForm.get('longitude')?.value 
+                }">
+              </map-marker>
+            </google-map>
+          </div>
+
+          <!-- Coordinates -->
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Latitude</mat-label>
+              <input matInput type="number" formControlName="latitude">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Longitude</mat-label>
+              <input matInput type="number" formControlName="longitude">
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Submit Button -->
+      <div class="flex justify-end mt-4">
+        <button 
+          mat-raised-button 
+          color="primary" 
+          type="submit"
+          [disabled]="eventForm.invalid || loading">
+          {{ isEditMode ? 'Update Event' : 'Create Event' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div> 

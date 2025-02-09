@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  role: UserRole;
+  roles: string[];
   emailVerified: boolean;
 }
 

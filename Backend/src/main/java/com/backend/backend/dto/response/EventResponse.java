@@ -16,9 +16,13 @@ public class EventResponse {
     private String location;
     private Set<String> requiredSkills;
     private int volunteersNeeded;
+    private int registeredVolunteers;
     private String organizationId;
+    private String organizationName;
     private EventStatus status;
     private double latitude;
     private double longitude;
-    private int registeredVolunteers;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private boolean isRegistered; // For logged-in volunteer
 } 

@@ -1,0 +1,74 @@
+<mat-toolbar>
+  <div class="container mx-auto flex items-center justify-between">
+    <a routerLink="/" class="flex items-center">
+      <mat-icon>volunteer_activism</mat-icon>
+      <span>VolunteerHub</span>
+    </a>
+
+    <nav class="hidden md:flex items-center">
+      <a mat-button routerLink="/events" routerLinkActive="active">Events</a>
+      <a mat-button routerLink="/organizations" routerLinkActive="active">Organizations</a>
+      <a mat-button routerLink="/volunteer" routerLinkActive="active">Volunteer</a>
+    </nav>
+
+    <div class="hidden md:flex items-center">
+      <ng-container *ngIf="!(authService.isAuthenticated$ | async); else authenticatedUser">
+        <a mat-stroked-button routerLink="/auth/login">Login</a>
+        <a mat-raised-button color="primary" routerLink="/auth/register">Sign Up</a>
+      </ng-container>
+
+      <ng-template #authenticatedUser>
+        <button mat-icon-button [matMenuTriggerFor]="notificationMenu">
+          <mat-icon>notifications</mat-icon>
+        </button>
+
+        <button mat-button [matMenuTriggerFor]="userMenu">
+          <mat-icon>account_circle</mat-icon>
+          <span>{{ (authService.getCurrentUser() | async)?.email || "User" }}</span>
+        </button>
+
+        <mat-menu #notificationMenu="matMenu">
+          <div class="p-4">
+            <h3>Notifications</h3>
+            <div>No new notifications</div>
+          </div>
+        </mat-menu>
+
+        <mat-menu #userMenu="matMenu">
+          <a mat-menu-item routerLink="/dashboard">
+            <mat-icon>dashboard</mat-icon>
+            <span>Dashboard</span>
+          </a>
+          <a mat-menu-item routerLink="/dashboard/profile">
+            <mat-icon>person</mat-icon>
+            <span>Profile</span>
+          </a>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>exit_to_app</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </ng-template>
+    </div>
+
+    <div class="md:hidden">
+      <button mat-icon-button [matMenuTriggerFor]="mobileMenu">
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <mat-menu #mobileMenu="matMenu">
+        <ng-container *ngIf="!(authService.isAuthenticated$ | async); else authenticatedMobileMenu">
+          <a mat-menu-item routerLink="/auth/login">Login</a>
+          <a mat-menu-item routerLink="/auth/register">Sign Up</a>
+        </ng-container>
+
+        <ng-template #authenticatedMobileMenu>
+          <a mat-menu-item routerLink="/dashboard">Dashboard</a>
+          <a mat-menu-item routerLink="/dashboard/profile">Profile</a>
+          <button mat-menu-item (click)="logout()">Logout</button>
+        </ng-template>
+      </mat-menu>
+    </div>
+  </div>
+</mat-toolbar>

@@ -1,163 +1,171 @@
 import { createReducer, on } from '@ngrx/store';
-import { AuthActions } from './auth.actions';
-import { AuthState, initialState } from './auth.state';
+import * as AuthActions from './auth.actions';
+import { AuthState } from '../../core/models/auth.model';
+
+export const initialState: AuthState = {
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  loading: false,
+  error: null
+};
 
 export const authReducer = createReducer(
-    initialState,
+  initialState,
 
-    // Login
-    on(AuthActions.login, (state): AuthState => ({
-        ...state,
-        loading: true,
-        error: null
-    })),
-    on(AuthActions.loginSuccess, (state, { user, token, refreshToken }): AuthState => ({
-        ...state,
-        user,
-        token,
-        refreshToken,
-        isAuthenticated: true,
-        loading: false,
-        error: null
-    })),
-    on(AuthActions.loginFailure, (state, { error }): AuthState => {
-        // Special handling for unverified email case
-        if (error === 'Please verify your email before logging in') {
-            return {
-                ...state,
-                loading: false,
-                error,
-                isAuthenticated: false,
-                token: null,
-                refreshToken: null,
-                // Keep the existing user state
-                user: state.user
-            };
-        }
-        return {
-            ...state,
-            loading: false,
-            error,
-            user: null,
-            token: null,
-            refreshToken: null,
-            isAuthenticated: false
-        };
-    }),
+  // Initialize
+  on(AuthActions.initializeAuth, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
 
-    // Register
-    on(AuthActions.register, (state): AuthState => ({
-        ...state,
-        loading: true,
-        error: null
-    })),
-    on(AuthActions.registerSuccess, (state, { user, token, refreshToken }): AuthState => ({
-        ...state,
-        user,
-        token,
-        refreshToken,
-        isAuthenticated: false, // Don't authenticate until email is verified
-        loading: false,
-        error: null
-    })),
-    on(AuthActions.registerFailure, (state, { error }): AuthState => ({
-        ...state,
-        loading: false,
-        error,
-        user: null,
-        token: null,
-        refreshToken: null,
-        isAuthenticated: false
-    })),
+  // Login
+  on(AuthActions.login, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(AuthActions.loginSuccess, (state, { user, accessToken, refreshToken }) => ({
+    ...state,
+    user,
+    token: {
+      accessToken,
+      refreshToken,
+      expiresIn: 3600
+    },
+    isAuthenticated: true,
+    loading: false,
+    error: null
+  })),
+  on(AuthActions.loginFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
 
-    // OAuth
-    on(AuthActions.oAuthLogin, (state): AuthState => ({
-        ...state,
-        loading: true,
-        error: null
-    })),
-    on(AuthActions.oAuthSuccess, (state, { user, token, refreshToken }): AuthState => ({
-        ...state,
-        user,
-        token,
-        refreshToken,
-        isAuthenticated: true,
-        loading: false,
-        error: null
-    })),
-    on(AuthActions.oAuthFailure, (state, { error }): AuthState => ({
-        ...state,
-        loading: false,
-        error
-    })),
+  // Register
+  on(AuthActions.register, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(AuthActions.registerSuccess, (state, { user, accessToken, refreshToken }) => ({
+    ...state,
+    user,
+    token: {
+      accessToken,
+      refreshToken,
+      expiresIn: 3600
+    },
+    isAuthenticated: true,
+    loading: false,
+    error: null
+  })),
+  on(AuthActions.registerFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
 
-    // Token Refresh
-    on(AuthActions.refreshToken, (state): AuthState => ({
-        ...state,
-        loading: true,
-        error: null
-    })),
-    on(AuthActions.refreshTokenSuccess, (state, { token, refreshToken }): AuthState => ({
-        ...state,
-        token,
-        refreshToken,
-        loading: false,
-        error: null
-    })),
-    on(AuthActions.refreshTokenFailure, (state, { error }): AuthState => ({
-        ...state,
-        loading: false,
-        error
-    })),
+  // OAuth
+  on(AuthActions.oAuthLogin, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(AuthActions.oAuthSuccess, (state, { user, accessToken, refreshToken }) => ({
+    ...state,
+    user,
+    token: {
+      accessToken,
+      refreshToken,
+      expiresIn: 3600
+    },
+    isAuthenticated: true,
+    loading: false,
+    error: null
+  })),
+  on(AuthActions.oAuthFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
 
-    // Email Verification
-    on(AuthActions.verifyEmail, (state): AuthState => ({
-        ...state,
-        loading: true,
-        error: null
-    })),
-    on(AuthActions.verifyEmailSuccess, (state): AuthState => ({
-        ...state,
-        user: state.user ? { ...state.user, emailVerified: true } : null,
-        loading: false,
-        error: null
-    })),
-    on(AuthActions.verifyEmailFailure, (state, { error }): AuthState => ({
-        ...state,
-        loading: false,
-        error
-    })),
+  // Token Refresh
+  on(AuthActions.refreshToken, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(AuthActions.refreshTokenSuccess, (state, { token }) => ({
+    ...state,
+    token,
+    loading: false,
+    error: null
+  })),
+  on(AuthActions.refreshTokenFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
 
-    // Resend Verification Email
-    on(AuthActions.resendVerificationEmail, (state): AuthState => ({
-        ...state,
-        loading: true,
-        error: null
-    })),
-    on(AuthActions.resendVerificationEmailSuccess, (state): AuthState => ({
-        ...state,
-        loading: false,
-        error: null
-    })),
-    on(AuthActions.resendVerificationEmailFailure, (state, { error }): AuthState => ({
-        ...state,
-        loading: false,
-        error
-    })),
+  // Email Verification
+  on(AuthActions.verifyEmail, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(AuthActions.verifyEmailSuccess, (state) => ({
+    ...state,
+    user: state.user ? { ...state.user, emailVerified: true } : null,
+    loading: false,
+    error: null
+  })),
+  on(AuthActions.verifyEmailFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
 
-    // Logout
-    on(AuthActions.logout, (state): AuthState => ({
-        ...state,
-        loading: true,
-        error: null
-    })),
-    on(AuthActions.logoutSuccess, (): AuthState => ({
-        ...initialState
-    })),
+  // Password Reset
+  on(AuthActions.forgotPassword, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(AuthActions.forgotPasswordSuccess, (state) => ({
+    ...state,
+    loading: false,
+    error: null
+  })),
+  on(AuthActions.forgotPasswordFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+  on(AuthActions.resetPassword, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(AuthActions.resetPasswordSuccess, (state) => ({
+    ...state,
+    loading: false,
+    error: null
+  })),
+  on(AuthActions.resetPasswordFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
 
-    // Clear Error
-    on(AuthActions.clearError, (state): AuthState => ({
-        ...state,
-        error: null
-    }))
+  // Session Management
+  on(AuthActions.logout, () => ({
+    ...initialState
+  })),
+  on(AuthActions.clearAuthError, (state) => ({
+    ...state,
+    error: null
+  }))
 ); 

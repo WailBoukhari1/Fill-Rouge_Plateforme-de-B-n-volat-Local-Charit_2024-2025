@@ -1,3 +1,5 @@
+import { AuthUser, JwtToken, UserRole } from '../auth.model';
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -13,8 +15,10 @@ export interface RegisterRequest {
 export interface AuthResponseData {
   accessToken: string;
   refreshToken: string;
+  expiresIn: number;
+  id: string;
   email: string;
-  role: string;
+  roles: UserRole[];
   emailVerified: boolean;
 }
 
@@ -26,25 +30,20 @@ export interface BackendAuthResponse {
 }
 
 export interface AuthResponse {
-  token: string | null;
-  refreshToken: string | null;
-  user: {
-    email: string;
-    role: string;
-    emailVerified: boolean;
-  };
+  user: AuthUser;
+  token: JwtToken;
 }
 
 export interface BackendUser {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    emailVerified: boolean;
-    profilePicture?: string;
-    bio?: string;
-    skills?: string[];
-    interests?: string[];
-    location?: string;
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: UserRole[];
+  emailVerified: boolean;
+  profilePicture?: string;
+  bio?: string;
+  skills?: string[];
+  interests?: string[];
+  location?: string;
 } 

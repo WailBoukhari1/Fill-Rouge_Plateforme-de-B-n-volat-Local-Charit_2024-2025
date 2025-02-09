@@ -1,0 +1,121 @@
+<div class="container mx-auto p-4">
+  <div *ngIf="loading" class="flex justify-center">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="error" class="text-red-600 text-center mb-4">
+    {{ error }}
+  </div>
+
+  <ng-container *ngIf="event$ | async as event">
+    <!-- Header -->
+    <div class="flex justify-between items-start mb-6">
+      <div>
+        <h1 class="text-3xl font-bold mb-2">{{ event.title }}</h1>
+        <div class="flex items-center text-gray-600">
+          <mat-icon class="mr-2">business</mat-icon>
+          <span>{{ event.organizationName }}</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button 
+          *ngIf="isOrganizer$ | async"
+          mat-stroked-button 
+          color="primary"
+          [routerLink]="['/events', event.id, 'edit']">
+          <mat-icon>edit</mat-icon>
+          Edit Event
+        </button>
+
+        <ng-container *ngIf="isVolunteer$ | async">
+          <button 
+            *ngIf="!event.isRegistered" 
+            mat-raised-button 
+            color="primary"
+            [disabled]="event.status !== EventStatus.PUBLISHED || 
+                       event.registeredVolunteers >= event.volunteersNeeded"
+            (click)="onRegister(event.id)">
+            Register
+          </button>
+          
+          <button 
+            *ngIf="event.isRegistered" 
+            mat-stroked-button 
+            color="warn"
+            (click)="onCancelRegistration(event.id)">
+            Cancel Registration
+          </button>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div *ngIf="event.status !== EventStatus.PUBLISHED" 
+         class="inline-block mb-6 px-4 py-2 rounded-full text-sm"
+         [ngClass]="{
+           'bg-yellow-100 text-yellow-800': event.status === EventStatus.DRAFT,
+           'bg-red-100 text-red-800': event.status === EventStatus.CANCELLED,
+           'bg-green-100 text-green-800': event.status === EventStatus.COMPLETED
+         }">
+      {{ event.status }}
+    </div>
+
+    <!-- Event Details -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Main Content -->
+      <div class="md:col-span-2">
+        <mat-card>
+          <mat-card-content>
+            <h2 class="text-xl font-semibold mb-4">About This Event</h2>
+            <p class="whitespace-pre-line mb-6">{{ event.description }}</p>
+
+            <h3 class="text-lg font-semibold mb-2">Required Skills</h3>
+            <div class="flex flex-wrap gap-2 mb-6">
+              <mat-chip-set>
+                <mat-chip *ngFor="let skill of event.requiredSkills">
+                  {{ skill }}
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+
+            <h3 class="text-lg font-semibold mb-2">Volunteer Spots</h3>
+            <div class="flex items-center mb-6">
+              <mat-icon class="mr-2">group</mat-icon>
+              <span>{{ event.registeredVolunteers }}/{{ event.volunteersNeeded }} volunteers registered</span>
+            </div>
+
+            <h3 class="text-lg font-semibold mb-2">Date & Time</h3>
+            <div class="flex items-center mb-6">
+              <mat-icon class="mr-2">event</mat-icon>
+              <span>{{ formatDate(event.dateTime) }}</span>
+            </div>
+
+            <h3 class="text-lg font-semibold mb-2">Location</h3>
+            <div class="flex items-center">
+              <mat-icon class="mr-2">location_on</mat-icon>
+              <span>{{ event.location }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Map -->
+      <div class="md:col-span-1">
+        <mat-card class="h-full">
+          <mat-card-content>
+            <google-map
+              width="100%"
+              [center]="{ lat: event.latitude, lng: event.longitude }"
+              [zoom]="15">
+              <map-marker
+                [position]="{ lat: event.latitude, lng: event.longitude }"
+                [title]="event.title">
+              </map-marker>
+            </google-map>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </ng-container>
+</div> 

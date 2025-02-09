@@ -57,13 +57,13 @@ public class VolunteerController {
     }
 
     @GetMapping("/search/skills/{skill}")
-    public ResponseEntity<List<VolunteerProfileResponse>> findBySkill(@PathVariable String skill) {
-        return ResponseEntity.ok(volunteerService.findVolunteersBySkill(skill));
+    public ResponseEntity<ApiResponse<List<VolunteerProfileResponse>>> findBySkill(@PathVariable String skill) {
+        return ResponseEntity.ok(ApiResponse.success(volunteerService.findVolunteersBySkill(skill)));
     }
 
     @GetMapping("/search/location/{location}")
-    public ResponseEntity<List<VolunteerProfileResponse>> findByLocation(@PathVariable String location) {
-        return ResponseEntity.ok(volunteerService.findVolunteersByLocation(location));
+    public ResponseEntity<ApiResponse<List<VolunteerProfileResponse>>> findByLocation(@PathVariable String location) {
+        return ResponseEntity.ok(ApiResponse.success(volunteerService.findVolunteersByLocation(location)));
     }
 
     @PostMapping("/events/{eventId}/register")
