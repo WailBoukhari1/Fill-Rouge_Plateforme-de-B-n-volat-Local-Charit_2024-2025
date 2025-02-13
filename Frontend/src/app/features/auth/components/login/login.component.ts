@@ -13,6 +13,7 @@ import * as AuthActions from '../../../../store/auth/auth.actions';
 import { selectAuthError, selectAuthLoading } from '../../../../store/auth/auth.selectors';
 import { RouterLink } from '@angular/router';
 import { AuthState } from '../../../../core/models/auth.model';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -81,7 +82,8 @@ export class LoginComponent {
   }
 
   loginWithGoogle(): void {
-    this.store.dispatch(AuthActions.oAuthLogin({ provider: 'google', code: '' }));
+    const googleAuthUrl = `${environment.apiUrl.replace('/api', '')}/oauth2/authorization/google`;
+    window.location.href = googleAuthUrl;
   }
 
   navigateToRegister(): void {

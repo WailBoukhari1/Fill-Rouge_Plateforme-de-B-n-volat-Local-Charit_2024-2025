@@ -2,16 +2,19 @@ package com.backend.backend.controller;
 
 import com.backend.backend.dto.request.OrganizationRequest;
 import com.backend.backend.dto.response.ApiResponse;
-import com.backend.backend.dto.EventResponse;
+import com.backend.backend.dto.response.EventResponse;
 import com.backend.backend.dto.response.OrganizationResponse;
 import com.backend.backend.service.interfaces.OrganizationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/organizations")
@@ -21,7 +24,7 @@ public class OrganizationController {
     private final OrganizationService organizationService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ORGANIZATION')")
+    @PreAuthorize("hasRole('VOLUNTEER')")
     public ResponseEntity<ApiResponse<OrganizationResponse>> createOrganization(
             @Valid @RequestBody OrganizationRequest request,
             @RequestHeader("User-Id") String userId) {
@@ -33,14 +36,27 @@ public class OrganizationController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrganizationResponse>> getOrganization(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.success(organizationService.getOrganization(id)));
+        return ResponseEntity.ok(ApiResponse.success(
+            organizationService.getOrganization(id),
+            "Organization retrieved successfully"
+        ));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<OrganizationResponse>>> getAllOrganizations(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+            organizationService.getAllOrganizations(pageable),
+            "Organizations retrieved successfully"
+        ));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<OrganizationResponse>>> searchOrganizations(
-            @RequestParam String query) {
+    public ResponseEntity<ApiResponse<Page<OrganizationResponse>>> searchOrganizations(
+            @RequestParam String query,
+            Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
-            organizationService.searchOrganizations(query)
+            organizationService.searchOrganizations(query, pageable),
+            "Search results retrieved successfully"
         ));
     }
 
@@ -48,7 +64,20 @@ public class OrganizationController {
     public ResponseEntity<ApiResponse<List<EventResponse>>> getOrganizationEvents(
             @PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(
-            organizationService.getOrganizationEvents(id)
+            organizationService.getOrganizationEvents(id),
+            "Organization events retrieved successfully"
+        ));
+    }
+
+    @GetMapping("/{id}/stats")
+    @PreAuthorize("hasRole('ORGANIZATION') and @securityService.isOrganizationOwner(#id, principal)")
+    public ResponseEntity<ApiResponse<Object>> getOrganizationStats(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(
+            Map.of(
+                "activeVolunteers", organizationService.getActiveVolunteersCount(id),
+                "totalEvents", organizationService.getTotalEventsCount(id)
+            ),
+            "Organization statistics retrieved successfully"
         ));
     }
 
@@ -67,7 +96,10 @@ public class OrganizationController {
     @PreAuthorize("(hasRole('ORGANIZATION') and @securityService.isOrganizationOwner(#id, principal)) or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteOrganization(@PathVariable String id) {
         organizationService.deleteOrganization(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "Organization deleted successfully"));
+        return ResponseEntity.ok(ApiResponse.success(
+            null,
+            "Organization deleted successfully"
+        ));
     }
 
     @PatchMapping("/{id}/verify")
@@ -76,6 +108,14 @@ public class OrganizationController {
         return ResponseEntity.ok(ApiResponse.success(
             organizationService.verifyOrganization(id),
             "Organization verified successfully"
+        ));
+    }
+
+    @GetMapping("/{id}/verification-status")
+    public ResponseEntity<ApiResponse<Boolean>> isOrganizationVerified(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success(
+            organizationService.isOrganizationVerified(id),
+            "Organization verification status retrieved successfully"
         ));
     }
 } 

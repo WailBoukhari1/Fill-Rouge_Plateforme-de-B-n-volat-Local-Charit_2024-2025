@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { AuthService } from '../../core/services/auth.service';
 import * as AuthActions from './auth.actions';
-import { catchError, map, mergeMap, tap, exhaustMap } from 'rxjs/operators';
+import { catchError, map, mergeMap, tap, exhaustMap, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../core/services/notification.service';
@@ -165,16 +165,24 @@ export class AuthEffects {
         )
     );
 
-    oAuthSuccess$ = createEffect(
-        () =>
-            this.actions$.pipe(
-                ofType(AuthActions.oAuthSuccess),
-                tap(() => {
-                    this.router.navigate(['/']);
-                    this.notificationService.success('Logged in successfully with OAuth');
-                })
-            ),
-        { dispatch: false }
+    oAuthSuccess$ = createEffect(() =>
+        this.actions$.pipe(
+            ofType(AuthActions.oAuthSuccess),
+            tap(action => {
+                localStorage.setItem('auth_token', action.accessToken);
+                localStorage.setItem('auth_refresh_token', action.refreshToken);
+            }),
+            mergeMap(action => 
+                this.authService.getCurrentUser().pipe(
+                    map(user => AuthActions.loginSuccess({
+                        accessToken: action.accessToken,
+                        refreshToken: action.refreshToken,
+                        user: { ...user, emailVerified: true }
+                    })),
+                    catchError(error => of(AuthActions.loginFailure({ error: error.message })))
+                )
+            )
+        )
     );
 
     refreshToken$ = createEffect(() =>
@@ -202,6 +210,25 @@ export class AuthEffects {
                 })
             ),
         { dispatch: false }
+    );
+
+    googleAuthSuccess$ = createEffect(() =>
+        this.actions$.pipe(
+            ofType(AuthActions.googleAuthSuccess),
+            map(action => {
+                const authResponse: AuthResponse = {
+                    accessToken: action.token,
+                    refreshToken: action.token,
+                    user: {
+                        ...action.user,
+                        roles: action.user.roles || []
+                    }
+                };
+                
+                this.authService.storeAuthTokens(action.token, action.token);
+                return AuthActions.loginSuccess(authResponse);
+            })
+        )
     );
 
     private mapAuthResponse(response: AuthResponse): AuthResponse {

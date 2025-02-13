@@ -1,11 +1,13 @@
 package com.backend.backend.controller;
 
+import com.backend.backend.dto.response.ApiResponse;
 import com.backend.backend.service.impl.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,34 +20,50 @@ public class FileController {
     private final FileStorageService fileStorageService;
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
-        try {
-            String fileId = fileStorageService.storeFile(file);
-            return ResponseEntity.ok(fileId);
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().body("Failed to upload file: " + e.getMessage());
-        }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<String>> uploadFile(
+            @RequestParam("file") MultipartFile file) throws IOException {
+        String fileId = fileStorageService.storeFile(file);
+        return ResponseEntity.ok(ApiResponse.success(
+            fileId,
+            "File uploaded successfully"
+        ));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ByteArrayResource> downloadFile(@PathVariable String id) {
-        try {
-            byte[] data = fileStorageService.downloadFile(id);
-            ByteArrayResource resource = new ByteArrayResource(data);
-            
-            return ResponseEntity.ok()
-                .contentLength(data.length)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
-        } catch (IOException e) {
-            return ResponseEntity.notFound().build();
-        }
+        byte[] data = fileStorageService.downloadFile(id);
+        ByteArrayResource resource = new ByteArrayResource(data);
+        
+        String contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        String filename = "download"; // You might want to get the actual filename from metadata
+        
+        return ResponseEntity.ok()
+            .contentLength(data.length)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+            .contentType(MediaType.parseMediaType(contentType))
+            .body(resource);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFile(@PathVariable String id) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> deleteFile(@PathVariable String id) {
         fileStorageService.deleteFile(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(
+            null,
+            "File deleted successfully"
+        ));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<String>> updateFile(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        String newFileId = fileStorageService.updateFile(id, file);
+        return ResponseEntity.ok(ApiResponse.success(
+            newFileId,
+            "File updated successfully"
+        ));
     }
 } 

@@ -4,7 +4,7 @@ import { RegisterComponent } from './components/register/register.component';
 import { VerifyEmailComponent } from './components/verify-email/verify-email.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
-import { OAuthCallbackComponent } from './components/oauth-callback/oauth-callback.component';
+import { OAuth2CallbackComponent } from './components/oauth2-callback/oauth2-callback.component';
 import { noAuthGuard } from '../../core/guards/auth.guard';
 
 export const AUTH_ROUTES: Routes = [
@@ -33,8 +33,8 @@ export const AUTH_ROUTES: Routes = [
     canActivate: [noAuthGuard]
   },
   {
-    path: 'oauth2/callback/:provider',
-    component: OAuthCallbackComponent
+    path: 'oauth2/callback',
+    component: OAuth2CallbackComponent
   },
   {
     path: '',

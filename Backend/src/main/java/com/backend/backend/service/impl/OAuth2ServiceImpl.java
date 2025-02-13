@@ -1,7 +1,7 @@
 package com.backend.backend.service.impl;
 
-import com.backend.backend.domain.model.User;
-import com.backend.backend.domain.model.UserRole;
+import com.backend.backend.model.User;
+import com.backend.backend.model.UserRole;
 import com.backend.backend.repository.UserRepository;
 import com.backend.backend.security.oauth2.CustomOAuth2UserService;
 import com.backend.backend.service.interfaces.OAuth2Service;

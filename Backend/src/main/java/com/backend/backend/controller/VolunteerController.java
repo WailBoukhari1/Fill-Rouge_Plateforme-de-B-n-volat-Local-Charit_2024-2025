@@ -2,7 +2,7 @@ package com.backend.backend.controller;
 
 import com.backend.backend.dto.request.VolunteerProfileRequest;
 import com.backend.backend.dto.response.ApiResponse;
-import com.backend.backend.dto.EventResponse;
+import com.backend.backend.dto.response.EventResponse;
 import com.backend.backend.dto.response.VolunteerProfileResponse;
 import com.backend.backend.security.SecurityUtils;
 import com.backend.backend.service.interfaces.VolunteerService;

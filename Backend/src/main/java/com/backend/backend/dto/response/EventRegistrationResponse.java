@@ -1,9 +1,11 @@
 package com.backend.backend.dto.response;
 
-import com.backend.backend.domain.model.RegistrationStatus;
+import java.time.LocalDateTime;
+
+import com.backend.backend.model.RegistrationStatus;
+
 import lombok.Builder;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -12,5 +14,11 @@ public class EventRegistrationResponse {
     private String eventId;
     private String volunteerId;
     private LocalDateTime registrationDate;
+    private LocalDateTime lastUpdated;
     private RegistrationStatus status;
+    
+    // Additional fields for detailed response
+    private String eventTitle;
+    private String volunteerName;
+    private LocalDateTime eventDate;
 } 

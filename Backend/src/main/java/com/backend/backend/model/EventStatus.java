@@ -1,4 +1,4 @@
-package com.backend.backend.domain.model;
+package com.backend.backend.model;
 
 public enum EventStatus {
     UPCOMING,

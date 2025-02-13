@@ -1,7 +1,9 @@
 package com.backend.backend.repository;
 
-import com.backend.backend.domain.model.VerificationToken;
 import org.springframework.data.mongodb.repository.MongoRepository;
+
+import com.backend.backend.model.VerificationToken;
+
 import java.util.Optional;
 import java.time.LocalDateTime;
 

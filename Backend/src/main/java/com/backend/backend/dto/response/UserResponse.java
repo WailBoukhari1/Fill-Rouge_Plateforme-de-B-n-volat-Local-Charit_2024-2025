@@ -1,9 +1,10 @@
 package com.backend.backend.dto.response;
 
-import com.backend.backend.domain.model.UserRole;
 import lombok.Data;
 
 import java.util.List;
+
+import com.backend.backend.model.UserRole;
 
 @Data
 public class UserResponse {

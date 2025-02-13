@@ -2,11 +2,13 @@ package com.backend.backend.controller;
 
 import com.backend.backend.dto.request.LoginRequest;
 import com.backend.backend.dto.request.RegisterRequest;
+import com.backend.backend.dto.request.PasswordUpdateRequest;
 import com.backend.backend.dto.response.ApiResponse;
 import com.backend.backend.dto.response.AuthResponse;
 import com.backend.backend.service.interfaces.AuthService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -42,8 +44,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String token) {
-        // Check if token starts with "Bearer " and has content
         if (token != null && token.startsWith("Bearer ") && token.length() > 7) {
             authService.logout(token.substring(7));
             return ResponseEntity.ok(ApiResponse.success(null, "Logout successful"));
@@ -53,7 +55,7 @@ public class AuthController {
 
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
-            @RequestHeader("Refresh-Token") String refreshToken) {
+            @RequestHeader("Refresh-Token") @NotBlank String refreshToken) {
         return ResponseEntity.ok(ApiResponse.success(
             authService.refreshToken(refreshToken),
             "Token refreshed successfully"
@@ -61,50 +63,59 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam String email, @RequestParam String code) {
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(
+            @RequestParam @Email String email,
+            @RequestParam @NotBlank String code) {
         authService.verifyEmail(email, code);
         return ResponseEntity.ok(ApiResponse.success(null, "Email verified successfully"));
     }
 
-    @PostMapping("/resend-verification-email")
+    @PostMapping("/resend-verification")
     public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(
-            @RequestParam @jakarta.validation.constraints.Email String email) {
+            @RequestParam @Email String email) {
         authService.resendVerificationEmail(email);
         return ResponseEntity.ok(ApiResponse.success(null, "Verification email resent successfully"));
     }
 
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(
-            @RequestParam @jakarta.validation.constraints.Email String email) {
-        authService.forgotPassword(email);
+    @PostMapping("/password/reset-request")
+    public ResponseEntity<ApiResponse<Void>> initiatePasswordReset(
+            @RequestParam @Email String email) {
+        authService.initiatePasswordReset(email);
         return ResponseEntity.ok(ApiResponse.success(null, "Password reset email sent"));
     }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(
-            @RequestParam String email,
-            @RequestParam String code,
-            @RequestParam @Size(min = 8, max = 32) String newPassword) {
-        authService.resetPassword(email, code, newPassword);
+    @PostMapping("/password/reset")
+    public ResponseEntity<ApiResponse<Void>> completePasswordReset(
+            @RequestParam @Email String email,
+            @RequestParam @NotBlank String code,
+            @RequestParam @NotBlank String newPassword) {
+        authService.completePasswordReset(email, code, newPassword);
         return ResponseEntity.ok(ApiResponse.success(null, "Password reset successful"));
     }
 
-    @GetMapping("/oauth2/callback/{provider}")
-    public ResponseEntity<ApiResponse<AuthResponse>> oauth2Callback(
+    @PostMapping("/password/change")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal OAuth2User user,
+            @Valid @RequestBody PasswordUpdateRequest request) {
+        authService.changePassword(user.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Password changed successfully"));
+    }
+
+    @PostMapping("/oauth2/login/{provider}")
+    public ResponseEntity<ApiResponse<AuthResponse>> handleOAuth2Login(
             @PathVariable String provider,
-            @RequestParam String code,
-            @RequestParam(required = false) String state) {
-        
+            @RequestParam String code) {
         return ResponseEntity.ok(ApiResponse.success(
-            authService.handleOAuth2Callback(provider, code, state),
+            authService.handleOAuth2Login(provider, code),
             "OAuth2 login successful"
         ));
     }
 
-    @GetMapping("/oauth2/current-user")
+    @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<OAuth2User>> getCurrentUser(
             @AuthenticationPrincipal OAuth2User oauth2User) {
-        return ResponseEntity.ok(ApiResponse.success(oauth2User));
+        return ResponseEntity.ok(ApiResponse.success(oauth2User, "Current user retrieved successfully"));
     }
 } 

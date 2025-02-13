@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (StringUtils.hasText(jwt) && !tokenBlacklistService.isBlacklisted(jwt)) {
                 if (jwtTokenProvider.validateToken(jwt)) {
-                    String username = jwtTokenProvider.getUsernameFromJWT(jwt);
+                    String username = jwtTokenProvider.getEmailFromToken(jwt);
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     
                     UsernamePasswordAuthenticationToken authentication = 

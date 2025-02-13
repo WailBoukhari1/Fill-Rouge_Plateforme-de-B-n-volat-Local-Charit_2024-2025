@@ -1,7 +1,7 @@
 package com.backend.backend.service.impl;
 
-import com.backend.backend.domain.Event;
-import com.backend.backend.domain.model.EventRegistration;
+import com.backend.backend.model.Event;
+import com.backend.backend.model.EventRegistration;
 import com.backend.backend.repository.EventRegistrationRepository;
 import com.backend.backend.repository.EventRepository;
 import com.backend.backend.service.interfaces.EmailService;

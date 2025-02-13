@@ -1,8 +1,9 @@
 package com.backend.backend.mapper;
 
-import com.backend.backend.domain.model.User;
 import com.backend.backend.dto.request.RegisterRequest;
 import com.backend.backend.dto.response.UserResponse;
+import com.backend.backend.model.User;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;

@@ -125,4 +125,15 @@ export const resetPasswordFailure = createAction(
 // Session actions
 export const logout = createAction('[Auth] Logout');
 export const clearAuthError = createAction('[Auth] Clear Error');
-export const initializeAuth = createAction('[Auth] Initialize'); 
+export const initializeAuth = createAction('[Auth] Initialize');
+
+// Google Auth actions
+export const googleAuthSuccess = createAction(
+    '[Auth] Google Auth Success',
+    props<{ token: string; user: any }>()
+);
+
+export const googleAuthFailure = createAction(
+    '[Auth] Google Auth Failure',
+    props<{ error: any }>()
+);

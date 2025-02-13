@@ -1,4 +1,4 @@
-package com.backend.backend.domain.model;
+package com.backend.backend.model;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

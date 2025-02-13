@@ -1,20 +1,21 @@
 package com.backend.backend.security.jwt;
 
-import com.backend.backend.security.UserPrincipal;
-import com.backend.backend.domain.model.User;
+import com.backend.backend.model.User;
 import com.backend.backend.repository.UserRepository;
+import com.backend.backend.security.SecurityConstants;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 
+import java.security.Key;
 import java.util.Date;
 import java.util.List;
-import java.security.Key;
-import io.jsonwebtoken.security.Keys;
 
 @Service
 @RequiredArgsConstructor
@@ -26,87 +27,38 @@ public class JwtTokenProvider {
     @Value("${spring.security.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${spring.security.jwt.expiration}")
-    private int jwtExpirationInMs;
+    private Key signingKey;
 
-    @Value("${spring.security.jwt.refresh-token.expiration}")
-    private long refreshExpiration;
+    private Key getSigningKey() {
+        if (signingKey == null) {
+            byte[] keyBytes = jwtSecret.getBytes();
+            signingKey = Keys.hmacShaKeyFor(keyBytes);
+        }
+        return signingKey;
+    }
 
     public String generateToken(Authentication authentication) {
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-
-        return Jwts.builder()
-                .setSubject(userPrincipal.getUsername())
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .claim("roles", userPrincipal.getAuthorities().iterator().next().getAuthority())
-                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS512)
-                .compact();
-    }
-
-    public String getUsernameFromJWT(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        return claims.getSubject();
-    }
-
-    public boolean validateToken(String authToken) {
-        try {
-            Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
-                .build()
-                .parseClaimsJws(authToken);
-            return true;
-        } catch (io.jsonwebtoken.security.SignatureException ex) {
-            logger.error("Invalid JWT signature");
-            return false;
-        } catch (MalformedJwtException ex) {
-            logger.error("Invalid JWT token");
-            return false;
-        } catch (ExpiredJwtException ex) {
-            logger.error("Expired JWT token");
-            return false;
-        } catch (UnsupportedJwtException ex) {
-            logger.error("Unsupported JWT token");
-            return false;
-        } catch (IllegalArgumentException ex) {
-            logger.error("JWT claims string is empty");
-            return false;
+        String email;
+        if (authentication.getPrincipal() instanceof User) {
+            email = ((User) authentication.getPrincipal()).getEmail();
+        } else if (authentication.getPrincipal() instanceof OAuth2User) {
+            email = ((OAuth2User) authentication.getPrincipal()).getAttribute("email");
+        } else {
+            throw new IllegalArgumentException("Unsupported principal type");
         }
-    }
-
-    public String generateToken(String email) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS512)
-                .compact();
+        
+        return buildToken(email, SecurityConstants.ACCESS_TOKEN_VALIDITY);
     }
 
     public String generateAccessToken(String email) {
-        return buildToken(email, jwtExpirationInMs);
+        return buildToken(email, SecurityConstants.ACCESS_TOKEN_VALIDITY);
     }
 
     public String generateRefreshToken(String email) {
-        return buildToken(email, refreshExpiration);
+        return buildToken(email, SecurityConstants.REFRESH_TOKEN_VALIDITY);
     }
 
     private String buildToken(String email, long expiration) {
-        byte[] keyBytes = jwtSecret.getBytes();
-        Key key = Keys.hmacShaKeyFor(keyBytes);
-        
-        // Get user role from repository
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -115,7 +67,35 @@ public class JwtTokenProvider {
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .claim("roles", List.of(user.getRole().name()))
-                .signWith(key, SignatureAlgorithm.HS512)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
+    }
+
+    public String getEmailFromToken(String token) {
+        return getClaims(token).getSubject();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            getClaims(token);
+            return true;
+        } catch (SecurityException | MalformedJwtException e) {
+            logger.error("Invalid JWT signature", e);
+        } catch (ExpiredJwtException e) {
+            logger.error("Expired JWT token", e);
+        } catch (UnsupportedJwtException e) {
+            logger.error("Unsupported JWT token", e);
+        } catch (IllegalArgumentException e) {
+            logger.error("JWT claims string is empty", e);
+        }
+        return false;
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 } 

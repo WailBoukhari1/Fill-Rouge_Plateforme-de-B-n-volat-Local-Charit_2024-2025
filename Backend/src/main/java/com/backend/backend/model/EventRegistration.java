@@ -1,4 +1,4 @@
-package com.backend.backend.domain.model;
+package com.backend.backend.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,6 +25,10 @@ public class EventRegistration {
     @NotNull(message = "Registration date is required")
     @PastOrPresent(message = "Registration date cannot be in the future")
     private LocalDateTime registrationDate;
+
+    @NotNull(message = "Last updated date is required")
+    @PastOrPresent(message = "Last updated date cannot be in the future")
+    private LocalDateTime lastUpdated;
 
     @NotNull(message = "Registration status is required")
     private RegistrationStatus status;

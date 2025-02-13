@@ -1,15 +1,15 @@
 package com.backend.backend.service.impl;
 
-import com.backend.backend.domain.model.EventRegistration;
-import com.backend.backend.domain.model.User;
-import com.backend.backend.domain.model.Volunteer;
 import com.backend.backend.dto.request.VolunteerProfileRequest;
-import com.backend.backend.dto.EventResponse;
+import com.backend.backend.dto.response.EventResponse;
 import com.backend.backend.dto.response.VolunteerProfileResponse;
 import com.backend.backend.exception.ResourceNotFoundException;
 import com.backend.backend.exception.ValidationException;
 import com.backend.backend.mapper.EventMapper;
 import com.backend.backend.mapper.VolunteerMapper;
+import com.backend.backend.model.EventRegistration;
+import com.backend.backend.model.User;
+import com.backend.backend.model.Volunteer;
 import com.backend.backend.repository.*;
 import com.backend.backend.service.interfaces.VolunteerService;
 import lombok.RequiredArgsConstructor;

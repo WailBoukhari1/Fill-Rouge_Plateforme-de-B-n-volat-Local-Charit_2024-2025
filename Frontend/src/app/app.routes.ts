@@ -4,6 +4,7 @@ import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-l
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { HomeComponent } from './pages/home/home.component';
+import { OAuthCallbackComponent } from './features/auth/components/oauth-callback/oauth-callback.component';
 
 export const routes: Routes = [
   {
@@ -65,6 +66,10 @@ export const routes: Routes = [
 
       }
     ]
+  },
+  {
+    path: 'oauth2/callback/google',
+    component: OAuthCallbackComponent
   },
   {
     path: '**',

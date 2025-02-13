@@ -1,6 +1,7 @@
 package com.backend.backend.dto.request;
 
-import com.backend.backend.domain.model.UserRole;
+import com.backend.backend.model.UserRole;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

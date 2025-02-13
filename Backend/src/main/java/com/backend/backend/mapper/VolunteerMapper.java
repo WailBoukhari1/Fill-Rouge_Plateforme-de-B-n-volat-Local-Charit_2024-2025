@@ -1,8 +1,9 @@
 package com.backend.backend.mapper;
 
-import com.backend.backend.domain.model.Volunteer;
 import com.backend.backend.dto.request.VolunteerProfileRequest;
 import com.backend.backend.dto.response.VolunteerProfileResponse;
+import com.backend.backend.model.Volunteer;
+
 import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)

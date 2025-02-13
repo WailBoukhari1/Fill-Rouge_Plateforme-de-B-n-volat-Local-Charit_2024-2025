@@ -1,9 +1,11 @@
 package com.backend.backend.dto.response;
 
-import com.backend.backend.domain.model.UserRole;
+import java.util.List;
+
+import com.backend.backend.model.UserRole;
+
 import lombok.Builder;
 import lombok.Data;
-import java.util.List;
 
 @Data
 @Builder

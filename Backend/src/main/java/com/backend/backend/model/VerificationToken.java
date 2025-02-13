@@ -1,4 +1,4 @@
-package com.backend.backend.domain.model;
+package com.backend.backend.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;

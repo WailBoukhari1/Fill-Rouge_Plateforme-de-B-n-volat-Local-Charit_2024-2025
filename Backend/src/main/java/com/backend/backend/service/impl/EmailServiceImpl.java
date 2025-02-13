@@ -1,80 +1,157 @@
 package com.backend.backend.service.impl;
 
+import com.backend.backend.exception.CustomException;
 import com.backend.backend.service.interfaces.EmailService;
 import com.backend.backend.util.EmailTemplates;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
     
     private final JavaMailSender mailSender;
     private final EmailTemplates emailTemplates;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a");
+
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
+    @Value("${app.email.enabled:true}")
+    private boolean emailEnabled;
 
     @Override
     @Async
-    public void sendVerificationEmail(String to, String token) {
-        sendHtmlEmail(to, "Verify Your Email", emailTemplates.buildVerificationEmail(token));
-    }
-
-    @Override
-    @Async
-    public void sendPasswordResetEmail(String to, String token) {
-        sendHtmlEmail(to, "Reset Your Password", emailTemplates.buildPasswordResetEmail(token));
-    }
-
-    @Override
-    @Async
-    public void sendEventConfirmation(String to, String eventTitle, String eventDate) {
-        sendSimpleEmail(to, "Event Registration Confirmation", 
-            String.format("You have successfully registered for %s on %s", eventTitle, eventDate));
+    public CompletableFuture<Void> sendVerificationEmail(String to, String token) {
+        String subject = "Verify Your Email Address";
+        String content = emailTemplates.buildVerificationEmail(token);
+        return sendHtmlEmail(to, subject, content);
     }
 
     @Override
     @Async
-    public void sendEventReminder(String to, String eventTitle, String eventDate) {
-        sendSimpleEmail(to, "Event Reminder", 
-            String.format("Reminder: %s is scheduled for %s", eventTitle, eventDate));
+    public CompletableFuture<Void> sendPasswordResetEmail(String to, String token) {
+        String subject = "Reset Your Password";
+        String content = emailTemplates.buildPasswordResetEmail(token);
+        return sendHtmlEmail(to, subject, content);
     }
 
     @Override
     @Async
-    public void sendEventCancellation(String to, String eventTitle) {
-        sendSimpleEmail(to, "Event Cancellation", 
-            String.format("The event %s has been cancelled", eventTitle));
+    public CompletableFuture<Void> sendEventConfirmation(String to, String eventTitle, String eventDate) {
+        String subject = "Event Registration Confirmation";
+        String content = emailTemplates.buildEventConfirmationEmail(eventTitle, eventDate);
+        return sendHtmlEmail(to, subject, content);
     }
 
     @Override
     @Async
-    public void sendEmail(String to, String subject, String content) {
-        sendSimpleEmail(to, subject, content);
+    public CompletableFuture<Void> sendEventReminder(String to, String eventTitle, String eventDate) {
+        String subject = "Upcoming Event Reminder";
+        String content = emailTemplates.buildEventReminderEmail(eventTitle, eventDate);
+        return sendHtmlEmail(to, subject, content);
     }
 
-    private void sendHtmlEmail(String to, String subject, String htmlContent) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send email", e);
-        }
+    @Override
+    @Async
+    public CompletableFuture<Void> sendEventCancellation(String to, String eventTitle) {
+        String subject = "Event Cancellation Notice";
+        String content = emailTemplates.buildEventCancellationEmail(eventTitle);
+        return sendHtmlEmail(to, subject, content);
     }
 
-    private void sendSimpleEmail(String to, String subject, String content) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(content);
-        mailSender.send(message);
+    @Override
+    @Async
+    public CompletableFuture<Void> sendEventUpdate(String to, String eventTitle, Map<String, String> changes) {
+        String subject = "Event Update Notification";
+        String content = emailTemplates.buildEventUpdateEmail(eventTitle, changes);
+        return sendHtmlEmail(to, subject, content);
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<Void> sendVolunteershipApproval(String to, String organizationName) {
+        String subject = "Volunteership Application Approved";
+        String content = emailTemplates.buildVolunteershipApprovalEmail(organizationName);
+        return sendHtmlEmail(to, subject, content);
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<Void> sendVolunteershipRejection(String to, String organizationName, String reason) {
+        String subject = "Volunteership Application Status";
+        String content = emailTemplates.buildVolunteershipRejectionEmail(organizationName, reason);
+        return sendHtmlEmail(to, subject, content);
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<Void> sendEmail(String to, String subject, String content) {
+        return sendSimpleEmail(to, subject, content);
+    }
+
+    private CompletableFuture<Void> sendHtmlEmail(String to, String subject, String htmlContent) {
+        return CompletableFuture.runAsync(() -> {
+            if (!emailEnabled) {
+                log.info("Email sending is disabled. Would have sent email to: {} with subject: {}", to, subject);
+                return;
+            }
+
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                helper.setFrom(fromEmail);
+                helper.setTo(to);
+                helper.setSubject(subject);
+                helper.setText(htmlContent, true);
+                mailSender.send(message);
+                log.info("Successfully sent HTML email to: {} with subject: {}", to, subject);
+            } catch (MessagingException | MailException e) {
+                log.error("Failed to send HTML email to: {} with subject: {}", to, subject, e);
+                throw new CustomException("Failed to send email: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        });
+    }
+
+    private CompletableFuture<Void> sendSimpleEmail(String to, String subject, String content) {
+        return CompletableFuture.runAsync(() -> {
+            if (!emailEnabled) {
+                log.info("Email sending is disabled. Would have sent email to: {} with subject: {}", to, subject);
+                return;
+            }
+
+            try {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom(fromEmail);
+                message.setTo(to);
+                message.setSubject(subject);
+                message.setText(content);
+                mailSender.send(message);
+                log.info("Successfully sent simple email to: {} with subject: {}", to, subject);
+            } catch (MailException e) {
+                log.error("Failed to send simple email to: {} with subject: {}", to, subject, e);
+                throw new CustomException("Failed to send email: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        });
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        return dateTime.format(DATE_FORMATTER);
     }
 } 

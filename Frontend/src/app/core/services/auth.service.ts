@@ -437,4 +437,25 @@ export class AuthService {
       user 
     };
   }
+
+  handleGoogleCallback(code: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/auth/oauth2/callback/google?code=${code}`);
+  }
+
+  // Method to check if the current URL is a Google OAuth callback
+  isGoogleCallback(url: string): boolean {
+    return url.includes('oauth2/callback/google') && url.includes('code=');
+  }
+
+  // Extract code from URL
+  extractCodeFromUrl(url: string): string | null {
+    const params = new URLSearchParams(url.split('?')[1]);
+    return params.get('code');
+  }
+
+  public storeAuthTokens(token: string, refreshToken: string, expiresIn: number = 3600): void {
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_refresh_token', refreshToken);
+    localStorage.setItem('auth_token_expiry', (Date.now() + expiresIn * 1000).toString());
+  }
 } 

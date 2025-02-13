@@ -1,7 +1,7 @@
 package com.backend.backend.service.interfaces;
 
-import com.backend.backend.dto.EventResponse;
 import com.backend.backend.dto.request.VolunteerProfileRequest;
+import com.backend.backend.dto.response.EventResponse;
 import com.backend.backend.dto.response.VolunteerProfileResponse;
 import java.util.List;
 
