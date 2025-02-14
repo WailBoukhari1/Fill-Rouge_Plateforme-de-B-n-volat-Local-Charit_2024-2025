@@ -15,6 +15,8 @@ import { selectAuthError, selectAuthLoading } from '../../../../store/auth/auth.
 import { RouterLink } from '@angular/router';
 import { AuthState } from '../../../../core/models/auth.model';
 import { Subject, takeUntil } from 'rxjs';
+import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-register',
@@ -81,7 +83,9 @@ export class RegisterComponent implements OnDestroy {
   constructor(
     private fb: FormBuilder,
     private store: Store<{ auth: AuthState }>,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {
     this.initForm();
   }
@@ -171,72 +175,49 @@ export class RegisterComponent implements OnDestroy {
   }
 
   onSubmit(): void {
-    // Mark all fields as touched to trigger validation
-    Object.keys(this.registerForm.controls).forEach(key => {
-      const control = this.registerForm.get(key);
-      if (control) {
-        control.markAsTouched();
-      }
-    });
-
     if (this.registerForm.valid) {
       const formValue = this.registerForm.value;
-      
-      // Properly format and validate the values
-      const firstName = (formValue.firstName || '').trim();
-      const lastName = (formValue.lastName || '').trim();
-      const email = (formValue.email || '').trim().toLowerCase();
-      
-      // Validate required fields
-      if (!firstName || !lastName) {
-        if (!firstName) {
-          this.registerForm.get('firstName')?.setErrors({ required: true });
-        }
-        if (!lastName) {
-          this.registerForm.get('lastName')?.setErrors({ required: true });
-        }
-        return;
-      }
-
-      // Validate minimum length
-      if (firstName.length < 2 || lastName.length < 2) {
-        if (firstName.length < 2) {
-          this.registerForm.get('firstName')?.setErrors({ minlength: true });
-        }
-        if (lastName.length < 2) {
-          this.registerForm.get('lastName')?.setErrors({ minlength: true });
-        }
-        return;
-      }
-
       const credentials = {
-        firstName: this.capitalizeFirstLetter(firstName),
-        lastName: this.capitalizeFirstLetter(lastName),
-        email,
+        firstName: formValue.firstName?.trim(),
+        lastName: formValue.lastName?.trim(),
+        email: formValue.email?.trim(),
         password: formValue.password,
         role: formValue.role
       };
 
-      // Log the actual data being sent (for debugging)
-      console.log('Sending registration data:', {
-        ...credentials,
-        password: '[REDACTED]'
-      });
-
       this.store.dispatch(AuthActions.register({ credentials }));
-    } else {
-      console.log('Form is invalid:', {
-        formErrors: this.registerForm.errors,
-        firstNameErrors: this.registerForm.get('firstName')?.errors,
-        lastNameErrors: this.registerForm.get('lastName')?.errors,
-        formValue: this.registerForm.value
+
+      // Subscribe to error state to handle specific error cases
+      this.error$.pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(error => {
+        if (error?.includes('User is disabled')) {
+          this.router.navigate(['/auth/verify-email'], { 
+            queryParams: { 
+              email: credentials.email,
+              isDisabled: true 
+            }
+          });
+        }
       });
     }
   }
 
-  private capitalizeFirstLetter(str: string): string {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  resendVerificationEmail(email: string): void {
+    this.authService.resendVerificationEmail(email).subscribe({
+      next: () => {
+        // Show success message
+        this.snackBar.open('Verification email sent successfully', 'Close', {
+          duration: 5000
+        });
+      },
+      error: (err) => {
+        // Show error message
+        this.snackBar.open(err.error?.message || 'Failed to send verification email', 'Close', {
+          duration: 5000
+        });
+      }
+    });
   }
 
   loginWithGoogle(): void {

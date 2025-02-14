@@ -229,37 +229,52 @@ export class AuthService {
   // Auth API Methods
   login(credentials: LoginCredentials): Observable<AuthResponse> {
     return this.http.post<AuthServerResponse>(`${this.apiUrl}/login`, credentials).pipe(
-      tap(response => console.log('Raw server response:', response)),
-      map(response => this.mapServerResponse(response)),
+      map(response => {
+        if (!response.success) {
+          if (response.message?.includes('Email not verified')) {
+            this.router.navigate(['/auth/verify-email'], { 
+              queryParams: { email: credentials.email }
+            });
+          }
+          throw new Error(response.message);
+        }
+        return this.mapServerResponse(response);
+      }),
       tap(response => {
-        this.setToken({
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          expiresIn: 3600
-        });
-        this.userSubject.next(response.user);
-        this.isAuthenticatedSubject.next(true);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        if (response.accessToken) {
+          this.setToken({
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            expiresIn: 3600
+          });
+          this.userSubject.next(response.user);
+          this.isAuthenticatedSubject.next(true);
+          localStorage.setItem('user', JSON.stringify(response.user));
+        }
       }),
       catchError(error => {
         console.error('Login error:', error);
+        if (error.error?.message?.includes('Email not verified')) {
+          this.router.navigate(['/auth/verify-email'], { 
+            queryParams: { email: credentials.email }
+          });
+        }
         return throwError(() => this.handleError(error));
       })
     );
   }
 
-  register(credentials: RegisterCredentials): Observable<AuthResponse> {
-    return this.http.post<AuthServerResponse>(`${this.apiUrl}/register`, credentials).pipe(
-      map(response => this.mapServerResponse(response)),
-      tap(response => {
-        this.setToken({
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          expiresIn: 3600
+  register(userData: RegisterCredentials): Observable<any> {
+    return this.http.post<AuthServerResponse>(`${this.apiUrl}/register`, userData).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        // After successful registration, redirect to verify-email page
+        this.router.navigate(['/auth/verify-email'], { 
+          queryParams: { email: userData.email }
         });
-        this.userSubject.next(response.user);
-        this.isAuthenticatedSubject.next(true);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        return response;
       }),
       catchError(error => {
         console.error('Registration error:', error);
@@ -457,5 +472,39 @@ export class AuthService {
     localStorage.setItem('auth_token', token);
     localStorage.setItem('auth_refresh_token', refreshToken);
     localStorage.setItem('auth_token_expiry', (Date.now() + expiresIn * 1000).toString());
+  }
+
+  resendVerificationEmail(email: string): Observable<any> {
+    return this.http.post<AuthServerResponse>(`${this.apiUrl}/resend-verification?email=${encodeURIComponent(email)}`, {}).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response;
+      }),
+      catchError(error => {
+        if (error.error?.message) {
+          return throwError(() => error.error.message);
+        }
+        return throwError(() => 'Failed to resend verification email');
+      })
+    );
+  }
+
+  verifyEmailWithCode(email: string, code: string): Observable<any> {
+    return this.http.post<AuthServerResponse>(`${this.apiUrl}/verify-email`, { email, code }).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response;
+      }),
+      catchError(error => {
+        if (error.error?.message) {
+          return throwError(() => error.error.message);
+        }
+        return throwError(() => 'Failed to verify email');
+      })
+    );
   }
 } 

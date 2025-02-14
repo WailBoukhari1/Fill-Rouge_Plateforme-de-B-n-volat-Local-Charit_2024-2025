@@ -45,41 +45,92 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        // Check if user already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new CustomException("Email already registered", HttpStatus.BAD_REQUEST);
         }
 
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
+        // Create new user
+        User user = User.builder()
+            .email(request.getEmail())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .firstName(request.getFirstName())
+            .lastName(request.getLastName())
+            .role(request.getRole())
+            .enabled(true)
+            .emailVerified(false)
+            .build();
 
-        User savedUser = userRepository.save(user);
-        
-        String accessToken = jwtTokenProvider.generateAccessToken(savedUser.getEmail());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.getEmail());
+        // Save user
+        user = userRepository.save(user);
 
-        return buildAuthResponse(savedUser, accessToken, refreshToken);
+        // Generate verification code
+        String verificationCode = generateVerificationCode();
+        user.setVerificationCode(verificationCode);
+        user.setVerificationCodeExpiryDate(LocalDateTime.now().plusHours(24));
+        userRepository.save(user);
+
+        // Send verification email
+        emailService.sendVerificationEmail(user.getEmail(), verificationCode);
+
+        // Return response without tokens since user needs to verify email first
+        return AuthResponse.builder()
+            .success(true)
+            .message("Registration successful. Please check your email to verify your account.")
+            .user(AuthResponse.UserDetails.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .roles(List.of(user.getRole()))
+                .emailVerified(false)
+                .build())
+            .build();
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
         try {
+            // First check if user exists and get their status
+            User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+            // Check email verification before attempting authentication
+            if (!user.isEmailVerified()) {
+                throw new CustomException("Email not verified. Please verify your email to activate your account.", HttpStatus.FORBIDDEN);
+            }
+
+            // Check if user is enabled
+            if (!user.isEnabled()) {
+                throw new CustomException("Account is disabled. Please contact support.", HttpStatus.FORBIDDEN);
+            }
+
+            // Attempt authentication
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
 
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+            // Generate tokens
+            String accessToken = jwtTokenProvider.generateToken(authentication);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(request.getEmail());
 
-            String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail());
-            String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
-
-            return buildAuthResponse(user, accessToken, refreshToken);
+            return AuthResponse.builder()
+                .success(true)
+                .message("Login successful")
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .user(AuthResponse.UserDetails.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .roles(List.of(user.getRole()))
+                    .emailVerified(user.isEmailVerified())
+                    .profilePicture(user.getProfilePicture())
+                    .build())
+                .build();
         } catch (BadCredentialsException e) {
-            throw new CustomException("Invalid email/password", HttpStatus.UNAUTHORIZED);
+            throw new CustomException("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
     }
 

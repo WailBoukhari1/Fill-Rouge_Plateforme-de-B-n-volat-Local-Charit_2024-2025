@@ -39,8 +39,10 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async
     public CompletableFuture<Void> sendVerificationEmail(String to, String token) {
+        log.info("Starting to send verification email to: {}", to);
         String subject = "Verify Your Email Address";
         String content = emailTemplates.buildVerificationEmail(token);
+        log.debug("Verification code: {}", token);
         return sendHtmlEmail(to, subject, content);
     }
 
@@ -114,16 +116,21 @@ public class EmailServiceImpl implements EmailService {
             }
 
             try {
+                log.debug("Creating MimeMessage...");
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                
+                log.debug("Setting email parameters - From: {}, To: {}", fromEmail, to);
                 helper.setFrom(fromEmail);
                 helper.setTo(to);
                 helper.setSubject(subject);
                 helper.setText(htmlContent, true);
+                
+                log.info("Attempting to send email...");
                 mailSender.send(message);
                 log.info("Successfully sent HTML email to: {} with subject: {}", to, subject);
             } catch (MessagingException | MailException e) {
-                log.error("Failed to send HTML email to: {} with subject: {}", to, subject, e);
+                log.error("Failed to send HTML email to: {} with subject: {}. Error: {}", to, subject, e.getMessage(), e);
                 throw new CustomException("Failed to send email: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         });
