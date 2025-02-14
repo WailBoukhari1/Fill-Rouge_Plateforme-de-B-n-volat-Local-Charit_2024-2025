@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.backend.backend.security.handler.CustomAccessDeniedHandler;
 import com.backend.backend.security.jwt.JwtAuthenticationEntryPoint;
@@ -25,10 +26,15 @@ import com.backend.backend.security.oauth2.OAuth2LoginSuccessHandler;
 import com.backend.backend.security.service.CustomUserDetailsService;
 
 import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity(
+    prePostEnabled = true,
+    securedEnabled = true,
+    jsr250Enabled = true
+)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -39,6 +45,18 @@ public class SecurityConfig {
     private final PasswordEncoder passwordEncoder;
     private final CustomOAuth2UserService oauth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+
+    @Value("${security.cors.allowed-origins}")
+    private String[] allowedOrigins;
+
+    @Value("${security.cors.allowed-methods}")
+    private String allowedMethods;
+
+    @Value("${security.cors.allowed-headers}")
+    private String allowedHeaders;
+
+    @Value("${security.cors.allow-credentials}")
+    private boolean allowCredentials;
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -64,15 +82,14 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Documentation and error endpoints
                 .requestMatchers(
-                    "/api/auth/**",
-                    "/oauth2/**",
-                    "/login/**",
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**"
+                    "/api/swagger-ui/**",
+                    "/api/v3/api-docs/**",
+                    "/api/error"
                 ).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/events/**", "/api/organizations/**").permitAll()
-                .anyRequest().authenticated()
+                // Let method security handle authorization
+                .anyRequest().permitAll()
             )
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo
@@ -87,10 +104,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:4200");
-        configuration.addAllowedMethod("*");
-        configuration.addAllowedHeader("*");
-        configuration.setAllowCredentials(true);
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
+        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+        configuration.setAllowCredentials(allowCredentials);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

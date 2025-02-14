@@ -1,40 +1,45 @@
-<div class="w-64 h-full">
-  <div class="p-4">
-    <a routerLink="/" class="flex items-center gap-2">
+<div class="w-64 h-full bg-white shadow-lg">
+  <div class="p-4 border-b">
+    <a routerLink="/dashboard" class="flex items-center gap-2 text-primary">
       <mat-icon>volunteer_activism</mat-icon>
       <span class="text-lg font-semibold">VolunteerHub</span>
     </a>
   </div>
 
-  <mat-nav-list>
+  <mat-nav-list class="py-2">
     <ng-container *ngIf="navigationItems$ | async as items">
       <ng-container *ngFor="let item of items">
         <!-- Parent menu item with children -->
         <ng-container *ngIf="item.children; else singleItem">
           <div class="nav-group">
-            <div class="nav-group-header px-4 py-2 flex items-center gap-2">
-              <mat-icon>{{item.icon}}</mat-icon>
-              <span>{{item.label}}</span>
+            <div class="nav-group-header px-4 py-2 flex items-center gap-2 text-gray-700">
+              <mat-icon class="text-gray-500">{{item.icon}}</mat-icon>
+              <span class="font-medium">{{item.label}}</span>
             </div>
             <a *ngFor="let child of item.children"
                mat-list-item 
-               [routerLink]="child.route"
+               [routerLink]="[child.route]"
                routerLinkActive="active"
-               class="pl-8">
-              <mat-icon matListItemIcon>{{child.icon}}</mat-icon>
+               [routerLinkActiveOptions]="{exact: true}"
+               class="pl-8 hover:bg-gray-50">
+              <mat-icon matListItemIcon class="text-gray-400">{{child.icon}}</mat-icon>
               <span matListItemTitle>{{child.label}}</span>
             </a>
           </div>
+          <mat-divider></mat-divider>
         </ng-container>
         
         <!-- Single menu item -->
         <ng-template #singleItem>
           <a mat-list-item 
-             [routerLink]="item.route"
-             routerLinkActive="active">
-            <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
+             [routerLink]="[item.route]"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="{exact: true}"
+             class="hover:bg-gray-50">
+            <mat-icon matListItemIcon class="text-gray-400">{{item.icon}}</mat-icon>
             <span matListItemTitle>{{item.label}}</span>
           </a>
+          <mat-divider></mat-divider>
         </ng-template>
       </ng-container>
     </ng-container>
@@ -43,16 +48,34 @@
 
 <style>
 .nav-group-header {
-  color: var(--mdc-text-button-label-text-color, rgba(0, 0, 0, 0.87));
-  font-weight: 500;
+  font-size: 0.875rem;
+  opacity: 0.9;
 }
 
 .nav-group {
-  margin: 8px 0;
+  margin: 4px 0;
 }
 
 .active {
-  background-color: rgba(0, 0, 0, 0.04);
-  color: var(--mdc-theme-primary);
+  background-color: rgba(var(--primary-rgb), 0.05) !important;
+  color: var(--primary-color);
+  border-right: 3px solid var(--primary-color);
+}
+
+.active mat-icon {
+  color: var(--primary-color) !important;
+}
+
+mat-nav-list {
+  padding: 0 !important;
+}
+
+mat-nav-list a {
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.mat-divider {
+  margin: 4px 0 !important;
 }
 </style>

@@ -30,11 +30,11 @@
 
         <ng-container *ngIf="isVolunteer$ | async">
           <button 
-            *ngIf="!event.isRegistered" 
+            *ngIf="event.status !== EventStatus.UPCOMING || 
+                     event.isRegistered || 
+                     event.registeredParticipants.length >= event.maxParticipants" 
             mat-raised-button 
             color="primary"
-            [disabled]="event.status !== EventStatus.PUBLISHED || 
-                       event.registeredParticipants.length >= event.maxParticipants"
             (click)="onRegister(event.id)">
             Register
           </button>
@@ -51,14 +51,10 @@
     </div>
 
     <!-- Status Badge -->
-    <div *ngIf="event.status !== EventStatus.PUBLISHED" 
-         class="inline-block mb-6 px-4 py-2 rounded-full text-sm"
-         [ngClass]="{
-           'bg-yellow-100 text-yellow-800': event.status === EventStatus.DRAFT,
-           'bg-red-100 text-red-800': event.status === EventStatus.CANCELLED,
-           'bg-green-100 text-green-800': event.status === EventStatus.COMPLETED
-         }">
-      {{ event.status }}
+    <div *ngIf="event.status !== EventStatus.UPCOMING"
+         class="text-yellow-600 mt-4">
+      <mat-icon>warning</mat-icon>
+      <span>Registration is not available for this event.</span>
     </div>
 
     <!-- Event Details -->

@@ -1,44 +1,68 @@
-<mat-toolbar>
-  <div class="flex items-center justify-between w-full">
+<mat-toolbar class="bg-white border-b">
+  <!-- Left side -->
+  <div class="flex items-center">
     <button mat-icon-button (click)="onToggleSidebar()">
       <mat-icon>menu</mat-icon>
     </button>
+    <button mat-icon-button (click)="goToHome()" class="ml-2" matTooltip="Go to Home">
+      <mat-icon>home</mat-icon>
+    </button>
+  </div>
 
-    <div class="flex-1 px-4">
-      <h1>Dashboard</h1>
-    </div>
+  <!-- Spacer -->
+  <span class="flex-1"></span>
 
-    <div class="flex items-center">
-      <button mat-icon-button [matMenuTriggerFor]="notificationMenu">
-        <mat-icon>notifications</mat-icon>
-      </button>
-      
-      <button mat-icon-button [matMenuTriggerFor]="profileMenu">
+  <!-- Right side -->
+  <div class="flex items-center gap-4">
+    <!-- Notifications -->
+    <button mat-icon-button [matMenuTriggerFor]="notificationsMenu" class="relative">
+      <mat-icon>notifications</mat-icon>
+      <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+    </button>
+
+    <!-- User menu -->
+    <ng-container *ngIf="currentUser$ | async as user">
+      <button mat-button [matMenuTriggerFor]="userMenu" class="flex items-center gap-2">
         <mat-icon>account_circle</mat-icon>
+        <span class="hidden md:inline">{{ user.email }}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
       </button>
-
-      <mat-menu #notificationMenu="matMenu">
-        <div class="p-4">
-          <h3>Notifications</h3>
-          <div>No new notifications</div>
-        </div>
-      </mat-menu>
-
-      <mat-menu #profileMenu="matMenu">
-        <a mat-menu-item routerLink="/dashboard/profile">
-          <mat-icon>person</mat-icon>
-          <span>Profile</span>
-        </a>
-        <a mat-menu-item routerLink="/dashboard/settings">
-          <mat-icon>settings</mat-icon>
-          <span>Settings</span>
-        </a>
-        <mat-divider></mat-divider>
-        <button mat-menu-item (click)="logout()">
-          <mat-icon>exit_to_app</mat-icon>
-          <span>Logout</span>
-        </button>
-      </mat-menu>
-    </div>
+    </ng-container>
   </div>
 </mat-toolbar>
+
+<!-- Notifications Menu -->
+<mat-menu #notificationsMenu="matMenu" class="w-80">
+  <div class="p-4">
+    <h3 class="text-lg font-semibold mb-2">Notifications</h3>
+    <div class="text-gray-500 text-sm">No new notifications</div>
+  </div>
+</mat-menu>
+
+<!-- User Menu -->
+<mat-menu #userMenu="matMenu">
+  <ng-container *ngIf="currentUser$ | async as user">
+    <div class="px-4 py-2">
+      <div class="font-medium">{{ user.email }}</div>
+      <div class="text-sm text-gray-500">
+        <ng-container *ngFor="let role of user.roles">
+          <span class="capitalize">{{ role.toLowerCase() }}</span>
+        </ng-container>
+      </div>
+    </div>
+    <mat-divider></mat-divider>
+    <a mat-menu-item [routerLink]="['/dashboard/profile']">
+      <mat-icon>person</mat-icon>
+      <span>My Profile</span>
+    </a>
+    <a mat-menu-item [routerLink]="['/dashboard/settings']">
+      <mat-icon>settings</mat-icon>
+      <span>Settings</span>
+    </a>
+    <mat-divider></mat-divider>
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+  </ng-container>
+</mat-menu>

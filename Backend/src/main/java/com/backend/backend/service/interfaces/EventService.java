@@ -1,13 +1,15 @@
 package com.backend.backend.service.interfaces;
 
-import com.backend.backend.dto.request.EventRequest;
-import com.backend.backend.dto.response.EventResponse;
-import com.backend.backend.dto.response.EventStatsResponse;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.backend.backend.dto.request.EventRequest;
+import com.backend.backend.dto.response.EventResponse;
+import com.backend.backend.dto.response.EventStatsResponse;
+import com.backend.backend.model.EventStatus;
 
 public interface EventService {
     // Core Event Operations
@@ -29,8 +31,23 @@ public interface EventService {
     List<EventResponse> getOrganizationEvents(String organizationId, boolean includeHistory);
     
     // Event Search
-    Page<EventResponse> searchEvents(String query, List<String> categories, 
-                                   String location, Double radius, Pageable pageable);
+    Page<EventResponse> searchEvents(
+        String query,
+        List<String> categories,
+        String location,
+        Double radius,
+        List<EventStatus> status,
+        Boolean pendingApproval,
+        Boolean isDraft,
+        Boolean isOwner,
+        Boolean hasRegistrations,
+        Boolean isRegistered,
+        Boolean skillMatch,
+        Boolean availableSpots,
+        Boolean registrationOpen,
+        String userId,
+        Pageable pageable
+    );
     List<EventResponse> getUpcomingEvents(int days);
     
     // Event Statistics
@@ -40,4 +57,6 @@ public interface EventService {
     // Event Notifications
     void scheduleEventReminders();
     void notifyEventParticipants(String eventId, String message);
+
+    List<String> getCategories();
 } 

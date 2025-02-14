@@ -51,7 +51,6 @@ export const routes: Routes = [
         path: 'events',
         canActivate: [() => roleGuard(['ADMIN', 'ORGANIZATION'])],
         loadChildren: () => import('./features/events/event.routes').then(m => m.DASHBOARD_EVENT_ROUTES),
-
       },
       {
         path: 'organizations',
@@ -63,7 +62,11 @@ export const routes: Routes = [
         path: 'volunteer',
         canActivate: [() => roleGuard(['VOLUNTEER'])],
         loadChildren: () => import('./features/volunteers/volunteer.routes').then(m => m.DASHBOARD_VOLUNTEER_ROUTES),
-
+      },
+      {
+        path: '',
+        redirectTo: 'events',
+        pathMatch: 'full'
       }
     ]
   },
@@ -72,7 +75,8 @@ export const routes: Routes = [
     component: OAuthCallbackComponent
   },
   {
-    path: '**',
-    redirectTo: 'home'
+    path: '',
+    redirectTo: '/dashboard',
+    pathMatch: 'full'
   }
 ];

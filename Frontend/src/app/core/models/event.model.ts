@@ -1,7 +1,9 @@
 import { EventStatus } from './event-status.enum';
 
+export { EventStatus };
+
 // Base interface with common properties
-interface BaseEvent {
+export interface BaseEvent {
   id: string;
   title: string;
   description: string;
@@ -21,24 +23,37 @@ interface BaseEvent {
   updatedAt: string;
   isRegistered: boolean;
   availableSpots: number;
-  registeredVolunteers: number;
+  requiresApproval: boolean;
+  currentParticipants: number;
 }
 
 // Event type used in components
-export type Event = BaseEvent;
+export interface Event extends BaseEvent {
+  registrationDeadline?: string;
+  category?: string;
+  distance?: number;
+  registrationCount?: number;
+  isFull?: boolean;
+  organizationLogo?: string;
+  statusText?: string;
+}
 
 // Request type for creating/updating events
 export interface EventRequest {
   title: string;
   description: string;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
   location: string;
   maxParticipants: number;
-  requiredSkills: string[];
+  category: string;
   imageUrl?: string;
-  latitude: number;
-  longitude: number;
+  requiresApproval?: boolean;
+  registrationDeadline?: Date;
+  status?: EventStatus;
+  requiredSkills?: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 // Response type from API
@@ -58,4 +73,33 @@ export interface EventRegistration {
   registeredAt: string;
 }
 
-export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'; 
+export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export interface EventSearchParams {
+  query?: string;
+  categories?: string[];
+  location?: string;
+  radius?: number;
+  includeFullEvents?: boolean;
+  includePastEvents?: boolean;
+  page?: number;
+  size?: number;
+}
+
+export interface RoleSpecificEventSearchParams extends EventSearchParams {
+  // Admin-specific parameters
+  status?: EventStatus[];
+  organizationId?: string;
+  pendingApproval?: boolean;
+
+  // Organization-specific parameters
+  isDraft?: boolean;
+  isOwner?: boolean;
+  hasRegistrations?: boolean;
+
+  // Volunteer-specific parameters
+  isRegistered?: boolean;
+  skillMatch?: boolean;
+  availableSpots?: boolean;
+  registrationOpen?: boolean;
+} 

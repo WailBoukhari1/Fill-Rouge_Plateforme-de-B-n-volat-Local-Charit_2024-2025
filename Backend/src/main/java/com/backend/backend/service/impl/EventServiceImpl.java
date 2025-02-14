@@ -7,24 +7,39 @@ import com.backend.backend.exception.CustomException;
 import com.backend.backend.model.Event;
 import com.backend.backend.model.EventStatus;
 import com.backend.backend.model.RegistrationStatus;
+import com.backend.backend.model.User;
+import com.backend.backend.model.UserRole;
+import com.backend.backend.model.EventRegistration;
 import com.backend.backend.mapper.EventMapper;
 import com.backend.backend.repository.EventRepository;
 import com.backend.backend.repository.EventRegistrationRepository;
+import com.backend.backend.repository.UserRepository;
 import com.backend.backend.service.interfaces.EmailService;
 import com.backend.backend.service.interfaces.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -35,6 +50,8 @@ public class EventServiceImpl implements EventService {
     private final EventRegistrationRepository registrationRepository;
     private final EventMapper eventMapper;
     private final EmailService emailService;
+    private final UserRepository userRepository;
+    private final MongoTemplate mongoTemplate;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a");
 
@@ -179,10 +196,160 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventResponse> searchEvents(String query, List<String> categories, 
-            String location, Double radius, Pageable pageable) {
-        // Search logic is handled by EventSearchService
-        throw new CustomException("Method not implemented in this service", HttpStatus.NOT_IMPLEMENTED);
+    public Page<EventResponse> searchEvents(
+            String searchQuery,
+            List<String> categories,
+            String location,
+            Double radius,
+            List<EventStatus> status,
+            Boolean pendingApproval,
+            Boolean isDraft,
+            Boolean isOwner,
+            Boolean hasRegistrations,
+            Boolean isRegistered,
+            Boolean skillMatch,
+            Boolean availableSpots,
+            Boolean registrationOpen,
+            String userId,
+            Pageable pageable) {
+
+        try {
+            // Build the criteria based on parameters
+            Criteria criteria = new Criteria();
+
+            // Common search criteria
+            if (StringUtils.hasText(searchQuery)) {
+                criteria.orOperator(
+                    Criteria.where("title").regex(searchQuery, "i"),
+                    Criteria.where("description").regex(searchQuery, "i")
+                );
+            }
+
+            if (categories != null && !categories.isEmpty()) {
+                criteria.and("category").in(categories);
+            }
+
+            if (StringUtils.hasText(location)) {
+                // Implement location-based search using coordinates
+                // This is a simplified version - you might want to use geospatial queries
+                criteria.and("location").regex(location, "i");
+            }
+
+            // Handle authenticated vs unauthenticated users
+            if (userId != null) {
+                // Get user information if userId is provided (userId is actually the email)
+                User user = userRepository.findByEmail(userId)
+                        .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+
+                // Role-specific criteria
+                UserRole userRole = user.getRole();
+                switch (userRole) {
+                    case ADMIN:
+                        // Admin can see all events by default
+                        if (status != null && !status.isEmpty()) {
+                            criteria.and("status").in(status);
+                        }
+                        if (Boolean.TRUE.equals(pendingApproval)) {
+                            criteria.and("requiresApproval").is(true)
+                                  .and("approved").is(false);
+                        }
+                        break;
+
+                    case ORGANIZATION:
+                        // Organization-specific filters
+                        if (Boolean.TRUE.equals(isOwner)) {
+                            criteria.and("organizationId").is(user.getId());
+                        }
+                        if (Boolean.TRUE.equals(isDraft)) {
+                            criteria.and("status").is(EventStatus.DRAFT);
+                        } else if (status != null && !status.isEmpty()) {
+                            criteria.and("status").in(status);
+                        }
+                        break;
+
+                    case VOLUNTEER:
+                        // Volunteer-specific filters
+                        if (Boolean.TRUE.equals(isRegistered)) {
+                            List<String> registeredEventIds = registrationRepository
+                                .findByVolunteerIdAndStatusIn(
+                                    user.getId(),
+                                    List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.PENDING)
+                                )
+                                .stream()
+                                .map(EventRegistration::getEventId)
+                                .collect(Collectors.toList());
+                            if (!registeredEventIds.isEmpty()) {
+                                criteria.and("id").in(registeredEventIds);
+                            }
+                        } else {
+                            // By default, volunteers see published events
+                            criteria.and("status").is(EventStatus.PUBLISHED);
+                        }
+                        
+                        if (Boolean.TRUE.equals(availableSpots)) {
+                            criteria.and("maxParticipants").gt(0);
+                        }
+                        
+                        if (Boolean.TRUE.equals(registrationOpen)) {
+                            criteria.and("registrationDeadline").gt(LocalDateTime.now());
+                        }
+                        break;
+                }
+            } else {
+                // For unauthenticated users, show only published events
+                criteria.and("status").is(EventStatus.PUBLISHED);
+            }
+
+            // Additional common filters
+            if (Boolean.TRUE.equals(hasRegistrations)) {
+                criteria.and("registrationCount").gt(0);
+            }
+
+            // Create the query
+            Query mongoQuery = new Query(criteria).with(pageable);
+
+            // Execute the query
+            List<Event> events = mongoTemplate.find(mongoQuery, Event.class);
+            long total = mongoTemplate.count(Query.query(criteria), Event.class);
+
+            // Map to response DTOs and add registration information if user is authenticated
+            List<EventResponse> eventResponses = events.stream()
+                .map(event -> {
+                    EventResponse response = eventMapper.toResponse(event);
+                    
+                    if (userId != null) {
+                        // Check if user is registered for this event
+                        if (Boolean.TRUE.equals(isRegistered)) {
+                            boolean registered = registrationRepository
+                                .existsByEventIdAndVolunteerIdAndStatusIn(
+                                    event.getId(), 
+                                    userId,
+                                    List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.PENDING)
+                                );
+                            response.setRegistered(registered);
+                        }
+
+                        // Check registration count if needed
+                        if (Boolean.TRUE.equals(hasRegistrations)) {
+                            long registrationCount = registrationRepository
+                                .countByEventIdAndStatusIn(
+                                    event.getId(),
+                                    List.of(RegistrationStatus.CONFIRMED, RegistrationStatus.PENDING)
+                                );
+                            response.setRegistrationCount(registrationCount);
+                        }
+                    }
+                    
+                    return response;
+                })
+                .collect(Collectors.toList());
+
+            return new PageImpl<>(eventResponses, pageable, total);
+
+        } catch (Exception e) {
+            throw new CustomException("Error searching events: " + e.getMessage(), 
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Override
@@ -301,5 +468,21 @@ public class EventServiceImpl implements EventService {
                             registration.getVolunteerId(), event.getId(), e.getMessage());
                     }
                 });
+    }
+
+    @Override
+    public List<String> getCategories() {
+        return Arrays.asList(
+            "Education",
+            "Environment",
+            "Health",
+            "Community",
+            "Arts & Culture",
+            "Sports",
+            "Technology",
+            "Social Services",
+            "Animal Welfare",
+            "Disaster Relief"
+        );
     }
 } 

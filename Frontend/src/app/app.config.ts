@@ -10,14 +10,19 @@ import { provideEffects } from '@ngrx/effects';
 import { authReducer } from './store/auth/auth.reducer';
 import { AuthEffects } from './store/auth/auth.effects';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { eventsReducer } from './store/events/events.reducer';
+import { EventsEffects } from './store/events/events.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withHashLocation()),
     provideAnimations(),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideStore({ auth: authReducer }),
-    provideEffects([AuthEffects]),
+    provideStore({ 
+      auth: authReducer,
+      events: eventsReducer 
+    }),
+    provideEffects([AuthEffects, EventsEffects]),
     provideStoreDevtools({
       maxAge: 25,
       logOnly: !isDevMode(),

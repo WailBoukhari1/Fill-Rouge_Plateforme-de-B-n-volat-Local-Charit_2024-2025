@@ -19,10 +19,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const accessToken = authService.getAccessToken();
-
-  if (accessToken) {
-    req = addTokenHeader(req, accessToken);
+  const token = authService.getStoredToken();
+  if (token) {
+    req = addTokenHeaders(req, token);
   }
 
   return next(req).pipe(
@@ -35,9 +34,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   );
 };
 
-function addTokenHeader(request: any, token: string) {
+function addTokenHeaders(request: any, token: JwtToken) {
   return request.clone({
-    headers: request.headers.set('Authorization', `Bearer ${token}`),
+    headers: request.headers
+      .set('Authorization', `Bearer ${token.accessToken}`)
+      .set('Refresh-Token', token.refreshToken)
   });
 }
 
@@ -54,10 +55,10 @@ function handleUnauthorizedError(
     const token = authService.getStoredToken();
     if (token?.refreshToken) {
       return authService.refreshToken(token.refreshToken).pipe(
-        switchMap((token) => {
+        switchMap((newToken) => {
           isRefreshing = false;
-          refreshTokenSubject.next(token);
-          return next(addTokenHeader(request, token.accessToken));
+          refreshTokenSubject.next(newToken);
+          return next(addTokenHeaders(request, newToken));
         }),
         catchError((error) => {
           isRefreshing = false;
@@ -72,7 +73,7 @@ function handleUnauthorizedError(
     take(1),
     switchMap(token => {
       if (token) {
-        return next(addTokenHeader(request, token.accessToken));
+        return next(addTokenHeaders(request, token));
       }
       return throwError(() => new Error('No refresh token available'));
     })

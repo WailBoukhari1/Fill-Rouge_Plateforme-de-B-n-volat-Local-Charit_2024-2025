@@ -20,7 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Validated
 public class AuthController {
@@ -28,6 +28,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
             authService.register(request),
@@ -36,6 +37,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
             authService.login(request),
@@ -54,6 +56,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
             @RequestHeader("Refresh-Token") @NotBlank String refreshToken) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -63,6 +66,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<Void>> verifyEmail(
             @RequestParam @Email String email,
             @RequestParam @NotBlank String code) {
@@ -71,6 +75,7 @@ public class AuthController {
     }
 
     @PostMapping("/resend-verification")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(
             @RequestParam @Email String email) {
         authService.resendVerificationEmail(email);
@@ -78,6 +83,7 @@ public class AuthController {
     }
 
     @PostMapping("/password/reset-request")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<Void>> initiatePasswordReset(
             @RequestParam @Email String email) {
         authService.initiatePasswordReset(email);
@@ -85,6 +91,7 @@ public class AuthController {
     }
 
     @PostMapping("/password/reset")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<Void>> completePasswordReset(
             @RequestParam @Email String email,
             @RequestParam @NotBlank String code,
@@ -103,6 +110,7 @@ public class AuthController {
     }
 
     @PostMapping("/oauth2/login/{provider}")
+    @PreAuthorize("isAnonymous()")
     public ResponseEntity<ApiResponse<AuthResponse>> handleOAuth2Login(
             @PathVariable String provider,
             @RequestParam String code) {

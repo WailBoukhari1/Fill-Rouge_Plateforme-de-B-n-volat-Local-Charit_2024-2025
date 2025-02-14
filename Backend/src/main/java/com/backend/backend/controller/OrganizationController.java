@@ -35,6 +35,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse<OrganizationResponse>> getOrganization(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(
             organizationService.getOrganization(id),
@@ -43,6 +44,7 @@ public class OrganizationController {
     }
 
     @GetMapping
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse<Page<OrganizationResponse>>> getAllOrganizations(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
             organizationService.getAllOrganizations(pageable),
@@ -51,6 +53,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse<Page<OrganizationResponse>>> searchOrganizations(
             @RequestParam String query,
             Pageable pageable) {
@@ -61,6 +64,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}/events")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse<List<EventResponse>>> getOrganizationEvents(
             @PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -112,6 +116,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}/verification-status")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse<Boolean>> isOrganizationVerified(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(
             organizationService.isOrganizationVerified(id),

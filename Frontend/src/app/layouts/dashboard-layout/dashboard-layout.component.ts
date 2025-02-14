@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -19,9 +19,9 @@ import { DashboardNavbarComponent } from './components/navbar/dashboard-navbar.c
   ],
   template: `
     <div class="dashboard-container">
-      <app-dashboard-navbar></app-dashboard-navbar>
+      <app-dashboard-navbar (toggleSidebar)="toggleSidebar()"></app-dashboard-navbar>
       <mat-sidenav-container>
-        <mat-sidenav mode="side" opened>
+        <mat-sidenav mode="side" [opened]="isSidebarOpen()">
           <app-dashboard-sidebar></app-dashboard-sidebar>
         </mat-sidenav>
         <mat-sidenav-content>
@@ -53,4 +53,10 @@ import { DashboardNavbarComponent } from './components/navbar/dashboard-navbar.c
     }
   `]
 })
-export class DashboardLayoutComponent {} 
+export class DashboardLayoutComponent {
+  protected isSidebarOpen = signal<boolean>(true);
+
+  toggleSidebar() {
+    this.isSidebarOpen.update(value => !value);
+  }
+} 

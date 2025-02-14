@@ -1,16 +1,17 @@
 package com.backend.backend.repository;
 
-import com.backend.backend.model.Event;
-import com.backend.backend.model.EventStatus;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
+import com.backend.backend.model.Event;
+import com.backend.backend.model.EventStatus;
 
 @Repository
 public interface EventRepository extends MongoRepository<Event, String> {
@@ -105,4 +106,8 @@ public interface EventRepository extends MongoRepository<Event, String> {
            "{ requiredSkills: { $in: ?1 } } " +
            "] }")
     List<Event> searchEvents(String location, List<String> skills);
+
+    Page<Event> findByOrganizationIdOrderByStartDateDesc(String organizationId, Pageable pageable);
+    
+    Page<Event> findByIdInOrderByStartDateDesc(List<String> eventIds, Pageable pageable);
 } 

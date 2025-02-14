@@ -11,11 +11,10 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../../services/event.service';
 import { AuthService } from '@core/services/auth.service';
-import { EventStatus } from '../../../../core/models/event-status.enum';
+import { EventStatus, EventResponse } from '@core/models/event.model';
 import { UserRole } from '@core/models/user.model';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { Observable, of, combineLatest } from 'rxjs';
-import { EventResponse } from '@core/models/event.model';
 
 @Component({
   selector: 'app-event-details',

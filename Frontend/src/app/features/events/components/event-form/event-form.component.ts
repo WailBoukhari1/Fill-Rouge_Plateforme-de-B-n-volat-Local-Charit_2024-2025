@@ -147,6 +147,7 @@ export class EventFormComponent implements OnInit, AfterViewInit {
       endDate: ['', [Validators.required, this.futureDateValidator()]],
       location: ['', Validators.required],
       maxParticipants: [1, [Validators.required, Validators.min(1), Validators.max(1000)]],
+      category: ['', Validators.required],
       requiredSkills: [[]],
       imageUrl: [''],
       latitude: [null, Validators.required],
@@ -355,7 +356,6 @@ export class EventFormComponent implements OnInit, AfterViewInit {
     }
 
     this.isSubmitting = true;
-    this.errorMessage = null;
     const formValue = this.eventForm.value;
     
     try {
@@ -377,6 +377,7 @@ export class EventFormComponent implements OnInit, AfterViewInit {
         endDate: formValue.endDate,
         location: formValue.location,
         maxParticipants: formValue.maxParticipants,
+        category: formValue.category,
         requiredSkills: this.requiredSkills,
         imageUrl: imageUrl,
         latitude: formValue.latitude,
@@ -392,7 +393,8 @@ export class EventFormComponent implements OnInit, AfterViewInit {
 
       this.router.navigate(['/events']);
     } catch (error) {
-      this.errorMessage = 'Failed to save event. Please try again.';
+      this.errorMessage = 'An error occurred while saving the event. Please try again.';
+    } finally {
       this.isSubmitting = false;
     }
   }

@@ -139,13 +139,11 @@ export class AuthService {
         return null;
       }
 
-      const expiresIn = parseInt(expiryStr, 10) - Date.now();
-      if (expiresIn <= 0) {
-        this.clearAuthData();
-        return null;
-      }
-
-      return { accessToken, refreshToken, expiresIn };
+      return {
+        accessToken,
+        refreshToken,
+        expiresIn: parseInt(expiryStr, 10)
+      };
     } catch (error) {
       console.error('Error retrieving token:', error);
       this.clearAuthData();
@@ -171,11 +169,11 @@ export class AuthService {
       localStorage.setItem(this.REFRESH_TOKEN_KEY, token.refreshToken);
       localStorage.setItem(
         this.TOKEN_EXPIRY_KEY,
-        (Date.now() + token.expiresIn * 1000).toString()
+        token.expiresIn.toString()
       );
 
       this.tokenRefreshNeeded.next(false);
-      this.tokenExpirySubject.next(token.expiresIn * 1000);
+      this.tokenExpirySubject.next(token.expiresIn);
     } catch (error) {
       console.error('Error setting token:', error);
       this.clearAuthData();
@@ -301,7 +299,8 @@ export class AuthService {
       }),
       catchError(error => {
         console.error('Token refresh error:', error);
-        return throwError(() => this.handleError(error));
+        this.clearAuthData();
+        return throwError(() => error);
       })
     );
   }
@@ -492,7 +491,10 @@ export class AuthService {
   }
 
   verifyEmailWithCode(email: string, code: string): Observable<any> {
-    return this.http.post<AuthServerResponse>(`${this.apiUrl}/verify-email`, { email, code }).pipe(
+    return this.http.post<AuthServerResponse>(
+      `${this.apiUrl}/verify-email?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, 
+      {}
+    ).pipe(
       map(response => {
         if (!response.success) {
           throw new Error(response.message);
