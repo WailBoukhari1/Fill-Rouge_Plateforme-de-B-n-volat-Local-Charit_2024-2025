@@ -1,0 +1,17 @@
+package com.fill_rouge.backend.constant;
+
+public enum EventCategory {
+    EDUCATION,
+    ENVIRONMENT,
+    HEALTH,
+    SOCIAL_SERVICES,
+    ANIMAL_WELFARE,
+    ARTS_CULTURE,
+    COMMUNITY_DEVELOPMENT,
+    DISASTER_RELIEF,
+    ELDERLY_CARE,
+    YOUTH_DEVELOPMENT,
+    SPORTS_RECREATION,
+    TECHNOLOGY,
+    OTHER
+} 

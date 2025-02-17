@@ -1,0 +1,61 @@
+<mat-sidenav-container class="h-screen">
+  <!-- Sidebar -->
+  <mat-sidenav [opened]="isMenuOpen" mode="side" class="w-64 bg-white border-r">
+    <!-- Logo and Brand -->
+    <div class="p-4 border-b">
+      <h1 class="text-xl font-bold text-primary-600">Volunteer Hub</h1>
+    </div>
+
+    <!-- Navigation Menu -->
+    <mat-nav-list>
+      @for(item of getFilteredMenuItems(); track item.route) {
+        <a mat-list-item [routerLink]="item.route" routerLinkActive="bg-primary-50">
+          <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
+          <span matListItemTitle>{{item.label}}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content class="bg-gray-50">
+    <!-- Top Toolbar -->
+    <mat-toolbar class="bg-white border-b">
+      <button mat-icon-button (click)="toggleMenu()">
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="flex-1"></span>
+
+      <!-- User Menu -->
+      <button mat-button [matMenuTriggerFor]="userMenu" class="flex items-center">
+        <mat-icon class="mr-2">account_circle</mat-icon>
+        <span>{{userName}}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu">
+        @if(userRole === 'VOLUNTEER') {
+          <a mat-menu-item routerLink="/dashboard/volunteer/profile">
+            <mat-icon>person</mat-icon>
+            <span>My Profile</span>
+          </a>
+        } @else if(userRole === 'ORGANIZATION') {
+          <a mat-menu-item routerLink="/dashboard/organization/profile">
+            <mat-icon>business</mat-icon>
+            <span>Organization Profile</span>
+          </a>
+        }
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>exit_to_app</mat-icon>
+          <span>Logout</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <!-- Page Content -->
+    <div class="p-6">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container> 

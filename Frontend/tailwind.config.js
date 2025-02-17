@@ -4,11 +4,9 @@ module.exports = {
     "./src/**/*.{html,ts}",
   ],
   theme: {
-    extend: {
-      colors: {
-  
-      }
-    },
+    extend: {},
   },
   plugins: [],
-} 
+  important: true
+}
+

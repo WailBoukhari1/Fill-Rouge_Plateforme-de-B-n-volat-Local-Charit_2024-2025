@@ -1,512 +1,307 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError, of, timer } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { Router } from '@angular/router';
-import { tap, catchError, map, filter, take } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
-import {
-  AuthResponse,
-  LoginCredentials,
-  RegisterCredentials,
-  AuthUser,
-  JwtToken,
-  PasswordResetRequest,
+import { jwtDecode } from 'jwt-decode';
+import { 
+  AuthResponse, 
+  ApiResponse,
+  LoginRequest, 
+  RegisterRequest,
   EmailVerificationRequest,
+  PasswordResetRequest,
+  NewPasswordRequest,
+  TwoFactorSetupResponse,
+  TwoFactorVerifyRequest,
+  User,
   UserRole
-} from '../models/auth.model';
+} from '../models/auth.models';
+import { environment } from '../../../environments/environment';
+import { selectIsAuthenticated, selectUser } from '../../store/auth/auth.selectors';
 import * as AuthActions from '../../store/auth/auth.actions';
 
-interface TokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
-interface AuthServerResponse {
-  success: boolean;
-  message: string;
-  data: {
-    accessToken: string;
-    refreshToken: string;
-    user: {
-      id: string;
-      email: string;
-      firstName?: string;
-      lastName?: string;
-      roles: string[];
-      emailVerified: boolean;
-      profilePicture?: string;
-    };
-  };
-  timestamp: string;
-}
-
-interface UserResponse {
-  success: boolean;
-  message: string;
-  data: {
-    id: string;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    roles: string[];
-    emailVerified: boolean;
-    profilePicture?: string;
-  };
-  timestamp: string;
+interface DecodedToken {
+  sub: string;
+  exp: number;
+  authorities?: string[];
+  role?: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly TOKEN_KEY = 'auth_token';
-  private readonly REFRESH_TOKEN_KEY = 'auth_refresh_token';
-  private readonly TOKEN_EXPIRY_KEY = 'auth_token_expiry';
-  private readonly REFRESH_THRESHOLD = 60000; // 1 minute
-  private readonly apiUrl = `${environment.apiUrl}/auth`;
-
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
-  isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
-  
-  private userSubject = new BehaviorSubject<AuthUser | null>(null);
-  user$ = this.userSubject.asObservable();
-
-  private tokenExpirySubject = new BehaviorSubject<number>(0);
-  tokenExpiry$ = this.tokenExpirySubject.asObservable();
-
-  private tokenRefreshNeeded = new BehaviorSubject<boolean>(false);
-  tokenRefreshNeeded$ = this.tokenRefreshNeeded.asObservable();
-
-  private userLoading = false;
+  private apiUrl = `${environment.apiUrl}/auth`;
+  isAuthenticated$ = this.store.select(selectIsAuthenticated);
+  currentUser$ = this.store.select(selectUser);
 
   constructor(
     private http: HttpClient,
-    private router: Router,
-    private store: Store
-  ) {
-    this.initializeAuthState();
-    this.initializeTokenMonitoring();
-  }
+    private store: Store,
+    private router: Router
+  ) {}
 
-  // Initialize auth state from local storage
-  private initializeAuthState(): void {
-    const token = this.getStoredToken();
-    const userStr = localStorage.getItem('user');
-    
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr) as AuthUser;
-        const authResponse: AuthResponse = {
-          accessToken: token.accessToken,
-          refreshToken: token.refreshToken,
-          user
-        };
-        this.store.dispatch(AuthActions.loginSuccess(authResponse));
-        this.isAuthenticatedSubject.next(true);
-        this.userSubject.next(user);
-      } catch (e) {
-        this.clearAuthData();
-      }
-    }
-  }
-
-  // Token monitoring and auto-refresh
-  private initializeTokenMonitoring(): void {
-    timer(0, 60000).subscribe(() => {
-      const remainingTime = this.getRemainingTime();
-      this.tokenExpirySubject.next(remainingTime);
-
-      if (remainingTime > 0 && remainingTime <= this.REFRESH_THRESHOLD) {
-        this.tokenRefreshNeeded.next(true);
-        const refreshToken = this.getRefreshToken();
-        if (refreshToken) {
-          this.refreshToken(refreshToken).subscribe();
-        }
-      }
-    });
-  }
-
-  // Token Management Methods
-  getStoredToken(): JwtToken | null {
-    try {
-      const accessToken = localStorage.getItem(this.TOKEN_KEY);
-      const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-      const expiryStr = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
-
-      if (!accessToken || !refreshToken || !expiryStr) {
-        return null;
-      }
-
-      return {
-        accessToken,
-        refreshToken,
-        expiresIn: parseInt(expiryStr, 10)
-      };
-    } catch (error) {
-      console.error('Error retrieving token:', error);
-      this.clearAuthData();
-      return null;
-    }
-  }
-
-  getAccessToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  private getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  private setToken(token: JwtToken): void {
-    try {
-      if (!token.accessToken || !token.refreshToken) {
-        throw new Error('Invalid token data');
-      }
-
-      localStorage.setItem(this.TOKEN_KEY, token.accessToken);
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, token.refreshToken);
-      localStorage.setItem(
-        this.TOKEN_EXPIRY_KEY,
-        token.expiresIn.toString()
-      );
-
-      this.tokenRefreshNeeded.next(false);
-      this.tokenExpirySubject.next(token.expiresIn);
-    } catch (error) {
-      console.error('Error setting token:', error);
-      this.clearAuthData();
-    }
-  }
-
-  private clearAuthData(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    localStorage.removeItem(this.TOKEN_EXPIRY_KEY);
-    localStorage.removeItem('user');
-    this.tokenExpirySubject.next(0);
-    this.tokenRefreshNeeded.next(false);
-    this.isAuthenticatedSubject.next(false);
-    this.userSubject.next(null);
-  }
-
-  isTokenExpired(): boolean {
-    try {
-      const expiry = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
-      if (!expiry) return true;
-      return Date.now() > parseInt(expiry, 10);
-    } catch (error) {
-      console.error('Error checking token expiry:', error);
-      return true;
-    }
-  }
-
-  private getRemainingTime(): number {
-    try {
-      const expiry = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
-      if (!expiry) return 0;
-      return Math.max(0, parseInt(expiry, 10) - Date.now());
-    } catch (error) {
-      console.error('Error getting remaining time:', error);
-      return 0;
-    }
-  }
-
-  getTokenExpiryTime(): Observable<string> {
-    return this.tokenExpiry$.pipe(
-      map(remainingMs => {
-        if (remainingMs <= 0) return 'Expired';
-        const minutes = Math.floor(remainingMs / 60000);
-        const seconds = Math.floor((remainingMs % 60000) / 1000);
-        return `${minutes}m ${seconds}s`;
-      })
-    );
-  }
-
-  // Auth API Methods
-  login(credentials: LoginCredentials): Observable<AuthResponse> {
-    return this.http.post<AuthServerResponse>(`${this.apiUrl}/login`, credentials).pipe(
-      map(response => {
-        if (!response.success) {
-          if (response.message?.includes('Email not verified')) {
-            this.router.navigate(['/auth/verify-email'], { 
-              queryParams: { email: credentials.email }
-            });
-          }
-          throw new Error(response.message);
-        }
-        return this.mapServerResponse(response);
-      }),
+  login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {
+    console.log('Login request:', request);
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, request).pipe(
       tap(response => {
-        if (response.accessToken) {
-          this.setToken({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
-            expiresIn: 3600
-          });
-          this.userSubject.next(response.user);
-          this.isAuthenticatedSubject.next(true);
-          localStorage.setItem('user', JSON.stringify(response.user));
+        console.log('Login response:', response);
+        if (!response.data) {
+          throw new Error('No data in response');
         }
+        this.handleAuthResponse(response.data);
       }),
       catchError(error => {
         console.error('Login error:', error);
-        if (error.error?.message?.includes('Email not verified')) {
-          this.router.navigate(['/auth/verify-email'], { 
-            queryParams: { email: credentials.email }
-          });
-        }
-        return throwError(() => this.handleError(error));
-      })
-    );
-  }
-
-  register(userData: RegisterCredentials): Observable<any> {
-    return this.http.post<AuthServerResponse>(`${this.apiUrl}/register`, userData).pipe(
-      map(response => {
-        if (!response.success) {
-          throw new Error(response.message);
-        }
-        // After successful registration, redirect to verify-email page
-        this.router.navigate(['/auth/verify-email'], { 
-          queryParams: { email: userData.email }
-        });
-        return response;
-      }),
-      catchError(error => {
-        console.error('Registration error:', error);
-        return throwError(() => this.handleError(error));
-      })
-    );
-  }
-
-  logout(): void {
-    this.clearAuthData();
-    this.store.dispatch(AuthActions.logout());
-    this.router.navigate(['/auth/login']);
-  }
-
-  refreshToken(refreshToken: string): Observable<JwtToken> {
-    return this.http.post<TokenResponse>(`${this.apiUrl}/refresh-token`, { refreshToken }).pipe(
-      map(response => ({
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        expiresIn: response.expiresIn || 3600
-      })),
-      tap(token => {
-        this.setToken(token);
-      }),
-      catchError(error => {
-        console.error('Token refresh error:', error);
-        this.clearAuthData();
+        this.clearStorage();
+        this.store.dispatch(AuthActions.loginFailure({ 
+          error: error.message || 'Authentication failed' 
+        }));
         return throwError(() => error);
       })
     );
   }
 
-  verifyEmail(request: EmailVerificationRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/verify-email`, request).pipe(
-      catchError(error => {
-        console.error('Email verification error:', error);
-        return throwError(() => this.handleError(error));
-      })
+  register(request: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, request).pipe(
+      tap(response => this.handleAuthResponse(response.data))
     );
   }
 
-  forgotPassword(email: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/forgot-password`, { email }).pipe(
-      catchError(error => {
-        console.error('Forgot password error:', error);
-        return throwError(() => this.handleError(error));
-      })
-    );
-  }
-
-  resetPassword(request: PasswordResetRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/reset-password`, request).pipe(
-      catchError(error => {
-        console.error('Password reset error:', error);
-        return throwError(() => this.handleError(error));
-      })
-    );
-  }
-
-  handleOAuthCallback(code: string, provider: string): Observable<AuthResponse> {
-    return this.http.get<AuthServerResponse>(
-      `${this.apiUrl}/oauth2/callback/${provider}?code=${code}`
-    ).pipe(
-      map(response => this.mapServerResponse(response)),
-      tap(response => {
-        this.setToken({
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          expiresIn: 3600
-        });
-        this.userSubject.next(response.user);
-        this.isAuthenticatedSubject.next(true);
-        localStorage.setItem('user', JSON.stringify(response.user));
-      }),
-      catchError(error => {
-        console.error('OAuth callback error:', error);
-        return throwError(() => this.handleError(error));
-      })
-    );
-  }
-
-  getCurrentUser(): Observable<AuthUser> {
-    const currentUser = this.userSubject.getValue();
-    if (currentUser) {
-      return of(currentUser);
-    }
-
-    if (this.userLoading) {
-      return this.userSubject.pipe(
-        filter((user): user is AuthUser => user !== null),
-        take(1)
-      );
-    }
-
-    this.userLoading = true;
-
-    return this.http.get<UserResponse>(`${this.apiUrl}/me`).pipe(
-      map(response => {
-        if (!response.success || !response.data) {
-          throw new Error('Invalid user response');
-        }
-
-        const user: AuthUser = {
-          id: response.data.id,
-          email: response.data.email,
-          firstName: response.data.firstName,
-          lastName: response.data.lastName,
-          roles: response.data.roles?.map(role => role as UserRole) || [],
-          emailVerified: response.data.emailVerified,
-          profilePicture: response.data.profilePicture
-        };
-        return user;
-      }),
-      tap(user => {
-        this.userSubject.next(user);
-        this.userLoading = false;
-      }),
-      catchError(error => {
-        this.userLoading = false;
-        console.error('Get current user error:', error);
-        return throwError(() => this.handleError(error));
-      })
-    );
-  }
-
-  hasRole(role: UserRole): Observable<boolean> {
-    return this.user$.pipe(
-      map(user => {
-        if (!user || !Array.isArray(user.roles)) {
-          return false;
-        }
-        return user.roles.includes(role);
-      })
-    );
-  }
-
-  // Navigation Methods
-  navigateToLogin(): void {
+  logout(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
     this.router.navigate(['/auth/login']);
   }
 
-  navigateToRegister(): void {
-    this.router.navigate(['/auth/register']);
+  refreshToken(token: string): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/refresh-token`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).pipe(
+      tap(response => this.handleAuthResponse(response.data))
+    );
   }
 
-  navigateToForgotPassword(): void {
-    this.router.navigate(['/auth/forgot-password']);
+  verifyEmail(email: string, code: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/verify-email`, { email, code });
   }
 
-  private handleError(error: any): string {
-    if (error.error instanceof ErrorEvent) {
-      return error.error.message;
+  resendVerificationCode(email: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/resend-verification`, { email });
+  }
+
+  forgotPassword(email: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/forgot-password`, null, {
+      params: { email }
+    });
+  }
+
+  resetPassword(code: string, newPassword: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/reset-password`, null, {
+      params: { code, newPassword }
+    });
+  }
+
+  setupTwoFactor(): Observable<ApiResponse<TwoFactorSetupResponse>> {
+    return this.http.post<ApiResponse<TwoFactorSetupResponse>>(`${this.apiUrl}/2fa/setup`, {});
+  }
+
+  enableTwoFactor(request: TwoFactorVerifyRequest): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/2fa/enable`, request);
+  }
+
+  disableTwoFactor(request: TwoFactorVerifyRequest): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/2fa/disable`, request);
+  }
+
+  verifyTwoFactorCode(request: TwoFactorVerifyRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/2fa/verify`, request);
+  }
+
+  private decodeToken(token: string): DecodedToken {
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      console.log('Decoded token:', decoded);
+      return decoded;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      throw error;
     }
-    return error.error?.message || 'An unexpected error occurred';
   }
 
-  private mapServerResponse(response: AuthServerResponse): AuthResponse {
-    if (!response || !response.data || !response.data.user) {
-      console.error('Invalid server response:', response);
-      throw new Error('Invalid server response');
+  private extractRoleFromToken(decodedToken: DecodedToken): string | undefined {
+    // Try to get role from authorities array
+    if (decodedToken.authorities && Array.isArray(decodedToken.authorities)) {
+      console.log('Found authorities in token:', decodedToken.authorities);
+      const roleAuthority = decodedToken.authorities.find(auth => auth.startsWith('ROLE_'));
+      if (roleAuthority) {
+        const role = roleAuthority.replace('ROLE_', '');
+        console.log('Extracted role from token authorities:', role);
+        return role;
+      }
     }
 
-    const user: AuthUser = {
-      id: response.data.user.id,
-      email: response.data.user.email,
-      firstName: response.data.user.firstName,
-      lastName: response.data.user.lastName,
-      roles: response.data.user.roles?.map(role => role as UserRole) || [],
-      emailVerified: response.data.user.emailVerified,
-      profilePicture: response.data.user.profilePicture
-    };
+    // Try to get role from role field
+    if (decodedToken.role) {
+      const role = decodedToken.role.replace('ROLE_', '');
+      console.log('Extracted role from token role field:', role);
+      return role;
+    }
+
+    return undefined;
+  }
+
+  private handleAuthResponse(response: AuthResponse): void {
+    if (!response) {
+      console.error('Invalid auth response:', response);
+      return;
+    }
+
+    try {
+      // Decode and validate token
+      const decodedToken = this.decodeToken(response.token);
+      if (this.isTokenExpired(decodedToken)) {
+        throw new Error('Token is expired');
+      }
+
+      // Extract role from various sources
+      let userRole: string | undefined;
+
+      // First try to get role from token
+      userRole = this.extractRoleFromToken(decodedToken);
+
+      // Then try to get role from response data
+      if (!userRole && response.role) {
+        userRole = response.role.replace('ROLE_', '');
+        console.log('Using role from response data:', userRole);
+      }
+
+      // Finally try to get role from response authorities
+      if (!userRole && response.authorities && Array.isArray(response.authorities)) {
+        console.log('Found authorities in response:', response.authorities);
+        const roleAuthority = response.authorities.find(auth => auth.startsWith('ROLE_'));
+        if (roleAuthority) {
+          userRole = roleAuthority.replace('ROLE_', '');
+          console.log('Extracted role from response authorities:', userRole);
+        }
+      }
+
+      // Validate role
+      if (!userRole) {
+        console.error('No role found in token or response');
+        throw new Error('No role found in authentication data');
+      }
+
+      // Validate role is a valid UserRole enum value
+      if (!Object.values(UserRole).includes(userRole as UserRole)) {
+        console.error('Invalid role:', userRole);
+        throw new Error(`Invalid role in authentication data: ${userRole}`);
+      }
+
+      // Create user data object
+      const userData: User = {
+        id: 0,
+        email: response.email,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        role: userRole as UserRole,
+        emailVerified: response.emailVerified,
+        twoFactorEnabled: response.twoFactorEnabled,
+        accountLocked: response.accountLocked,
+        accountExpired: response.accountExpired,
+        credentialsExpired: response.credentialsExpired,
+        profilePicture: response.profilePicture,
+        lastLoginIp: response.lastLoginIp,
+        lastLoginAt: response.lastLoginAt
+      };
+
+      console.log('Created user data:', userData);
+
+      // Store auth data in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
+
+      // Update store with user data
+      this.store.dispatch(AuthActions.loginSuccess({
+        user: userData,
+        token: response.token,
+        refreshToken: response.refreshToken
+      }));
+    } catch (error) {
+      console.error('Error handling auth response:', error);
+      this.clearStorage();
+      throw error;
+    }
+  }
+
+  private isTokenExpired(decodedToken: DecodedToken): boolean {
+    if (!decodedToken.exp) return true;
+    const currentTime = Date.now() / 1000;
+    return decodedToken.exp < currentTime;
+  }
+
+  getDecodedToken(): DecodedToken | null {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
     
-    return { 
-      accessToken: response.data.accessToken,
-      refreshToken: response.data.refreshToken,
-      user 
-    };
+    try {
+      const decoded = this.decodeToken(token);
+      if (this.isTokenExpired(decoded)) {
+        this.clearStorage();
+        return null;
+      }
+      return decoded;
+    } catch {
+      this.clearStorage();
+      return null;
+    }
   }
 
-  handleGoogleCallback(code: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/auth/oauth2/callback/google?code=${code}`);
+  private clearStorage(): void {
+    localStorage.clear();
   }
 
-  // Method to check if the current URL is a Google OAuth callback
-  isGoogleCallback(url: string): boolean {
-    return url.includes('oauth2/callback/google') && url.includes('code=');
-  }
+  checkAuthState(): void {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    const refreshToken = localStorage.getItem('refreshToken');
 
-  // Extract code from URL
-  extractCodeFromUrl(url: string): string | null {
-    const params = new URLSearchParams(url.split('?')[1]);
-    return params.get('code');
-  }
-
-  public storeAuthTokens(token: string, refreshToken: string, expiresIn: number = 3600): void {
-    localStorage.setItem('auth_token', token);
-    localStorage.setItem('auth_refresh_token', refreshToken);
-    localStorage.setItem('auth_token_expiry', (Date.now() + expiresIn * 1000).toString());
-  }
-
-  resendVerificationEmail(email: string): Observable<any> {
-    return this.http.post<AuthServerResponse>(`${this.apiUrl}/resend-verification?email=${encodeURIComponent(email)}`, {}).pipe(
-      map(response => {
-        if (!response.success) {
-          throw new Error(response.message);
+    if (token && userStr && refreshToken) {
+      try {
+        const decodedToken = this.decodeToken(token);
+        if (this.isTokenExpired(decodedToken)) {
+          this.clearStorage();
+          this.store.dispatch(AuthActions.logout());
+          return;
         }
-        return response;
-      }),
-      catchError(error => {
-        if (error.error?.message) {
-          return throwError(() => error.error.message);
-        }
-        return throwError(() => 'Failed to resend verification email');
-      })
-    );
+
+        const user = JSON.parse(userStr) as User;
+        this.store.dispatch(AuthActions.loginSuccess({
+          user,
+          token,
+          refreshToken
+        }));
+      } catch (error) {
+        console.error('Error restoring auth state:', error);
+        this.clearStorage();
+        this.store.dispatch(AuthActions.logout());
+      }
+    }
   }
 
-  verifyEmailWithCode(email: string, code: string): Observable<any> {
-    return this.http.post<AuthServerResponse>(
-      `${this.apiUrl}/verify-email?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, 
-      {}
-    ).pipe(
-      map(response => {
-        if (!response.success) {
-          throw new Error(response.message);
-        }
-        return response;
-      }),
-      catchError(error => {
-        if (error.error?.message) {
-          return throwError(() => error.error.message);
-        }
-        return throwError(() => 'Failed to verify email');
-      })
-    );
+  isLoggedIn(): boolean {
+    return !!localStorage.getItem('token');
+  }
+
+  getUserRole(): string {
+    return localStorage.getItem('userRole') || '';
+  }
+
+  getUserName(): string {
+    return localStorage.getItem('userName') || '';
   }
 } 

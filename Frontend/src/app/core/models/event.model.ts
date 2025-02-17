@@ -1,105 +1,140 @@
-import { EventStatus } from './event-status.enum';
+export enum EventStatus {
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  UPCOMING = 'UPCOMING',
+  ONGOING = 'ONGOING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
 
-export { EventStatus };
+export enum EventCategory {
+  ENVIRONMENT = 'ENVIRONMENT',
+  EDUCATION = 'EDUCATION',
+  HEALTHCARE = 'HEALTHCARE',
+  COMMUNITY = 'COMMUNITY',
+  ARTS = 'ARTS',
+  SPORTS = 'SPORTS',
+  TECHNOLOGY = 'TECHNOLOGY',
+  SOCIAL = 'SOCIAL'
+}
 
-// Base interface with common properties
-export interface BaseEvent {
+export interface Event {
   id: string;
   title: string;
   description: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  maxParticipants: number;
+  category: EventCategory;
+  status: EventStatus;
   organizationId: string;
   organizationName: string;
-  requiredSkills: string[];
-  registeredParticipants: string[];
-  imageUrl?: string;
-  status: EventStatus;
-  latitude: number;
-  longitude: number;
-  createdAt: string;
-  updatedAt: string;
-  isRegistered: boolean;
-  availableSpots: number;
-  requiresApproval: boolean;
-  currentParticipants: number;
-}
-
-// Event type used in components
-export interface Event extends BaseEvent {
-  registrationDeadline?: string;
-  category?: string;
-  distance?: number;
-  registrationCount?: number;
-  isFull?: boolean;
   organizationLogo?: string;
-  statusText?: string;
-}
-
-// Request type for creating/updating events
-export interface EventRequest {
-  title: string;
-  description: string;
+  organizationDescription?: string;
   startDate: Date;
   endDate: Date;
+  registrationDeadline: Date;
   location: string;
+  coordinates?: [number, number];
+  imageUrl: string;
+  registeredParticipants: Set<string>;
   maxParticipants: number;
-  category: string;
-  imageUrl?: string;
-  requiresApproval?: boolean;
-  registrationDeadline?: Date;
-  status?: EventStatus;
-  requiredSkills?: string[];
+  waitlistedParticipants: Set<string>;
+  requiredSkills: string[];
+  impactSummary?: string;
+  minimumAge: number;
+  requiresBackground: boolean;
+  waitlistEnabled: boolean;
+  maxWaitlistSize: number;
+  isCancelled: boolean;
+  cancellationReason?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: string;
+  updatedBy?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  isRecurring: boolean;
+  recurrencePattern?: string;
+  recurrenceEndDate?: Date;
+  requiresApproval: boolean;
+  approvedParticipants: Set<string>;
+  rejectedParticipants: Set<string>;
+  pendingParticipants: Set<string>;
+  averageRating: number;
+  numberOfRatings: number;
+  tags: Set<string>;
+}
+
+export interface EventLocation {
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
   latitude?: number;
   longitude?: number;
 }
 
-// Response type from API
-export type EventResponse = BaseEvent;
-
-export interface EventFilters {
-  location?: string;
-  skills?: string[];
-  radius?: number;
+export enum EventType {
+  IN_PERSON = 'IN_PERSON',
+  VIRTUAL = 'VIRTUAL',
+  HYBRID = 'HYBRID'
 }
 
 export interface EventRegistration {
+  eventId: string;
+  volunteerId: string;
+  registrationDate: Date;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'WAITLISTED' | 'CANCELLED';
+  checkedIn: boolean;
+  checkInTime?: Date;
+  checkOutTime?: Date;
+  hoursContributed?: number;
+  feedbackSubmitted: boolean;
+  approvalDate?: Date;
+  rejectionReason?: string;
+  waitlistPosition?: number;
+}
+
+export interface EventFeedback {
   id: string;
   eventId: string;
   volunteerId: string;
-  status: RegistrationStatus;
-  registeredAt: string;
+  rating: number;
+  comment: string;
+  hoursContributed: number;
+  submittedAt: Date;
+  isAnonymous: boolean;
 }
 
-export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export interface EventStats {
+  totalEvents: number;
+  activeEvents: number;
+  totalParticipants: number;
+  averageRating: number;
+  totalVolunteerHours: number;
+  completedEvents: number;
+  upcomingEvents: number;
+  participationRate: number;
+  impactMetrics?: {
+    totalHoursContributed: number;
+    averageHoursPerEvent: number;
+    totalBeneficiaries: number;
+    communityImpactScore: number;
+  };
+}
 
-export interface EventSearchParams {
-  query?: string;
-  categories?: string[];
+export interface EventFilters {
+  search?: string;
+  category?: EventCategory;
+  startDate?: Date;
+  endDate?: Date;
   location?: string;
   radius?: number;
-  includeFullEvents?: boolean;
-  includePastEvents?: boolean;
-  page?: number;
-  size?: number;
-}
-
-export interface RoleSpecificEventSearchParams extends EventSearchParams {
-  // Admin-specific parameters
-  status?: EventStatus[];
+  skills?: string[];
+  status?: EventStatus;
   organizationId?: string;
-  pendingApproval?: boolean;
-
-  // Organization-specific parameters
-  isDraft?: boolean;
-  isOwner?: boolean;
-  hasRegistrations?: boolean;
-
-  // Volunteer-specific parameters
-  isRegistered?: boolean;
-  skillMatch?: boolean;
-  availableSpots?: boolean;
-  registrationOpen?: boolean;
+  tags?: string[];
+  requiresBackground?: boolean;
+  isRecurring?: boolean;
+  minimumAge?: number;
 } 

@@ -1,0 +1,114 @@
+{
+  "id": "volunteer-platform-local",
+  "name": "Local Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "organizationId",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "email",
+      "value": "test@example.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "password",
+      "value": "Test@password123",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "volunteer_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "verification_code",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "reset_code",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "new_password",
+      "value": "NewTest@password123",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "search_query",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "receiver_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "message_content",
+      "value": "Hello!",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "notification_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "other_user_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+} 

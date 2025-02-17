@@ -1,30 +1,44 @@
-import { inject } from '@angular/core';
-import { Router, type CanActivateFn } from '@angular/router';
-import { AuthService } from '../services/auth.service';
-import { map, take } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
+import { map, take } from 'rxjs/operators';
+import { selectUser } from '../../store/auth/auth.selectors';
 
-export type UserRole = 'ADMIN' | 'ORGANIZATION' | 'VOLUNTEER';
+@Injectable({
+  providedIn: 'root'
+})
+export class RoleGuard implements CanActivate {
+  constructor(
+    private store: Store,
+    private router: Router
+  ) {}
 
-export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => {
-  return (route, state) => {
-    const router = inject(Router);
-    const authService = inject(AuthService);
-
-    return authService.getCurrentUser().pipe(
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): Observable<boolean> {
+    return this.store.select(selectUser).pipe(
       take(1),
       map(user => {
         if (!user) {
-          return router.createUrlTree(['/auth/login']);
+          this.router.navigate(['/auth/login']);
+          return false;
         }
 
-        const hasAllowedRole = user.roles.some(role => allowedRoles.includes(role as UserRole));
-        if (hasAllowedRole) {
+        const requiredRoles = route.data['roles'] as string[];
+        if (!requiredRoles || requiredRoles.length === 0) {
           return true;
         }
 
-        // Redirect to home page or unauthorized page
-        return router.createUrlTree(['/']);
+        const hasRequiredRole = requiredRoles.includes(user.role);
+        if (!hasRequiredRole) {
+          this.router.navigate(['/unauthorized']);
+          return false;
+        }
+
+        return true;
       })
     );
-  };
-}; 
+  }
+} 

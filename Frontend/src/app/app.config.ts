@@ -1,28 +1,32 @@
 import { ApplicationConfig, isDevMode } from '@angular/core';
-import { provideRouter, withHashLocation } from '@angular/router';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarModule } from '@angular/material/snack-bar';
-import { routes } from './app.routes';
 import { provideStore } from '@ngrx/store';
-import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { provideEffects } from '@ngrx/effects';
+import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { provideAnimations } from '@angular/platform-browser/animations';
+
+import { routes } from './app.routes';
 import { authReducer } from './store/auth/auth.reducer';
 import { AuthEffects } from './store/auth/auth.effects';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
-import { eventsReducer } from './store/events/events.reducer';
-import { EventsEffects } from './store/events/events.effects';
+import { eventReducer } from './store/event/event.reducer';
+import { EventEffects } from './store/event/event.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes, withHashLocation()),
-    provideAnimations(),
-    provideHttpClient(withInterceptors([authInterceptor])),
-    provideStore({ 
+    provideRouter(routes),
+    provideHttpClient(
+      withInterceptors([authInterceptor])
+    ),
+    provideStore({
       auth: authReducer,
-      events: eventsReducer 
+      event: eventReducer
     }),
-    provideEffects([AuthEffects, EventsEffects]),
+    provideEffects([
+      AuthEffects,
+      EventEffects
+    ]),
     provideStoreDevtools({
       maxAge: 25,
       logOnly: !isDevMode(),
@@ -30,10 +34,6 @@ export const appConfig: ApplicationConfig = {
       trace: false,
       traceLimit: 75,
     }),
-    MatSnackBarModule,
-    {
-      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
-      useValue: { duration: 3000 }
-    }
+    provideAnimations()
   ]
 };

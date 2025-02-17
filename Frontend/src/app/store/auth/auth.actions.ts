@@ -1,139 +1,86 @@
 import { createAction, props } from '@ngrx/store';
-import { AuthUser, LoginCredentials, RegisterCredentials, JwtToken, AuthResponse } from '../../core/models/auth.model';
+import { User, UserRole } from '../../core/models/auth.models';
 
-// Login actions
+// Login
 export const login = createAction(
-    '[Auth] Login',
-    props<{ credentials: LoginCredentials }>()
+  '[Auth] Login',
+  props<{ 
+    email: string; 
+    password: string;
+    twoFactorCode?: string;
+  }>()
 );
 
 export const loginSuccess = createAction(
-    '[Auth] Login Success',
-    props<AuthResponse>()
+  '[Auth] Login Success',
+  props<{ user: User; token: string; refreshToken: string }>()
 );
 
 export const loginFailure = createAction(
-    '[Auth] Login Failure',
-    props<{ error: string }>()
+  '[Auth] Login Failure',
+  props<{ error: string }>()
 );
 
-// Register actions
+// Two Factor Required
+export const twoFactorRequired = createAction(
+  '[Auth] Two Factor Required',
+  props<{ email: string; password: string }>()
+);
+
+// Register
 export const register = createAction(
-    '[Auth] Register',
-    props<{ credentials: RegisterCredentials }>()
+  '[Auth] Register',
+  props<{ 
+    email: string; 
+    password: string; 
+    firstName: string; 
+    lastName: string;
+    role?: UserRole;
+  }>()
 );
 
 export const registerSuccess = createAction(
-    '[Auth] Register Success',
-    props<AuthResponse>()
+  '[Auth] Register Success',
+  props<{ user: User; token: string; refreshToken: string }>()
 );
 
 export const registerFailure = createAction(
-    '[Auth] Register Failure',
-    props<{ error: string }>()
+  '[Auth] Register Failure',
+  props<{ error: string }>()
 );
 
-// Token refresh actions
-export const refreshToken = createAction(
-    '[Auth] Refresh Token'
+// Logout
+export const logout = createAction('[Auth] Logout');
+
+export const logoutSuccess = createAction('[Auth] Logout Success');
+
+export const logoutFailure = createAction(
+  '[Auth] Logout Failure',
+  props<{ error: string }>()
 );
+
+// Refresh Token
+export const refreshToken = createAction('[Auth] Refresh Token');
 
 export const refreshTokenSuccess = createAction(
-    '[Auth] Refresh Token Success',
-    props<{ token: JwtToken }>()
+  '[Auth] Refresh Token Success',
+  props<{ user: User; token: string; refreshToken: string }>()
 );
 
 export const refreshTokenFailure = createAction(
-    '[Auth] Refresh Token Failure',
-    props<{ error: string }>()
+  '[Auth] Refresh Token Failure',
+  props<{ error: string }>()
 );
 
-// OAuth actions
-export const oAuthLogin = createAction(
-    '[Auth] OAuth Login',
-    props<{ provider: string; code: string }>()
+// Load Stored User
+export const loadStoredUser = createAction('[Auth] Load Stored User');
+
+export const loadStoredUserSuccess = createAction(
+  '[Auth] Load Stored User Success',
+  props<{ user: User | null }>()
 );
 
-export const oAuthSuccess = createAction(
-    '[Auth] OAuth Success',
-    props<AuthResponse>()
-);
-
-export const oAuthFailure = createAction(
-    '[Auth] OAuth Failure',
-    props<{ error: string }>()
-);
-
-// Email verification actions
-export const verifyEmail = createAction(
-    '[Auth] Verify Email',
-    props<{ email: string; code: string }>()
-);
-
-export const verifyEmailSuccess = createAction(
-    '[Auth] Verify Email Success'
-);
-
-export const verifyEmailFailure = createAction(
-    '[Auth] Verify Email Failure',
-    props<{ error: string }>()
-);
-
-export const resendVerificationEmail = createAction(
-    '[Auth] Resend Verification Email',
-    props<{ email: string }>()
-);
-
-export const resendVerificationEmailSuccess = createAction(
-    '[Auth] Resend Verification Email Success'
-);
-
-export const resendVerificationEmailFailure = createAction(
-    '[Auth] Resend Verification Email Failure',
-    props<{ error: string }>()
-);
-
-// Password reset actions
-export const forgotPassword = createAction(
-    '[Auth] Forgot Password',
-    props<{ email: string }>()
-);
-
-export const forgotPasswordSuccess = createAction(
-    '[Auth] Forgot Password Success'
-);
-
-export const forgotPasswordFailure = createAction(
-    '[Auth] Forgot Password Failure',
-    props<{ error: string }>()
-);
-
-export const resetPassword = createAction(
-    '[Auth] Reset Password',
-    props<{ token: string; password: string }>()
-);
-
-export const resetPasswordSuccess = createAction(
-    '[Auth] Reset Password Success'
-);
-
-export const resetPasswordFailure = createAction(
-    '[Auth] Reset Password Failure',
-    props<{ error: string }>()
-);
-
-// Session actions
-export const logout = createAction('[Auth] Logout');
-export const clearAuthError = createAction('[Auth] Clear Error');
-export const initializeAuth = createAction('[Auth] Initialize');
-
-// Google Auth actions
-export const googleAuthSuccess = createAction(
-    '[Auth] Google Auth Success',
-    props<{ token: string; user: any }>()
-);
-
-export const googleAuthFailure = createAction(
-    '[Auth] Google Auth Failure',
-    props<{ error: any }>()
-);
+export const loadStoredUserFailure = createAction(
+  '[Auth] Load Stored User Failure',
+  props<{ error: string }>()
+); 

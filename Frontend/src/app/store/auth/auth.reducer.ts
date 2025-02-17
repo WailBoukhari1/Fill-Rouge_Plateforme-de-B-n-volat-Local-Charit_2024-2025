@@ -1,47 +1,50 @@
 import { createReducer, on } from '@ngrx/store';
+import { AuthState } from '../../core/models/auth.models';
 import * as AuthActions from './auth.actions';
-import { AuthState } from '../../core/models/auth.model';
 
 export const initialState: AuthState = {
   user: null,
-  token: null,
+  accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
+  error: null,
   loading: false,
-  error: null
+  requiresTwoFactor: false
 };
 
 export const authReducer = createReducer(
   initialState,
 
-  // Initialize
-  on(AuthActions.initializeAuth, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-
   // Login
   on(AuthActions.login, (state) => ({
     ...state,
     loading: true,
-    error: null
+    error: null,
+    requiresTwoFactor: false
   })),
-  on(AuthActions.loginSuccess, (state, { user, accessToken, refreshToken }) => ({
+  on(AuthActions.loginSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
-    token: {
-      accessToken,
-      refreshToken,
-      expiresIn: 3600
-    },
+    accessToken: token,
+    refreshToken,
     isAuthenticated: true,
     loading: false,
-    error: null
+    error: null,
+    requiresTwoFactor: false
   })),
   on(AuthActions.loginFailure, (state, { error }) => ({
     ...state,
     loading: false,
-    error
+    error,
+    requiresTwoFactor: false
+  })),
+
+  // Two Factor Required
+  on(AuthActions.twoFactorRequired, (state) => ({
+    ...state,
+    loading: false,
+    error: null,
+    requiresTwoFactor: true
   })),
 
   // Register
@@ -50,14 +53,11 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
-  on(AuthActions.registerSuccess, (state, { user, accessToken, refreshToken }) => ({
+  on(AuthActions.registerSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
-    token: {
-      accessToken,
-      refreshToken,
-      expiresIn: 3600
-    },
+    accessToken: token,
+    refreshToken,
     isAuthenticated: true,
     loading: false,
     error: null
@@ -68,39 +68,32 @@ export const authReducer = createReducer(
     error
   })),
 
-  // OAuth
-  on(AuthActions.oAuthLogin, (state) => ({
+  // Logout
+  on(AuthActions.logout, (state) => ({
     ...state,
     loading: true,
     error: null
   })),
-  on(AuthActions.oAuthSuccess, (state, { user, accessToken, refreshToken }) => ({
-    ...state,
-    user,
-    token: {
-      accessToken,
-      refreshToken,
-      expiresIn: 3600
-    },
-    isAuthenticated: true,
-    loading: false,
-    error: null
+  on(AuthActions.logoutSuccess, () => ({
+    ...initialState
   })),
-  on(AuthActions.oAuthFailure, (state, { error }) => ({
+  on(AuthActions.logoutFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
   })),
 
-  // Token Refresh
+  // Refresh Token
   on(AuthActions.refreshToken, (state) => ({
     ...state,
     loading: true,
     error: null
   })),
-  on(AuthActions.refreshTokenSuccess, (state, { token }) => ({
+  on(AuthActions.refreshTokenSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
-    token,
+    user,
+    accessToken: token,
+    refreshToken,
     loading: false,
     error: null
   })),
@@ -110,62 +103,17 @@ export const authReducer = createReducer(
     error
   })),
 
-  // Email Verification
-  on(AuthActions.verifyEmail, (state) => ({
+  // Load Stored User
+  on(AuthActions.loadStoredUser, (state) => ({
     ...state,
     loading: true,
     error: null
   })),
-  on(AuthActions.verifyEmailSuccess, (state) => ({
+  on(AuthActions.loadStoredUserSuccess, (state, { user }) => ({
     ...state,
-    user: state.user ? { ...state.user, emailVerified: true } : null,
+    user,
+    isAuthenticated: !!user,
     loading: false,
-    error: null
-  })),
-  on(AuthActions.verifyEmailFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-
-  // Password Reset
-  on(AuthActions.forgotPassword, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-  on(AuthActions.forgotPasswordSuccess, (state) => ({
-    ...state,
-    loading: false,
-    error: null
-  })),
-  on(AuthActions.forgotPasswordFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-  on(AuthActions.resetPassword, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-  on(AuthActions.resetPasswordSuccess, (state) => ({
-    ...state,
-    loading: false,
-    error: null
-  })),
-  on(AuthActions.resetPasswordFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-
-  // Session Management
-  on(AuthActions.logout, () => ({
-    ...initialState
-  })),
-  on(AuthActions.clearAuthError, (state) => ({
-    ...state,
     error: null
   }))
 ); 
