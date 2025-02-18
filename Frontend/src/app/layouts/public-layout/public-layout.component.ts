@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -62,7 +62,7 @@ import { AuthService } from '../../core/services/auth.service';
               <mat-icon>dashboard</mat-icon>
               <span>Dashboard</span>
             </a>
-            <button mat-menu-item (click)="logout()">
+            <button mat-menu-item (click)="onLogout()">
               <mat-icon>exit_to_app</mat-icon>
               <span>Logout</span>
             </button>
@@ -206,11 +206,16 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `]
 })
-export class PublicLayoutComponent {
+export class PublicLayoutComponent implements OnInit {
   currentYear = new Date().getFullYear();
   userName: string = '';
 
-  constructor(private authService: AuthService) {
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
     if (this.isLoggedIn()) {
       this.userName = this.authService.getUserName();
     }
@@ -221,11 +226,19 @@ export class PublicLayoutComponent {
   }
 
   getDashboardLink(): string {
-    const role = this.authService.getUserRole();
-    return `/dashboard/${role.toLowerCase()}`;
+    return '/dashboard';
   }
 
-  logout() {
-    this.authService.logout();
+  onLogout() {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/auth/login']);
+      },
+      error: (error) => {
+        console.error('Logout failed:', error);
+        // Still navigate to login page even if logout fails
+        this.router.navigate(['/auth/login']);
+      }
+    });
   }
 } 

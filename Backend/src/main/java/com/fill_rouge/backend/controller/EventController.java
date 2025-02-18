@@ -1,19 +1,16 @@
 package com.fill_rouge.backend.controller;
 
-import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
-import com.fill_rouge.backend.domain.EventWaitlist;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.request.FeedbackRequest;
 import com.fill_rouge.backend.dto.response.ApiResponse;
 import com.fill_rouge.backend.dto.response.EventResponse;
 import com.fill_rouge.backend.dto.response.FeedbackResponse;
-import com.fill_rouge.backend.dto.response.WaitlistResponse;
 import com.fill_rouge.backend.mapper.EventMapper;
 import com.fill_rouge.backend.service.event.EventFeedbackService;
 import com.fill_rouge.backend.service.event.EventService;
-import com.fill_rouge.backend.service.event.EventWaitlistService;
+import com.fill_rouge.backend.constant.EventStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -34,11 +31,10 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
-@Tag(name = "Event Management", description = "APIs for managing events, waitlists, and feedback")
+@Tag(name = "Event Management", description = "APIs for managing events and feedback")
 public class EventController {
     
     private final EventService eventService;
-    private final EventWaitlistService waitlistService;
     private final EventFeedbackService feedbackService;
     private final EventMapper eventMapper;
     
@@ -189,7 +185,7 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponse>> approveEvent(
             @PathVariable String eventId,
             @RequestHeader("X-User-ID") String userId) {
-        Event event = eventService.updateEventStatus(eventId, EventStatus.APPROVED);
+        Event event = eventService.updateEventStatus(eventId, EventStatus.ACTIVE);
         return ResponseEntity.ok(ApiResponse.success(
             eventMapper.toResponse(event, userId),
             "Event approved successfully"
@@ -202,7 +198,7 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponse>> rejectEvent(
             @PathVariable String eventId,
             @RequestHeader("X-User-ID") String userId) {
-        Event event = eventService.updateEventStatus(eventId, EventStatus.REJECTED);
+        Event event = eventService.updateEventStatus(eventId, EventStatus.PENDING);
         return ResponseEntity.ok(ApiResponse.success(
             eventMapper.toResponse(event, userId),
             "Event rejected"
@@ -215,7 +211,7 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponse>> cancelEvent(
             @PathVariable String eventId,
             @RequestHeader("X-User-ID") String userId) {
-        Event event = eventService.updateEventStatus(eventId, EventStatus.CANCELLED);
+        Event event = eventService.updateEventStatus(eventId, EventStatus.FULL);
         return ResponseEntity.ok(ApiResponse.success(
             eventMapper.toResponse(event, userId),
             "Event cancelled successfully"
@@ -235,72 +231,6 @@ public class EventController {
         ));
     }
     
-    // Waitlist Management Endpoints
-    @PostMapping("/{eventId}/waitlist/join")
-    @PreAuthorize("hasRole('VOLUNTEER')")
-    @Operation(summary = "Join event waitlist", description = "Add a volunteer to the event waitlist")
-    public ResponseEntity<ApiResponse<WaitlistResponse>> joinWaitlist(
-            @PathVariable String eventId,
-            @RequestHeader("X-User-ID") String volunteerId) {
-        EventWaitlist waitlist = waitlistService.joinWaitlist(eventId, volunteerId);
-        return ResponseEntity.ok(ApiResponse.success(WaitlistResponse.fromWaitlist(waitlist), 
-                "Successfully joined the waitlist"));
-    }
-    
-    @DeleteMapping("/{eventId}/waitlist/leave")
-    @PreAuthorize("hasRole('VOLUNTEER')")
-    @Operation(summary = "Leave event waitlist", description = "Remove a volunteer from the event waitlist")
-    public ResponseEntity<ApiResponse<Void>> leaveWaitlist(
-            @PathVariable String eventId,
-            @RequestHeader("X-User-ID") String volunteerId) {
-        waitlistService.leaveWaitlist(eventId, volunteerId);
-        return ResponseEntity.ok(ApiResponse.success(null, "Successfully left the waitlist"));
-    }
-    
-    @GetMapping("/{eventId}/waitlist")
-    @Operation(summary = "Get event waitlist", description = "Get the list of volunteers on the event waitlist")
-    public ResponseEntity<ApiResponse<List<WaitlistResponse>>> getEventWaitlist(
-            @PathVariable String eventId,
-            @PageableDefault(size = 10) Pageable pageable) {
-        Page<EventWaitlist> waitlistPage = waitlistService.getEventWaitlist(eventId, pageable);
-        List<WaitlistResponse> waitlist = waitlistPage.getContent().stream()
-                .map(WaitlistResponse::fromWaitlist)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(ApiResponse.success(waitlist));
-    }
-    
-    @GetMapping("/waitlist/volunteer/{volunteerId}")
-    @Operation(summary = "Get volunteer waitlists", description = "Get all waitlists for a specific volunteer")
-    public ResponseEntity<ApiResponse<List<WaitlistResponse>>> getVolunteerWaitlists(
-            @PathVariable String volunteerId,
-            @PageableDefault(size = 10) Pageable pageable) {
-        Page<EventWaitlist> waitlistPage = waitlistService.getVolunteerWaitlists(volunteerId, pageable);
-        List<WaitlistResponse> waitlists = waitlistPage.getContent().stream()
-                .map(WaitlistResponse::fromWaitlist)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(ApiResponse.success(waitlists));
-    }
-    
-    @GetMapping("/{eventId}/waitlist/position")
-    @PreAuthorize("hasRole('VOLUNTEER')")
-    @Operation(summary = "Get waitlist position", description = "Get the volunteer's position on the waitlist")
-    public ResponseEntity<ApiResponse<Integer>> getWaitlistPosition(
-            @PathVariable String eventId,
-            @RequestHeader("X-User-ID") String volunteerId) {
-        int position = waitlistService.getWaitlistPosition(eventId, volunteerId);
-        return ResponseEntity.ok(ApiResponse.success(position));
-    }
-    
-    @PostMapping("/{eventId}/waitlist/notify-next")
-    @PreAuthorize("hasRole('ORGANIZATION')")
-    @Operation(summary = "Notify next in waitlist", description = "Notify the next person on the waitlist")
-    public ResponseEntity<ApiResponse<Void>> notifyNextInWaitlist(
-            @PathVariable String eventId) {
-        waitlistService.notifyNextInWaitlist(eventId);
-        return ResponseEntity.ok(ApiResponse.success(null, "Notification sent to next person in waitlist"));
-    }
-    
-    // Feedback Management Endpoints
     @PostMapping("/{eventId}/feedback")
     @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Submit feedback", description = "Submit feedback for an event")
@@ -311,8 +241,16 @@ public class EventController {
         EventFeedback feedback = createFeedbackFromRequest(request);
         
         EventFeedback submittedFeedback = feedbackService.submitFeedback(eventId, volunteerId, feedback);
-        return ResponseEntity.ok(ApiResponse.success(FeedbackResponse.fromFeedback(submittedFeedback), 
-                "Feedback submitted successfully"));
+        return ResponseEntity.ok(ApiResponse.success(
+            FeedbackResponse.builder()
+                .id(submittedFeedback.getId())
+                .eventId(submittedFeedback.getEventId())
+                .volunteerId(submittedFeedback.getVolunteerId())
+                .rating(submittedFeedback.getRating())
+                .comment(submittedFeedback.getComment())
+                .submittedAt(submittedFeedback.getSubmittedAt())
+                .build(),
+            "Feedback submitted successfully"));
     }
     
     @GetMapping("/{eventId}/feedback")
@@ -322,17 +260,17 @@ public class EventController {
             @PageableDefault(size = 10) Pageable pageable) {
         Page<EventFeedback> feedbackPage = feedbackService.getEventFeedbacks(eventId, pageable);
         List<FeedbackResponse> feedbacks = feedbackPage.getContent().stream()
-                .map(FeedbackResponse::fromFeedback)
+                .map(feedback -> FeedbackResponse.builder()
+                    .id(feedback.getId())
+                    .eventId(feedback.getEventId())
+                    .volunteerId(feedback.getVolunteerId())
+                    .rating(feedback.getRating())
+                    .comment(feedback.getComment())
+                    .submittedAt(feedback.getSubmittedAt())
+                    .build())
                 .collect(Collectors.toList());
         
-        ApiResponse.Meta meta = ApiResponse.Meta.builder()
-                .page(feedbackPage.getNumber())
-                .size(feedbackPage.getSize())
-                .totalElements(feedbackPage.getTotalElements())
-                .totalPages(feedbackPage.getTotalPages())
-                .build();
-        
-        return ResponseEntity.ok(ApiResponse.success(feedbacks, meta));
+        return ResponseEntity.ok(ApiResponse.success(feedbacks));
     }
     
     @GetMapping("/feedback/volunteer/{volunteerId}")
@@ -342,17 +280,17 @@ public class EventController {
             @PageableDefault(size = 10) Pageable pageable) {
         Page<EventFeedback> feedbackPage = feedbackService.getVolunteerFeedbacks(volunteerId, pageable);
         List<FeedbackResponse> feedbacks = feedbackPage.getContent().stream()
-                .map(FeedbackResponse::fromFeedback)
+                .map(feedback -> FeedbackResponse.builder()
+                    .id(feedback.getId())
+                    .eventId(feedback.getEventId())
+                    .volunteerId(feedback.getVolunteerId())
+                    .rating(feedback.getRating())
+                    .comment(feedback.getComment())
+                    .submittedAt(feedback.getSubmittedAt())
+                    .build())
                 .collect(Collectors.toList());
         
-        ApiResponse.Meta meta = ApiResponse.Meta.builder()
-                .page(feedbackPage.getNumber())
-                .size(feedbackPage.getSize())
-                .totalElements(feedbackPage.getTotalElements())
-                .totalPages(feedbackPage.getTotalPages())
-                .build();
-        
-        return ResponseEntity.ok(ApiResponse.success(feedbacks, meta));
+        return ResponseEntity.ok(ApiResponse.success(feedbacks));
     }
     
     @DeleteMapping("/feedback/{feedbackId}")
@@ -405,10 +343,8 @@ public class EventController {
     // Helper method to create feedback from request
     private EventFeedback createFeedbackFromRequest(FeedbackRequest request) {
         return EventFeedback.builder()
-                .rating(request.getRating())
+                .rating((int) request.getRating())
                 .comment(request.getComment())
-                .hoursContributed(request.getHoursContributed())
-                .isAnonymous(request.isAnonymous())
                 .build();
     }
 }

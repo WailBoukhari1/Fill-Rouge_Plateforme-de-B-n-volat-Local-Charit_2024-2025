@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface VolunteerProfile {
@@ -33,11 +34,38 @@ export interface VolunteerProfile {
   backgroundCheckStatus: string;
 }
 
+export interface VolunteerStatistics {
+  totalEventsAttended: number;
+  totalHoursVolunteered: number;
+  averageRating: number;
+  reliabilityScore: number;
+  badges: string[];
+  upcomingEvents: number;
+  completedEvents: number;
+  canceledEvents: number;
+  achievementsEarned: number;
+  impactMetrics: {
+    peopleServed: number;
+    projectsCompleted: number;
+    skillsLearned: number;
+  };
+}
+
+export interface VolunteerHours {
+  id: string;
+  eventId: string;
+  eventName: string;
+  date: Date;
+  hours: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  notes?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class VolunteerService {
-  private apiUrl = `${environment.apiUrl}/volunteers`;
+  private apiUrl = `${environment.apiUrl}/api/volunteers`;
 
   constructor(private http: HttpClient) {}
 
@@ -52,8 +80,29 @@ export class VolunteerService {
   }
 
   // Get volunteer statistics
-  getStatistics(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/statistics`);
+  getStatistics(): Observable<VolunteerStatistics> {
+    return this.http.get<VolunteerStatistics>(`${this.apiUrl}/statistics`).pipe(
+      catchError(error => {
+        console.error('Error fetching volunteer statistics:', error);
+        // Return default statistics if the API fails
+        return of({
+          totalEventsAttended: 0,
+          totalHoursVolunteered: 0,
+          averageRating: 0,
+          reliabilityScore: 0,
+          badges: [],
+          upcomingEvents: 0,
+          completedEvents: 0,
+          canceledEvents: 0,
+          achievementsEarned: 0,
+          impactMetrics: {
+            peopleServed: 0,
+            projectsCompleted: 0,
+            skillsLearned: 0
+          }
+        });
+      })
+    );
   }
 
   // Get volunteer achievements
@@ -62,8 +111,13 @@ export class VolunteerService {
   }
 
   // Get volunteer hours
-  getVolunteerHours(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/hours`);
+  getVolunteerHours(): Observable<VolunteerHours[]> {
+    return this.http.get<VolunteerHours[]>(`${this.apiUrl}/hours`).pipe(
+      catchError(error => {
+        console.error('Error fetching volunteer hours:', error);
+        return of([]);
+      })
+    );
   }
 
   // Update volunteer availability
@@ -106,5 +160,25 @@ export class VolunteerService {
   // Request background check
   requestBackgroundCheck(): Observable<any> {
     return this.http.post(`${this.apiUrl}/background-check/request`, {});
+  }
+
+  // Get volunteer dashboard statistics
+  getDashboardStats(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/dashboard`);
+  }
+
+  // Get volunteer dashboard statistics by date range
+  getDashboardStatsByDateRange(startDate: Date, endDate: Date): Observable<any> {
+    return this.http.get(`${this.apiUrl}/dashboard/range`, {
+      params: {
+        start: startDate.toISOString(),
+        end: endDate.toISOString()
+      }
+    });
+  }
+
+  // Get volunteer reliability score
+  getReliabilityScore(): Observable<number> {
+    return this.http.get<number>(`${this.apiUrl}/reliability-score`);
   }
 } 

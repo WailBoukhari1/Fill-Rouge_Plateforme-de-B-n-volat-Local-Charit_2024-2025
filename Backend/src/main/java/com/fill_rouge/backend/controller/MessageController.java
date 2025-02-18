@@ -1,10 +1,13 @@
 package com.fill_rouge.backend.controller;
 
-import com.fill_rouge.backend.dto.response.MessageResponse;
-import com.fill_rouge.backend.mapper.CommunicationMapper;
-import com.fill_rouge.backend.service.communication.CommunicationService;
+import com.fill_rouge.backend.domain.Message;
+import com.fill_rouge.backend.service.message.MessageService;
+
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,45 +26,50 @@ import java.util.List;
 @Tag(name = "Messages", description = "APIs for managing messages between users")
 public class MessageController {
 
-    private final CommunicationService communicationService;
-    private final CommunicationMapper communicationMapper;
+    private final MessageService messageService;
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Send message", description = "Send a message to another user")
-    @ApiResponse(responseCode = "200", description = "Message sent successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid request")
-    public ResponseEntity<MessageResponse> sendMessage(
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Message sent successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
+    public ResponseEntity<Message> sendMessage(
             @RequestHeader("X-User-ID") String senderId,
             @RequestParam @NotBlank String receiverId,
             @RequestParam @NotBlank @Size(min = 1, max = 2000) String content,
             @RequestParam(required = false) String attachmentUrl) {
-        return ResponseEntity.ok(communicationMapper.toMessageResponse(
-            communicationService.sendMessage(senderId, receiverId, content, attachmentUrl)
-        ));
+        return ResponseEntity.ok(
+            messageService.sendMessage(senderId, receiverId, content, attachmentUrl)
+        );
     }
 
     @GetMapping("/conversation/{otherUserId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get conversation", description = "Get messages between current user and another user")
-    @ApiResponse(responseCode = "200", description = "Conversation retrieved successfully")
-    public ResponseEntity<List<MessageResponse>> getConversation(
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Conversation retrieved successfully")
+    })
+    public ResponseEntity<List<Message>> getConversation(
             @RequestHeader("X-User-ID") String userId,
             @PathVariable String otherUserId) {
-        return ResponseEntity.ok(communicationMapper.toMessageResponseList(
-            communicationService.getConversation(userId, otherUserId)
-        ));
+        return ResponseEntity.ok(
+            messageService.getConversation(userId, otherUserId)
+        );
     }
 
     @GetMapping("/unread")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get unread messages", description = "Get all unread messages for the current user")
-    @ApiResponse(responseCode = "200", description = "Unread messages retrieved successfully")
-    public ResponseEntity<List<MessageResponse>> getUnreadMessages(
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Unread messages retrieved successfully")
+    })
+    public ResponseEntity<List<Message>> getUnreadMessages(
             @RequestHeader("X-User-ID") String userId) {
-        return ResponseEntity.ok(communicationMapper.toMessageResponseList(
-            communicationService.getUnreadMessages(userId)
-        ));
+        return ResponseEntity.ok(
+            messageService.getUnreadMessages(userId)
+        );
     }
 
     @GetMapping("/count")
@@ -69,14 +77,14 @@ public class MessageController {
     @Operation(summary = "Get unread count", description = "Get the count of unread messages")
     public ResponseEntity<Long> getUnreadCount(
             @RequestHeader("X-User-ID") String userId) {
-        return ResponseEntity.ok(communicationService.getUnreadCount(userId));
+        return ResponseEntity.ok(messageService.getUnreadCount(userId));
     }
 
     @PatchMapping("/{messageId}/read")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Mark as read", description = "Mark a message as read")
     public ResponseEntity<Void> markAsRead(@PathVariable String messageId) {
-        communicationService.markAsRead(messageId);
+        messageService.markAsRead(messageId);
         return ResponseEntity.ok().build();
     }
 
@@ -85,7 +93,7 @@ public class MessageController {
     @Operation(summary = "Mark all as read", description = "Mark all messages as read")
     public ResponseEntity<Void> markAllAsRead(
             @RequestHeader("X-User-ID") String userId) {
-        communicationService.markAllAsRead(userId);
+        messageService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
 
@@ -93,7 +101,7 @@ public class MessageController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete message", description = "Delete a message")
     public ResponseEntity<Void> deleteMessage(@PathVariable String messageId) {
-        communicationService.deleteCommunication(messageId);
+        messageService.deleteMessage(messageId);
         return ResponseEntity.ok().build();
     }
 }

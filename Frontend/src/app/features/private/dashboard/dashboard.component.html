@@ -36,12 +36,12 @@
 
       <mat-menu #userMenu="matMenu">
         @if(userRole === 'VOLUNTEER') {
-          <a mat-menu-item routerLink="/dashboard/volunteer/profile">
+          <a mat-menu-item routerLink="/dashboard/profile">
             <mat-icon>person</mat-icon>
             <span>My Profile</span>
           </a>
         } @else if(userRole === 'ORGANIZATION') {
-          <a mat-menu-item routerLink="/dashboard/organization/profile">
+          <a mat-menu-item routerLink="/dashboard/profile">
             <mat-icon>business</mat-icon>
             <span>Organization Profile</span>
           </a>

@@ -1,8 +1,17 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Report, ReportFilter, ReportType } from '../models/report.model';
+import { 
+  OverviewStatistics, 
+  UserActivity, 
+  EventStatistics, 
+  ReportType, 
+  ReportRequest, 
+  ReportResponse, 
+  Report, 
+  ReportFilter 
+} from '../models/report.model';
 
 @Injectable({
   providedIn: 'root'
@@ -12,27 +21,45 @@ export class ReportService {
 
   constructor(private http: HttpClient) {}
 
-  generateReport(type: ReportType, filters?: ReportFilter[]): Observable<Report> {
-    return this.http.post<Report>(`${this.apiUrl}/generate`, { type, filters });
+  getOverviewStatistics(): Observable<OverviewStatistics> {
+    return this.http.get<OverviewStatistics>(`${this.apiUrl}/overview`);
+  }
+
+  getUserActivity(): Observable<UserActivity[]> {
+    return this.http.get<UserActivity[]>(`${this.apiUrl}/user-activity`);
+  }
+
+  getEventStatistics(): Observable<EventStatistics[]> {
+    return this.http.get<EventStatistics[]>(`${this.apiUrl}/event-statistics`);
+  }
+
+  getReports(type?: ReportType): Observable<Report[]> {
+    let params = new HttpParams();
+    if (type) {
+      params = params.set('type', type.toString());
+    }
+    return this.http.get<Report[]>(this.apiUrl, { params });
+  }
+
+  generateReport(type: ReportType, startDate?: Date, endDate?: Date): Observable<ReportResponse> {
+    const request: ReportRequest = {
+      type,
+      startDate,
+      endDate
+    };
+    return this.http.post<ReportResponse>(`${this.apiUrl}/generate`, request);
   }
 
   getReport(id: string): Observable<Report> {
     return this.http.get<Report>(`${this.apiUrl}/${id}`);
   }
 
-  getReports(type?: ReportType): Observable<Report[]> {
-    const params = type ? { type } : {};
-    return this.http.get<Report[]>(this.apiUrl, { params });
-  }
-
   deleteReport(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  downloadReport(id: string, format: 'pdf' | 'csv' | 'excel'): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/${id}/download/${format}`, {
-      responseType: 'blob'
-    });
+  downloadReport(fileUrl: string): Observable<Blob> {
+    return this.http.get(fileUrl, { responseType: 'blob' });
   }
 
   scheduleReport(type: ReportType, schedule: string, filters?: ReportFilter[]): Observable<Report> {

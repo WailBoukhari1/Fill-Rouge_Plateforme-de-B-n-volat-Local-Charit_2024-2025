@@ -1,13 +1,13 @@
 package com.fill_rouge.backend.dto.response;
 
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fill_rouge.backend.domain.EventFeedback;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -20,45 +20,17 @@ public class FeedbackResponse {
     private String volunteerId;
     private String volunteerName;
     private String eventTitle;
-    private double rating;
+    
+    private int rating;
     private String comment;
     private int hoursContributed;
-    private LocalDateTime submittedAt;
+    private String sentiment;  // POSITIVE, NEUTRAL, NEGATIVE
+    
     private boolean isAnonymous;
-
-    public static FeedbackResponse fromFeedback(EventFeedback feedback) {
-        if (feedback == null) {
-            return null;
-        }
-
-        return FeedbackResponse.builder()
-                .id(feedback.getId())
-                .eventId(feedback.getEventId())
-                .volunteerId(feedback.getVolunteerId())
-                .rating(feedback.getRating())
-                .comment(feedback.getComment())
-                .hoursContributed(feedback.getHoursContributed())
-                .submittedAt(feedback.getSubmittedAt())
-                .build();
-    }
-
-    public static FeedbackResponse fromFeedbackWithDetails(
-            EventFeedback feedback,
-            String volunteerName,
-            String eventTitle,
-            boolean isAnonymous) {
-        FeedbackResponse response = fromFeedback(feedback);
-        if (response != null) {
-            response.setVolunteerName(isAnonymous ? "Anonymous" : volunteerName);
-            response.setEventTitle(eventTitle);
-            response.setAnonymous(isAnonymous);
-        }
-        return response;
-    }
-
-    public String getSentiment() {
-        if (rating >= 4.0) return "POSITIVE";
-        if (rating <= 2.0) return "NEGATIVE";
-        return "NEUTRAL";
-    }
+    private LocalDateTime submittedAt;
+    
+    // Metrics
+    private double averageRating;
+    private int totalHours;
+    private int feedbackCount;
 } 

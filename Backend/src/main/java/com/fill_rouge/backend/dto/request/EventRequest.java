@@ -1,14 +1,22 @@
 package com.fill_rouge.backend.dto.request;
 
+import java.time.LocalDateTime;
+
 import com.fill_rouge.backend.constant.EventCategory;
-import jakarta.validation.constraints.*;
+
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
@@ -26,9 +34,6 @@ public class EventRequest {
     @NotBlank(message = "Event location is required")
     private String location;
 
-    @Size(min = 2, max = 2, message = "Coordinates must contain exactly 2 values [latitude, longitude]")
-    private double[] coordinates;
-
     @NotNull(message = "Start date is required")
     @Future(message = "Start date must be in the future")
     private LocalDateTime startDate;
@@ -38,21 +43,11 @@ public class EventRequest {
     private LocalDateTime endDate;
 
     @Min(value = 1, message = "Minimum participants must be at least 1")
-    @Max(value = 1000, message = "Maximum participants cannot exceed 1000")
+    @Max(value = 100, message = "Maximum participants cannot exceed 100")
     private int maxParticipants;
 
     @NotNull(message = "Event category is required")
     private EventCategory category;
-
-    private List<String> requiredSkills;
-
-    private boolean waitlistEnabled = true;
-
-    @Min(value = 0, message = "Waitlist size cannot be negative")
-    @Max(value = 500, message = "Waitlist size cannot exceed 500")
-    private int maxWaitlistSize = 50;
-
-    private String impactSummary;
 
     @NotBlank(message = "Contact person is required")
     private String contactPerson;
@@ -63,20 +58,8 @@ public class EventRequest {
     @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Invalid contact phone format")
     private String contactPhone;
 
-    private boolean isVirtual = false;
-    private String virtualMeetingLink;
-    private String difficulty = "BEGINNER";
-
-    @PositiveOrZero(message = "Duration hours cannot be negative")
-    private int durationHours;
-
     @AssertTrue(message = "End date must be after start date")
     private boolean isValidDateRange() {
         return startDate == null || endDate == null || !endDate.isBefore(startDate);
-    }
-
-    @AssertTrue(message = "Virtual meeting link is required for virtual events")
-    private boolean isValidVirtualEvent() {
-        return !isVirtual || (isVirtual && virtualMeetingLink != null && !virtualMeetingLink.trim().isEmpty());
     }
 }

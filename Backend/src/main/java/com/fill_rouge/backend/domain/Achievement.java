@@ -1,123 +1,100 @@
 package com.fill_rouge.backend.domain;
 
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.index.Indexed;
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import com.fill_rouge.backend.constant.AchievementType;
+
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "achievements")
 public class Achievement {
     @Id
     private String id;
 
-    @NotBlank(message = "Volunteer ID is required")
+    @NotBlank(message = "Achievement name is required")
+    @Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
     @Indexed
-    private String volunteerId;
+    private String name;
 
-    @NotBlank(message = "Badge ID is required")
-    @Indexed
-    private String badgeId;
-
-    @NotNull(message = "Earned date is required")
-    private LocalDateTime earnedAt;
-
-    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    @NotBlank(message = "Achievement description is required")
+    @Size(min = 10, max = 500, message = "Description must be between 10 and 500 characters")
     private String description;
 
-    @NotNull(message = "Points value is required")
-    @PositiveOrZero(message = "Points cannot be negative")
-    private Integer points = 0;
+    @NotNull(message = "Achievement type is required")
+    private AchievementType type;
 
-    @NotBlank(message = "Category is required")
+    private String iconUrl;
     private String category;
+    private Integer points = 0;
+    private String difficulty = "NORMAL"; // EASY, NORMAL, HARD, EXPERT
 
-    private Boolean isPublic = true;
-    private LocalDateTime expiresAt;
-    private String eventId;
-    private String organizationId;
-    private LocalDateTime createdAt;
+    // Achievement Requirements
+    @Min(value = 0, message = "Required events cannot be negative")
+    private int requiredEvents;
+
+    @Min(value = 0, message = "Required hours cannot be negative")
+    private int requiredHours;
+
+    @DecimalMin(value = "0.0", message = "Required rating cannot be negative")
+    @DecimalMax(value = "5.0", message = "Required rating cannot exceed 5.0")
+    private double requiredRating;
+
+    private String prerequisiteAchievementId;
+    private boolean isPrerequisiteMet = true;
+
+    // Achievement Properties
+    private boolean isSecret = false;
+    private boolean isSpecial = false;
+    private boolean isStackable = false;
+    private int maxStack = 1;
+    private String seasonId;
+    private boolean isSeasonalAchievement = false;
+    private String unlockMessage;
+
+    // Achievement Status
+    @Builder.Default
+    private boolean isActive = true;
+    
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
     private String createdBy;
-    private LocalDateTime updatedAt;
-    private String updatedBy;
-    private Boolean isRevoked = false;
+    private boolean isRevoked = false;
     private String revokedBy;
     private LocalDateTime revokedAt;
     private String revocationReason;
-    private Boolean isHidden = false;
-    private String progressStatus = "COMPLETED";
-    private Integer progressValue = 100;
-    private String progressDescription;
-    private LocalDateTime lastProgressUpdate;
-    private Boolean isStackable = false;
-    private Integer currentStack = 1;
-    private Integer maxStack = 1;
-    private String seasonId;
-    private Boolean isSeasonalAchievement = false;
-    private Integer bonusPoints = 0;
-    private String unlockMessage;
-    private Boolean isSecret = false;
-    private Boolean isDiscovered = true;
-    private LocalDateTime discoveredAt;
-    private String achievementGroupId;
-    private Integer groupOrder = 0;
-    private String difficulty = "NORMAL";
-    private Integer completionPercentage = 100;
-    private String prerequisiteAchievementId;
-    private Boolean isPrerequisiteMet = true;
 
-    public Achievement() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        this.earnedAt = LocalDateTime.now();
+    public boolean isAvailable() {
+        return isActive && !isRevoked && 
+               (!isSeasonalAchievement || (seasonId != null && !seasonId.isEmpty()));
     }
 
-    public boolean isActive() {
-        return !isRevoked && 
-               (expiresAt == null || LocalDateTime.now().isBefore(expiresAt));
+    public boolean canBeStacked() {
+        return isStackable && maxStack > 1;
     }
 
-    public boolean isVisible() {
-        return !isHidden && (isPublic || isDiscovered);
-    }
-
-    public boolean canProgress() {
-        return !isRevoked && 
-               progressValue < 100 && 
-               (expiresAt == null || LocalDateTime.now().isBefore(expiresAt));
-    }
-
-    public boolean canStack() {
-        return isStackable && 
-               currentStack < maxStack && 
-               !isRevoked;
-    }
-
-    public void incrementStack() {
-        if (canStack()) {
-            currentStack++;
-            lastProgressUpdate = LocalDateTime.now();
-        }
-    }
-
-    public void updateProgress(int newValue, String description) {
-        if (newValue < 0 || newValue > 100) {
-            throw new IllegalArgumentException("Progress value must be between 0 and 100");
-        }
-        
-        this.progressValue = newValue;
-        this.progressDescription = description;
-        this.lastProgressUpdate = LocalDateTime.now();
-        
-        if (newValue >= 100) {
-            this.progressStatus = "COMPLETED";
-            this.completionPercentage = 100;
-        } else {
-            this.progressStatus = "IN_PROGRESS";
-            this.completionPercentage = newValue;
-        }
+    public boolean requiresPrerequisite() {
+        return prerequisiteAchievementId != null && !prerequisiteAchievementId.isEmpty();
     }
 
     public void revoke(String revokedBy, String reason) {
@@ -125,23 +102,16 @@ public class Achievement {
         this.revokedBy = revokedBy;
         this.revokedAt = LocalDateTime.now();
         this.revocationReason = reason;
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public void discover() {
-        if (!isDiscovered) {
-            this.isDiscovered = true;
-            this.discoveredAt = LocalDateTime.now();
-        }
+    public void activate() {
+        this.isActive = true;
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public int getTotalPoints() {
-        int total = points;
-        if (bonusPoints != null) {
-            total += bonusPoints;
-        }
-        if (isStackable && currentStack > 1) {
-            total *= currentStack;
-        }
-        return total;
+    public void deactivate() {
+        this.isActive = false;
+        this.updatedAt = LocalDateTime.now();
     }
 } 

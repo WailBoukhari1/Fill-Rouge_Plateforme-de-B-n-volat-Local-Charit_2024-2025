@@ -1,26 +1,26 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
-  Event, 
-  EventStats, 
-  EventFeedback, 
-  EventRegistration,
-  EventFilters,
-  EventStatus 
-} from '../models/event.model';
+  IEvent, 
+  IEventStats, 
+  IEventFeedback, 
+  IEventRegistration,
+  IEventFilters,
+  EventStatus
+} from '../models/event.types';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EventService {
-  private apiUrl = `${environment.apiUrl}/events`;
+  private apiUrl = `${environment.apiUrl}/api/events`;
 
   constructor(private http: HttpClient) {}
 
   // Public Event Endpoints
-  getEvents(filters: EventFilters, page: number = 0, size: number = 10): Observable<any> {
+  getEvents(filters: IEventFilters, page: number = 0, size: number = 10): Observable<{ content: IEvent[]; totalElements: number }> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
@@ -39,51 +39,131 @@ export class EventService {
     if (filters.isRecurring !== undefined) params = params.set('isRecurring', filters.isRecurring.toString());
     if (filters.minimumAge !== undefined) params = params.set('minimumAge', filters.minimumAge.toString());
 
-    return this.http.get<any>(this.apiUrl, { params });
+    return this.http.get<{ content: IEvent[]; totalElements: number }>(this.apiUrl, { params }).pipe(
+      map(response => ({
+        content: response.content.map(event => ({
+          ...event,
+          registeredParticipants: new Set(event.registeredParticipants),
+          waitlistedParticipants: new Set(event.waitlistedParticipants),
+          approvedParticipants: new Set(event.approvedParticipants),
+          rejectedParticipants: new Set(event.rejectedParticipants),
+          pendingParticipants: new Set(event.pendingParticipants),
+          tags: new Set(event.tags),
+          resources: new Set(event.resources),
+          sponsors: new Set(event.sponsors)
+        })),
+        totalElements: response.totalElements
+      }))
+    );
   }
 
-  getEventById(id: string): Observable<Event> {
-    return this.http.get<Event>(`${this.apiUrl}/${id}`);
+  getEventById(id: string): Observable<IEvent> {
+    return this.http.get<IEvent>(`${this.apiUrl}/${id}`).pipe(
+      map(event => ({
+        ...event,
+        registeredParticipants: new Set(event.registeredParticipants),
+        waitlistedParticipants: new Set(event.waitlistedParticipants),
+        approvedParticipants: new Set(event.approvedParticipants),
+        rejectedParticipants: new Set(event.rejectedParticipants),
+        pendingParticipants: new Set(event.pendingParticipants),
+        tags: new Set(event.tags),
+        resources: new Set(event.resources),
+        sponsors: new Set(event.sponsors)
+      }))
+    );
+  }
+
+  getUpcomingEvents(): Observable<IEvent[]> {
+    return this.http.get<{ content: IEvent[] }>(`${this.apiUrl}/upcoming`).pipe(
+      map(response => response.content || []),
+      map(events => events.map(event => ({
+        ...event,
+        registeredParticipants: new Set(event.registeredParticipants),
+        waitlistedParticipants: new Set(event.waitlistedParticipants),
+        approvedParticipants: new Set(event.approvedParticipants),
+        rejectedParticipants: new Set(event.rejectedParticipants),
+        pendingParticipants: new Set(event.pendingParticipants),
+        tags: new Set(event.tags),
+        resources: new Set(event.resources),
+        sponsors: new Set(event.sponsors)
+      }))),
+      catchError(error => {
+        console.error('Error loading upcoming events:', error);
+        return of([]);
+      })
+    );
   }
 
   // Event Registration
-  registerForEvent(eventId: string): Observable<EventRegistration> {
-    return this.http.post<EventRegistration>(`${this.apiUrl}/${eventId}/register`, {});
+  registerForEvent(eventId: string): Observable<IEventRegistration> {
+    return this.http.post<IEventRegistration>(`${this.apiUrl}/${eventId}/register`, {});
   }
 
-  unregisterFromEvent(eventId: string): Observable<void> {
+  cancelRegistration(eventId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${eventId}/register`);
   }
 
-  // Waitlist Management
-  joinWaitlist(eventId: string): Observable<EventRegistration> {
-    return this.http.post<EventRegistration>(`${this.apiUrl}/${eventId}/waitlist`, {});
+  // Event Waitlist
+  joinWaitlist(eventId: string): Observable<IEventRegistration> {
+    return this.http.post<IEventRegistration>(`${this.apiUrl}/${eventId}/waitlist`, {});
   }
 
   leaveWaitlist(eventId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${eventId}/waitlist`);
   }
 
-  getWaitlistPosition(eventId: string): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/${eventId}/waitlist/position`);
+  getEventWaitlist(eventId: string): Observable<IEventRegistration[]> {
+    return this.http.get<IEventRegistration[]>(`${this.apiUrl}/${eventId}/waitlist`);
   }
 
-  // Feedback Management
-  submitFeedback(eventId: string, feedback: Partial<EventFeedback>): Observable<EventFeedback> {
-    return this.http.post<EventFeedback>(`${this.apiUrl}/${eventId}/feedback`, feedback);
+  // Event Feedback
+  submitEventFeedback(eventId: string, feedback: Partial<IEventFeedback>): Observable<IEventFeedback> {
+    return this.http.post<IEventFeedback>(`${this.apiUrl}/${eventId}/feedback`, feedback);
   }
 
-  getFeedback(eventId: string, volunteerId: string): Observable<EventFeedback> {
-    return this.http.get<EventFeedback>(`${this.apiUrl}/${eventId}/feedback/${volunteerId}`);
+  // Event Statistics
+  getEventStatistics(eventId: string): Observable<IEventStats> {
+    return this.http.get<IEventStats>(`${this.apiUrl}/${eventId}/statistics`);
+  }
+
+  getEventParticipants(eventId: string, page: number = 0, size: number = 10): Observable<{ content: IEventRegistration[]; totalElements: number }> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<{ content: IEventRegistration[]; totalElements: number }>(`${this.apiUrl}/${eventId}/participants`, { params });
   }
 
   // Organization Event Management
-  createEvent(event: Partial<Event>): Observable<Event> {
-    return this.http.post<Event>(this.apiUrl, event);
+  createEvent(event: Partial<IEvent>): Observable<IEvent> {
+    return this.http.post<IEvent>(this.apiUrl, event).pipe(
+      map(event => ({
+        ...event,
+        registeredParticipants: new Set(event.registeredParticipants),
+        waitlistedParticipants: new Set(event.waitlistedParticipants),
+        approvedParticipants: new Set(event.approvedParticipants),
+        rejectedParticipants: new Set(event.rejectedParticipants),
+        pendingParticipants: new Set(event.pendingParticipants),
+        tags: new Set(event.tags),
+        resources: new Set(event.resources),
+        sponsors: new Set(event.sponsors)
+      }))
+    );
   }
 
-  updateEvent(id: string, event: Partial<Event>): Observable<Event> {
-    return this.http.put<Event>(`${this.apiUrl}/${id}`, event);
+  updateEvent(id: string, event: Partial<IEvent>): Observable<IEvent> {
+    return this.http.put<IEvent>(`${this.apiUrl}/${id}`, event).pipe(
+      map(event => ({
+        ...event,
+        registeredParticipants: new Set(event.registeredParticipants),
+        waitlistedParticipants: new Set(event.waitlistedParticipants),
+        approvedParticipants: new Set(event.approvedParticipants),
+        rejectedParticipants: new Set(event.rejectedParticipants),
+        pendingParticipants: new Set(event.pendingParticipants),
+        tags: new Set(event.tags),
+        resources: new Set(event.resources),
+        sponsors: new Set(event.sponsors)
+      }))
+    );
   }
 
   deleteEvent(id: string): Observable<void> {
@@ -91,22 +171,15 @@ export class EventService {
   }
 
   // Event Status Management
-  updateEventStatus(id: string, status: EventStatus): Observable<Event> {
-    return this.http.patch<Event>(`${this.apiUrl}/${id}/status`, { status });
+  updateEventStatus(id: string, status: EventStatus): Observable<IEvent> {
+    return this.http.patch<IEvent>(`${this.apiUrl}/${id}/status`, { status });
   }
 
-  cancelEvent(id: string, reason: string): Observable<Event> {
-    return this.http.patch<Event>(`${this.apiUrl}/${id}/cancel`, { reason });
+  cancelEvent(id: string, reason: string): Observable<IEvent> {
+    return this.http.patch<IEvent>(`${this.apiUrl}/${id}/cancel`, { reason });
   }
 
   // Participant Management
-  getEventParticipants(eventId: string, page: number = 0, size: number = 10): Observable<any> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<any>(`${this.apiUrl}/${eventId}/participants`, { params });
-  }
-
   approveParticipant(eventId: string, userId: string): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${eventId}/participants/${userId}/approve`, {});
   }
@@ -125,21 +198,21 @@ export class EventService {
   }
 
   // Statistics and Metrics
-  getEventStats(eventId: string): Observable<EventStats> {
-    return this.http.get<EventStats>(`${this.apiUrl}/${eventId}/stats`);
+  getEventStats(eventId: string): Observable<IEventStats> {
+    return this.http.get<IEventStats>(`${this.apiUrl}/${eventId}/stats`);
   }
 
-  getOrganizationEventStats(organizationId: string): Observable<EventStats> {
-    return this.http.get<EventStats>(`${this.apiUrl}/organization/${organizationId}/stats`);
+  getOrganizationEventStats(organizationId: string): Observable<IEventStats> {
+    return this.http.get<IEventStats>(`${this.apiUrl}/organization/${organizationId}/stats`);
   }
 
   // Recurring Events
-  createRecurringEvent(event: Partial<Event>, pattern: string, endDate: Date): Observable<Event[]> {
-    return this.http.post<Event[]>(`${this.apiUrl}/recurring`, { event, pattern, endDate });
+  createRecurringEvent(event: Partial<IEvent>, pattern: string, endDate: Date): Observable<IEvent[]> {
+    return this.http.post<IEvent[]>(`${this.apiUrl}/recurring`, { event, pattern, endDate });
   }
 
-  updateRecurringSeries(seriesId: string, event: Partial<Event>): Observable<Event[]> {
-    return this.http.put<Event[]>(`${this.apiUrl}/recurring/${seriesId}`, event);
+  updateRecurringSeries(seriesId: string, event: Partial<IEvent>): Observable<IEvent[]> {
+    return this.http.put<IEvent[]>(`${this.apiUrl}/recurring/${seriesId}`, event);
   }
 
   cancelRecurringSeries(seriesId: string, reason: string): Observable<void> {
@@ -147,50 +220,60 @@ export class EventService {
   }
 
   // Utility Methods
-  isEventFull(event: Event): boolean {
+  isEventFull(event: IEvent): boolean {
     return event.registeredParticipants.size >= event.maxParticipants;
   }
 
-  canRegister(event: Event): boolean {
+  canRegister(event: IEvent): boolean {
     return !this.isEventFull(event) && 
-           event.status === EventStatus.UPCOMING && 
+           event.status === EventStatus.APPROVED && 
            !event.isCancelled &&
-           new Date(event.registrationDeadline) > new Date();
+           new Date() < new Date(event.startDate);
   }
 
   getStatusColor(status: EventStatus): string {
-    const statusColors: { [key in EventStatus]: string } = {
+    const statusColors: Record<EventStatus, string> = {
+      [EventStatus.PENDING]: 'basic',
+      [EventStatus.APPROVED]: 'accent',
+      [EventStatus.CANCELLED]: 'warn',
+      [EventStatus.COMPLETED]: 'primary',
       [EventStatus.DRAFT]: 'basic',
-      [EventStatus.PENDING]: 'accent',
-      [EventStatus.UPCOMING]: 'primary',
+      [EventStatus.UPCOMING]: 'accent',
       [EventStatus.ONGOING]: 'primary',
-      [EventStatus.COMPLETED]: 'basic',
-      [EventStatus.CANCELLED]: 'warn'
+      [EventStatus.PUBLISHED]: 'primary'
     };
     return statusColors[status] || 'basic';
   }
 
-  calculateProgress(event: Event): number {
+  calculateProgress(event: IEvent): number {
     return (event.registeredParticipants.size / event.maxParticipants) * 100;
   }
 
-  isParticipant(event: Event, userId: string): boolean {
+  isParticipant(event: IEvent, userId: string): boolean {
     return event.registeredParticipants.has(userId);
   }
 
-  isWaitlisted(event: Event, userId: string): boolean {
+  isWaitlisted(event: IEvent, userId: string): boolean {
     return event.waitlistedParticipants.has(userId);
   }
 
-  isPending(event: Event, userId: string): boolean {
+  isPending(event: IEvent, userId: string): boolean {
     return event.pendingParticipants.has(userId);
   }
 
-  isApproved(event: Event, userId: string): boolean {
+  isApproved(event: IEvent, userId: string): boolean {
     return event.approvedParticipants.has(userId);
   }
 
-  isRejected(event: Event, userId: string): boolean {
+  isRejected(event: IEvent, userId: string): boolean {
     return event.rejectedParticipants.has(userId);
+  }
+
+  getRegisteredEvents(): Observable<IEvent[]> {
+    return this.http.get<IEvent[]>(`${this.apiUrl}/registered`);
+  }
+
+  getWaitlistedEvents(): Observable<IEvent[]> {
+    return this.http.get<IEvent[]>(`${this.apiUrl}/waitlist`);
   }
 } 

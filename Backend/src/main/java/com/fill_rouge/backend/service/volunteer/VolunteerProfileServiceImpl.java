@@ -1,11 +1,9 @@
 package com.fill_rouge.backend.service.volunteer;
 
 import com.fill_rouge.backend.domain.VolunteerProfile;
-import com.fill_rouge.backend.domain.Volunteer;
 import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.repository.VolunteerProfileRepository;
-import com.fill_rouge.backend.repository.VolunteerRepository;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
 import com.fill_rouge.backend.exception.ValidationException;
 import org.slf4j.Logger;
@@ -22,7 +20,6 @@ import org.springframework.lang.NonNull;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class VolunteerProfileServiceImpl implements VolunteerProfileService {
     private final VolunteerProfileRepository profileRepository;
-    private final VolunteerRepository volunteerRepository;
 
     @Override
     @Transactional
@@ -46,14 +42,13 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
             throw new ValidationException("Profile already exists for this volunteer");
         }
 
-        Volunteer volunteer = volunteerRepository.findById(volunteerId)
-            .orElseThrow(() -> new ResourceNotFoundException("Volunteer not found"));
-
         VolunteerProfile profile = new VolunteerProfile();
+        profile.setId(volunteerId); // Use volunteerId as profile ID
         updateProfileFromRequest(profile, request);
-        profile.setVolunteer(volunteer);
+        profile.setCreatedAt(LocalDateTime.now());
+        profile.setUpdatedAt(LocalDateTime.now());
         
-        return saveProfile(profile);
+        return toVolunteerProfileResponse(saveProfile(profile));
     }
 
     @Override
@@ -66,14 +61,14 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         VolunteerProfile profile = getVolunteerProfile(volunteerId);
         updateProfileFromRequest(profile, request);
         
-        return saveProfile(profile);
+        return toVolunteerProfileResponse(saveProfile(profile));
     }
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "volunteerProfiles", key = "#volunteerId")
     public VolunteerProfileResponse getProfile(@NonNull String volunteerId) {
-        return VolunteerProfileResponse.fromVolunteerProfile(getVolunteerProfile(volunteerId));
+        return toVolunteerProfileResponse(getVolunteerProfile(volunteerId));
     }
 
     @Override
@@ -90,7 +85,7 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
     public List<VolunteerProfileResponse> searchVolunteers(String query) {
         return profileRepository.findAll().stream()
             .filter(profile -> matchesSearchCriteria(profile, query))
-            .map(VolunteerProfileResponse::fromVolunteerProfile)
+            .map(this::toVolunteerProfileResponse)
             .collect(Collectors.toList());
     }
 
@@ -136,11 +131,10 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
     }
 
     // Helper methods
-    private VolunteerProfileResponse saveProfile(VolunteerProfile profile) {
+    private VolunteerProfile saveProfile(VolunteerProfile profile) {
         try {
             profile.setUpdatedAt(LocalDateTime.now());
-            VolunteerProfile savedProfile = profileRepository.save(profile);
-            return VolunteerProfileResponse.fromVolunteerProfile(savedProfile);
+            return profileRepository.save(profile);
         } catch (Exception e) {
             log.error("Error saving volunteer profile: {}", e.getMessage());
             throw new RuntimeException("Failed to save volunteer profile", e);
@@ -225,6 +219,47 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
                profile.getInterests().stream().anyMatch(interest -> interest.toLowerCase().contains(lowercaseQuery)) ||
                profile.getCity().toLowerCase().contains(lowercaseQuery) ||
                profile.getCountry().toLowerCase().contains(lowercaseQuery);
+    }
+
+    private VolunteerProfileResponse toVolunteerProfileResponse(VolunteerProfile profile) {
+        return VolunteerProfileResponse.builder()
+            .id(profile.getId())
+            .firstName(profile.getFirstName())
+            .lastName(profile.getLastName())
+            .email(profile.getEmail())
+            .phoneNumber(profile.getPhoneNumber())
+            .address(profile.getAddress())
+            .bio(profile.getBio())
+            .profilePicture(profile.getProfilePicture())
+            .joinedAt(profile.getCreatedAt())
+            .isActive(profile.isActive())
+            .status(profile.getStatus())
+            .totalEventsAttended(profile.getTotalEventsAttended())
+            .totalVolunteerHours(profile.getTotalHoursVolunteered())
+            .averageEventRating(profile.getAverageRating())
+            .skills(profile.getSkills())
+            .interests(profile.getInterests())
+            .preferredCauses(profile.getPreferredCategories())
+            .city(profile.getCity())
+            .country(profile.getCountry())
+            .emergencyContact(profile.getEmergencyContact())
+            .emergencyPhone(profile.getEmergencyPhone())
+            .preferredCategories(profile.getPreferredCategories())
+            .availableDays(profile.getAvailableDays())
+            .preferredTimeOfDay(profile.getPreferredTimeOfDay())
+            .certifications(profile.getCertifications())
+            .languages(profile.getLanguages())
+            .backgroundChecked(profile.isBackgroundChecked())
+            .backgroundCheckDate(profile.getBackgroundCheckDate())
+            .backgroundCheckStatus(profile.getBackgroundCheckStatus())
+            .reliabilityScore(profile.getReliabilityScore())
+            .availableForEmergency(profile.isAvailableForEmergency())
+            .receiveNotifications(profile.isReceiveNotifications())
+            .notificationPreferences(profile.getNotificationPreferences())
+            .profileVisible(profile.isProfileVisible())
+            .createdAt(profile.getCreatedAt())
+            .updatedAt(profile.getUpdatedAt())
+            .build();
     }
 } 
 

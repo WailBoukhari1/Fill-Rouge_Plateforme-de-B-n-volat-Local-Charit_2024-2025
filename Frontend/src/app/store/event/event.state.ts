@@ -1,5 +1,5 @@
 import { EntityState } from '@ngrx/entity';
-import { Event, EventStats, EventFilters } from '../../core/models/event.model';
+import { Event, EventStats, EventFilters, EventStatus, EventCategory } from '../../core/models/event.model';
 
 export enum ParticipationStatus {
   PENDING = 'PENDING',
@@ -12,9 +12,9 @@ export enum ParticipationStatus {
 export interface EventParticipant {
   userId: string;
   status: ParticipationStatus;
-  registeredAt: string;
-  checkedInAt?: string;
-  checkedOutAt?: string;
+  registeredAt: Date;
+  checkedInAt?: Date;
+  checkedOutAt?: Date;
   hoursLogged?: number;
   pointsAwarded?: number;
   feedback?: string;
@@ -22,45 +22,51 @@ export interface EventParticipant {
   noShowReason?: string;
 }
 
-export interface Event {
+export interface IEvent {
   id: string;
   title: string;
   description: string;
+  category: EventCategory;
+  status: EventStatus;
   organizationId: string;
+  organizationName: string;
+  organizationLogo?: string;
+  organizationDescription?: string;
+  startDate: Date;
+  endDate: Date;
+  registrationDeadline: Date;
   location: string;
-  coordinates: number[];
-  startDate: string;
-  endDate: string;
+  coordinates?: [number, number];
+  imageUrl: string;
+  registeredParticipants: Set<string>;
   maxParticipants: number;
-  currentParticipants: number;
-  category: string;
-  status: string;
+  waitlistedParticipants: Set<string>;
   requiredSkills: string[];
-  rating: number;
-  numberOfRatings: number;
-  impactSummary: string;
-  totalVolunteerHours: number;
-  isVirtual: boolean;
-  virtualMeetingLink: string;
-  difficulty: string;
-  durationHours: number;
-  isRegistered: boolean;
-  isWaitlisted: boolean;
+  impactSummary?: string;
+  minimumAge: number;
+  requiresBackground: boolean;
   waitlistEnabled: boolean;
   maxWaitlistSize: number;
-  contactPerson: string;
-  contactEmail: string;
-  contactPhone: string;
-  createdAt: string;
-  updatedAt: string;
-  pointsOffered: number;
-  minimumRequirements?: string;
+  isCancelled: boolean;
+  cancellationReason?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: string;
+  updatedBy?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  isRecurring: boolean;
+  recurrencePattern?: string;
+  recurrenceEndDate?: Date;
+  requiresApproval: boolean;
+  approvedParticipants: Set<string>;
+  rejectedParticipants: Set<string>;
+  pendingParticipants: Set<string>;
+  averageRating: number;
+  numberOfRatings: number;
+  tags: Set<string>;
   participants: { [userId: string]: EventParticipant };
-  autoApproveRegistrations: boolean;
-  requireCheckin: boolean;
-  checkInCode?: string;
-  organizerNotes?: string;
-  participationStatus?: ParticipationStatus;
 }
 
 export interface EventState {

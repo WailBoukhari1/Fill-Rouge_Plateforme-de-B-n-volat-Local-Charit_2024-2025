@@ -1,200 +1,170 @@
 import { createReducer, on } from '@ngrx/store';
-import { createEntityAdapter, EntityAdapter } from '@ngrx/entity';
-import { Event, EventState, initialEventState } from './event.state';
-import { EventActions } from './event.actions';
+import { IEvent } from '../../core/models/event.types';
+import * as EventActions from './event.actions';
+import { IEventFilters } from '../../core/models/event.types';
 
-export const eventAdapter: EntityAdapter<Event> = createEntityAdapter<Event>({
-  selectId: (event: Event) => event.id,
-  sortComparer: (a: Event, b: Event) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-});
+export interface EventState {
+  events: IEvent[];
+  selectedEvent: IEvent | null;
+  upcomingEvents: IEvent[];
+  registeredEvents: IEvent[];
+  waitlistedEvents: IEvent[];
+  loading: boolean;
+  error: any;
+  totalElements: number;
+  filters: IEventFilters;
+}
 
 export const initialState: EventState = {
   events: [],
   selectedEvent: null,
-  eventStats: null,
+  upcomingEvents: [],
+  registeredEvents: [],
+  waitlistedEvents: [],
   loading: false,
   error: null,
-  filters: {},
-  pagination: {
-    currentPage: 0,
-    pageSize: 10,
-    totalItems: 0
+  totalElements: 0,
+  filters: {
+    search: '',
+    category: undefined,
+    startDate: undefined,
+    endDate: undefined,
+    location: '',
+    radius: 0,
+    skills: [],
+    status: undefined,
+    organizationId: '',
+    tags: []
   }
 };
 
 export const eventReducer = createReducer(
   initialState,
-
+  
   // Load Events
-  on(EventActions.loadEvents, (state) => ({
+  on(EventActions.loadEvents, state => ({
     ...state,
     loading: true,
     error: null
   })),
-
-  on(EventActions.loadEventsSuccess, (state, { events, total }) => ({
+  on(EventActions.loadEventsSuccess, (state, { events, totalElements }) => ({
     ...state,
     events,
+    totalElements,
     loading: false,
-    error: null,
-    pagination: {
-      ...state.pagination,
-      totalItems: total
-    }
+    error: null
   })),
-
   on(EventActions.loadEventsFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
   })),
 
-  // Load Single Event
-  on(EventActions.loadEvent, (state) => ({
+  // Load Event By Id
+  on(EventActions.loadEventById, state => ({
     ...state,
     loading: true,
     error: null
   })),
-
-  on(EventActions.loadEventSuccess, (state, { event }) => ({
+  on(EventActions.loadEventByIdSuccess, (state, { event }) => ({
     ...state,
     selectedEvent: event,
     loading: false,
     error: null
   })),
-
-  on(EventActions.loadEventFailure, (state, { error }) => ({
+  on(EventActions.loadEventByIdFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
   })),
 
-  // Create Event
-  on(EventActions.createEvent, (state) => ({
+  // Register For Event
+  on(EventActions.registerForEvent, state => ({
     ...state,
     loading: true,
     error: null
   })),
-
-  on(EventActions.createEventSuccess, (state, { event }) => ({
+  on(EventActions.registerForEventSuccess, state => ({
     ...state,
-    events: [event, ...state.events],
     loading: false,
     error: null
   })),
-
-  on(EventActions.createEventFailure, (state, { error }) => ({
+  on(EventActions.registerForEventFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
   })),
 
-  // Update Event
-  on(EventActions.updateEvent, (state) => ({
+  // Update Event Status
+  on(EventActions.updateEventStatus, state => ({
     ...state,
     loading: true,
     error: null
   })),
-
-  on(EventActions.updateEventSuccess, (state, { event }) => ({
-    ...state,
-    events: state.events.map(e => e.id === event.id ? event : e),
-    selectedEvent: state.selectedEvent?.id === event.id ? event : state.selectedEvent,
-    loading: false,
-    error: null
-  })),
-
-  on(EventActions.updateEventFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-
-  // Delete Event
-  on(EventActions.deleteEvent, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-
-  on(EventActions.deleteEventSuccess, (state, { id }) => ({
-    ...state,
-    events: state.events.filter(event => event.id !== id),
-    selectedEvent: state.selectedEvent?.id === id ? null : state.selectedEvent,
-    loading: false,
-    error: null
-  })),
-
-  on(EventActions.deleteEventFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-
-  // Event Status
-  on(EventActions.updateEventStatus, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-
   on(EventActions.updateEventStatusSuccess, (state, { event }) => ({
     ...state,
+    selectedEvent: event,
     events: state.events.map(e => e.id === event.id ? event : e),
-    selectedEvent: state.selectedEvent?.id === event.id ? event : state.selectedEvent,
     loading: false,
     error: null
   })),
-
   on(EventActions.updateEventStatusFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
   })),
 
-  // Event Stats
-  on(EventActions.loadEventStats, (state) => ({
+  // Load Upcoming Events
+  on(EventActions.loadUpcomingEvents, state => ({
     ...state,
     loading: true,
     error: null
   })),
-
-  on(EventActions.loadEventStatsSuccess, (state, { stats }) => ({
+  on(EventActions.loadUpcomingEventsSuccess, (state, { events }) => ({
     ...state,
-    eventStats: stats,
+    upcomingEvents: events,
     loading: false,
     error: null
   })),
-
-  on(EventActions.loadEventStatsFailure, (state, { error }) => ({
+  on(EventActions.loadUpcomingEventsFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
   })),
 
-  // Filters
-  on(EventActions.updateFilters, (state, { filters }) => ({
+  // Load Registered Events
+  on(EventActions.loadRegisteredEvents, state => ({
     ...state,
-    filters
-  })),
-
-  // Clear State
-  on(EventActions.clearSelectedEvent, (state) => ({
-    ...state,
-    selectedEvent: null
-  })),
-
-  on(EventActions.clearEventError, (state) => ({
-    ...state,
+    loading: true,
     error: null
   })),
+  on(EventActions.loadRegisteredEventsSuccess, (state, { events }) => ({
+    ...state,
+    registeredEvents: events,
+    loading: false,
+    error: null
+  })),
+  on(EventActions.loadRegisteredEventsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
 
-  on(EventActions.resetEventState, () => initialState)
-);
-
-export const {
-  selectIds,
-  selectEntities,
-  selectAll,
-  selectTotal,
-} = eventAdapter.getSelectors(); 
+  // Load Waitlisted Events
+  on(EventActions.loadWaitlistedEvents, state => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(EventActions.loadWaitlistedEventsSuccess, (state, { events }) => ({
+    ...state,
+    waitlistedEvents: events,
+    loading: false,
+    error: null
+  })),
+  on(EventActions.loadWaitlistedEventsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  }))
+); 

@@ -7,10 +7,14 @@ import com.fill_rouge.backend.repository.*;
 import com.fill_rouge.backend.domain.Event;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -217,36 +221,75 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     }
 
     private int calculateTotalVolunteerHours() {
-        return feedbackRepository.findAll().stream()
-                .mapToInt(feedback -> feedback.getHoursContributed())
+        return eventRepository.findAll().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .mapToInt(this::calculateEventHours)
                 .sum();
     }
 
+    private int calculateEventHours(Event event) {
+        if (event.getStartDate() == null || event.getEndDate() == null) {
+            return 0;
+        }
+        Duration duration = Duration.between(event.getStartDate(), event.getEndDate());
+        return Math.toIntExact(duration.toHours() * event.getRegisteredParticipants().size());
+    }
+
     private double calculateOverallSuccessRate() {
-        // Implementation to calculate overall success rate
-        return 0.0;
+        List<Event> completedEvents = eventRepository.findAll().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .collect(Collectors.toList());
+        if (completedEvents.isEmpty()) {
+            return 0.0;
+        }
+        
+        return completedEvents.stream()
+                .mapToDouble(event -> calculateEventSuccessRate(event.getId()))
+                .average()
+                .orElse(0.0);
     }
 
     private long calculateTotalParticipantsInRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return eventRepository.findByStartDateBetween(startDate, endDate, null)
-                .stream()
+        return eventRepository.findByStartDateBetween(startDate, endDate, Pageable.unpaged())
+                .getContent().stream()
                 .mapToLong(event -> event.getRegisteredParticipants().size())
                 .sum();
     }
 
     private double calculateAverageRatingInRange(LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate average rating in range
-        return 0.0;
+        List<Event> events = eventRepository.findByStartDateBetween(startDate, endDate, Pageable.unpaged())
+                .getContent();
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        return events.stream()
+                .mapToDouble(Event::getAverageRating)
+                .average()
+                .orElse(0.0);
     }
 
     private int calculateVolunteerHoursInRange(LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate volunteer hours in range
-        return 0;
+        return eventRepository.findByStartDateBetween(startDate, endDate, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .mapToInt(this::calculateEventHours)
+                .sum();
     }
 
     private double calculateSuccessRateInRange(LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate success rate in range
-        return 0.0;
+        List<Event> events = eventRepository.findByStartDateBetween(startDate, endDate, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .collect(Collectors.toList());
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        return events.stream()
+                .mapToDouble(event -> calculateEventSuccessRate(event.getId()))
+                .average()
+                .orElse(0.0);
     }
 
     private long calculateOrganizationParticipants(String organizationId) {
@@ -257,77 +300,156 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     }
 
     private double calculateOrganizationAverageRating(String organizationId) {
-        // Implementation to calculate organization average rating
-        return 0.0;
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .getContent();
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        return events.stream()
+                .mapToDouble(Event::getAverageRating)
+                .average()
+                .orElse(0.0);
     }
 
     private int calculateOrganizationVolunteerHours(String organizationId) {
-        // Implementation to calculate organization volunteer hours
-        return 0;
+        return eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .mapToInt(this::calculateEventHours)
+                .sum();
     }
 
     private double calculateOrganizationSuccessRate(String organizationId) {
-        // Implementation to calculate organization success rate
-        return 0.0;
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .collect(Collectors.toList());
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        return events.stream()
+                .mapToDouble(event -> calculateEventSuccessRate(event.getId()))
+                .average()
+                .orElse(0.0);
     }
 
-    private long calculateOrganizationParticipantsInRange(String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate organization participants in range
-        return 0;
+    private long calculateOrganizationParticipantsInRange(
+            String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
+        return eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStartDate().isAfter(startDate) && 
+                               event.getStartDate().isBefore(endDate))
+                .mapToLong(event -> event.getRegisteredParticipants().size())
+                .sum();
     }
 
-    private double calculateOrganizationAverageRatingInRange(String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate organization average rating in range
-        return 0.0;
+    private double calculateOrganizationAverageRatingInRange(
+            String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStartDate().isAfter(startDate) && 
+                               event.getStartDate().isBefore(endDate))
+                .collect(Collectors.toList());
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        return events.stream()
+                .mapToDouble(Event::getAverageRating)
+                .average()
+                .orElse(0.0);
     }
 
-    private int calculateOrganizationVolunteerHoursInRange(String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate organization volunteer hours in range
-        return 0;
+    private int calculateOrganizationVolunteerHoursInRange(
+            String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
+        return eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED &&
+                               event.getStartDate().isAfter(startDate) && 
+                               event.getStartDate().isBefore(endDate))
+                .mapToInt(this::calculateEventHours)
+                .sum();
     }
 
-    private double calculateOrganizationSuccessRateInRange(String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate organization success rate in range
-        return 0.0;
+    private double calculateOrganizationSuccessRateInRange(
+            String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .getContent().stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED &&
+                               event.getStartDate().isAfter(startDate) && 
+                               event.getStartDate().isBefore(endDate))
+                .collect(Collectors.toList());
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        return events.stream()
+                .mapToDouble(event -> calculateEventSuccessRate(event.getId()))
+                .average()
+                .orElse(0.0);
     }
 
     private int calculateVolunteerEventCount(String volunteerId) {
-        // Implementation to calculate volunteer event count
-        return 0;
+        return eventRepository.findEventsByParticipant(volunteerId).size();
     }
 
     private double calculateVolunteerAverageRating(String volunteerId) {
-        // Implementation to calculate volunteer average rating
-        return 0.0;
+        return feedbackRepository.findByVolunteerId(volunteerId, Pageable.unpaged()).stream()
+            .mapToDouble(feedback -> feedback.getRating())
+            .average()
+            .orElse(0.0);
     }
 
     private int calculateVolunteerTotalHours(String volunteerId) {
-        // Implementation to calculate volunteer total hours
-        return 0;
+        return eventRepository.findEventsByParticipant(volunteerId).stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .mapToInt(this::calculateEventHours)
+                .sum();
     }
 
     private double calculateVolunteerSuccessRate(String volunteerId) {
-        // Implementation to calculate volunteer success rate
-        return 0.0;
+        List<Event> events = eventRepository.findEventsByParticipant(volunteerId);
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        long completedEvents = events.stream()
+            .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+            .count();
+            
+        return (double) completedEvents / events.size() * 100;
     }
 
     private int calculateVolunteerEventCountInRange(String volunteerId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate volunteer event count in range
-        return 0;
+        return eventRepository.findEventsByParticipantAndDateRange(volunteerId, startDate, endDate).size();
     }
 
     private double calculateVolunteerAverageRatingInRange(String volunteerId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate volunteer average rating in range
-        return 0.0;
+        return feedbackRepository.findByVolunteerIdAndDateRange(volunteerId, startDate, endDate, Pageable.unpaged()).stream()
+            .mapToDouble(feedback -> feedback.getRating())
+            .average()
+            .orElse(0.0);
     }
 
     private int calculateVolunteerHoursInRange(String volunteerId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate volunteer hours in range
-        return 0;
+        return eventRepository.findEventsByParticipantAndDateRange(volunteerId, startDate, endDate).stream()
+                .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+                .mapToInt(this::calculateEventHours)
+                .sum();
     }
 
     private double calculateVolunteerSuccessRateInRange(String volunteerId, LocalDateTime startDate, LocalDateTime endDate) {
-        // Implementation to calculate volunteer success rate in range
-        return 0.0;
+        List<Event> events = eventRepository.findEventsByParticipantAndDateRange(volunteerId, startDate, endDate);
+        if (events.isEmpty()) {
+            return 0.0;
+        }
+        
+        long completedEvents = events.stream()
+            .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+            .count();
+            
+        return (double) completedEvents / events.size() * 100;
     }
 } 

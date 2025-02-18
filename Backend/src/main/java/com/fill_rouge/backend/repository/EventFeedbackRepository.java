@@ -1,15 +1,16 @@
 package com.fill_rouge.backend.repository;
 
-import com.fill_rouge.backend.domain.EventFeedback;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.Aggregation;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import com.fill_rouge.backend.domain.EventFeedback;
 
 @Repository
 public interface EventFeedbackRepository extends MongoRepository<EventFeedback, String> {
@@ -36,6 +37,9 @@ public interface EventFeedbackRepository extends MongoRepository<EventFeedback, 
     
     @Query("{ 'eventId': ?0, 'submittedAt': { $gte: ?1, $lte: ?2 } }")
     List<EventFeedback> findFeedbacksByDateRange(String eventId, LocalDateTime startDate, LocalDateTime endDate);
+    
+    @Query("{ 'volunteerId': ?0, 'submittedAt': { $gte: ?1, $lte: ?2 } }")
+    Page<EventFeedback> findByVolunteerIdAndDateRange(String volunteerId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
     
     @Aggregation(pipeline = {
         "{ $match: { 'eventId': ?0 } }",

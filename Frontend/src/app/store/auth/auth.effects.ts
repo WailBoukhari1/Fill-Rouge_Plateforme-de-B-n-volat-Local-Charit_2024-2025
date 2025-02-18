@@ -116,12 +116,17 @@ export class AuthEffects {
     () =>
       this.actions$.pipe(
         ofType(AuthActions.loginSuccess),
-        tap(({ user }) => {
+        tap(({ user, redirect = true }) => {
           console.log('Login success effect triggered, user:', user);
           console.log('Email verification status in success effect:', user.emailVerified);
           
           if (!user) {
             console.error('No user data in loginSuccess action');
+            return;
+          }
+
+          if (!redirect) {
+            console.log('Skipping redirect as this is a state restoration');
             return;
           }
 
@@ -141,23 +146,8 @@ export class AuthEffects {
           }
 
           console.log('Email verified, user role:', user.role);
-          switch (user.role) {
-            case UserRole.ADMIN:
-              console.log('Redirecting to admin dashboard');
-              this.router.navigate(['/dashboard/admin']);
-              break;
-            case UserRole.ORGANIZATION:
-              console.log('Redirecting to organization dashboard');
-              this.router.navigate(['/dashboard/organization']);
-              break;
-            case UserRole.VOLUNTEER:
-              console.log('Redirecting to volunteer dashboard');
-              this.router.navigate(['/dashboard/volunteer']);
-              break;
-            default:
-              console.error('Unknown user role:', user.role);
-              this.router.navigate(['/auth/login']);
-          }
+          // Simplified navigation - all roles go to /dashboard
+          this.router.navigate(['/dashboard']);
         })
       ),
     { dispatch: false }

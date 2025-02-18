@@ -3,12 +3,12 @@ package com.fill_rouge.backend.service.auth;
 import com.fill_rouge.backend.config.security.JwtService;
 import com.fill_rouge.backend.constant.Role;
 import com.fill_rouge.backend.domain.User;
-import com.fill_rouge.backend.domain.Volunteer;
+import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.request.LoginRequest;
 import com.fill_rouge.backend.dto.request.RegisterRequest;
 import com.fill_rouge.backend.dto.response.AuthResponse;
 import com.fill_rouge.backend.repository.UserRepository;
-import com.fill_rouge.backend.repository.VolunteerRepository;
+import com.fill_rouge.backend.repository.VolunteerProfileRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,7 +39,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private static final int LOCK_TIME_MINUTES = 30;
 
     private final UserRepository userRepository;
-    private final VolunteerRepository volunteerRepository;
+    private final VolunteerProfileRepository volunteerProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -76,9 +76,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user = userRepository.save(user);
 
             // Create volunteer profile
-            Volunteer volunteer = new Volunteer();
-            volunteer.setUser(user);
-            volunteerRepository.save(volunteer);
+            VolunteerProfile profile = new VolunteerProfile();
+            profile.setUser(user);
+            profile.setFirstName(user.getFirstName());
+            profile.setLastName(user.getLastName());
+            profile.setEmail(user.getEmail());
+            profile.setCreatedAt(LocalDateTime.now());
+            profile.setUpdatedAt(LocalDateTime.now());
+            profile.setStatus("ACTIVE");
+            profile.setActive(true);
+            profile.setProfileVisible(true);
+            volunteerProfileRepository.save(profile);
 
             // Generate tokens
             String jwt = jwtService.generateToken(user);
@@ -134,9 +142,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new RuntimeException("Invalid credentials");
             }
         } catch (DisabledException e) {
+            logger.error("Login failed: Account is disabled", e);
             throw new RuntimeException("Account is disabled");
         } catch (AuthenticationException e) {
-            throw new RuntimeException("Authentication failed");
+            logger.error("Login failed: Authentication error", e);
+            throw new RuntimeException("Authentication failed: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Login failed: Unexpected error", e);
+            throw new RuntimeException("Login failed: " + e.getMessage());
         }
     }
 

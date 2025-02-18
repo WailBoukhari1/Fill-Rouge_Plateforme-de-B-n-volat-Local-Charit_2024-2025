@@ -1,6 +1,9 @@
 package com.fill_rouge.backend.service.report;
 
 import com.fill_rouge.backend.constant.EventStatus;
+import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.request.CustomReportRequest;
 import com.fill_rouge.backend.dto.response.*;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
@@ -31,10 +34,9 @@ public class ReportServiceImpl implements ReportService {
     private final EventStatisticsService eventStatisticsService;
     private final VolunteerProfileService volunteerProfileService;
     private final EventRepository eventRepository;
-    private final VolunteerRepository volunteerRepository;
+    private final VolunteerProfileRepository volunteerProfileRepository;
     private final OrganizationRepository organizationRepository;
     private final EventFeedbackRepository feedbackRepository;
-    private final SkillRepository skillRepository;
     private final ReportExportService reportExportService;
     private final ReportRepository reportRepository;
 
@@ -53,12 +55,11 @@ public class ReportServiceImpl implements ReportService {
 
         return VolunteerReportResponse.builder()
                 .volunteerId(volunteerId)
-                .volunteerName(profile.getVolunteer().getUser().getFirstName() + " " + 
-                             profile.getVolunteer().getUser().getLastName())
+                .volunteerName(profile.getFirstName() + " " + profile.getLastName())
                 .totalEventsAttended((Integer) basicStats.get("participantCount"))
                 .totalHoursContributed((Integer) basicStats.get("totalHours"))
                 .averageRating((Double) basicStats.get("averageRating"))
-                .topSkills(profile.getSkills().stream().collect(Collectors.toList()))
+                .topSkills(new ArrayList<>(profile.getSkills()))
                 .eventsByCategory(getEventsByCategory(volunteerId, startDate, endDate))
                 .achievements(profile.getBadges())
                 .reportGeneratedAt(LocalDateTime.now())
@@ -112,7 +113,7 @@ public class ReportServiceImpl implements ReportService {
         Map<String, Double> metrics = ReportCalculationUtil.calculateCommonMetrics(categoryStats);
 
         return ImpactReportResponse.builder()
-                .totalVolunteers((int) volunteerRepository.count())
+                .totalVolunteers((int) volunteerProfileRepository.count())
                 .totalOrganizations((int) organizationRepository.count())
                 .totalEvents(categoryStats.stream().mapToInt(stat -> (Integer) stat.get("count")).sum())
                 .totalVolunteerHours(calculateTotalVolunteerHours(startDate, endDate))
@@ -252,7 +253,7 @@ public class ReportServiceImpl implements ReportService {
 
     private Map<String, Integer> calculateSkillDemand() {
         return eventRepository.findAll().stream()
-                .flatMap(event -> event.getRequiredSkills().stream())
+                .flatMap(event -> event.getRegisteredParticipants().stream())
                 .collect(Collectors.groupingBy(
                     skill -> skill,
                     Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
@@ -260,7 +261,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private Map<String, Integer> calculateSkillSupply() {
-        return volunteerRepository.findAll().stream()
+        return volunteerProfileRepository.findAll().stream()
                 .flatMap(volunteer -> volunteer.getSkills().stream())
                 .collect(Collectors.groupingBy(
                     skill -> skill,
@@ -325,7 +326,7 @@ public class ReportServiceImpl implements ReportService {
 
     private Map<String, Integer> calculateUserStats() {
         return Map.of(
-            "totalVolunteers", (int) volunteerRepository.count(),
+            "totalVolunteers", (int) volunteerProfileRepository.count(),
             "totalOrganizations", (int) organizationRepository.count(),
             "activeUsers", calculateActiveUsers()
         );
@@ -397,8 +398,15 @@ public class ReportServiceImpl implements ReportService {
                     LocalDateTime submittedAt = feedback.getSubmittedAt();
                     return submittedAt.isAfter(startDate) && submittedAt.isBefore(endDate);
                 })
-                .mapToInt(feedback -> feedback.getHoursContributed())
+                .mapToInt(this::calculateEventHours)
                 .sum();
+    }
+
+    private int calculateEventHours(EventFeedback feedback) {
+        Event event = eventRepository.findById(feedback.getEventId())
+            .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        if (event.getStartDate() == null || event.getEndDate() == null) return 0;
+        return (int) java.time.Duration.between(event.getStartDate(), event.getEndDate()).toHours();
     }
 
     private double calculateCompletionRate(String volunteerId) {

@@ -68,12 +68,12 @@ interface MenuItem {
 
           <mat-menu #userMenu="matMenu">
             @if(userRole === 'VOLUNTEER') {
-              <a mat-menu-item routerLink="/dashboard/volunteer/profile">
+              <a mat-menu-item routerLink="/dashboard/profile">
                 <mat-icon>person</mat-icon>
                 <span>My Profile</span>
               </a>
             } @else if(userRole === 'ORGANIZATION') {
-              <a mat-menu-item routerLink="/dashboard/organization/profile">
+              <a mat-menu-item routerLink="/dashboard/profile">
                 <mat-icon>business</mat-icon>
                 <span>Organization Profile</span>
               </a>
@@ -119,25 +119,25 @@ export class PrivateLayoutComponent {
     {
       label: 'Dashboard',
       icon: 'dashboard',
-      route: '/dashboard/volunteer',
+      route: '/dashboard',
       roles: ['VOLUNTEER']
     },
     {
       label: 'My Events',
       icon: 'event',
-      route: '/dashboard/volunteer/events',
+      route: '/dashboard/events',
       roles: ['VOLUNTEER']
     },
     {
       label: 'My Hours',
       icon: 'schedule',
-      route: '/dashboard/volunteer/hours',
+      route: '/dashboard/hours',
       roles: ['VOLUNTEER']
     },
     {
       label: 'Achievements',
       icon: 'emoji_events',
-      route: '/dashboard/volunteer/achievements',
+      route: '/dashboard/achievements',
       roles: ['VOLUNTEER']
     },
 
@@ -145,25 +145,25 @@ export class PrivateLayoutComponent {
     {
       label: 'Dashboard',
       icon: 'dashboard',
-      route: '/dashboard/organization',
+      route: '/dashboard',
       roles: ['ORGANIZATION']
     },
     {
       label: 'Event Management',
       icon: 'event_note',
-      route: '/dashboard/organization/events',
+      route: '/dashboard/events',
       roles: ['ORGANIZATION']
     },
     {
       label: 'Volunteers',
       icon: 'people',
-      route: '/dashboard/organization/volunteers',
+      route: '/dashboard',
       roles: ['ORGANIZATION']
     },
     {
       label: 'Reports',
       icon: 'assessment',
-      route: '/dashboard/organization/reports',
+      route: '/dashboard/reports',
       roles: ['ORGANIZATION']
     },
 
@@ -171,25 +171,25 @@ export class PrivateLayoutComponent {
     {
       label: 'Dashboard',
       icon: 'dashboard',
-      route: '/dashboard/admin',
+      route: '/dashboard',
       roles: ['ADMIN']
     },
     {
       label: 'Users',
       icon: 'manage_accounts',
-      route: '/dashboard/admin/users',
+      route: '/dashboard/users',
       roles: ['ADMIN']
     },
     {
       label: 'Organizations',
       icon: 'business_center',
-      route: '/dashboard/admin/organizations',
+      route: '/dashboard/organizations',
       roles: ['ADMIN']
     },
     {
       label: 'Events',
       icon: 'event_available',
-      route: '/dashboard/admin/events',
+      route: '/dashboard/events',
       roles: ['ADMIN']
     }
   ];

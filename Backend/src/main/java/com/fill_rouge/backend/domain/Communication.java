@@ -1,60 +1,53 @@
 package com.fill_rouge.backend.domain;
 
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
-
 import java.time.LocalDateTime;
-import java.util.Map;
 
-@Document(collection = "communications")
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Document(collection = "communications")
+@CompoundIndex(name = "user_communication_idx", def = "{'receiverId': 1, 'sentAt': -1}")
 public class Communication {
-
     @Id
     private String id;
 
-    @Field("sender_id")
+    @NotBlank(message = "Sender ID is required")
     private String senderId;
 
-    @Field("receiver_id")
+    @NotBlank(message = "Receiver ID is required")
     private String receiverId;
 
+    @NotBlank(message = "Content is required")
     private String content;
 
-    private String title;
-
-    @Field("type")
-    private CommunicationType type;
-
-    @Field("reference_id")
-    private String referenceId;
-
-    @Field("attachment_url")
     private String attachmentUrl;
+    private String eventId;
+    private String organizationId;
 
-    private boolean read;
+    private boolean isRead;
+    private LocalDateTime readAt;
+    private boolean isDeleted;
+    private LocalDateTime deletedAt;
+    private LocalDateTime sentAt;
 
-    @Field("metadata")
-    private Map<String, String> metadata;
-
-    @CreatedDate
-    @Field("created_at")
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Field("updated_at")
-    private LocalDateTime updatedAt;
+    @Builder.Default
+    private CommunicationType type = CommunicationType.NOTIFICATION;
 
     public enum CommunicationType {
-        MESSAGE,
-        NOTIFICATION,
-        SYSTEM_ALERT
+        MESSAGE,            // Direct message between users
+        NOTIFICATION,       // System notification
+        EVENT_UPDATE,       // Event-related update
+        ORGANIZATION_NEWS   // Organization announcement
     }
 } 

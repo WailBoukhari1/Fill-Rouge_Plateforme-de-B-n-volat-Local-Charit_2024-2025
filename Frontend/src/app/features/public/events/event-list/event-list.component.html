@@ -24,7 +24,7 @@
         <!-- Date Filter -->
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Date</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="date">
+          <input matInput [matDatepicker]="picker" formControlName="startDate">
           <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
@@ -71,7 +71,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @for(event of filteredEvents; track event.id) {
           <mat-card class="h-full">
-            <img mat-card-image [src]="event.image" [alt]="event.title" class="h-48 w-full object-cover">
+            <img mat-card-image [src]="event.imageUrl" [alt]="event.title" class="h-48 w-full object-cover">
             <mat-card-content class="p-4">
               <!-- Event Title -->
               <h3 class="text-xl font-semibold mb-2">{{event.title}}</h3>
@@ -88,7 +88,7 @@
               <div class="space-y-2 text-gray-500">
                 <div class="flex items-center">
                   <mat-icon class="mr-2">calendar_today</mat-icon>
-                  <span>{{event.date | date:'mediumDate'}}</span>
+                  <span>{{event.startDate | date:'mediumDate'}}</span>
                 </div>
                 <div class="flex items-center">
                   <mat-icon class="mr-2">location_on</mat-icon>
@@ -96,7 +96,7 @@
                 </div>
                 <div class="flex items-center">
                   <mat-icon class="mr-2">group</mat-icon>
-                  <span>{{event.registeredParticipants.length}}/{{event.maxParticipants}} spots filled</span>
+                  <span>{{event.registeredParticipants.size}}/{{event.maxParticipants}} spots filled</span>
                 </div>
                 @if(event.averageRating > 0) {
                   <div class="flex items-center">
@@ -119,7 +119,7 @@
                     mat-raised-button 
                     color="accent"
                     (click)="joinWaitlist(event.id)"
-                    [disabled]="event.waitlistedParticipants.length >= event.maxWaitlistSize">
+                    [disabled]="event.waitlistedParticipants.size >= event.maxWaitlistSize">
                     <mat-icon class="mr-1">queue</mat-icon>
                     Join Waitlist
                   </button>

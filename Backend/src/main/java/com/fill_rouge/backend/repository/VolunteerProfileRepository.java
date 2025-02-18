@@ -1,15 +1,17 @@
 package com.fill_rouge.backend.repository;
 
-import com.fill_rouge.backend.domain.VolunteerProfile;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.fill_rouge.backend.domain.VolunteerProfile;
 
 @Repository
 public interface VolunteerProfileRepository extends MongoRepository<VolunteerProfile, String> {
+    @Query("{'user.id': ?0}")
     Optional<VolunteerProfile> findByVolunteerId(String volunteerId);
     
     @Query("{'skills': {$in: ?0}}")

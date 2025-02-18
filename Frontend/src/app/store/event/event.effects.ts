@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { map, mergeMap, catchError, withLatestFrom } from 'rxjs/operators';
-import { EventService } from '../../core/services/event.service';
-import { EventActions } from './event.actions';
-import { selectEventFilters } from './event.selectors';
+import { map, mergeMap, catchError, withLatestFrom, tap } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { EventService } from '../../core/services/event.service';
+import { EventStatus } from '../../core/models/event.types';
+import * as EventActions from './event.actions';
+import { selectEventFilters } from './event.selectors';
 
 @Injectable()
 export class EventEffects {
@@ -18,21 +19,21 @@ export class EventEffects {
         this.eventService.getEvents(filters, page, size).pipe(
           map(response => EventActions.loadEventsSuccess({
             events: response.content,
-            total: response.totalElements
+            totalElements: response.totalElements
           })),
-          catchError(error => of(EventActions.loadEventsFailure({ error: error.message })))
+          catchError(error => of(EventActions.loadEventsFailure({ error })))
         )
       )
     )
   );
 
-  loadEvent$ = createEffect(() =>
+  loadEventById$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(EventActions.loadEvent),
+      ofType(EventActions.loadEventById),
       mergeMap(({ id }) =>
         this.eventService.getEventById(id).pipe(
-          map(event => EventActions.loadEventSuccess({ event })),
-          catchError(error => of(EventActions.loadEventFailure({ error: error.message })))
+          map(event => EventActions.loadEventByIdSuccess({ event })),
+          catchError(error => of(EventActions.loadEventByIdFailure({ error })))
         )
       )
     )
@@ -90,11 +91,8 @@ export class EventEffects {
       ofType(EventActions.registerForEvent),
       mergeMap(({ eventId }) =>
         this.eventService.registerForEvent(eventId).pipe(
-          map(() => {
-            this.snackBar.open('Successfully registered for event', 'Close', { duration: 3000 });
-            return EventActions.registerForEventSuccess();
-          }),
-          catchError(error => of(EventActions.registerForEventFailure({ error: error.message })))
+          map(registration => EventActions.registerForEventSuccess({ registration })),
+          catchError(error => of(EventActions.registerForEventFailure({ error })))
         )
       )
     )
@@ -104,7 +102,7 @@ export class EventEffects {
     this.actions$.pipe(
       ofType(EventActions.unregisterFromEvent),
       mergeMap(({ eventId }) =>
-        this.eventService.unregisterFromEvent(eventId).pipe(
+        this.eventService.cancelRegistration(eventId).pipe(
           map(() => {
             this.snackBar.open('Successfully unregistered from event', 'Close', { duration: 3000 });
             return EventActions.unregisterFromEventSuccess();
@@ -148,8 +146,8 @@ export class EventEffects {
   updateEventStatus$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.updateEventStatus),
-      mergeMap(({ id, status }) =>
-        this.eventService.updateEventStatus(id, status).pipe(
+      mergeMap(({ eventId, status }) =>
+        this.eventService.updateEventStatus(eventId, status as EventStatus).pipe(
           map(event => {
             this.snackBar.open('Event status updated successfully', 'Close', { duration: 3000 });
             return EventActions.updateEventStatusSuccess({ event });
@@ -179,12 +177,9 @@ export class EventEffects {
     this.actions$.pipe(
       ofType(EventActions.submitFeedback),
       mergeMap(({ eventId, feedback }) =>
-        this.eventService.submitFeedback(eventId, feedback).pipe(
-          map(submittedFeedback => {
-            this.snackBar.open('Feedback submitted successfully', 'Close', { duration: 3000 });
-            return EventActions.submitFeedbackSuccess({ feedback: submittedFeedback });
-          }),
-          catchError(error => of(EventActions.submitFeedbackFailure({ error: error.message })))
+        this.eventService.submitEventFeedback(eventId, feedback).pipe(
+          map(submittedFeedback => EventActions.submitFeedbackSuccess({ feedback: submittedFeedback })),
+          catchError(error => of(EventActions.submitFeedbackFailure({ error })))
         )
       )
     )
@@ -213,6 +208,65 @@ export class EventEffects {
         size: 10 
       }))
     )
+  );
+
+  loadUpcomingEvents$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.loadUpcomingEvents),
+      mergeMap(() =>
+        this.eventService.getUpcomingEvents().pipe(
+          map(events => EventActions.loadUpcomingEventsSuccess({ events })),
+          catchError(error => of(EventActions.loadUpcomingEventsFailure({ error })))
+        )
+      )
+    )
+  );
+
+  loadRegisteredEvents$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.loadRegisteredEvents),
+      mergeMap(() =>
+        this.eventService.getRegisteredEvents().pipe(
+          map(events => EventActions.loadRegisteredEventsSuccess({ events })),
+          catchError(error => of(EventActions.loadRegisteredEventsFailure({ error })))
+        )
+      )
+    )
+  );
+
+  loadWaitlistedEvents$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.loadWaitlistedEvents),
+      mergeMap(() =>
+        this.eventService.getWaitlistedEvents().pipe(
+          map(events => EventActions.loadWaitlistedEventsSuccess({ events })),
+          catchError(error => of(EventActions.loadWaitlistedEventsFailure({ error })))
+        )
+      )
+    )
+  );
+
+  handleError$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(
+        EventActions.loadEventsFailure,
+        EventActions.loadEventByIdFailure,
+        EventActions.registerForEventFailure,
+        EventActions.submitFeedbackFailure,
+        EventActions.updateEventStatusFailure,
+        EventActions.loadUpcomingEventsFailure,
+        EventActions.loadRegisteredEventsFailure,
+        EventActions.loadWaitlistedEventsFailure
+      ),
+      tap(({ error }) => {
+        this.snackBar.open(
+          error.message || 'An error occurred',
+          'Close',
+          { duration: 5000 }
+        );
+      })
+    ),
+    { dispatch: false }
   );
 
   constructor(

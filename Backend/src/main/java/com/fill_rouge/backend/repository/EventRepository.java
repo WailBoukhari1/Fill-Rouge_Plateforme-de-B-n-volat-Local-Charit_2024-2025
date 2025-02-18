@@ -1,17 +1,18 @@
 package com.fill_rouge.backend.repository;
 
-import com.fill_rouge.backend.constant.EventCategory;
-import com.fill_rouge.backend.constant.EventStatus;
-import com.fill_rouge.backend.domain.Event;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.fill_rouge.backend.constant.EventCategory;
+import com.fill_rouge.backend.constant.EventStatus;
+import com.fill_rouge.backend.domain.Event;
 
 @Repository
 public interface EventRepository extends MongoRepository<Event, String> {
@@ -33,6 +34,9 @@ public interface EventRepository extends MongoRepository<Event, String> {
     
     @Query("{'registeredParticipants': ?0}")
     List<Event> findEventsByParticipant(String volunteerId);
+    
+    @Query("{'registeredParticipants': ?0, 'startDate': { $gte: ?1, $lte: ?2 }}")
+    List<Event> findEventsByParticipantAndDateRange(String volunteerId, LocalDateTime startDate, LocalDateTime endDate);
     
     @Query("{'waitlistedParticipants': ?0}")
     List<Event> findEventsByWaitlistedParticipant(String volunteerId);

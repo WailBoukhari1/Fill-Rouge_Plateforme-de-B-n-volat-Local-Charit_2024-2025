@@ -1,16 +1,17 @@
 package com.fill_rouge.backend.mapper;
 
-import com.fill_rouge.backend.domain.Organization;
-import com.fill_rouge.backend.dto.request.OrganizationRequest;
-import com.fill_rouge.backend.dto.response.OrganizationResponse;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+
+import com.fill_rouge.backend.domain.Organization;
+import com.fill_rouge.backend.dto.request.OrganizationRequest;
+import com.fill_rouge.backend.dto.response.OrganizationResponse;
 
 @Mapper(componentModel = "spring", imports = {HashSet.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface OrganizationMapper {

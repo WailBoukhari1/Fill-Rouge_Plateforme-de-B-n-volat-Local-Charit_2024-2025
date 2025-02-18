@@ -3,6 +3,7 @@ package com.fill_rouge.backend.service.organization;
 import com.fill_rouge.backend.domain.Organization;
 import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.dto.request.OrganizationRequest;
 import com.fill_rouge.backend.dto.response.OrganizationResponse;
 import com.fill_rouge.backend.repository.OrganizationRepository;
@@ -240,7 +241,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         
         // Update total volunteer hours
         int totalHours = events.stream()
-            .mapToInt(Event::getTotalVolunteerHours)
+            .filter(event -> event.getStatus() == EventStatus.COMPLETED)
+            .mapToInt(event -> {
+                if (event.getStartDate() == null || event.getEndDate() == null) return 0;
+                return (int) (java.time.Duration.between(event.getStartDate(), event.getEndDate()).toHours() 
+                    * event.getRegisteredParticipants().size());
+            })
             .sum();
         organization.setTotalVolunteerHours(totalHours);
         

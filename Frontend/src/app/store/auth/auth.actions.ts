@@ -13,7 +13,12 @@ export const login = createAction(
 
 export const loginSuccess = createAction(
   '[Auth] Login Success',
-  props<{ user: User; token: string; refreshToken: string }>()
+  props<{ 
+    user: User; 
+    token: string; 
+    refreshToken: string;
+    redirect?: boolean;
+  }>()
 );
 
 export const loginFailure = createAction(

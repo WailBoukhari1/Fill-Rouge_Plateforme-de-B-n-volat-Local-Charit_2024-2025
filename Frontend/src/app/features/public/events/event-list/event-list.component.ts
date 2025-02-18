@@ -14,7 +14,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { FormControl, FormGroup } from '@angular/forms';
-import { EventService, Event, EventFilter } from '../../../../core/services/event.service';
+import { EventService } from '../../../../core/services/event.service';
+import { IEvent, IEventFilters, EventCategory } from '../../../../core/models/event.types';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { RouterModule } from '@angular/router';
@@ -47,27 +48,22 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 export class EventListComponent implements OnInit {
   // Filter form
   filterForm = new FormGroup({
-    search: new FormControl(''),
-    category: new FormControl(''),
-    date: new FormControl(null),
-    location: new FormControl('')
+    search: new FormControl<string | undefined>(undefined),
+    category: new FormControl<EventCategory | undefined>(undefined),
+    startDate: new FormControl<Date | undefined>(undefined),
+    location: new FormControl<string | undefined>(undefined)
   });
 
   // Categories for filter
-  categories = [
-    'Environmental',
-    'Education',
-    'Healthcare',
-    'Community Service',
-    'Animal Welfare',
-    'Arts & Culture',
-    'Sports & Recreation'
-  ];
+  categories = Object.values(EventCategory);
 
-  events: Event[] = [];
-  filteredEvents: Event[] = [];
+  events: IEvent[] = [];
+  filteredEvents: IEvent[] = [];
   isLoading = false;
   error: string | null = null;
+  currentPage = 0;
+  pageSize = 10;
+  totalEvents = 0;
 
   constructor(
     private eventService: EventService,
@@ -83,29 +79,27 @@ export class EventListComponent implements OnInit {
     });
   }
 
-  loadEvents() {
+  loadEvents(filters?: IEventFilters) {
     this.isLoading = true;
     this.error = null;
 
-    this.eventService.getEvents()
-      .pipe(
-        catchError(error => {
-          this.error = 'Failed to load events. Please try again later.';
-          this.snackBar.open(this.error, 'Close', { duration: 5000 });
-          return of([]);
-        }),
-        finalize(() => {
-          this.isLoading = false;
-        })
-      )
-      .subscribe(events => {
-        this.events = events;
+    this.eventService.getEvents(filters || {}, this.currentPage, this.pageSize).subscribe({
+      next: (response) => {
+        this.events = response.content;
+        this.totalEvents = response.totalElements;
+        this.isLoading = false;
         this.applyFilters();
-      });
+      },
+      error: (error) => {
+        console.error('Error loading events:', error);
+        this.error = 'Failed to load events. Please try again.';
+        this.isLoading = false;
+      }
+    });
   }
 
   applyFilters() {
-    const filters = this.filterForm.value;
+    const filters = this.filterForm.getRawValue();
     
     this.filteredEvents = this.events.filter(event => {
       const matchesSearch = !filters.search || 
@@ -115,8 +109,8 @@ export class EventListComponent implements OnInit {
       const matchesCategory = !filters.category || 
         event.category === filters.category;
         
-      const matchesDate = !filters.date || 
-        new Date(event.date).toDateString() === new Date(filters.date).toDateString();
+      const matchesDate = !filters.startDate || 
+        new Date(event.startDate).toDateString() === new Date(filters.startDate).toDateString();
         
       const matchesLocation = !filters.location || 
         event.location.toLowerCase().includes(filters.location.toLowerCase());
@@ -169,16 +163,17 @@ export class EventListComponent implements OnInit {
       });
   }
 
-  getAvailableSpots(event: Event): number {
-    return event.maxParticipants - event.registeredParticipants.length;
+  getAvailableSpots(event: IEvent): number {
+    return event.maxParticipants - (event.registeredParticipants?.size || 0);
   }
 
-  isEventFull(event: Event): boolean {
-    return event.registeredParticipants.length >= event.maxParticipants;
+  isEventFull(event: IEvent): boolean {
+    return (event.registeredParticipants?.size || 0) >= event.maxParticipants;
   }
 
   onPageChange(event: PageEvent): void {
-    // TODO: Implement pagination
-    console.log(event);
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadEvents();
   }
 } 

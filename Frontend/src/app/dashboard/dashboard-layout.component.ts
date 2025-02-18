@@ -80,18 +80,18 @@ export class DashboardLayoutComponent implements OnInit {
       name: 'Admin Dashboard',
       roles: [UserRole.ADMIN],
       items: [
-        { label: 'Skills Management', icon: 'psychology', route: '/dashboard/admin/skills' },
-        { label: 'Organizations', icon: 'business', route: '/dashboard/admin/organizations' },
-        { label: 'Reports', icon: 'assessment', route: '/dashboard/admin/reports' }
+        { label: 'Skills Management', icon: 'psychology', route: '/dashboard/skills' },
+        { label: 'Organizations', icon: 'business', route: '/dashboard/organizations' },
+        { label: 'Reports', icon: 'assessment', route: '/dashboard/reports' }
       ]
     },
     {
       name: 'Organization Dashboard',
       roles: [UserRole.ORGANIZATION],
       items: [
-        { label: 'Events', icon: 'event', route: '/dashboard/organization/events' },
-        { label: 'Resources', icon: 'folder', route: '/dashboard/organization/resources' },
-        { label: 'Reports', icon: 'assessment', route: '/dashboard/organization/reports' },
+        { label: 'Events', icon: 'event', route: '/dashboard/events' },
+        { label: 'Resources', icon: 'folder', route: '/dashboard/resources' },
+        { label: 'Reports', icon: 'assessment', route: '/dashboard/reports' },
         { label: 'Messages', icon: 'message', route: '/dashboard/messages' },
         { label: 'Notifications', icon: 'notifications', route: '/dashboard/notifications' }
       ]
@@ -100,9 +100,9 @@ export class DashboardLayoutComponent implements OnInit {
       name: 'Volunteer Dashboard',
       roles: [UserRole.VOLUNTEER],
       items: [
-        { label: 'Profile', icon: 'person', route: '/dashboard/volunteer/profile' },
-        { label: 'Events', icon: 'event', route: '/dashboard/volunteer/events' },
-        { label: 'Achievements', icon: 'emoji_events', route: '/dashboard/volunteer/achievements' },
+        { label: 'Profile', icon: 'person', route: '/dashboard/profile' },
+        { label: 'Events', icon: 'event', route: '/dashboard/events' },
+        { label: 'Achievements', icon: 'emoji_events', route: '/dashboard/achievements' },
         { label: 'Messages', icon: 'message', route: '/dashboard/messages' },
         { label: 'Notifications', icon: 'notifications', route: '/dashboard/notifications' }
       ]

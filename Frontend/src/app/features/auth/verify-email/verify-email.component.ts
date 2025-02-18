@@ -119,17 +119,8 @@ export class VerifyEmailComponent implements OnInit {
               // Stop loading
               this.loading = false;
 
-              // Navigate based on role
-              switch (user.role) {
-                case 'ORGANIZATION':
-                  this.router.navigate(['/dashboard/organization']);
-                  break;
-                case 'VOLUNTEER':
-                  this.router.navigate(['/dashboard/volunteer']);
-                  break;
-                default:
-                  this.router.navigate(['/dashboard']);
-              }
+              // Navigate to dashboard (simplified route)
+              this.router.navigate(['/dashboard']);
             } else {
               this.loading = false;
               this.router.navigate(['/auth/login']);

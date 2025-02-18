@@ -11,7 +11,11 @@ export interface Organization {
     instagram?: string;
     linkedin?: string;
   };
-  logo?: string;
+  logoUrl?: string;
+  location?: string;
+  eventCount?: number;
+  rating?: number;
+  reviewCount?: number;
   coverImage?: string;
   address: Address;
   type: OrganizationType;

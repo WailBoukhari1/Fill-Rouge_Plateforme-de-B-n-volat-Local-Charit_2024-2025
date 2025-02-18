@@ -1,16 +1,20 @@
 package com.fill_rouge.backend.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Document(collection = "event_feedback")
 @Data
@@ -28,16 +32,12 @@ public class EventFeedback {
     @Field("volunteer_id")
     private String volunteerId;
     
-    private double rating;
+    @Min(value = 1, message = "Rating must be between 1 and 5")
+    @Max(value = 5, message = "Rating must be between 1 and 5")
+    private int rating;
     
+    @Size(max = 500, message = "Comment cannot exceed 500 characters")
     private String comment;
-    
-    @Field("hours_contributed")
-    private int hoursContributed;
-    
-    @Field("is_anonymous")
-    @Builder.Default
-    private boolean isAnonymous = false;
     
     @CreatedDate
     @Field("submitted_at")

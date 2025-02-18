@@ -1,68 +1,21 @@
-export enum EventStatus {
-  DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  UPCOMING = 'UPCOMING',
-  ONGOING = 'ONGOING',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
-}
+import {
+  IEvent,
+  EventStatus,
+  EventCategory,
+  IEventRegistration,
+  RegistrationStatus,
+  IEventFeedback,
+  IEventStats,
+  IEventFilters
+} from './event.types';
 
-export enum EventCategory {
-  ENVIRONMENT = 'ENVIRONMENT',
-  EDUCATION = 'EDUCATION',
-  HEALTHCARE = 'HEALTHCARE',
-  COMMUNITY = 'COMMUNITY',
-  ARTS = 'ARTS',
-  SPORTS = 'SPORTS',
-  TECHNOLOGY = 'TECHNOLOGY',
-  SOCIAL = 'SOCIAL'
-}
+export type Event = IEvent;
+export type EventRegistration = IEventRegistration;
+export type EventFeedback = IEventFeedback;
+export type EventStats = IEventStats;
+export type EventFilters = IEventFilters;
 
-export interface Event {
-  id: string;
-  title: string;
-  description: string;
-  category: EventCategory;
-  status: EventStatus;
-  organizationId: string;
-  organizationName: string;
-  organizationLogo?: string;
-  organizationDescription?: string;
-  startDate: Date;
-  endDate: Date;
-  registrationDeadline: Date;
-  location: string;
-  coordinates?: [number, number];
-  imageUrl: string;
-  registeredParticipants: Set<string>;
-  maxParticipants: number;
-  waitlistedParticipants: Set<string>;
-  requiredSkills: string[];
-  impactSummary?: string;
-  minimumAge: number;
-  requiresBackground: boolean;
-  waitlistEnabled: boolean;
-  maxWaitlistSize: number;
-  isCancelled: boolean;
-  cancellationReason?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy?: string;
-  updatedBy?: string;
-  contactPerson?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  isRecurring: boolean;
-  recurrencePattern?: string;
-  recurrenceEndDate?: Date;
-  requiresApproval: boolean;
-  approvedParticipants: Set<string>;
-  rejectedParticipants: Set<string>;
-  pendingParticipants: Set<string>;
-  averageRating: number;
-  numberOfRatings: number;
-  tags: Set<string>;
-}
+export { EventStatus, EventCategory, RegistrationStatus };
 
 export interface EventLocation {
   address: string;
@@ -74,17 +27,10 @@ export interface EventLocation {
   longitude?: number;
 }
 
-export enum EventType {
-  IN_PERSON = 'IN_PERSON',
-  VIRTUAL = 'VIRTUAL',
-  HYBRID = 'HYBRID'
-}
-
-export interface EventRegistration {
-  eventId: string;
-  volunteerId: string;
-  registrationDate: Date;
+export interface EventParticipant {
+  userId: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'WAITLISTED' | 'CANCELLED';
+  registrationDate: Date;
   checkedIn: boolean;
   checkInTime?: Date;
   checkOutTime?: Date;
@@ -95,46 +41,24 @@ export interface EventRegistration {
   waitlistPosition?: number;
 }
 
-export interface EventFeedback {
+export interface EventDetails {
   id: string;
-  eventId: string;
-  volunteerId: string;
-  rating: number;
-  comment: string;
-  hoursContributed: number;
-  submittedAt: Date;
-  isAnonymous: boolean;
+  title: string;
+  description: string;
+  date: Date;
+  location: string;
+  organizationName: string;
+  participantCount: number;
+  maxParticipants: number;
+  requiredSkills: string[];
+  status: string;
+  isRegistered: boolean;
+  isWaitlisted: boolean;
+  waitlistPosition?: number;
 }
 
-export interface EventStats {
-  totalEvents: number;
-  activeEvents: number;
-  totalParticipants: number;
-  averageRating: number;
-  totalVolunteerHours: number;
-  completedEvents: number;
-  upcomingEvents: number;
-  participationRate: number;
-  impactMetrics?: {
-    totalHoursContributed: number;
-    averageHoursPerEvent: number;
-    totalBeneficiaries: number;
-    communityImpactScore: number;
-  };
+export enum EventType {
+  IN_PERSON = 'IN_PERSON',
+  VIRTUAL = 'VIRTUAL',
+  HYBRID = 'HYBRID'
 }
-
-export interface EventFilters {
-  search?: string;
-  category?: EventCategory;
-  startDate?: Date;
-  endDate?: Date;
-  location?: string;
-  radius?: number;
-  skills?: string[];
-  status?: EventStatus;
-  organizationId?: string;
-  tags?: string[];
-  requiresBackground?: boolean;
-  isRecurring?: boolean;
-  minimumAge?: number;
-} 

@@ -1,40 +1,41 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { UnverifiedEmailGuard } from '../../core/guards/unverified-email.guard';
+import { NoAuthGuard } from '../../core/guards/no-auth.guard';
+import { AuthLayoutComponent } from '../../layouts/auth-layout/auth-layout.component';
 
 export const AUTH_ROUTES: Routes = [
   {
     path: '',
+    component: AuthLayoutComponent,
+    canActivate: [NoAuthGuard],
     children: [
       {
         path: 'login',
-        loadComponent: () => import('./login/login.component').then(m => m.LoginComponent),
-        title: 'Login',
-        data: { layout: 'auth' }
+        loadComponent: () => import('./login/login.component').then(m => m.LoginComponent)
       },
       {
         path: 'register',
-        loadComponent: () => import('./register/register.component').then(m => m.RegisterComponent),
-        title: 'Register',
-        data: { layout: 'auth' }
+        loadComponent: () => import('./register/register.component').then(m => m.RegisterComponent)
       },
+      {
+        path: 'forgot-password',
+        loadComponent: () => import('./forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+      },
+      {
+        path: 'reset-password',
+        loadComponent: () => import('./reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
+      }
+    ]
+  },
+  {
+    path: '',
+    children: [
       {
         path: 'verify-email',
         loadComponent: () => import('./verify-email/verify-email.component').then(m => m.VerifyEmailComponent),
         title: 'Verify Email',
         canActivate: [UnverifiedEmailGuard],
-        data: { layout: 'auth' }
-      },
-      {
-        path: 'forgot-password',
-        loadComponent: () => import('./forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
-        title: 'Forgot Password',
-        data: { layout: 'auth' }
-      },
-      {
-        path: 'reset-password',
-        loadComponent: () => import('./reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
-        title: 'Reset Password',
         data: { layout: 'auth' }
       },
       {

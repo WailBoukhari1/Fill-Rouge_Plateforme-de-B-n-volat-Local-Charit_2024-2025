@@ -131,7 +131,7 @@ public class EventServiceImpl implements EventService {
     
     @Override
     public Page<Event> getUpcomingEvents(Pageable pageable) {
-        return eventRepository.findByStatusAndStartDateAfter(EventStatus.APPROVED, LocalDateTime.now(), pageable);
+        return eventRepository.findByStatusAndStartDateAfter(EventStatus.ACTIVE, LocalDateTime.now(), pageable);
     }
     
     @Override
@@ -219,23 +219,23 @@ public class EventServiceImpl implements EventService {
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
         event.setLocation(request.getLocation());
-        event.setCoordinates(request.getCoordinates());
         event.setStartDate(request.getStartDate());
         event.setEndDate(request.getEndDate());
         event.setMaxParticipants(request.getMaxParticipants());
         event.setCategory(request.getCategory());
-        event.setRequiredSkills(request.getRequiredSkills());
+        event.setContactPerson(request.getContactPerson());
+        event.setContactEmail(request.getContactEmail());
     }
 
     private void validateEventModifiable(Event event) {
         if (event.getStatus() == EventStatus.COMPLETED || 
-            event.getStatus() == EventStatus.CANCELLED) {
+            event.getStatus() == EventStatus.FULL) {
             throw new IllegalStateException("Cannot modify event in " + event.getStatus() + " state");
         }
     }
     
     private void validateEventRegistration(Event event) {
-        if (event.getStatus() != EventStatus.APPROVED) {
+        if (event.getStatus() != EventStatus.ACTIVE) {
             throw new IllegalStateException("Cannot register for event with status: " + event.getStatus());
         }
         if (LocalDateTime.now().isAfter(event.getStartDate())) {
@@ -257,16 +257,16 @@ public class EventServiceImpl implements EventService {
         
         switch (currentStatus) {
             case PENDING -> {
-                if (newStatus != EventStatus.APPROVED && newStatus != EventStatus.REJECTED) {
-                    throw new IllegalStateException("Pending event can only be approved or rejected");
+                if (newStatus != EventStatus.ACTIVE && newStatus != EventStatus.FULL) {
+                    throw new IllegalStateException("Pending event can only be activated or marked as full");
                 }
             }
-            case APPROVED -> {
-                if (newStatus != EventStatus.CANCELLED && newStatus != EventStatus.COMPLETED) {
-                    throw new IllegalStateException("Approved event can only be cancelled or completed");
+            case ACTIVE -> {
+                if (newStatus != EventStatus.FULL && newStatus != EventStatus.ONGOING) {
+                    throw new IllegalStateException("Active event can only be marked as full or ongoing");
                 }
             }
-            case REJECTED, CANCELLED, COMPLETED -> 
+            case FULL, ONGOING, COMPLETED -> 
                 throw new IllegalStateException("Cannot change status of event in " + currentStatus + " state");
         }
     }

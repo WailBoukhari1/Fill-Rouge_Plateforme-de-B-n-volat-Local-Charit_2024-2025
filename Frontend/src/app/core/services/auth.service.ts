@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
 import { jwtDecode } from 'jwt-decode';
@@ -33,7 +33,9 @@ interface DecodedToken {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/auth`;
+  private apiUrl = `${environment.apiUrl}/api/auth`;
+  private tokenKey = 'auth_token';
+  private userKey = 'user_data';
   isAuthenticated$ = this.store.select(selectIsAuthenticated);
   currentUser$ = this.store.select(selectUser);
 
@@ -70,11 +72,19 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    this.router.navigate(['/auth/login']);
+  logout(): Observable<void> {
+    // First, clear local storage and state
+    this.clearStorage();
+    this.store.dispatch(AuthActions.logout());
+
+    // Then make the API call
+    return this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
+      catchError(error => {
+        console.error('Logout API call failed:', error);
+        // We've already cleared the state, so just propagate the error
+        return throwError(() => error);
+      })
+    );
   }
 
   refreshToken(token: string): Observable<ApiResponse<AuthResponse>> {
@@ -221,8 +231,8 @@ export class AuthService {
       console.log('Created user data:', userData);
 
       // Store auth data in localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', response.token);
+      localStorage.setItem(this.userKey, JSON.stringify(userData));
+      localStorage.setItem(this.tokenKey, response.token);
       localStorage.setItem('refreshToken', response.refreshToken);
 
       // Update store with user data
@@ -245,7 +255,7 @@ export class AuthService {
   }
 
   getDecodedToken(): DecodedToken | null {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(this.tokenKey);
     if (!token) return null;
     
     try {
@@ -262,46 +272,78 @@ export class AuthService {
   }
 
   private clearStorage(): void {
-    localStorage.clear();
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
+    localStorage.removeItem('refreshToken');
+    // Clear any other auth-related items you might have
+    localStorage.removeItem('lastLoginTime');
+    sessionStorage.clear(); // Clear any session storage as well
   }
 
   checkAuthState(): void {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    const refreshToken = localStorage.getItem('refreshToken');
+    const token = localStorage.getItem(this.tokenKey);
+    const userData = localStorage.getItem(this.userKey);
 
-    if (token && userStr && refreshToken) {
+    if (token && userData) {
       try {
+        const user = JSON.parse(userData);
         const decodedToken = this.decodeToken(token);
-        if (this.isTokenExpired(decodedToken)) {
-          this.clearStorage();
-          this.store.dispatch(AuthActions.logout());
-          return;
-        }
 
-        const user = JSON.parse(userStr) as User;
-        this.store.dispatch(AuthActions.loginSuccess({
-          user,
-          token,
-          refreshToken
-        }));
+        if (!this.isTokenExpired(decodedToken)) {
+          // Restore auth state without redirecting
+          this.store.dispatch(AuthActions.loginSuccess({
+            user,
+            token,
+            refreshToken: localStorage.getItem('refreshToken') || '',
+            redirect: false
+          }));
+        } else {
+          this.clearStorage();
+        }
       } catch (error) {
         console.error('Error restoring auth state:', error);
         this.clearStorage();
-        this.store.dispatch(AuthActions.logout());
       }
     }
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('token');
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const decodedToken = this.decodeToken(token);
+      return !this.isTokenExpired(decodedToken);
+    } catch {
+      return false;
+    }
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(this.tokenKey);
   }
 
   getUserRole(): string {
-    return localStorage.getItem('userRole') || '';
+    const userData = localStorage.getItem(this.userKey);
+    if (!userData) return '';
+    
+    try {
+      const user = JSON.parse(userData);
+      return user.role || '';
+    } catch {
+      return '';
+    }
   }
 
   getUserName(): string {
-    return localStorage.getItem('userName') || '';
+    const userData = localStorage.getItem(this.userKey);
+    if (!userData) return '';
+    
+    try {
+      const user = JSON.parse(userData);
+      return `${user.firstName} ${user.lastName}`.trim() || user.email || '';
+    } catch {
+      return '';
+    }
   }
 } 

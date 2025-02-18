@@ -1,28 +1,31 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { Observable, map, take } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { selectIsAuthenticated } from '../../store/auth/auth.selectors';
+import { selectUser } from '../../store/auth/auth.selectors';
+import { AuthService } from '../services/auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class NoAuthGuard implements CanActivate {
+export class NoAuthGuard {
   constructor(
     private store: Store,
+    private authService: AuthService,
     private router: Router
   ) {}
 
   canActivate(): Observable<boolean | UrlTree> {
-    return this.store.select(selectIsAuthenticated).pipe(
+    return this.store.select(selectUser).pipe(
       take(1),
-      map(isAuthenticated => {
-        if (isAuthenticated) {
-          // If user is authenticated, redirect to dashboard
-          return this.router.createUrlTree(['/dashboard']);
+      map(user => {
+        if (!user || !this.authService.isLoggedIn()) {
+          return true;
         }
-        // Allow access to auth routes if not authenticated
-        return true;
+
+        // If user is already logged in, redirect to dashboard
+        // The dashboard will handle showing appropriate content based on role
+        return this.router.createUrlTree(['/dashboard']);
       })
     );
   }
