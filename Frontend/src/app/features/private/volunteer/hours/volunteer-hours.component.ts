@@ -5,6 +5,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { VolunteerService } from '../../../../core/services/volunteer.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-volunteer-hours',
@@ -56,17 +57,31 @@ import { VolunteerService } from '../../../../core/services/volunteer.service';
 export class VolunteerHoursComponent implements OnInit {
   volunteerHours: any[] = [];
   displayedColumns: string[] = ['event', 'date', 'hours', 'status'];
+  loading: boolean = true;
 
-  constructor(private volunteerService: VolunteerService) {}
+  constructor(private volunteerService: VolunteerService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadVolunteerHours();
   }
 
   loadVolunteerHours(): void {
+    this.loading = true;
     this.volunteerService.getVolunteerHours().subscribe({
-      next: (hours) => this.volunteerHours = hours,
-      error: (error) => console.error('Error loading volunteer hours:', error)
+      next: (hours) => {
+        this.volunteerHours = hours;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading volunteer hours:', error);
+        this.snackBar.open(
+          'Unable to load volunteer hours. Please try again later.',
+          'Close',
+          { duration: 5000 }
+        );
+        this.volunteerHours = [];
+        this.loading = false;
+      }
     });
   }
 } 

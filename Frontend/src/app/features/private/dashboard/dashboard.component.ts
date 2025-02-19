@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { VolunteerService } from '../../../core/services/volunteer.service';
 import { EventService } from '../../../core/services/event.service';
+import { VolunteerStatistics, VolunteerHours, RecentActivity } from '../../../core/models/volunteer.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -40,7 +41,7 @@ import { EventService } from '../../../core/services/event.service';
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-gray-600">My Events</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.totalEvents}}</h2>
+                    <h2 class="text-2xl font-bold">{{volunteerStats.totalEventsAttended}}</h2>
                   </div>
                   <mat-icon class="text-primary-500">event</mat-icon>
                 </div>
@@ -52,7 +53,7 @@ import { EventService } from '../../../core/services/event.service';
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-gray-600">Hours Contributed</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.totalHours}}</h2>
+                    <h2 class="text-2xl font-bold">{{volunteerStats.totalHoursVolunteered}}</h2>
                   </div>
                   <mat-icon class="text-primary-500">schedule</mat-icon>
                 </div>
@@ -63,8 +64,8 @@ import { EventService } from '../../../core/services/event.service';
               <mat-card-content class="p-4">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">Achievements</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.achievements}}</h2>
+                    <p class="text-gray-600">Impact Score</p>
+                    <h2 class="text-2xl font-bold">{{volunteerStats.impactScore}}</h2>
                   </div>
                   <mat-icon class="text-primary-500">emoji_events</mat-icon>
                 </div>
@@ -75,10 +76,10 @@ import { EventService } from '../../../core/services/event.service';
               <mat-card-content class="p-4">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">Upcoming Events</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.upcomingEvents}}</h2>
+                    <p class="text-gray-600">Organizations</p>
+                    <h2 class="text-2xl font-bold">{{volunteerStats.organizationsWorkedWith}}</h2>
                   </div>
-                  <mat-icon class="text-primary-500">upcoming</mat-icon>
+                  <mat-icon class="text-primary-500">business</mat-icon>
                 </div>
               </mat-card-content>
             </mat-card>
@@ -149,16 +150,16 @@ import { EventService } from '../../../core/services/event.service';
 export class DashboardComponent implements OnInit {
   userRole: string = '';
   loading = true;
-  recentActivities: any[] = [];
-
-  // Volunteer Statistics
-  volunteerStats = {
-    totalEvents: 0,
-    totalHours: 0,
-    achievements: 0,
-    upcomingEvents: 0
+  recentActivities: RecentActivity[] = [];
+  // Volunteer Statistics with proper typing
+  volunteerStats: VolunteerStatistics = {
+    totalEventsAttended: 0,
+    totalHoursVolunteered: 0,
+    badges: [],
+    impactScore: 0,
+    skillsGained: [],
+    organizationsWorkedWith: 0
   };
-
   constructor(
     private authService: AuthService,
     private volunteerService: VolunteerService,
@@ -190,80 +191,71 @@ export class DashboardComponent implements OnInit {
       this.loadVolunteerData();
     }
   }
-
   private loadVolunteerData() {
     this.loading = true;
     
-    // Create a default stats object
-    const defaultStats = {
-      totalEvents: 0,
-      totalHours: 0,
-      achievements: 0,
-      upcomingEvents: 0
-    };
-
     // Load volunteer statistics
     this.volunteerService.getStatistics().subscribe({
       next: (stats) => {
         this.volunteerStats = {
-          totalEvents: stats.totalEventsAttended || 0,
-          totalHours: stats.totalHoursVolunteered || 0,
-          achievements: stats.badges?.length || 0,
-          upcomingEvents: 0 // Will be set by upcoming events call
+          totalEventsAttended: stats.totalEventsAttended || 0,
+          totalHoursVolunteered: stats.totalHoursVolunteered || 0,
+          badges: Array.isArray(stats.badges) ? stats.badges.map(badge => {
+            if (typeof badge === 'string') {
+              return {
+                id: badge,
+                name: badge,
+                description: '',
+                imageUrl: '',
+                earnedDate: new Date()
+              };
+            }
+            return badge;
+          }) : [],
+          impactScore: 0,
+          skillsGained: [],
+          organizationsWorkedWith: 0
         };
+
+        // After statistics are loaded, load hours and activities
+        this.loadVolunteerHours();
       },
       error: (error) => {
         console.error('Error loading volunteer statistics:', error);
         this.snackBar.open(
-          'Unable to load volunteer statistics. Please try again later.',
-          'Close',
-          { duration: 5000 }
-        );
-        this.volunteerStats = defaultStats;
-      }
-    });
-
-    // Load upcoming events count
-    this.eventService.getUpcomingEvents().subscribe({
-      next: (events) => {
-        this.volunteerStats.upcomingEvents = events.length;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading upcoming events:', error);
-        this.snackBar.open(
-          'Unable to load upcoming events. Please try again later.',
+          'Unable to load statistics. Please try again later.',
           'Close',
           { duration: 5000 }
         );
         this.loading = false;
-      }
-    });
-
-    // Load recent activities with error handling
-    this.volunteerService.getVolunteerHours().subscribe({
-      next: (hours) => {
-        this.recentActivities = hours.slice(0, 5).map(hour => ({
-          id: hour.id,
-          icon: 'schedule',
-          description: `Volunteered ${hour.hours} hours at ${hour.eventName}`,
-          timestamp: hour.date
-        }));
-      },
-      error: (error) => {
-        console.error('Error loading recent activities:', error);
-        this.snackBar.open(
-          'Unable to load recent activities. Please try again later.',
-          'Close',
-          { duration: 5000 }
-        );
-        this.recentActivities = [];
       }
     });
   }
 
+  private loadVolunteerHours() {
+    this.volunteerService.getVolunteerHours().subscribe({
+      next: (hours) => {
+        // Convert volunteer hours to recent activities
+        this.recentActivities = hours.slice(0, 5).map(hour => ({
+          id: hour.id,
+          type: 'HOURS',
+          icon: 'schedule',
+          title: hour.eventName,
+          description: `Volunteered for ${hour.hours} hours`,
+          timestamp: new Date(hour.date),
+          relatedId: hour.eventId,
+          status: hour.status
+        }));
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading volunteer hours:', error);
+        this.loading = false;
+      }
+    });
+  }
   // Add a retry method for manual refresh
   retryLoading() {
     this.loadDashboardData();
   }
-} 
+}

@@ -1,13 +1,12 @@
 package com.fill_rouge.backend.exception;
 
-import com.fill_rouge.backend.dto.response.ApiResponse;
-import com.fill_rouge.backend.dto.response.ErrorResponse;
-import com.fill_rouge.backend.constant.error.AuthErrorCode;
-import com.fill_rouge.backend.constant.error.ErrorCode;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.security.SignatureException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -22,12 +21,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.fill_rouge.backend.dto.response.ApiResponse;
+import com.fill_rouge.backend.dto.response.ErrorResponse;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -56,21 +56,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        String traceId = generateTraceId();
-        logger.error("Resource not found - TraceId: {} - Resource: {} with ID: {}", 
-                traceId, ex.getResourceType(), ex.getResourceId(), ex);
+    public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.NOT_FOUND.value());
+        body.put("error", "Not Found");
+        body.put("message", ex.getMessage());
         
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND.value())
-                .body(ApiResponse.<Void>builder()
-                        .status(HttpStatus.NOT_FOUND.value())
-                        .errorCode(ex.getErrorCode())
-                        .path(request.getRequestURI())
-                        .traceId(traceId)
-                        .timestamp(ex.getTimestamp())
-                        .message(String.format("%s with id '%s' not found", ex.getResourceType(), ex.getResourceId()))
-                        .build());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
     @ExceptionHandler(ValidationException.class)
@@ -91,27 +84,23 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-        String traceId = generateTraceId();
-        logger.error("Method argument validation failed - TraceId: {}", traceId, ex);
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> validationErrors = ex.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .collect(Collectors.toMap(
+                FieldError::getField,
+                error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value"
+            ));
 
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-
-        ErrorResponse response = ErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message("Validation failed")
-                .timestamp(LocalDateTime.now())
-                .error("Validation Error")
-                .validationErrors(convertToValidationErrors(errors))
-                .traceId(traceId)
-                .build();
-
-        return ResponseEntity.badRequest().body(response);
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Validation Failed");
+        body.put("message", "Invalid request parameters");
+        body.put("details", validationErrors);
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -157,18 +146,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
-        String traceId = generateTraceId();
-        logger.error("Access denied - TraceId: {}", traceId, ex);
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.FORBIDDEN.value());
+        body.put("error", "Forbidden");
+        body.put("message", "Access Denied");
         
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN.value())
-                .body(ApiResponse.<Void>builder()
-                        .status(HttpStatus.FORBIDDEN.value())
-                        .errorCode("ACCESS_DENIED")
-                        .path(request.getRequestURI())
-                        .traceId(traceId)
-                        .build());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     @ExceptionHandler(DisabledException.class)
@@ -232,19 +217,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleAllUncaughtException(Exception ex) {
-        String traceId = generateTraceId();
-        logger.error("Unexpected error occurred - TraceId: {}", traceId, ex);
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        body.put("error", "Internal Server Error");
+        body.put("message", "An unexpected error occurred");
         
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .body(ApiResponse.<Void>builder()
-                        .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                        .errorCode("INTERNAL_SERVER_ERROR")
-                        .path(request.getRequestURI())
-                        .traceId(traceId)
-                        .message("An unexpected error occurred. Please try again later.")
-                        .build());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
     private String generateTraceId() {

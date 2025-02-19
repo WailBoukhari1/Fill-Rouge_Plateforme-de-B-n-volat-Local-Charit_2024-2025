@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable, Inject } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../auth/auth.service';
 
 export interface VolunteerProfile {
   id: string;
@@ -65,23 +66,30 @@ export interface VolunteerHours {
   providedIn: 'root'
 })
 export class VolunteerService {
-  private apiUrl = `${environment.apiUrl}/api/volunteers`;
+  private apiUrl = environment.apiUrl + '/volunteers';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   // Get volunteer profile
   getProfile(): Observable<VolunteerProfile> {
-    return this.http.get<VolunteerProfile>(`${this.apiUrl}/profile`);
+    return this.http.get<VolunteerProfile>(`${this.apiUrl}/profile`, { withCredentials: true });
   }
 
   // Update volunteer profile
   updateProfile(profile: Partial<VolunteerProfile>): Observable<VolunteerProfile> {
-    return this.http.put<VolunteerProfile>(`${this.apiUrl}/profile`, profile);
+    return this.http.put<VolunteerProfile>(`${this.apiUrl}/profile`, profile, { withCredentials: true });
   }
 
   // Get volunteer statistics
   getStatistics(): Observable<VolunteerStatistics> {
-    return this.http.get<VolunteerStatistics>(`${this.apiUrl}/statistics`).pipe(
+    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
+    return this.http.get<VolunteerStatistics>(`${this.apiUrl}/statistics`, { 
+      headers,
+      withCredentials: true 
+    }).pipe(
       catchError(error => {
         console.error('Error fetching volunteer statistics:', error);
         // Return default statistics if the API fails
@@ -112,7 +120,11 @@ export class VolunteerService {
 
   // Get volunteer hours
   getVolunteerHours(): Observable<VolunteerHours[]> {
-    return this.http.get<VolunteerHours[]>(`${this.apiUrl}/hours`).pipe(
+    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
+    return this.http.get<VolunteerHours[]>(`${this.apiUrl}/hours`, { 
+      headers,
+      withCredentials: true 
+    }).pipe(
       catchError(error => {
         console.error('Error fetching volunteer hours:', error);
         return of([]);
@@ -122,19 +134,19 @@ export class VolunteerService {
 
   // Update volunteer availability
   updateAvailability(availability: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/availability`, availability);
+    return this.http.put(`${this.apiUrl}/availability`, availability, { withCredentials: true });
   }
 
   // Update notification preferences
   updateNotificationPreferences(preferences: string[]): Observable<any> {
-    return this.http.put(`${this.apiUrl}/notifications`, { preferences });
+    return this.http.put(`${this.apiUrl}/notifications`, { preferences }, { withCredentials: true });
   }
 
   // Upload profile picture
   uploadProfilePicture(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post(`${this.apiUrl}/profile/picture`, formData);
+    return this.http.post(`${this.apiUrl}/profile/picture`, formData, { withCredentials: true });
   }
 
   // Add certification
@@ -164,12 +176,15 @@ export class VolunteerService {
 
   // Get volunteer dashboard statistics
   getDashboardStats(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/dashboard`);
+    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
+    return this.http.get(`${this.apiUrl}/dashboard`, { headers });
   }
 
   // Get volunteer dashboard statistics by date range
   getDashboardStatsByDateRange(startDate: Date, endDate: Date): Observable<any> {
+    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
     return this.http.get(`${this.apiUrl}/dashboard/range`, {
+      headers,
       params: {
         start: startDate.toISOString(),
         end: endDate.toISOString()
