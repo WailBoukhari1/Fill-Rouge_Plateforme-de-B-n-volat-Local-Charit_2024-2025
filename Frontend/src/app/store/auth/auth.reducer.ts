@@ -1,20 +1,10 @@
 import { createReducer, on } from '@ngrx/store';
-import { AuthState } from '../../core/models/auth.models';
+import { initialAuthState } from './auth.state';
 import * as AuthActions from './auth.actions';
 
-export const initialState: AuthState = {
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
-  error: null,
-  loading: false,
-  requiresTwoFactor: false
-};
-
 export const authReducer = createReducer(
-  initialState,
-
+  initialAuthState,
+  
   // Login
   on(AuthActions.login, (state) => ({
     ...state,
@@ -22,6 +12,7 @@ export const authReducer = createReducer(
     error: null,
     requiresTwoFactor: false
   })),
+  
   on(AuthActions.loginSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
@@ -32,6 +23,7 @@ export const authReducer = createReducer(
     error: null,
     requiresTwoFactor: false
   })),
+  
   on(AuthActions.loginFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -53,6 +45,7 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
+  
   on(AuthActions.registerSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
@@ -62,6 +55,7 @@ export const authReducer = createReducer(
     loading: false,
     error: null
   })),
+  
   on(AuthActions.registerFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -74,9 +68,11 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
+  
   on(AuthActions.logoutSuccess, () => ({
-    ...initialState
+    ...initialAuthState
   })),
+  
   on(AuthActions.logoutFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -89,6 +85,7 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
+  
   on(AuthActions.refreshTokenSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
@@ -97,6 +94,7 @@ export const authReducer = createReducer(
     loading: false,
     error: null
   })),
+  
   on(AuthActions.refreshTokenFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -109,6 +107,7 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
+  
   on(AuthActions.loadStoredUserSuccess, (state, { user }) => ({
     ...state,
     user,

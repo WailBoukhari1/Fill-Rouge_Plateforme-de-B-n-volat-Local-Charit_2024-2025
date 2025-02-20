@@ -1,14 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService } from '../../../core/services/auth.service';
-import { VolunteerService } from '../../../core/services/volunteer.service';
-import { EventService } from '../../../core/services/event.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
+import { Chart, ChartType } from 'chart.js/auto';
+
+import * as VolunteerActions from '../../../store/volunteer/volunteer.actions';
+import * as VolunteerSelectors from '../../../store/volunteer/volunteer.selectors';
 import { VolunteerStatistics, VolunteerHours } from '../../../core/services/volunteer.service';
 
 @Component({
@@ -24,270 +27,235 @@ import { VolunteerStatistics, VolunteerHours } from '../../../core/services/volu
   ],
   template: `
     <div class="container mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-6">{{getDashboardTitle()}}</h1>
+      <h1 class="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
 
       <!-- Loading Spinner -->
-      @if (loading) {
+      @if (loading$ | async) {
         <div class="flex justify-center items-center h-64">
           <mat-spinner diameter="40"></mat-spinner>
         </div>
       } @else {
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          @if (userRole === 'VOLUNTEER') {
-            <!-- Events Stats -->
-            <mat-card>
-              <mat-card-content class="p-4">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-gray-600">Total Events</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.totalEventsAttended}}</h2>
-                    <p class="text-sm text-gray-500">
-                      {{volunteerStats.upcomingEvents}} upcoming
-                    </p>
-                  </div>
-                  <mat-icon class="text-primary-500">event</mat-icon>
-                </div>
-              </mat-card-content>
-            </mat-card>
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <!-- Hours by Month Chart -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Hours by Month</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="p-4">
+              <canvas #hoursChart></canvas>
+            </mat-card-content>
+          </mat-card>
 
-            <!-- Hours Stats -->
-            <mat-card>
-              <mat-card-content class="p-4">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-gray-600">Hours Contributed</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.totalHoursVolunteered}}</h2>
-                    <p class="text-sm text-gray-500">
-                      Avg: {{volunteerStats.averageHoursPerEvent | number:'1.0-1'}} per event
-                    </p>
-                  </div>
-                  <mat-icon class="text-primary-500">schedule</mat-icon>
-                </div>
-              </mat-card-content>
-            </mat-card>
+          <!-- Events by Category Chart -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Events by Category</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="p-4">
+              <canvas #categoryChart></canvas>
+            </mat-card-content>
+          </mat-card>
 
-            <!-- Rating Stats -->
-            <mat-card>
-              <mat-card-content class="p-4">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-gray-600">Average Rating</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.averageRating | number:'1.0-1'}}</h2>
-                    <p class="text-sm text-gray-500">
-                      Reliability: {{volunteerStats.reliabilityScore}}%
-                    </p>
-                  </div>
-                  <mat-icon class="text-primary-500">star</mat-icon>
-                </div>
-              </mat-card-content>
-            </mat-card>
+          <!-- Participation by Day Chart -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Participation by Day</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="p-4">
+              <canvas #participationChart></canvas>
+            </mat-card-content>
+          </mat-card>
 
-            <!-- Impact Stats -->
-            <mat-card>
-              <mat-card-content class="p-4">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-gray-600">Organizations</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.organizationsWorkedWith}}</h2>
-                    <p class="text-sm text-gray-500">
-                      Growth: {{(volunteerStats.participationGrowthRate * 100) | number:'1.0-1'}}%
-                    </p>
-                  </div>
-                  <mat-icon class="text-primary-500">business</mat-icon>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          }
+          <!-- Growth Metrics Chart -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Growth Metrics</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="p-4">
+              <canvas #growthChart></canvas>
+            </mat-card-content>
+          </mat-card>
         </div>
+      }
 
-        <!-- Recent Activity and Quick Actions -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Recent Activity -->
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>Recent Activity</mat-card-title>
-            </mat-card-header>
-            <mat-card-content class="p-4">
-              @if (recentActivities.length === 0) {
-                <div class="text-center py-4 text-gray-500">
-                  No recent activities
-                </div>
-              } @else {
-                <div class="space-y-4">
-                  @for (activity of recentActivities; track activity.id) {
-                    <div class="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded">
-                      <mat-icon [class]="getStatusColor(activity.status)">
-                        {{getActivityIcon(activity.status)}}
-                      </mat-icon>
-                      <div>
-                        <p class="font-medium">{{activity.title}}</p>
-                        <p class="text-sm text-gray-600">{{activity.description}}</p>
-                        <p class="text-xs text-gray-500">{{activity.timestamp | date:'medium'}}</p>
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
-            </mat-card-content>
-          </mat-card>
-
-          <!-- Quick Actions -->
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>Quick Actions</mat-card-title>
-            </mat-card-header>
-            <mat-card-content class="p-4">
-              <div class="grid grid-cols-2 gap-4">
-                @if (userRole === 'VOLUNTEER') {
-                  <button mat-raised-button color="primary" routerLink="/events">
-                    <mat-icon>event</mat-icon>
-                    Browse Events
-                  </button>
-                  <button mat-raised-button color="primary" routerLink="/volunteer/hours">
-                    <mat-icon>schedule</mat-icon>
-                    View Hours
-                  </button>
-                  <button mat-raised-button color="primary" routerLink="/volunteer/achievements">
-                    <mat-icon>emoji_events</mat-icon>
-                    Achievements
-                  </button>
-                  <button mat-raised-button color="primary" routerLink="/volunteer/profile">
-                    <mat-icon>person</mat-icon>
-                    Profile
-                  </button>
-                }
-              </div>
-            </mat-card-content>
-          </mat-card>
+      @if (error$ | async) {
+        <div class="mt-4 p-4 bg-red-100 text-red-700 rounded">
+          {{error$ | async}}
+          <button mat-button color="warn" (click)="retryLoading()">Retry</button>
         </div>
       }
     </div>
-  `
+  `,
+  styles: [`
+    .chart-container {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      min-height: 300px;
+    }
+  `]
 })
-export class DashboardComponent implements OnInit {
-  userRole: string = '';
-  loading = true;
-  recentActivities: any[] = [];
-  volunteerStats: VolunteerStatistics = {
-    totalEventsAttended: 0,
-    upcomingEvents: 0,
-    completedEvents: 0,
-    canceledEvents: 0,
-    totalHoursVolunteered: 0,
-    averageHoursPerEvent: 0,
-    averageRating: 0,
-    reliabilityScore: 0,
-    organizationsWorkedWith: 0,
-    participationGrowthRate: 0,
-    hoursGrowthRate: 0,
-    eventsByCategory: {},
-    hoursByMonth: {},
-    participationByDay: {}
-  };
+export class DashboardComponent implements OnInit, AfterViewInit {
+  @ViewChild('hoursChart') hoursChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('categoryChart') categoryChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('participationChart') participationChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('growthChart') growthChartRef!: ElementRef<HTMLCanvasElement>;
+
+  statistics$: Observable<VolunteerStatistics | null>;
+  loading$: Observable<boolean>;
+  error$: Observable<string | null>;
+
+  private hoursChart: Chart<'line'> | null = null;
+  private categoryChart: Chart<'pie'> | null = null;
+  private participationChart: Chart<'bar'> | null = null;
+  private growthChart: Chart<'line'> | null = null;
 
   constructor(
-    private authService: AuthService,
-    private volunteerService: VolunteerService,
-    private eventService: EventService,
+    private store: Store,
     private snackBar: MatSnackBar
-  ) {}
+  ) {
+    this.statistics$ = this.store.select(VolunteerSelectors.selectVolunteerStatistics);
+    this.loading$ = this.store.select(VolunteerSelectors.selectVolunteerLoading);
+    this.error$ = this.store.select(VolunteerSelectors.selectVolunteerError);
+  }
 
   ngOnInit(): void {
-    this.userRole = 'VOLUNTEER'; // For testing, replace with actual role logic
-    this.loadDashboardData();
+    this.store.dispatch(VolunteerActions.loadStatistics());
   }
 
-  getDashboardTitle(): string {
-    switch (this.userRole) {
-      case 'VOLUNTEER':
-        return 'Volunteer Dashboard';
-      case 'ORGANIZATION':
-        return 'Organization Dashboard';
-      case 'ADMIN':
-        return 'Admin Dashboard';
-      default:
-        return 'Dashboard';
-    }
-  }
-
-  loadDashboardData() {
-    this.loading = true;
-    if (this.userRole === 'VOLUNTEER') {
-      this.loadVolunteerData();
-    }
-  }
-
-  private loadVolunteerData() {
-    this.loading = true;
-    
-    // Load volunteer statistics
-    this.volunteerService.getStatistics().subscribe({
-      next: (stats) => {
-        this.volunteerStats = stats;
-        // After statistics are loaded, load hours
-        this.loadVolunteerHours();
-      },
-      error: (error) => {
-        console.error('Error loading volunteer statistics:', error);
-        this.snackBar.open(
-          'Unable to load statistics. Please try again later.',
-          'Close',
-          { duration: 5000 }
-        );
-        this.loading = false;
+  ngAfterViewInit(): void {
+    this.initializeCharts();
+    this.statistics$.subscribe(stats => {
+      if (stats) {
+        this.updateCharts(stats);
       }
     });
   }
 
-  private loadVolunteerHours() {
-    this.volunteerService.getVolunteerHours().subscribe({
-      next: (hours) => {
-        // Convert volunteer hours to recent activities
-        this.recentActivities = hours.slice(0, 5).map(hour => ({
-          id: hour.id,
-          title: hour.eventName,
-          description: `Volunteered for ${hour.hours} hours`,
-          timestamp: new Date(hour.date),
-          status: hour.status,
-          relatedId: hour.eventId
-        }));
-        this.loading = false;
+  private initializeCharts(): void {
+    // Initialize Hours Chart
+    this.hoursChart = new Chart(this.hoursChartRef.nativeElement, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Hours Volunteered',
+          data: [],
+          borderColor: 'rgb(75, 192, 192)',
+          tension: 0.1
+        }]
       },
-      error: (error) => {
-        console.error('Error loading volunteer hours:', error);
-        this.loading = false;
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    // Initialize Category Chart
+    this.categoryChart = new Chart(this.categoryChartRef.nativeElement, {
+      type: 'pie',
+      data: {
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: [
+            'rgb(255, 99, 132)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 205, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(153, 102, 255)'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    // Initialize Participation Chart
+    this.participationChart = new Chart(this.participationChartRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        datasets: [{
+          label: 'Events Attended',
+          data: [],
+          backgroundColor: 'rgb(54, 162, 235)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    // Initialize Growth Chart
+    this.growthChart = new Chart(this.growthChartRef.nativeElement, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [
+          {
+            label: 'Participation Growth',
+            data: [],
+            borderColor: 'rgb(75, 192, 192)'
+          },
+          {
+            label: 'Hours Growth',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
       }
     });
   }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'APPROVED':
-        return 'text-green-600';
-      case 'PENDING':
-        return 'text-orange-600';
-      case 'REJECTED':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
+  private updateCharts(stats: VolunteerStatistics): void {
+    // Update Hours Chart
+    if (this.hoursChart && stats.hoursByMonth) {
+      const labels = Object.keys(stats.hoursByMonth);
+      const data = Object.values(stats.hoursByMonth);
+      this.hoursChart.data.labels = labels;
+      this.hoursChart.data.datasets[0].data = data;
+      this.hoursChart.update();
     }
-  }
 
-  getActivityIcon(status: string): string {
-    switch (status) {
-      case 'APPROVED':
-        return 'check_circle';
-      case 'PENDING':
-        return 'pending';
-      case 'REJECTED':
-        return 'cancel';
-      default:
-        return 'schedule';
+    // Update Category Chart
+    if (this.categoryChart && stats.eventsByCategory) {
+      const labels = Object.keys(stats.eventsByCategory);
+      const data = Object.values(stats.eventsByCategory);
+      this.categoryChart.data.labels = labels;
+      this.categoryChart.data.datasets[0].data = data;
+      this.categoryChart.update();
+    }
+
+    // Update Participation Chart
+    if (this.participationChart && stats.participationByDay) {
+      const data = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        .map(day => stats.participationByDay[day] || 0);
+      this.participationChart.data.datasets[0].data = data;
+      this.participationChart.update();
+    }
+
+    // Update Growth Chart
+    if (this.growthChart) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      const participationData = months.map(() => stats.participationGrowthRate * 100);
+      const hoursData = months.map(() => stats.hoursGrowthRate * 100);
+      this.growthChart.data.datasets[0].data = participationData;
+      this.growthChart.data.datasets[1].data = hoursData;
+      this.growthChart.update();
     }
   }
 
   retryLoading() {
-    this.loadDashboardData();
+    this.store.dispatch(VolunteerActions.loadStatistics());
   }
 }

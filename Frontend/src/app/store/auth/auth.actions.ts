@@ -1,5 +1,6 @@
 import { createAction, props } from '@ngrx/store';
-import { User, UserRole } from '../../core/models/auth.models';
+import { User } from '../../core/models/auth.models';
+import { UserRole } from '../../core/models/auth.models';
 
 // Login
 export const login = createAction(
@@ -26,11 +27,8 @@ export const loginFailure = createAction(
   props<{ error: string }>()
 );
 
-// Two Factor Required
-export const twoFactorRequired = createAction(
-  '[Auth] Two Factor Required',
-  props<{ email: string; password: string }>()
-);
+// Two Factor
+export const twoFactorRequired = createAction('[Auth] Two Factor Required');
 
 // Register
 export const register = createAction(

@@ -7,13 +7,13 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
-import { authReducer } from './store/auth/auth.reducer';
 import { AuthEffects } from './store/auth/auth.effects';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
-import { eventReducer } from './store/event/event.reducer';
 import { EventEffects } from './store/event/event.effects';
 import { AuthService } from './core/services/auth.service';
+import { reducers } from './store';
+import { VolunteerEffects } from './store/volunteer/volunteer.effects';
 
 export function initializeApp(authService: AuthService) {
   return () => {
@@ -27,13 +27,11 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([authInterceptor, errorInterceptor])
     ),
-    provideStore({
-      auth: authReducer,
-      event: eventReducer
-    }),
+    provideStore(reducers),
     provideEffects([
       AuthEffects,
-      EventEffects
+      EventEffects,
+      VolunteerEffects
     ]),
     provideStoreDevtools({
       maxAge: 25,

@@ -1,10 +1,10 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
-  ORGANIZATION = 'ORGANIZATION',
-  VOLUNTEER = 'VOLUNTEER'
+  VOLUNTEER = 'VOLUNTEER',
+  ORGANIZATION = 'ORGANIZATION'
 }
 
-export type User = {
+export interface User {
   id: number;
   email: string;
   firstName: string;
@@ -18,7 +18,7 @@ export type User = {
   profilePicture?: string;
   lastLoginIp?: string;
   lastLoginAt?: string;
-};
+}
 
 export interface AuthState {
   user: User | null;
@@ -34,17 +34,14 @@ export interface AuthState {
 }
 
 export interface ApiResponse<T> {
-  success: boolean;
+  status: number;
   message: string;
   data: T;
-  timestamp: string;
-  path: string;
 }
 
 export interface AuthResponse {
   token: string;
   refreshToken: string;
-  type: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -76,7 +73,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role?: UserRole;
 }
 
 export interface EmailVerificationRequest {

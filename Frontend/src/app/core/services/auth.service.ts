@@ -299,11 +299,16 @@ export class AuthService {
           }));
         } else {
           this.clearStorage();
+          this.store.dispatch(AuthActions.logoutSuccess());
         }
       } catch (error) {
         console.error('Error restoring auth state:', error);
         this.clearStorage();
+        this.store.dispatch(AuthActions.logoutSuccess());
       }
+    } else {
+      // Initialize with logged out state
+      this.store.dispatch(AuthActions.logoutSuccess());
     }
   }
 
