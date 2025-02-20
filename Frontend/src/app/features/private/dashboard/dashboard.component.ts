@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { VolunteerService } from '../../../core/services/volunteer.service';
 import { EventService } from '../../../core/services/event.service';
-import { VolunteerStatistics, VolunteerHours, RecentActivity } from '../../../core/models/volunteer.model';
+import { VolunteerStatistics, VolunteerHours } from '../../../core/services/volunteer.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -35,49 +35,64 @@ import { VolunteerStatistics, VolunteerHours, RecentActivity } from '../../../co
         <!-- Statistics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           @if (userRole === 'VOLUNTEER') {
-            <!-- Volunteer Stats -->
+            <!-- Events Stats -->
             <mat-card>
               <mat-card-content class="p-4">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">My Events</p>
+                    <p class="text-gray-600">Total Events</p>
                     <h2 class="text-2xl font-bold">{{volunteerStats.totalEventsAttended}}</h2>
+                    <p class="text-sm text-gray-500">
+                      {{volunteerStats.upcomingEvents}} upcoming
+                    </p>
                   </div>
                   <mat-icon class="text-primary-500">event</mat-icon>
                 </div>
               </mat-card-content>
             </mat-card>
 
+            <!-- Hours Stats -->
             <mat-card>
               <mat-card-content class="p-4">
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-gray-600">Hours Contributed</p>
                     <h2 class="text-2xl font-bold">{{volunteerStats.totalHoursVolunteered}}</h2>
+                    <p class="text-sm text-gray-500">
+                      Avg: {{volunteerStats.averageHoursPerEvent | number:'1.0-1'}} per event
+                    </p>
                   </div>
                   <mat-icon class="text-primary-500">schedule</mat-icon>
                 </div>
               </mat-card-content>
             </mat-card>
 
+            <!-- Rating Stats -->
             <mat-card>
               <mat-card-content class="p-4">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">Impact Score</p>
-                    <h2 class="text-2xl font-bold">{{volunteerStats.impactScore}}</h2>
+                    <p class="text-gray-600">Average Rating</p>
+                    <h2 class="text-2xl font-bold">{{volunteerStats.averageRating | number:'1.0-1'}}</h2>
+                    <p class="text-sm text-gray-500">
+                      Reliability: {{volunteerStats.reliabilityScore}}%
+                    </p>
                   </div>
-                  <mat-icon class="text-primary-500">emoji_events</mat-icon>
+                  <mat-icon class="text-primary-500">star</mat-icon>
                 </div>
               </mat-card-content>
             </mat-card>
 
+            <!-- Impact Stats -->
             <mat-card>
               <mat-card-content class="p-4">
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-gray-600">Organizations</p>
                     <h2 class="text-2xl font-bold">{{volunteerStats.organizationsWorkedWith}}</h2>
+                    <p class="text-sm text-gray-500">
+                      Growth: {{(volunteerStats.participationGrowthRate * 100) | number:'1.0-1'}}%
+                    </p>
                   </div>
                   <mat-icon class="text-primary-500">business</mat-icon>
                 </div>
@@ -101,11 +116,14 @@ import { VolunteerStatistics, VolunteerHours, RecentActivity } from '../../../co
               } @else {
                 <div class="space-y-4">
                   @for (activity of recentActivities; track activity.id) {
-                    <div class="flex items-center space-x-4">
-                      <mat-icon>{{activity.icon}}</mat-icon>
+                    <div class="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded">
+                      <mat-icon [class]="getStatusColor(activity.status)">
+                        {{getActivityIcon(activity.status)}}
+                      </mat-icon>
                       <div>
-                        <p class="font-medium">{{activity.description}}</p>
-                        <p class="text-sm text-gray-500">{{activity.timestamp | date:'short'}}</p>
+                        <p class="font-medium">{{activity.title}}</p>
+                        <p class="text-sm text-gray-600">{{activity.description}}</p>
+                        <p class="text-xs text-gray-500">{{activity.timestamp | date:'medium'}}</p>
                       </div>
                     </div>
                   }
@@ -122,19 +140,19 @@ import { VolunteerStatistics, VolunteerHours, RecentActivity } from '../../../co
             <mat-card-content class="p-4">
               <div class="grid grid-cols-2 gap-4">
                 @if (userRole === 'VOLUNTEER') {
-                  <button mat-raised-button color="primary" routerLink="/dashboard/volunteer/events">
+                  <button mat-raised-button color="primary" routerLink="/events">
                     <mat-icon>event</mat-icon>
                     Browse Events
                   </button>
-                  <button mat-raised-button color="primary" routerLink="/dashboard/volunteer/hours">
+                  <button mat-raised-button color="primary" routerLink="/volunteer/hours">
                     <mat-icon>schedule</mat-icon>
                     View Hours
                   </button>
-                  <button mat-raised-button color="primary" routerLink="/dashboard/volunteer/achievements">
+                  <button mat-raised-button color="primary" routerLink="/volunteer/achievements">
                     <mat-icon>emoji_events</mat-icon>
                     Achievements
                   </button>
-                  <button mat-raised-button color="primary" routerLink="/dashboard/volunteer/profile">
+                  <button mat-raised-button color="primary" routerLink="/volunteer/profile">
                     <mat-icon>person</mat-icon>
                     Profile
                   </button>
@@ -150,16 +168,24 @@ import { VolunteerStatistics, VolunteerHours, RecentActivity } from '../../../co
 export class DashboardComponent implements OnInit {
   userRole: string = '';
   loading = true;
-  recentActivities: RecentActivity[] = [];
-  // Volunteer Statistics with proper typing
+  recentActivities: any[] = [];
   volunteerStats: VolunteerStatistics = {
     totalEventsAttended: 0,
+    upcomingEvents: 0,
+    completedEvents: 0,
+    canceledEvents: 0,
     totalHoursVolunteered: 0,
-    badges: [],
-    impactScore: 0,
-    skillsGained: [],
-    organizationsWorkedWith: 0
+    averageHoursPerEvent: 0,
+    averageRating: 0,
+    reliabilityScore: 0,
+    organizationsWorkedWith: 0,
+    participationGrowthRate: 0,
+    hoursGrowthRate: 0,
+    eventsByCategory: {},
+    hoursByMonth: {},
+    participationByDay: {}
   };
+
   constructor(
     private authService: AuthService,
     private volunteerService: VolunteerService,
@@ -168,7 +194,7 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.userRole = this.authService.getUserRole();
+    this.userRole = 'VOLUNTEER'; // For testing, replace with actual role logic
     this.loadDashboardData();
   }
 
@@ -191,33 +217,15 @@ export class DashboardComponent implements OnInit {
       this.loadVolunteerData();
     }
   }
+
   private loadVolunteerData() {
     this.loading = true;
     
     // Load volunteer statistics
     this.volunteerService.getStatistics().subscribe({
       next: (stats) => {
-        this.volunteerStats = {
-          totalEventsAttended: stats.totalEventsAttended || 0,
-          totalHoursVolunteered: stats.totalHoursVolunteered || 0,
-          badges: Array.isArray(stats.badges) ? stats.badges.map(badge => {
-            if (typeof badge === 'string') {
-              return {
-                id: badge,
-                name: badge,
-                description: '',
-                imageUrl: '',
-                earnedDate: new Date()
-              };
-            }
-            return badge;
-          }) : [],
-          impactScore: 0,
-          skillsGained: [],
-          organizationsWorkedWith: 0
-        };
-
-        // After statistics are loaded, load hours and activities
+        this.volunteerStats = stats;
+        // After statistics are loaded, load hours
         this.loadVolunteerHours();
       },
       error: (error) => {
@@ -238,13 +246,11 @@ export class DashboardComponent implements OnInit {
         // Convert volunteer hours to recent activities
         this.recentActivities = hours.slice(0, 5).map(hour => ({
           id: hour.id,
-          type: 'HOURS',
-          icon: 'schedule',
           title: hour.eventName,
           description: `Volunteered for ${hour.hours} hours`,
           timestamp: new Date(hour.date),
-          relatedId: hour.eventId,
-          status: hour.status
+          status: hour.status,
+          relatedId: hour.eventId
         }));
         this.loading = false;
       },
@@ -254,7 +260,33 @@ export class DashboardComponent implements OnInit {
       }
     });
   }
-  // Add a retry method for manual refresh
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'APPROVED':
+        return 'text-green-600';
+      case 'PENDING':
+        return 'text-orange-600';
+      case 'REJECTED':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  }
+
+  getActivityIcon(status: string): string {
+    switch (status) {
+      case 'APPROVED':
+        return 'check_circle';
+      case 'PENDING':
+        return 'pending';
+      case 'REJECTED':
+        return 'cancel';
+      default:
+        return 'schedule';
+    }
+  }
+
   retryLoading() {
     this.loadDashboardData();
   }

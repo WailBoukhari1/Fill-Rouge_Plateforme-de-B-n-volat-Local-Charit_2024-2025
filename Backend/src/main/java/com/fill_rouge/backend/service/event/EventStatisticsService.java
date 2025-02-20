@@ -1,9 +1,11 @@
 package com.fill_rouge.backend.service.event;
 
-import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+
+import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
+import com.fill_rouge.backend.dto.response.VolunteerStatsResponse;
 
 public interface EventStatisticsService {
     // Dashboard Statistics
@@ -44,4 +46,6 @@ public interface EventStatisticsService {
     Map<String, Double> calculatePerformanceMetrics(String organizationId);
     double calculateOverallPerformanceScore(String organizationId);
     Map<String, Object> generatePerformanceReport(String organizationId);
+
+    VolunteerStatsResponse getVolunteerStatistics(String volunteerId);
 } 

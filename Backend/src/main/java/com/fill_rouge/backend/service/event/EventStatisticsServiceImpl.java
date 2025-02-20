@@ -5,6 +5,8 @@ import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
 import com.fill_rouge.backend.repository.*;
 import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.dto.response.VolunteerStatsResponse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     
     private final EventRepository eventRepository;
     private final EventFeedbackRepository feedbackRepository;
+    private final VolunteerProfileRepository volunteerProfileRepository;
 
     @Override
     public EventStatisticsResponse getAdminDashboardStats() {
@@ -206,6 +209,76 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
         return new HashMap<>();
     }
 
+    @Override
+    public VolunteerStatsResponse getVolunteerStatistics(String volunteerId) {
+        List<Event> allEvents = eventRepository.findEventsByParticipant(volunteerId);
+        List<Event> completedEvents = allEvents.stream()
+            .filter(event -> EventStatus.COMPLETED.equals(event.getStatus()))
+            .collect(Collectors.toList());
+        List<Event> upcomingEvents = allEvents.stream()
+            .filter(event -> EventStatus.ACTIVE.equals(event.getStatus()) && 
+                           event.getStartDate().isAfter(LocalDateTime.now()))
+            .collect(Collectors.toList());
+        List<Event> canceledEvents = allEvents.stream()
+            .filter(event -> EventStatus.FULL.equals(event.getStatus()))
+            .collect(Collectors.toList());
+
+        // Calculate total hours
+        int totalHours = completedEvents.stream()
+            .mapToInt(this::calculateEventHours)
+            .sum();
+
+        // Calculate average hours per event
+        double avgHoursPerEvent = completedEvents.isEmpty() ? 0 :
+            (double) totalHours / completedEvents.size();
+
+        // Calculate hours by month
+        Map<String, Integer> hoursByMonth = completedEvents.stream()
+            .collect(Collectors.groupingBy(
+                event -> event.getStartDate().getMonth().toString(),
+                Collectors.summingInt(this::calculateEventHours)
+            ));
+
+        // Calculate events by category
+        Map<String, Integer> eventsByCategory = completedEvents.stream()
+            .collect(Collectors.groupingBy(
+                event -> event.getCategory().toString(),
+                Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
+            ));
+
+        // Calculate average rating
+        double averageRating = feedbackRepository.findByVolunteerId(volunteerId, Pageable.unpaged())
+            .stream()
+            .mapToDouble(EventFeedback::getRating)
+            .average()
+            .orElse(0.0);
+
+        // Calculate reliability score
+        int reliabilityScore = calculateReliabilityScore(volunteerId, allEvents);
+
+        // Calculate growth rates
+        double participationGrowthRate = calculateParticipationGrowthRate(volunteerId);
+        double hoursGrowthRate = calculateHoursGrowthRate(volunteerId);
+
+        // Build response
+        return VolunteerStatsResponse.builder()
+            .totalEventsAttended(completedEvents.size())
+            .upcomingEvents(upcomingEvents.size())
+            .completedEvents(completedEvents.size())
+            .canceledEvents(canceledEvents.size())
+            .eventsByCategory(eventsByCategory)
+            .totalHoursVolunteered(totalHours)
+            .averageHoursPerEvent(avgHoursPerEvent)
+            .hoursByMonth(hoursByMonth)
+            .averageRating(averageRating)
+            .reliabilityScore(reliabilityScore)
+            .participationGrowthRate(participationGrowthRate)
+            .hoursGrowthRate(hoursGrowthRate)
+            .organizationsWorkedWith(calculateOrganizationsWorkedWith(completedEvents))
+            .participationByDay(calculateParticipationByDay(completedEvents))
+            .build();
+    }
+
     // Private helper methods
     private long calculateTotalParticipants() {
         return eventRepository.findAll().stream()
@@ -232,7 +305,7 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
             return 0;
         }
         Duration duration = Duration.between(event.getStartDate(), event.getEndDate());
-        return Math.toIntExact(duration.toHours() * event.getRegisteredParticipants().size());
+        return Math.toIntExact(duration.toHours());
     }
 
     private double calculateOverallSuccessRate() {
@@ -451,5 +524,97 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
             .count();
             
         return (double) completedEvents / events.size() * 100;
+    }
+
+    private int calculateReliabilityScore(String volunteerId, List<Event> events) {
+        if (events.isEmpty()) {
+            return 100;
+        }
+
+        int totalEvents = events.size();
+        int completedEvents = (int) events.stream()
+            .filter(event -> EventStatus.COMPLETED.equals(event.getStatus()))
+            .count();
+        int canceledEvents = (int) events.stream()
+            .filter(event -> EventStatus.FULL.equals(event.getStatus()))
+            .count();
+
+        // Base score starts at 100
+        int score = 100;
+
+        // Deduct points for cancellations (more weight)
+        score -= (canceledEvents * 15);
+
+        // Add points for completed events
+        score += (completedEvents * 5);
+
+        // Normalize score between 0 and 100
+        return Math.min(Math.max(score, 0), 100);
+    }
+
+    private double calculateParticipationGrowthRate(String volunteerId) {
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        List<Event> recentEvents = eventRepository.findEventsByParticipantAndDateRange(
+            volunteerId, sixMonthsAgo, LocalDateTime.now());
+
+        if (recentEvents.isEmpty()) {
+            return 0.0;
+        }
+
+        // Split events into two 3-month periods
+        LocalDateTime midPoint = sixMonthsAgo.plusMonths(3);
+        long firstPeriodCount = recentEvents.stream()
+            .filter(event -> event.getStartDate().isBefore(midPoint))
+            .count();
+        long secondPeriodCount = recentEvents.stream()
+            .filter(event -> event.getStartDate().isAfter(midPoint))
+            .count();
+
+        if (firstPeriodCount == 0) {
+            return secondPeriodCount > 0 ? 1.0 : 0.0;
+        }
+
+        return ((double) secondPeriodCount - firstPeriodCount) / firstPeriodCount;
+    }
+
+    private double calculateHoursGrowthRate(String volunteerId) {
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        List<Event> recentEvents = eventRepository.findEventsByParticipantAndDateRange(
+            volunteerId, sixMonthsAgo, LocalDateTime.now());
+
+        if (recentEvents.isEmpty()) {
+            return 0.0;
+        }
+
+        LocalDateTime midPoint = sixMonthsAgo.plusMonths(3);
+        int firstPeriodHours = recentEvents.stream()
+            .filter(event -> event.getStartDate().isBefore(midPoint))
+            .mapToInt(this::calculateEventHours)
+            .sum();
+        int secondPeriodHours = recentEvents.stream()
+            .filter(event -> event.getStartDate().isAfter(midPoint))
+            .mapToInt(this::calculateEventHours)
+            .sum();
+
+        if (firstPeriodHours == 0) {
+            return secondPeriodHours > 0 ? 1.0 : 0.0;
+        }
+
+        return ((double) secondPeriodHours - firstPeriodHours) / firstPeriodHours;
+    }
+
+    private int calculateOrganizationsWorkedWith(List<Event> events) {
+        return (int) events.stream()
+            .map(Event::getOrganizationId)
+            .distinct()
+            .count();
+    }
+
+    private Map<String, Integer> calculateParticipationByDay(List<Event> events) {
+        return events.stream()
+            .collect(Collectors.groupingBy(
+                event -> event.getStartDate().getDayOfWeek().toString(),
+                Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
+            ));
     }
 } 

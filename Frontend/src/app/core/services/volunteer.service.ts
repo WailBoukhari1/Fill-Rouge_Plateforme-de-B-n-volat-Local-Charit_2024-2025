@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 
@@ -36,20 +36,29 @@ export interface VolunteerProfile {
 }
 
 export interface VolunteerStatistics {
+  // Event Statistics
   totalEventsAttended: number;
-  totalHoursVolunteered: number;
-  averageRating: number;
-  reliabilityScore: number;
-  badges: string[];
   upcomingEvents: number;
   completedEvents: number;
   canceledEvents: number;
-  achievementsEarned: number;
-  impactMetrics: {
-    peopleServed: number;
-    projectsCompleted: number;
-    skillsLearned: number;
-  };
+  eventsByCategory: { [key: string]: number };
+
+  // Time Statistics
+  totalHoursVolunteered: number;
+  averageHoursPerEvent: number;
+  hoursByMonth: { [key: string]: number };
+
+  // Performance Statistics
+  averageRating: number;
+  reliabilityScore: number;
+  organizationsWorkedWith: number;
+
+  // Growth Statistics
+  participationGrowthRate: number;
+  hoursGrowthRate: number;
+
+  // Engagement Statistics
+  participationByDay: { [key: string]: number };
 }
 
 export interface VolunteerHours {
@@ -62,11 +71,17 @@ export interface VolunteerHours {
   notes?: string;
 }
 
+interface ApiResponse<T> {
+  status: number;
+  message: string;
+  data: T;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class VolunteerService {
-  private apiUrl = environment.apiUrl + '/volunteers';
+  private apiUrl = environment.apiUrl + '/api/volunteers';
 
   constructor(
     private http: HttpClient,
@@ -86,28 +101,29 @@ export class VolunteerService {
   // Get volunteer statistics
   getStatistics(): Observable<VolunteerStatistics> {
     const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
-    return this.http.get<VolunteerStatistics>(`${this.apiUrl}/statistics`, { 
+    return this.http.get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/statistics`, { 
       headers,
       withCredentials: true 
     }).pipe(
+      map(response => response.data),
       catchError(error => {
         console.error('Error fetching volunteer statistics:', error);
         // Return default statistics if the API fails
         return of({
           totalEventsAttended: 0,
-          totalHoursVolunteered: 0,
-          averageRating: 0,
-          reliabilityScore: 0,
-          badges: [],
           upcomingEvents: 0,
           completedEvents: 0,
           canceledEvents: 0,
-          achievementsEarned: 0,
-          impactMetrics: {
-            peopleServed: 0,
-            projectsCompleted: 0,
-            skillsLearned: 0
-          }
+          eventsByCategory: {},
+          totalHoursVolunteered: 0,
+          averageHoursPerEvent: 0,
+          hoursByMonth: {},
+          averageRating: 0,
+          reliabilityScore: 0,
+          organizationsWorkedWith: 0,
+          participationGrowthRate: 0,
+          hoursGrowthRate: 0,
+          participationByDay: {}
         });
       })
     );
@@ -121,10 +137,11 @@ export class VolunteerService {
   // Get volunteer hours
   getVolunteerHours(): Observable<VolunteerHours[]> {
     const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
-    return this.http.get<VolunteerHours[]>(`${this.apiUrl}/hours`, { 
+    return this.http.get<ApiResponse<VolunteerHours[]>>(`${this.apiUrl}/hours`, { 
       headers,
       withCredentials: true 
     }).pipe(
+      map(response => response.data),
       catchError(error => {
         console.error('Error fetching volunteer hours:', error);
         return of([]);
