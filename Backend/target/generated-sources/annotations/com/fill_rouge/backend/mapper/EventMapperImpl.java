@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-05T23:57:02+0000",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 23.0.2 (Oracle Corporation)"
+    date = "2025-03-06T17:27:52+0000",
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
 public class EventMapperImpl implements EventMapper {
@@ -27,16 +27,16 @@ public class EventMapperImpl implements EventMapper {
 
         Event event = new Event();
 
-        event.setTitle( request.getTitle() );
-        event.setDescription( request.getDescription() );
-        event.setLocation( request.getLocation() );
-        event.setStartDate( request.getStartDate() );
-        event.setEndDate( request.getEndDate() );
-        event.setMaxParticipants( request.getMaxParticipants() );
         event.setCategory( request.getCategory() );
-        event.setContactPerson( request.getContactPerson() );
         event.setContactEmail( request.getContactEmail() );
+        event.setContactPerson( request.getContactPerson() );
         event.setContactPhone( request.getContactPhone() );
+        event.setDescription( request.getDescription() );
+        event.setEndDate( request.getEndDate() );
+        event.setLocation( request.getLocation() );
+        event.setMaxParticipants( request.getMaxParticipants() );
+        event.setStartDate( request.getStartDate() );
+        event.setTitle( request.getTitle() );
 
         event.setCreatedAt( LocalDateTime.now() );
         event.setUpdatedAt( LocalDateTime.now() );
@@ -52,22 +52,22 @@ public class EventMapperImpl implements EventMapper {
 
         EventResponse.EventResponseBuilder eventResponse = EventResponse.builder();
 
-        eventResponse.id( event.getId() );
-        eventResponse.title( event.getTitle() );
-        eventResponse.description( event.getDescription() );
-        eventResponse.organizationId( event.getOrganizationId() );
-        eventResponse.location( event.getLocation() );
-        eventResponse.startDate( event.getStartDate() );
-        eventResponse.endDate( event.getEndDate() );
-        eventResponse.maxParticipants( event.getMaxParticipants() );
-        eventResponse.category( event.getCategory() );
-        eventResponse.status( event.getStatus() );
         eventResponse.averageRating( event.getAverageRating() );
-        eventResponse.numberOfRatings( event.getNumberOfRatings() );
-        eventResponse.contactPerson( event.getContactPerson() );
+        eventResponse.category( event.getCategory() );
         eventResponse.contactEmail( event.getContactEmail() );
+        eventResponse.contactPerson( event.getContactPerson() );
         eventResponse.contactPhone( event.getContactPhone() );
         eventResponse.createdAt( event.getCreatedAt() );
+        eventResponse.description( event.getDescription() );
+        eventResponse.endDate( event.getEndDate() );
+        eventResponse.id( event.getId() );
+        eventResponse.location( event.getLocation() );
+        eventResponse.maxParticipants( event.getMaxParticipants() );
+        eventResponse.numberOfRatings( event.getNumberOfRatings() );
+        eventResponse.organizationId( event.getOrganizationId() );
+        eventResponse.startDate( event.getStartDate() );
+        eventResponse.status( event.getStatus() );
+        eventResponse.title( event.getTitle() );
         eventResponse.updatedAt( event.getUpdatedAt() );
 
         eventResponse.currentParticipants( event.getRegisteredParticipants().size() );
@@ -82,33 +82,33 @@ public class EventMapperImpl implements EventMapper {
             return;
         }
 
-        if ( request.getTitle() != null ) {
-            event.setTitle( request.getTitle() );
-        }
-        if ( request.getDescription() != null ) {
-            event.setDescription( request.getDescription() );
-        }
-        if ( request.getLocation() != null ) {
-            event.setLocation( request.getLocation() );
-        }
-        if ( request.getStartDate() != null ) {
-            event.setStartDate( request.getStartDate() );
-        }
-        if ( request.getEndDate() != null ) {
-            event.setEndDate( request.getEndDate() );
-        }
-        event.setMaxParticipants( request.getMaxParticipants() );
         if ( request.getCategory() != null ) {
             event.setCategory( request.getCategory() );
-        }
-        if ( request.getContactPerson() != null ) {
-            event.setContactPerson( request.getContactPerson() );
         }
         if ( request.getContactEmail() != null ) {
             event.setContactEmail( request.getContactEmail() );
         }
+        if ( request.getContactPerson() != null ) {
+            event.setContactPerson( request.getContactPerson() );
+        }
         if ( request.getContactPhone() != null ) {
             event.setContactPhone( request.getContactPhone() );
+        }
+        if ( request.getDescription() != null ) {
+            event.setDescription( request.getDescription() );
+        }
+        if ( request.getEndDate() != null ) {
+            event.setEndDate( request.getEndDate() );
+        }
+        if ( request.getLocation() != null ) {
+            event.setLocation( request.getLocation() );
+        }
+        event.setMaxParticipants( request.getMaxParticipants() );
+        if ( request.getStartDate() != null ) {
+            event.setStartDate( request.getStartDate() );
+        }
+        if ( request.getTitle() != null ) {
+            event.setTitle( request.getTitle() );
         }
 
         event.setUpdatedAt( LocalDateTime.now() );

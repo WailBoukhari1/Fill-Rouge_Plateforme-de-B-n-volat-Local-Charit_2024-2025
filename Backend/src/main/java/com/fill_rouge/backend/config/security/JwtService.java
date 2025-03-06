@@ -109,6 +109,13 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractUserId(String token) {
+        // In our implementation, we don't store the user ID in the token
+        // We use the username (email) to look up the user
+        // This method is provided for compatibility with the controller
+        return extractUsername(token);
+    }
+
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

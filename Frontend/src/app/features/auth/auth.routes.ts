@@ -3,6 +3,7 @@ import { AuthGuard } from '../../core/guards/auth.guard';
 import { UnverifiedEmailGuard } from '../../core/guards/unverified-email.guard';
 import { NoAuthGuard } from '../../core/guards/no-auth.guard';
 import { AuthLayoutComponent } from '../../layouts/auth-layout/auth-layout.component';
+import { QuestionnaireGuard } from './guards/questionnaire.guard';
 
 export const AUTH_ROUTES: Routes = [
   {
@@ -31,6 +32,13 @@ export const AUTH_ROUTES: Routes = [
   {
     path: '',
     children: [
+      {
+        path: 'questionnaire',
+        loadComponent: () => import('./questionnaire/questionnaire.component').then(m => m.QuestionnaireComponent),
+        title: 'Complete Profile',
+        canActivate: [AuthGuard, QuestionnaireGuard],
+        data: { layout: 'auth' }
+      },
       {
         path: 'verify-email',
         loadComponent: () => import('./verify-email/verify-email.component').then(m => m.VerifyEmailComponent),
@@ -64,4 +72,4 @@ export const AUTH_ROUTES: Routes = [
       }
     ]
   }
-]; 
+];

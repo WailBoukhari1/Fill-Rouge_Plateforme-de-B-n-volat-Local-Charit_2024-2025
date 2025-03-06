@@ -37,6 +37,7 @@ public class AuthResponse {
     private boolean accountExpired;
     private boolean credentialsExpired;
     private String profilePicture;
+    private boolean questionnaireCompleted;
     
     @Builder.Default
     private boolean success = true;

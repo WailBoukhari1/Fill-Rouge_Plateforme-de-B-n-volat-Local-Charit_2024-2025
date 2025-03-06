@@ -18,6 +18,7 @@ export interface User {
   profilePicture?: string;
   lastLoginIp?: string;
   lastLoginAt?: string;
+  questionnaireCompleted: boolean;
 }
 
 export interface AuthState {
@@ -55,6 +56,7 @@ export interface AuthResponse {
   profilePicture?: string;
   lastLoginIp?: string;
   lastLoginAt?: string;
+  questionnaireCompleted: boolean;
 }
 
 export interface AuthError {

@@ -2,7 +2,11 @@ package com.fill_rouge.backend.dto.request;
 
 import com.fill_rouge.backend.constant.Role;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,7 +36,7 @@ public class RegisterRequest {
     )
     private String password;
 
-    @NotNull(message = "Role is required")
+    // Role is now optional during registration
     private Role role;
 
     // Optional fields
@@ -46,6 +50,7 @@ public class RegisterRequest {
 
     @AssertTrue(message = "Organization name is required for organization role")
     private boolean isValidOrganizationData() {
+        // Only validate if role is explicitly set to ORGANIZATION
         if (role == Role.ORGANIZATION) {
             return organizationName != null && !organizationName.trim().isEmpty();
         }

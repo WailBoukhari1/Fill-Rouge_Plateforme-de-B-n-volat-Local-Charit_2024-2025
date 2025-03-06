@@ -6,6 +6,7 @@ import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.request.LoginRequest;
 import com.fill_rouge.backend.dto.request.RegisterRequest;
+import com.fill_rouge.backend.dto.request.QuestionnaireRequest;
 import com.fill_rouge.backend.dto.response.AuthResponse;
 import com.fill_rouge.backend.repository.UserRepository;
 import com.fill_rouge.backend.repository.VolunteerProfileRepository;
@@ -30,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -274,9 +278,59 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public void logout(String jwt) {
-        // In a stateless JWT setup, we don't need to do anything server-side
-        // The client should remove the tokens
-        logger.info("User logged out successfully");
+        // Implement token blacklisting or other logout logic if needed
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse completeQuestionnaire(String email, QuestionnaireRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Update user information based on questionnaire
+        // We'll store these in the volunteer profile instead of the user entity
+        boolean isOrganization = "ORGANIZATION".equals(request.getRole());
+        
+        user.setQuestionnaireCompleted(true);
+        
+        // Handle role-specific information
+        if (isOrganization) {
+            user.setRole(Role.ORGANIZATION);
+            // Additional organization-specific logic can be added here
+            // For example, creating an organization profile
+        } else {
+            // Update volunteer profile
+            Optional<VolunteerProfile> profileOpt = volunteerProfileRepository.findByUserEmail(email);
+            
+            if (profileOpt.isEmpty()) {
+                throw new RuntimeException("Volunteer profile not found");
+            }
+            
+            VolunteerProfile profile = profileOpt.get();
+            
+            // Update profile with questionnaire data
+            profile.setBio(request.getBio());
+            profile.setPhoneNumber(request.getPhoneNumber());
+            profile.setAddress(request.getAddress());
+            profile.setCity(request.getCity());
+            profile.setCountry(request.getCountry());
+            
+            // For now, we'll skip updating skills, interests, and availability
+            // These can be implemented in a future update
+            
+            profile.setUpdatedAt(LocalDateTime.now());
+            
+            volunteerProfileRepository.save(profile);
+        }
+        
+        // Save updated user
+        user = userRepository.save(user);
+        
+        // Generate new tokens
+        String jwt = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        
+        return createAuthResponse(user, jwt, refreshToken);
     }
 
     private void validatePassword(String password) {
@@ -297,20 +351,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private AuthResponse createAuthResponse(User user, String jwt, String refreshToken) {
-        AuthResponse response = new AuthResponse();
-        response.setToken(jwt);
-        response.setRefreshToken(refreshToken);
-        response.setEmail(user.getEmail());
-        response.setFirstName(user.getFirstName());
-        response.setLastName(user.getLastName());
-        response.setEmailVerified(user.isEmailVerified());
-        response.setTwoFactorEnabled(user.isTwoFactorEnabled());
-        response.setAccountLocked(user.isAccountLocked());
-        response.setAccountExpired(!user.isAccountNonExpired());
-        response.setCredentialsExpired(!user.isCredentialsNonExpired());
-        response.setLastLoginIp(user.getLastLoginIp());
-        response.setLastLoginAt(user.getLastLoginDate());
-        return response;
+        return AuthResponse.builder()
+                .token(jwt)
+                .refreshToken(refreshToken)
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .userId(user.getId())
+                .roles(user.getAuthorities().stream().map(Object::toString).collect(java.util.stream.Collectors.toSet()))
+                .emailVerified(user.isEmailVerified())
+                .twoFactorEnabled(user.isTwoFactorEnabled())
+                .lastLoginIp(user.getLastLoginIp())
+                .lastLoginAt(user.getLastLoginDate())
+                .accountLocked(!user.isAccountNonLocked())
+                .accountExpired(!user.isAccountNonExpired())
+                .credentialsExpired(!user.isCredentialsNonExpired())
+                .questionnaireCompleted(user.isQuestionnaireCompleted())
+                .build();
     }
 
     private void sendVerificationEmail(User user) {

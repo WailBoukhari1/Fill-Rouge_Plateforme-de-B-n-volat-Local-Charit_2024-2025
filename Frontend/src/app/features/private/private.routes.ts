@@ -1,12 +1,13 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '../../core/guards/auth.guard';
+import { QuestionnaireCompletedGuard } from '../auth/guards/questionnaire-completed.guard';
 import { DashboardLayoutComponent } from '../../layouts/dashboard-layout/dashboard-layout.component';
 
 export const PRIVATE_ROUTES: Routes = [
   {
     path: '',
     component: DashboardLayoutComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, QuestionnaireCompletedGuard],
     children: [
       {
         path: '',
@@ -64,4 +65,4 @@ export const PRIVATE_ROUTES: Routes = [
       }
     ]
   }
-]; 
+];

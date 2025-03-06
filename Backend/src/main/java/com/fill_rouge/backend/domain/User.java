@@ -61,6 +61,7 @@ public class User implements UserDetails {
     private LocalDateTime accountLockedUntil;
     private LocalDateTime passwordLastChanged;
     private List<String> previousPasswords = new ArrayList<>();
+    private boolean questionnaireCompleted = false;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

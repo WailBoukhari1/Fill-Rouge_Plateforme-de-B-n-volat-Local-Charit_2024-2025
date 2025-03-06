@@ -4,7 +4,7 @@ import * as AuthActions from './auth.actions';
 
 export const authReducer = createReducer(
   initialAuthState,
-  
+
   // Login
   on(AuthActions.login, (state) => ({
     ...state,
@@ -12,7 +12,7 @@ export const authReducer = createReducer(
     error: null,
     requiresTwoFactor: false
   })),
-  
+
   on(AuthActions.loginSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
@@ -23,7 +23,7 @@ export const authReducer = createReducer(
     error: null,
     requiresTwoFactor: false
   })),
-  
+
   on(AuthActions.loginFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -45,7 +45,7 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
-  
+
   on(AuthActions.registerSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
@@ -55,8 +55,32 @@ export const authReducer = createReducer(
     loading: false,
     error: null
   })),
-  
+
   on(AuthActions.registerFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  // Questionnaire
+  on(AuthActions.submitQuestionnaire, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(AuthActions.submitQuestionnaireSuccess, (state, { user }) => ({
+    ...state,
+    user: {
+      ...state.user,
+      ...user,
+      questionnaireCompleted: true
+    },
+    loading: false,
+    error: null
+  })),
+
+  on(AuthActions.submitQuestionnaireFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
@@ -68,11 +92,11 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
-  
+
   on(AuthActions.logoutSuccess, () => ({
     ...initialAuthState
   })),
-  
+
   on(AuthActions.logoutFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -85,7 +109,7 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
-  
+
   on(AuthActions.refreshTokenSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
@@ -94,7 +118,7 @@ export const authReducer = createReducer(
     loading: false,
     error: null
   })),
-  
+
   on(AuthActions.refreshTokenFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -107,7 +131,7 @@ export const authReducer = createReducer(
     loading: true,
     error: null
   })),
-  
+
   on(AuthActions.loadStoredUserSuccess, (state, { user }) => ({
     ...state,
     user,
@@ -115,4 +139,4 @@ export const authReducer = createReducer(
     loading: false,
     error: null
   }))
-); 
+);

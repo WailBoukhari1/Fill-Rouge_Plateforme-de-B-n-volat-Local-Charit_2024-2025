@@ -39,4 +39,7 @@ public interface VolunteerProfileRepository extends MongoRepository<VolunteerPro
     
     @Query("{'location': {$near: {$geometry: {type: 'Point', coordinates: ?0}, $maxDistance: ?1}}}")
     List<VolunteerProfile> findNearbyVolunteers(double[] coordinates, double maxDistance);
+    
+    @Query("{'email': ?0}")
+    Optional<VolunteerProfile> findByUserEmail(String email);
 } 

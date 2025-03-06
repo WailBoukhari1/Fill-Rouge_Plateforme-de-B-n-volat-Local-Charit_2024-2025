@@ -1,6 +1,7 @@
 package com.fill_rouge.backend.config.security;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,6 +11,8 @@ import org.springframework.validation.annotation.Validated;
 public class JwtConfig {
     private String secretKey;
     private long expiration;
+    
+    @NestedConfigurationProperty
     private RefreshToken refreshToken;
 
     public static class RefreshToken {

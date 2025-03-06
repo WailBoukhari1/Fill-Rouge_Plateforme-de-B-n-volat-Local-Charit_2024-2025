@@ -99,11 +99,26 @@ export class AuthService {
   }
 
   verifyEmail(email: string, code: string): Observable<ApiResponse<void>> {
-    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/verify-email`, { email, code });
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}/verify-email`,
+      null,
+      { params: { email, code } }
+    );
+  }
+
+  checkEmailVerificationStatus(email: string): Observable<ApiResponse<boolean>> {
+    return this.http.get<ApiResponse<boolean>>(
+      `${this.apiUrl}/verify-email/status`,
+      { params: { email } }
+    );
   }
 
   resendVerificationCode(email: string): Observable<ApiResponse<void>> {
-    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/resend-verification`, { email });
+    return this.http.post<ApiResponse<void>>(
+      `${this.apiUrl}/resend-verification`,
+      null,
+      { params: { email } }
+    );
   }
 
   forgotPassword(email: string): Observable<ApiResponse<void>> {
@@ -132,6 +147,10 @@ export class AuthService {
 
   verifyTwoFactorCode(request: TwoFactorVerifyRequest): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/2fa/verify`, request);
+  }
+
+  submitQuestionnaire(formData: any): Observable<ApiResponse<User>> {
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/questionnaire`, formData);
   }
 
   private decodeToken(token: string): DecodedToken {
@@ -228,7 +247,8 @@ export class AuthService {
         credentialsExpired: response.credentialsExpired,
         profilePicture: response.profilePicture,
         lastLoginIp: response.lastLoginIp,
-        lastLoginAt: response.lastLoginAt
+        lastLoginAt: response.lastLoginAt,
+        questionnaireCompleted: response.questionnaireCompleted
       };
 
       console.log('Created user data:', userData);

@@ -1,0 +1,83 @@
+# Example development configuration - Copy to application-dev.yml and update values
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: volunteer_platform_dev
+      auto-index-creation: true
+      # Optional authentication - uncomment if needed
+      # username: ${MONGODB_USERNAME}
+      # password: ${MONGODB_PASSWORD}
+  mail:
+    host: smtp.mailtrap.io
+    port: 2525
+    username: ${MAILTRAP_USERNAME:your-mailtrap-username}
+    password: ${MAILTRAP_PASSWORD:your-mailtrap-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: smtp.mailtrap.io
+          timeout: 5000
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: always
+
+security:
+  jwt:
+    # WARNING: Change this key in production!
+    secret-key: your-256-bit-secret-key-here
+  cors:
+    allowed-origins: http://localhost:4200,http://localhost:3000
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.security: DEBUG
+    com.fill_rouge.backend: DEBUG
+    org.springframework.web: DEBUG
+  file:
+    name: logs/application-dev.log
+    max-size: 10MB
+    max-history: 7
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Security scanning configuration
+security-scan:
+  enabled: false
+  schedule: "0 0 * * * *"
+  alert:
+    email: dev@localhost
+    threshold:
+      high: 3
+      medium: 5
+      low: 10
+
+# Development Features
+features:
+  email-verification: false  # Disable email verification in development
+  rate-limiting: false      # Disable rate limiting in development
+  demo-data: true          # Enable demo data loading 

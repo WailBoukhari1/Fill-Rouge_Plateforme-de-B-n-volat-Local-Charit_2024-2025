@@ -59,6 +59,22 @@ export const registerFailure = createAction(
   props<{ error: string }>()
 );
 
+// Questionnaire
+export const submitQuestionnaire = createAction(
+  '[Auth] Submit Questionnaire',
+  props<{ formData: any }>()
+);
+
+export const submitQuestionnaireSuccess = createAction(
+  '[Auth] Submit Questionnaire Success',
+  props<{ user: User }>()
+);
+
+export const submitQuestionnaireFailure = createAction(
+  '[Auth] Submit Questionnaire Failure',
+  props<{ error: string }>()
+);
+
 // Logout
 export const logout = createAction('[Auth] Logout');
 

@@ -31,4 +31,9 @@ export const selectAccessToken = createSelector(
 export const selectUserRole = createSelector(
   selectUser,
   user => user?.role
-); 
+);
+
+export const selectRequiresTwoFactor = createSelector(
+  selectAuthState,
+  (state: AuthState) => state.requiresTwoFactor
+);

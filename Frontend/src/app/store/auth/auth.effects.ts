@@ -17,7 +17,11 @@ export class AuthEffects {
       ofType(AuthActions.login),
       tap(() => console.log('Login action dispatched')),
       mergeMap(action =>
-        this.authService.login({ email: action.email, password: action.password }).pipe(
+        this.authService.login({
+          email: action.email,
+          password: action.password,
+          twoFactorCode: action.twoFactorCode
+        }).pipe(
           tap(response => {
             console.log('Login API response:', response);
             console.log('Email verification status from API:', response.data.emailVerified);
@@ -26,6 +30,13 @@ export class AuthEffects {
             if (!response.data) {
               throw new Error('No data in response');
             }
+
+            // Check if two-factor authentication is required
+            if (response.data.twoFactorEnabled && !action.twoFactorCode) {
+              console.log('Two-factor authentication required but no code provided');
+              return AuthActions.twoFactorRequired();
+            }
+
             const decodedToken = this.authService.getDecodedToken();
             const role = decodedToken?.role?.replace('ROLE_', '') as UserRole;
 
@@ -46,7 +57,8 @@ export class AuthEffects {
               credentialsExpired: response.data.credentialsExpired,
               profilePicture: response.data.profilePicture,
               lastLoginIp: response.data.lastLoginIp,
-              lastLoginAt: response.data.lastLoginAt
+              lastLoginAt: response.data.lastLoginAt,
+              questionnaireCompleted: response.data.questionnaireCompleted
             };
             console.log('Constructed user data:', userData);
             console.log('Email verification status in constructed data:', userData.emailVerified);
@@ -58,7 +70,30 @@ export class AuthEffects {
           }),
           catchError(error => {
             console.error('Login error:', error);
-            return of(AuthActions.loginFailure({ error: error.message || 'Login failed' }));
+
+            // Extract the error message from the response
+            let errorMessage = 'Login failed';
+
+            if (error.error && error.error.message) {
+              errorMessage = error.error.message;
+            } else if (error.message) {
+              errorMessage = error.message;
+            } else if (typeof error === 'string') {
+              errorMessage = error;
+            }
+
+            // Check for specific error types
+            if (errorMessage.includes('Bad credentials')) {
+              errorMessage = 'Invalid email or password. Please try again.';
+            } else if (errorMessage.includes('locked')) {
+              errorMessage = 'Your account is locked. Please contact support.';
+            } else if (errorMessage.includes('disabled')) {
+              errorMessage = 'Your account is disabled. Please verify your email.';
+            } else if (errorMessage.includes('expired')) {
+              errorMessage = 'Your session has expired. Please log in again.';
+            }
+
+            return of(AuthActions.loginFailure({ error: errorMessage }));
           })
         )
       )
@@ -109,7 +144,8 @@ export class AuthEffects {
               credentialsExpired: response.data.credentialsExpired,
               profilePicture: response.data.profilePicture,
               lastLoginIp: response.data.lastLoginIp,
-              lastLoginAt: response.data.lastLoginAt
+              lastLoginAt: response.data.lastLoginAt,
+              questionnaireCompleted: response.data.questionnaireCompleted
             };
             // Immediately redirect to verify-email page after successful registration
             this.router.navigate(['/auth/verify-email'], {
@@ -123,9 +159,28 @@ export class AuthEffects {
           }),
           catchError(error => {
             console.error('Registration error:', error);
-            return of(AuthActions.registerFailure({
-              error: error.error?.message || error.message || 'Registration failed'
-            }));
+
+            // Extract the error message from the response
+            let errorMessage = 'Registration failed';
+
+            if (error.error && error.error.message) {
+              errorMessage = error.error.message;
+            } else if (error.message) {
+              errorMessage = error.message;
+            } else if (typeof error === 'string') {
+              errorMessage = error;
+            }
+
+            // Check for specific error types
+            if (errorMessage.includes('Email already exists')) {
+              errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+            } else if (errorMessage.includes('validation')) {
+              errorMessage = 'Please check your information and try again.';
+            } else if (errorMessage.includes('server')) {
+              errorMessage = 'Server error. Please try again later.';
+            }
+
+            return of(AuthActions.registerFailure({ error: errorMessage }));
           })
         );
       })
@@ -151,11 +206,35 @@ export class AuthEffects {
             return;
           }
 
+          // Check if account is locked
+          if (user.accountLocked) {
+            console.log('Account is locked, redirecting to unauthorized page');
+            this.router.navigate(['/auth/unauthorized'], {
+              queryParams: { reason: 'account_locked' }
+            });
+            return;
+          }
+
+          // Check if email is verified
           if (!user.emailVerified) {
             console.log('Email not verified, redirecting to verification');
             this.router.navigate(['/auth/verify-email'], {
               queryParams: { email: user.email }
             });
+            return;
+          }
+
+          // Check if two-factor authentication is required
+          if (user.twoFactorEnabled) {
+            console.log('Two-factor authentication required');
+            this.router.navigate(['/auth/2fa/verify']);
+            return;
+          }
+
+          // Check if questionnaire needs to be completed
+          if (!user.questionnaireCompleted) {
+            console.log('Questionnaire not completed, redirecting to questionnaire');
+            this.router.navigate(['/auth/questionnaire']);
             return;
           }
 
@@ -166,9 +245,22 @@ export class AuthEffects {
             return;
           }
 
-          console.log('Email verified, user role:', user.role);
-          // Simplified navigation - all roles go to /dashboard
-          this.router.navigate(['/dashboard']);
+          console.log('All checks passed, navigating to dashboard, user role:', user.role);
+          // Navigate based on role
+          switch (user.role) {
+            case UserRole.ADMIN:
+              this.router.navigate(['/dashboard']);
+              break;
+            case UserRole.VOLUNTEER:
+              this.router.navigate(['/dashboard/volunteer/profile']);
+              break;
+            case UserRole.ORGANIZATION:
+              this.router.navigate(['/dashboard']);
+              break;
+            default:
+              console.error('Unknown role:', user.role);
+              this.router.navigate(['/dashboard']);
+          }
         })
       ),
     { dispatch: false }
@@ -180,6 +272,8 @@ export class AuthEffects {
       this.actions$.pipe(
         ofType(AuthActions.registerSuccess),
         tap(({ user }) => {
+          console.log('Registration successful, redirecting to email verification');
+          // Always redirect to verify-email page after successful registration
           this.router.navigate(['/auth/verify-email'], {
             queryParams: { email: user.email }
           });
@@ -214,7 +308,8 @@ export class AuthEffects {
               credentialsExpired: response.data.credentialsExpired,
               profilePicture: response.data.profilePicture,
               lastLoginIp: response.data.lastLoginIp,
-              lastLoginAt: response.data.lastLoginAt
+              lastLoginAt: response.data.lastLoginAt,
+              questionnaireCompleted: response.data.questionnaireCompleted
             };
             return AuthActions.refreshTokenSuccess({
               user: userData,
@@ -260,6 +355,74 @@ export class AuthEffects {
         ofType(AuthActions.logoutSuccess),
         tap(() => {
           this.router.navigate(['/auth/login']);
+        })
+      ),
+    { dispatch: false }
+  );
+
+  // Handle two-factor required
+  twoFactorRequired$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.twoFactorRequired),
+        tap(() => {
+          console.log('Two-factor authentication required');
+          // Show the two-factor form in the login component
+          // This is handled by the login component subscribing to the auth state
+        })
+      ),
+    { dispatch: false }
+  );
+
+  // Handle questionnaire submission
+  submitQuestionnaire$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.submitQuestionnaire),
+      mergeMap(action => {
+        return this.authService.submitQuestionnaire(action.formData).pipe(
+          map(response => {
+            if (!response.data) {
+              throw new Error('No data in response');
+            }
+
+            return AuthActions.submitQuestionnaireSuccess({
+              user: response.data
+            });
+          }),
+          catchError(error => {
+            console.error('Questionnaire submission error:', error);
+            return of(AuthActions.submitQuestionnaireFailure({
+              error: error.message || 'Failed to submit questionnaire'
+            }));
+          })
+        );
+      })
+    )
+  );
+
+  // Handle questionnaire success
+  submitQuestionnaireSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.submitQuestionnaireSuccess),
+        tap(({ user }) => {
+          console.log('Questionnaire submitted successfully, user:', user);
+
+          // Navigate based on role
+          switch (user.role) {
+            case UserRole.ADMIN:
+              this.router.navigate(['/dashboard']);
+              break;
+            case UserRole.VOLUNTEER:
+              this.router.navigate(['/dashboard/volunteer/profile']);
+              break;
+            case UserRole.ORGANIZATION:
+              this.router.navigate(['/dashboard']);
+              break;
+            default:
+              console.error('Unknown role:', user.role);
+              this.router.navigate(['/dashboard']);
+          }
         })
       ),
     { dispatch: false }
