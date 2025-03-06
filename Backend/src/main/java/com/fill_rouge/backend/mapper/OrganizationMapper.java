@@ -13,9 +13,10 @@ import com.fill_rouge.backend.domain.Organization;
 import com.fill_rouge.backend.dto.request.OrganizationRequest;
 import com.fill_rouge.backend.dto.response.OrganizationResponse;
 
-@Mapper(componentModel = "spring", imports = {HashSet.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", imports = {
+        HashSet.class }, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface OrganizationMapper {
-    
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -27,13 +28,13 @@ public interface OrganizationMapper {
     @Mapping(target = "totalVolunteerHours", constant = "0")
     @Mapping(target = "impactScore", constant = "0.0")
     Organization toEntity(OrganizationRequest request);
-    
+
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "focusAreas", expression = "java(new HashSet<>(organization.getFocusAreas()))")
     @Mapping(target = "socialMediaLinks", expression = "java(new ArrayList<>(organization.getSocialMediaLinks()))")
     @Mapping(target = "documents", expression = "java(new ArrayList<>(organization.getDocuments()))")
     OrganizationResponse toResponse(Organization organization);
-    
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "user", ignore = true)
@@ -48,6 +49,6 @@ public interface OrganizationMapper {
     void updateEntity(OrganizationRequest request, @MappingTarget Organization organization);
 
     List<OrganizationResponse> toResponseList(List<Organization> organizations);
- 
+
     Set<OrganizationResponse> toResponseSet(Set<Organization> organizations);
 }

@@ -11,6 +11,9 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - MONGODB_URI=mongodb://mongodb:27017
       - MONGODB_DATABASE=volunteer_platform
+      - JWT_SECRET_KEY=your-secure-jwt-secret-key-at-least-256-bits-long
+      - APP_ENCRYPTION_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - APP_ENCRYPTION_SALT=0123456789abcdef0123456789abcdef
     depends_on:
       - mongodb
 

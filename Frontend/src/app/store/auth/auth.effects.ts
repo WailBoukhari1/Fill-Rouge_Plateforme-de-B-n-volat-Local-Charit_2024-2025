@@ -28,7 +28,7 @@ export class AuthEffects {
             }
             const decodedToken = this.authService.getDecodedToken();
             const role = decodedToken?.role?.replace('ROLE_', '') as UserRole;
-            
+
             if (!role) {
               throw new Error('No role found in token');
             }
@@ -50,7 +50,7 @@ export class AuthEffects {
             };
             console.log('Constructed user data:', userData);
             console.log('Email verification status in constructed data:', userData.emailVerified);
-            return AuthActions.loginSuccess({ 
+            return AuthActions.loginSuccess({
               user: userData,
               token: response.data.token,
               refreshToken: response.data.refreshToken
@@ -68,14 +68,30 @@ export class AuthEffects {
   register$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.register),
-      mergeMap(action =>
-        this.authService.register({ 
-          email: action.email, 
+      mergeMap(action => {
+        // Create the register request object with all possible fields
+        const registerRequest: any = {
+          email: action.email,
           password: action.password,
           firstName: action.firstName,
           lastName: action.lastName,
-          role: action.role || UserRole.VOLUNTEER
-        }).pipe(
+          role: action.role
+        };
+
+        // Add organization fields if provided
+        if (action.organizationName) {
+          registerRequest.organizationName = action.organizationName;
+          registerRequest.organizationWebsite = action.organizationWebsite;
+          registerRequest.organizationDescription = action.organizationDescription;
+        }
+
+        // Add optional fields if provided
+        if (action.phoneNumber) registerRequest.phoneNumber = action.phoneNumber;
+        if (action.address) registerRequest.address = action.address;
+        if (action.city) registerRequest.city = action.city;
+        if (action.country) registerRequest.country = action.country;
+
+        return this.authService.register(registerRequest).pipe(
           map(response => {
             if (!response.data) {
               throw new Error('No data in response');
@@ -99,15 +115,20 @@ export class AuthEffects {
             this.router.navigate(['/auth/verify-email'], {
               queryParams: { email: action.email }
             });
-            return AuthActions.registerSuccess({ 
+            return AuthActions.registerSuccess({
               user: userData,
               token: response.data.token,
               refreshToken: response.data.refreshToken
             });
           }),
-          catchError(error => of(AuthActions.registerFailure({ error: error.error.message })))
-        )
-      )
+          catchError(error => {
+            console.error('Registration error:', error);
+            return of(AuthActions.registerFailure({
+              error: error.error?.message || error.message || 'Registration failed'
+            }));
+          })
+        );
+      })
     )
   );
 
@@ -119,7 +140,7 @@ export class AuthEffects {
         tap(({ user, redirect = true }) => {
           console.log('Login success effect triggered, user:', user);
           console.log('Email verification status in success effect:', user.emailVerified);
-          
+
           if (!user) {
             console.error('No user data in loginSuccess action');
             return;
@@ -195,7 +216,7 @@ export class AuthEffects {
               lastLoginIp: response.data.lastLoginIp,
               lastLoginAt: response.data.lastLoginAt
             };
-            return AuthActions.refreshTokenSuccess({ 
+            return AuthActions.refreshTokenSuccess({
               user: userData,
               token: response.data.token,
               refreshToken: response.data.refreshToken
@@ -250,4 +271,4 @@ export class AuthEffects {
     private store: Store,
     private router: Router
   ) {}
-} 
+}

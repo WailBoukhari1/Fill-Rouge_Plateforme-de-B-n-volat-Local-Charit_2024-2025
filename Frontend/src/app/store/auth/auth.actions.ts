@@ -5,8 +5,8 @@ import { UserRole } from '../../core/models/auth.models';
 // Login
 export const login = createAction(
   '[Auth] Login',
-  props<{ 
-    email: string; 
+  props<{
+    email: string;
     password: string;
     twoFactorCode?: string;
   }>()
@@ -14,9 +14,9 @@ export const login = createAction(
 
 export const loginSuccess = createAction(
   '[Auth] Login Success',
-  props<{ 
-    user: User; 
-    token: string; 
+  props<{
+    user: User;
+    token: string;
     refreshToken: string;
     redirect?: boolean;
   }>()
@@ -33,12 +33,19 @@ export const twoFactorRequired = createAction('[Auth] Two Factor Required');
 // Register
 export const register = createAction(
   '[Auth] Register',
-  props<{ 
-    email: string; 
-    password: string; 
-    firstName: string; 
+  props<{
+    email: string;
+    password: string;
+    firstName: string;
     lastName: string;
-    role?: UserRole;
+    role: UserRole;
+    organizationName?: string;
+    organizationWebsite?: string;
+    organizationDescription?: string;
+    phoneNumber?: string;
+    address?: string;
+    city?: string;
+    country?: string;
   }>()
 );
 
@@ -86,4 +93,4 @@ export const loadStoredUserSuccess = createAction(
 export const loadStoredUserFailure = createAction(
   '[Auth] Load Stored User Failure',
   props<{ error: string }>()
-); 
+);

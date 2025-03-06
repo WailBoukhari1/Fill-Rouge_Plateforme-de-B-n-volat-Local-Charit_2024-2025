@@ -82,7 +82,7 @@ import { filter, take } from 'rxjs/operators';
 
                 <mat-form-field class="w-full">
                   <mat-label>Role</mat-label>
-                  <mat-select formControlName="role" required>
+                  <mat-select formControlName="role" required (selectionChange)="onRoleChange()">
                     <mat-option value="ORGANIZATION">Organization</mat-option>
                     <mat-option value="VOLUNTEER">Volunteer</mat-option>
                   </mat-select>
@@ -90,6 +90,27 @@ import { filter, take } from 'rxjs/operators';
                     Role is required
                   </mat-error>
                 </mat-form-field>
+
+                <!-- Organization fields - only shown when role is ORGANIZATION -->
+                <div *ngIf="registerForm.get('role')?.value === 'ORGANIZATION'" class="space-y-4">
+                  <mat-form-field class="w-full">
+                    <mat-label>Organization Name</mat-label>
+                    <input matInput formControlName="organizationName" required>
+                    <mat-error *ngIf="registerForm.get('organizationName')?.errors?.['required']">
+                      Organization name is required
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field class="w-full">
+                    <mat-label>Organization Website</mat-label>
+                    <input matInput formControlName="organizationWebsite">
+                  </mat-form-field>
+
+                  <mat-form-field class="w-full">
+                    <mat-label>Organization Description</mat-label>
+                    <textarea matInput formControlName="organizationDescription" rows="3"></textarea>
+                  </mat-form-field>
+                </div>
               </div>
 
               <div *ngIf="error$ | async as error" class="text-red-500 text-sm text-center">
@@ -145,7 +166,10 @@ export class RegisterComponent implements OnInit {
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      role: ['', Validators.required]
+      role: ['', Validators.required],
+      organizationName: [''],
+      organizationWebsite: [''],
+      organizationDescription: ['']
     });
   }
 
@@ -166,16 +190,40 @@ export class RegisterComponent implements OnInit {
     });
   }
 
+  onRoleChange(): void {
+    const role = this.registerForm.get('role')?.value;
+    const organizationNameControl = this.registerForm.get('organizationName');
+
+    if (role === 'ORGANIZATION') {
+      organizationNameControl?.setValidators([Validators.required]);
+    } else {
+      organizationNameControl?.clearValidators();
+    }
+
+    organizationNameControl?.updateValueAndValidity();
+  }
+
   onSubmit(): void {
     if (this.registerForm.valid) {
-      const { email, password, firstName, lastName, role } = this.registerForm.value;
-      this.store.dispatch(AuthActions.register({
-        email,
-        password,
-        firstName,
-        lastName,
-        role
-      }));
+      const formValue = this.registerForm.value;
+      const registerData = {
+        email: formValue.email,
+        password: formValue.password,
+        firstName: formValue.firstName,
+        lastName: formValue.lastName,
+        role: formValue.role
+      };
+
+      // Add organization fields if role is ORGANIZATION
+      if (formValue.role === 'ORGANIZATION') {
+        Object.assign(registerData, {
+          organizationName: formValue.organizationName,
+          organizationWebsite: formValue.organizationWebsite,
+          organizationDescription: formValue.organizationDescription
+        });
+      }
+
+      this.store.dispatch(AuthActions.register(registerData));
     }
   }
-} 
+}

@@ -1,27 +1,48 @@
 package com.fill_rouge.backend.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.fill_rouge.backend.dto.request.LoginRequest;
 import com.fill_rouge.backend.dto.request.RegisterRequest;
 import com.fill_rouge.backend.dto.response.ApiResponse;
 import com.fill_rouge.backend.dto.response.AuthResponse;
 import com.fill_rouge.backend.service.auth.AuthenticationService;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:4200", "http://localhost:3000"}, 
+    allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, 
+    RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class AuthController {
 
     private final AuthenticationService authenticationService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authenticationService.register(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "User registered successfully"));
+        try {
+            AuthResponse response = authenticationService.register(request);
+            return ResponseEntity.ok(ApiResponse.success(response, "User registered successfully"));
+        } catch (Exception e) {
+            // Log the exception
+            System.err.println("Registration error: " + e.getMessage());
+            e.printStackTrace();
+            // Return a more specific error message
+            return ResponseEntity.status(500).body(
+                    ApiResponse.error("Registration failed: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR));
+        }
     }
 
     @PostMapping("/login")

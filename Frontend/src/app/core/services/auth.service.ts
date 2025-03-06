@@ -5,10 +5,10 @@ import { Observable, throwError, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
 import { jwtDecode } from 'jwt-decode';
-import { 
-  AuthResponse, 
+import {
+  AuthResponse,
   ApiResponse,
-  LoginRequest, 
+  LoginRequest,
   RegisterRequest,
   EmailVerificationRequest,
   PasswordResetRequest,
@@ -21,6 +21,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { selectIsAuthenticated, selectUser } from '../../store/auth/auth.selectors';
 import * as AuthActions from '../../store/auth/auth.actions';
+import { log } from 'console';
 
 interface DecodedToken {
   sub: string;
@@ -33,7 +34,7 @@ interface DecodedToken {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/api/auth`;
+  private apiUrl = `${environment.apiUrl}/auth`;
   private tokenKey = 'auth_token';
   private userKey = 'user_data';
   isAuthenticated$ = this.store.select(selectIsAuthenticated);
@@ -47,6 +48,7 @@ export class AuthService {
 
   login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {
     console.log('Login request:', request);
+
     return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, request).pipe(
       tap(response => {
         console.log('Login response:', response);
@@ -58,8 +60,8 @@ export class AuthService {
       catchError(error => {
         console.error('Login error:', error);
         this.clearStorage();
-        this.store.dispatch(AuthActions.loginFailure({ 
-          error: error.message || 'Authentication failed' 
+        this.store.dispatch(AuthActions.loginFailure({
+          error: error.message || 'Authentication failed'
         }));
         return throwError(() => error);
       })
@@ -67,6 +69,7 @@ export class AuthService {
   }
 
   register(request: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
+
     return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, request).pipe(
       tap(response => this.handleAuthResponse(response.data))
     );
@@ -257,7 +260,7 @@ export class AuthService {
   getDecodedToken(): DecodedToken | null {
     const token = localStorage.getItem(this.tokenKey);
     if (!token) return null;
-    
+
     try {
       const decoded = this.decodeToken(token);
       if (this.isTokenExpired(decoded)) {
@@ -331,7 +334,7 @@ export class AuthService {
   getUserRole(): string {
     const userData = localStorage.getItem(this.userKey);
     if (!userData) return '';
-    
+
     try {
       const user = JSON.parse(userData);
       return user.role || '';
@@ -343,7 +346,7 @@ export class AuthService {
   getUserName(): string {
     const userData = localStorage.getItem(this.userKey);
     if (!userData) return '';
-    
+
     try {
       const user = JSON.parse(userData);
       return `${user.firstName} ${user.lastName}`.trim() || user.email || '';
@@ -351,4 +354,4 @@ export class AuthService {
       return '';
     }
   }
-} 
+}

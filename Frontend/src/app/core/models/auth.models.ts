@@ -73,7 +73,14 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role?: UserRole;
+  role: UserRole;
+  phoneNumber?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  organizationName?: string;
+  organizationWebsite?: string;
+  organizationDescription?: string;
 }
 
 export interface EmailVerificationRequest {
@@ -97,4 +104,4 @@ export interface TwoFactorSetupResponse {
 
 export interface TwoFactorVerifyRequest {
   code: string;
-} 
+}

@@ -13,7 +13,7 @@ import com.fill_rouge.backend.dto.request.RegisterRequest;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface UserMapper {
-    
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -29,5 +29,6 @@ public interface UserMapper {
     void updateEntity(RegisterRequest request, @MappingTarget User user);
 
     List<User> toEntityList(List<RegisterRequest> requests);
+
     Set<User> toEntitySet(Set<RegisterRequest> requests);
 }

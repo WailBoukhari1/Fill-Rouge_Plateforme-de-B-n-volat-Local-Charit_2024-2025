@@ -98,6 +98,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean shouldSkipTokenProcessing(HttpServletRequest request) {
         String path = request.getRequestURI();
         return path.startsWith("/api/auth/") || 
+               path.startsWith("/auth/") ||
                path.startsWith("/api/public/") ||
                path.startsWith("/swagger-ui/") ||
                path.startsWith("/v3/api-docs/") ||
