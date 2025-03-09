@@ -20,6 +20,7 @@ public class QuestionnaireRequest {
     private String phoneNumber;
     private String address;
     private String city;
+    private String country;
     private String province;
     
     // Organization fields

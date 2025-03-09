@@ -6,9 +6,6 @@ spring:
       port: 27017
       database: volunteer_platform_dev
       auto-index-creation: true
-      # Optional authentication - uncomment if needed
-      # username: ${MONGODB_USERNAME}
-      # password: ${MONGODB_PASSWORD}
   mail:
     host: smtp.mailtrap.io
     port: 2525
@@ -26,22 +23,43 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    context-path: /api
   error:
     include-message: always
     include-binding-errors: always
     include-stacktrace: always
 
+app:
+  encryption:
+    algorithm: AES/GCM/NoPadding
+    salt-length: 16
+    iv-length: 12
+    salt: ${APP_ENCRYPTION_SALT:your_dev_encryption_salt_here}
+    iv: ${APP_ENCRYPTION_IV:your_dev_encryption_iv_here}
+    secret: ${APP_ENCRYPTION_SECRET:your_dev_encryption_secret_here}
+
 security:
   jwt:
-    # WARNING: Change this key in production!
-    secret-key: your-256-bit-secret-key-here
+    secret-key: ${JWT_SECRET_KEY:your_dev_jwt_secret_key_here}
+    expiration: 86400000  # 24 hours
+    refresh-token:
+      expiration: 604800000  # 7 days
   cors:
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+    allowed-headers: Authorization,Content-Type,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers
+    exposed-headers: Authorization,Content-Disposition
     allowed-origins: http://localhost:4200,http://localhost:3000
+    max-age: 3600
 
 springdoc:
   swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
     enabled: true
   api-docs:
+    path: /v3/api-docs
     enabled: true
 
 logging:
@@ -51,6 +69,9 @@ logging:
     org.springframework.security: DEBUG
     com.fill_rouge.backend: DEBUG
     org.springframework.web: DEBUG
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: logs/application-dev.log
     max-size: 10MB
@@ -60,21 +81,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
-
-# Security scanning configuration
-security-scan:
-  enabled: false
-  schedule: "0 0 * * * *"
-  alert:
-    email: dev@localhost
-    threshold:
-      high: 3
-      medium: 5
-      low: 10
 
 # Development Features
 features:
