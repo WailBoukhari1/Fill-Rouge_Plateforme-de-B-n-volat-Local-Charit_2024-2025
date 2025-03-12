@@ -46,6 +46,7 @@ export interface AuthResponse {
   email: string;
   firstName: string;
   lastName: string;
+  userId: string;
   role?: UserRole;
   authorities?: string[];
   emailVerified: boolean;

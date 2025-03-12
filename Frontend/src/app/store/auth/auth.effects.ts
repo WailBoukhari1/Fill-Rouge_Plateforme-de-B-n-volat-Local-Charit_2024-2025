@@ -45,7 +45,7 @@ export class AuthEffects {
             }
 
             const userData: User = {
-              id: 0,
+              id: parseInt(response.data.userId) || 0,
               email: response.data.email,
               firstName: response.data.firstName,
               lastName: response.data.lastName,
@@ -194,7 +194,8 @@ export class AuthEffects {
         ofType(AuthActions.loginSuccess),
         tap(({ user, redirect = true }) => {
           console.log('Login success effect triggered, user:', user);
-          console.log('Email verification status in success effect:', user.emailVerified);
+          console.log('User role:', user.role);
+          console.log('Questionnaire completed:', user.questionnaireCompleted);
 
           if (!user) {
             console.error('No user data in loginSuccess action');
@@ -245,16 +246,20 @@ export class AuthEffects {
             return;
           }
 
-          console.log('All checks passed, navigating to dashboard, user role:', user.role);
+          console.log('All checks passed, navigating based on role:', user.role);
+          
           // Navigate based on role
           switch (user.role) {
             case UserRole.ADMIN:
+              console.log('Navigating to admin dashboard');
               this.router.navigate(['/dashboard']);
               break;
             case UserRole.VOLUNTEER:
+              console.log('Navigating to volunteer profile');
               this.router.navigate(['/dashboard/volunteer/profile']);
               break;
             case UserRole.ORGANIZATION:
+              console.log('Navigating to organization dashboard');
               this.router.navigate(['/dashboard']);
               break;
             default:
@@ -407,6 +412,15 @@ export class AuthEffects {
         ofType(AuthActions.submitQuestionnaireSuccess),
         tap(({ user }) => {
           console.log('Questionnaire submitted successfully, user:', user);
+
+          // Ensure the user data is properly stored
+          const updatedUser = {
+            ...user,
+            questionnaireCompleted: true
+          };
+
+          // Store the updated user data
+          localStorage.setItem('user_data', JSON.stringify(updatedUser));
 
           // Navigate based on role
           switch (user.role) {

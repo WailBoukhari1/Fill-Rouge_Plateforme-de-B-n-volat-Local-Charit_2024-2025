@@ -8,7 +8,7 @@ import { Certification, CertificationDocument } from '../models/skill.model';
   providedIn: 'root'
 })
 export class CertificationService {
-  private apiUrl = `${environment.apiUrl}/api/certifications`;
+  private apiUrl = `${environment.apiUrl}/certifications`;
 
   constructor(private http: HttpClient) {}
 

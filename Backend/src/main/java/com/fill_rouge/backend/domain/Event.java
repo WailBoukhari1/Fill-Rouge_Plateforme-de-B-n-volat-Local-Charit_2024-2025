@@ -3,13 +3,18 @@ package com.fill_rouge.backend.domain;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.time.Duration;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 
 import com.fill_rouge.backend.constant.EventCategory;
 import com.fill_rouge.backend.constant.EventStatus;
+import com.fill_rouge.backend.constant.EventParticipationStatus;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Max;
@@ -18,12 +23,21 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Document(collection = "events")
 public class Event {
     @Id
     private String id;
+    
+    @DBRef
+    private Organization organization;
     
     @NotBlank(message = "Event title is required")
     @Size(min = 5, max = 100, message = "Title must be between 5 and 100 characters")
@@ -53,6 +67,7 @@ public class Event {
     private int maxParticipants;
     
     private Set<String> registeredParticipants = new HashSet<>();
+    private Set<String> waitlistedParticipants = new HashSet<>();
     
     @NotNull(message = "Event category is required")
     private EventCategory category;
@@ -73,13 +88,9 @@ public class Event {
     private String contactEmail;
     private String contactPhone;
     
-    // Constructor with initialization
-    public Event() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        this.status = EventStatus.PENDING;
-    }
-
+    @DBRef
+    private List<EventParticipation> participations = new ArrayList<>();
+    
     // Utility methods
     public boolean isRegistrationOpen() {
         return status == EventStatus.ACTIVE && 
@@ -95,8 +106,7 @@ public class Event {
     }
 
     public boolean isCompleted() {
-        return status == EventStatus.COMPLETED && 
-               LocalDateTime.now().isAfter(endDate);
+        return status == EventStatus.COMPLETED;
     }
 
     public int getAvailableSpots() {
@@ -110,5 +120,12 @@ public class Event {
         double totalRating = this.averageRating * this.numberOfRatings;
         this.numberOfRatings++;
         this.averageRating = (totalRating + newRating) / this.numberOfRatings;
+    }
+
+    public int getTotalVolunteerHours() {
+        long hours = Duration.between(startDate, endDate).toHours();
+        return (int) (hours * participations.stream()
+            .filter(p -> p.getStatus() == EventParticipationStatus.ATTENDED)
+            .count());
     }
 } 

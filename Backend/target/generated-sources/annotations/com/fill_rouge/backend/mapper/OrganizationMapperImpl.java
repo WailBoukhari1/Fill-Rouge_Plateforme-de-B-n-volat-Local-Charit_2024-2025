@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-09T10:21:39+0000",
+    date = "2025-03-11T23:30:37+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -27,47 +27,44 @@ public class OrganizationMapperImpl implements OrganizationMapper {
             return null;
         }
 
-        Organization organization = new Organization();
+        Organization.OrganizationBuilder organization = Organization.builder();
 
-        organization.setAcceptingVolunteers( request.isAcceptingVolunteers() );
-        organization.setAddress( request.getAddress() );
-        organization.setCity( request.getCity() );
+        organization.acceptingVolunteers( request.isAcceptingVolunteers() );
+        organization.address( request.getAddress() );
+        organization.city( request.getCity() );
         double[] coordinates = request.getCoordinates();
         if ( coordinates != null ) {
-            organization.setCoordinates( Arrays.copyOf( coordinates, coordinates.length ) );
+            organization.coordinates( Arrays.copyOf( coordinates, coordinates.length ) );
         }
-        organization.setCountry( request.getCountry() );
-        organization.setDescription( request.getDescription() );
+        organization.country( request.getCountry() );
+        organization.description( request.getDescription() );
         List<String> list = request.getDocuments();
         if ( list != null ) {
-            organization.setDocuments( new ArrayList<String>( list ) );
+            organization.documents( new ArrayList<String>( list ) );
         }
         Set<String> set = request.getFocusAreas();
         if ( set != null ) {
-            organization.setFocusAreas( new LinkedHashSet<String>( set ) );
+            organization.focusAreas( new LinkedHashSet<String>( set ) );
         }
-        organization.setLogo( request.getLogo() );
-        organization.setMission( request.getMission() );
-        organization.setName( request.getName() );
-        organization.setPhoneNumber( request.getPhoneNumber() );
-        organization.setRegistrationNumber( request.getRegistrationNumber() );
-        List<String> list1 = request.getSocialMediaLinks();
-        if ( list1 != null ) {
-            organization.setSocialMediaLinks( new ArrayList<String>( list1 ) );
-        }
-        organization.setTaxId( request.getTaxId() );
-        organization.setVision( request.getVision() );
-        organization.setWebsite( request.getWebsite() );
+        organization.logo( request.getLogo() );
+        organization.mission( request.getMission() );
+        organization.name( request.getName() );
+        organization.phoneNumber( request.getPhoneNumber() );
+        organization.registrationNumber( request.getRegistrationNumber() );
+        organization.socialMediaLinks( request.getSocialMediaLinks() );
+        organization.taxId( request.getTaxId() );
+        organization.vision( request.getVision() );
+        organization.website( request.getWebsite() );
 
-        organization.setVerified( false );
-        organization.setRating( 0.0 );
-        organization.setNumberOfRatings( 0 );
-        organization.setTotalEventsHosted( 0 );
-        organization.setActiveVolunteers( 0 );
-        organization.setTotalVolunteerHours( 0 );
-        organization.setImpactScore( 0.0 );
+        organization.verified( false );
+        organization.rating( 0.0 );
+        organization.numberOfRatings( 0 );
+        organization.totalEventsHosted( 0 );
+        organization.activeVolunteers( 0 );
+        organization.totalVolunteerHours( 0 );
+        organization.impactScore( 0.0 );
 
-        return organization;
+        return organization.build();
     }
 
     @Override
@@ -179,18 +176,8 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         if ( request.getRegistrationNumber() != null ) {
             organization.setRegistrationNumber( request.getRegistrationNumber() );
         }
-        if ( organization.getSocialMediaLinks() != null ) {
-            List<String> list1 = request.getSocialMediaLinks();
-            if ( list1 != null ) {
-                organization.getSocialMediaLinks().clear();
-                organization.getSocialMediaLinks().addAll( list1 );
-            }
-        }
-        else {
-            List<String> list1 = request.getSocialMediaLinks();
-            if ( list1 != null ) {
-                organization.setSocialMediaLinks( new ArrayList<String>( list1 ) );
-            }
+        if ( request.getSocialMediaLinks() != null ) {
+            organization.setSocialMediaLinks( request.getSocialMediaLinks() );
         }
         if ( request.getTaxId() != null ) {
             organization.setTaxId( request.getTaxId() );

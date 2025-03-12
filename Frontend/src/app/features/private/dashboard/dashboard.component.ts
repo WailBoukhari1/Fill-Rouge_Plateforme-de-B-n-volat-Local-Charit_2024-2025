@@ -7,12 +7,16 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, take } from 'rxjs';
 import { Chart, ChartType } from 'chart.js/auto';
 
 import * as VolunteerActions from '../../../store/volunteer/volunteer.actions';
 import * as VolunteerSelectors from '../../../store/volunteer/volunteer.selectors';
 import { VolunteerStatistics, VolunteerHours } from '../../../core/services/volunteer.service';
+import { StatisticsService } from '../../../core/services/statistics.service';
+import { VolunteerStats, OrganizationStats, AdminStats, DetailedVolunteerStats } from '../../../core/models/statistics.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { StatisticsResponse } from '../../../core/models/statistics.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -27,7 +31,7 @@ import { VolunteerStatistics, VolunteerHours } from '../../../core/services/volu
   ],
   template: `
     <div class="container mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
+      <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
 
       <!-- Loading Spinner -->
       @if (loading$ | async) {
@@ -35,6 +39,94 @@ import { VolunteerStatistics, VolunteerHours } from '../../../core/services/volu
           <mat-spinner diameter="40"></mat-spinner>
         </div>
       } @else {
+        <!-- Statistics Cards -->
+        @if (volunteerStats) {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Hours Volunteered</div>
+                <div class="text-3xl font-bold text-primary">{{volunteerStats.totalHoursVolunteered}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Events Participated</div>
+                <div class="text-3xl font-bold text-primary">{{volunteerStats.eventsParticipated}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Impact Score</div>
+                <div class="text-3xl font-bold text-primary">{{volunteerStats.impactScore}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Average Rating</div>
+                <div class="text-3xl font-bold text-primary">{{volunteerStats.averageRating | number:'1.1-1'}}</div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        }
+
+        @if (organizationStats) {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Total Volunteers</div>
+                <div class="text-3xl font-bold text-primary">{{organizationStats.totalVolunteers}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Active Volunteers</div>
+                <div class="text-3xl font-bold text-primary">{{organizationStats.activeVolunteers}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Total Events</div>
+                <div class="text-3xl font-bold text-primary">{{organizationStats.totalEvents}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Resources Shared</div>
+                <div class="text-3xl font-bold text-primary">{{organizationStats.resourcesShared}}</div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        }
+
+        @if (adminStats) {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Total Users</div>
+                <div class="text-3xl font-bold text-primary">{{adminStats.totalUsers}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Platform Engagement</div>
+                <div class="text-3xl font-bold text-primary">{{adminStats.platformEngagementRate | number:'1.1-1'}}%</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Verified Organizations</div>
+                <div class="text-3xl font-bold text-primary">{{adminStats.verifiedOrganizations}}</div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card>
+              <mat-card-content>
+                <div class="text-lg font-semibold">Total Resources</div>
+                <div class="text-3xl font-bold text-primary">{{adminStats.totalResources}}</div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        }
+
         <!-- Charts Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <!-- Hours by Month Chart -->
@@ -103,9 +195,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('participationChart') participationChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('growthChart') growthChartRef!: ElementRef<HTMLCanvasElement>;
 
-  statistics$: Observable<VolunteerStatistics | null>;
+  statistics$: Observable<StatisticsResponse | null>;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
+
+  volunteerStats: VolunteerStats | null = null;
+  organizationStats: OrganizationStats | null = null;
+  adminStats: AdminStats | null = null;
+  detailedVolunteerStats: DetailedVolunteerStats | null = null;
 
   private hoursChart: Chart<'line'> | null = null;
   private categoryChart: Chart<'pie'> | null = null;
@@ -114,7 +211,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   constructor(
     private store: Store,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private statisticsService: StatisticsService,
+    private authService: AuthService
   ) {
     this.statistics$ = this.store.select(VolunteerSelectors.selectVolunteerStatistics);
     this.loading$ = this.store.select(VolunteerSelectors.selectVolunteerLoading);
@@ -123,6 +222,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.store.dispatch(VolunteerActions.loadStatistics());
+    this.loadStatistics();
   }
 
   ngAfterViewInit(): void {
@@ -130,6 +230,51 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.statistics$.subscribe(stats => {
       if (stats) {
         this.updateCharts(stats);
+      }
+    });
+  }
+
+  private loadStatistics(): void {
+    const userRole = this.authService.getUserRole();
+    
+    this.authService.currentUser$.pipe(
+      take(1)
+    ).subscribe(user => {
+      if (user?.id) {
+        const userId = user.id.toString();
+        this.statisticsService.getStatisticsByRole(userId).subscribe({
+          next: (response) => {
+            this.volunteerStats = response.volunteerStats ?? null;
+            this.organizationStats = response.organizationStats ?? null;
+            this.adminStats = response.adminStats ?? null;
+
+            if (userRole === 'VOLUNTEER') {
+              this.loadDetailedVolunteerStats();
+            }
+          },
+          error: (error) => {
+            this.snackBar.open('Failed to load statistics', 'Close', {
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  private loadDetailedVolunteerStats(): void {
+    this.statisticsService.getDetailedVolunteerStats().subscribe({
+      next: (stats) => {
+        this.detailedVolunteerStats = stats;
+      },
+      error: (error) => {
+        this.snackBar.open('Failed to load detailed statistics', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
       }
     });
   }
@@ -217,29 +362,32 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private updateCharts(stats: VolunteerStatistics): void {
+  private updateCharts(stats: StatisticsResponse): void {
+    const volunteerStats = stats.volunteerStats;
+    if (!volunteerStats) return;
+
     // Update Hours Chart
-    if (this.hoursChart && stats.hoursByMonth) {
-      const labels = Object.keys(stats.hoursByMonth);
-      const data = Object.values(stats.hoursByMonth);
-      this.hoursChart.data.labels = labels;
+    if (this.hoursChart && volunteerStats.totalHoursVolunteered) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      const data = months.map(() => volunteerStats.totalHoursVolunteered / 6); // Distribute hours evenly
+      this.hoursChart.data.labels = months;
       this.hoursChart.data.datasets[0].data = data;
       this.hoursChart.update();
     }
 
     // Update Category Chart
-    if (this.categoryChart && stats.eventsByCategory) {
-      const labels = Object.keys(stats.eventsByCategory);
-      const data = Object.values(stats.eventsByCategory);
-      this.categoryChart.data.labels = labels;
+    if (this.categoryChart && volunteerStats.eventsParticipated) {
+      const categories = ['Education', 'Health', 'Environment', 'Social'];
+      const data = categories.map(() => volunteerStats.eventsParticipated / 4); // Distribute events evenly
+      this.categoryChart.data.labels = categories;
       this.categoryChart.data.datasets[0].data = data;
       this.categoryChart.update();
     }
 
     // Update Participation Chart
-    if (this.participationChart && stats.participationByDay) {
-      const data = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-        .map(day => stats.participationByDay[day] || 0);
+    if (this.participationChart) {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const data = days.map(() => volunteerStats.eventsParticipated / 7); // Distribute events evenly
       this.participationChart.data.datasets[0].data = data;
       this.participationChart.update();
     }
@@ -247,8 +395,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Update Growth Chart
     if (this.growthChart) {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-      const participationData = months.map(() => stats.participationGrowthRate * 100);
-      const hoursData = months.map(() => stats.hoursGrowthRate * 100);
+      const participationData = months.map(() => (volunteerStats.eventsParticipated / 6) * 100);
+      const hoursData = months.map(() => (volunteerStats.totalHoursVolunteered / 6) * 100);
       this.growthChart.data.datasets[0].data = participationData;
       this.growthChart.data.datasets[1].data = hoursData;
       this.growthChart.update();

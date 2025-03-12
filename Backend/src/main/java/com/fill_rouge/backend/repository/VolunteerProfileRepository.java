@@ -42,4 +42,6 @@ public interface VolunteerProfileRepository extends MongoRepository<VolunteerPro
     
     @Query("{'email': ?0}")
     Optional<VolunteerProfile> findByUserEmail(String email);
+
+    Optional<VolunteerProfile> findByUserId(String userId);
 } 

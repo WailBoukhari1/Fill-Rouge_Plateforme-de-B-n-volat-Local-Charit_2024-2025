@@ -1,0 +1,77 @@
+<parameter name="explanation">Searching for Swagger configuration to verify API documentation setup</parameter>
+<parameter name="query">OpenAPI or Swagger configuration in Spring Boot</parameter>
+</invoke>
+
+<invoke name="codebase_search">
+<parameter name="explanation">Searching for Spring Security configuration</parameter>
+<parameter name="query">SecurityConfig or WebSecurityConfigurerAdapter</parameter>
+</invoke>
+
+<invoke name="codebase_search">
+<parameter name="explanation">Searching for test files</parameter>
+<parameter name="query">@Test or JUnit test classes</parameter>
+</invoke>
+
+<invoke name="edit_file">
+<parameter name="target_file">Backend/src/main/java/com/fill_rouge/backend/domain/Resource.java</parameter>
+<parameter name="instructions">Creating the Resource entity class with necessary fields</parameter>
+<parameter name="code_edit">package com.fill_rouge.backend.domain;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "resources")
+public class Resource {
+    @Id
+    private String id;
+    private String name;
+    private String description;
+    private String type;
+    private String url;
+    private String organizationId;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
+</parameter>
+</invoke>
+
+<invoke name="codebase_search">
+<parameter name="explanation">Searching for Swagger configuration to verify API documentation setup</parameter>
+<parameter name="query">OpenAPI or Swagger configuration in Spring Boot</parameter>
+</invoke>
+
+<invoke name="codebase_search">
+<parameter name="explanation">Searching for Spring Security configuration</parameter>
+<parameter name="query">SecurityConfig or WebSecurityConfigurerAdapter</parameter>
+</invoke>
+
+<invoke name="codebase_search">
+<parameter name="explanation">Searching for test files</parameter>
+<parameter name="query">@Test or JUnit test classes</parameter>
+</invoke>
+
+<invoke name="edit_file">
+<parameter name="target_file">Backend/src/main/java/com/fill_rouge/backend/repository/ResourceRepository.java</parameter>
+<parameter name="instructions">Creating the ResourceRepository interface with necessary methods</parameter>
+<parameter name="code_edit">package com.fill_rouge.backend.repository;
+
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+import com.fill_rouge.backend.domain.Resource;
+
+@Repository
+public interface ResourceRepository extends MongoRepository<Resource, String> {
+    long countByOrganizationId(String organizationId);
+}
+</parameter>
+</invoke> 

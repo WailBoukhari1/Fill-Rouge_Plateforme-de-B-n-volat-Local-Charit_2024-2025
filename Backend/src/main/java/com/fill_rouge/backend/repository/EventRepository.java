@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import com.fill_rouge.backend.constant.EventCategory;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.domain.User;
 
 @Repository
 public interface EventRepository extends MongoRepository<Event, String> {
@@ -33,13 +34,10 @@ public interface EventRepository extends MongoRepository<Event, String> {
     Page<Event> findByStartDateBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
     
     @Query("{'registeredParticipants': ?0}")
-    List<Event> findEventsByParticipant(String volunteerId);
-    
-    @Query("{'registeredParticipants': ?0, 'startDate': { $gte: ?1, $lte: ?2 }}")
-    List<Event> findEventsByParticipantAndDateRange(String volunteerId, LocalDateTime startDate, LocalDateTime endDate);
+    List<Event> findByParticipantsContaining(String userId);
     
     @Query("{'waitlistedParticipants': ?0}")
-    List<Event> findEventsByWaitlistedParticipant(String volunteerId);
+    List<Event> findByWaitlistContaining(String userId);
     
     @Query(value = "{'organizationId': ?0}", count = true)
     long countByOrganization(String organizationId);

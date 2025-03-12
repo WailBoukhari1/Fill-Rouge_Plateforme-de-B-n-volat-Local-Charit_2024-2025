@@ -195,30 +195,20 @@ export class AuthService {
     try {
       // Decode and validate token
       const decodedToken = this.decodeToken(response.token);
+      console.log('Decoded token:', decodedToken);
+      
       if (this.isTokenExpired(decodedToken)) {
         throw new Error('Token is expired');
       }
 
-      // Extract role from various sources
-      let userRole: string | undefined;
+      // Extract role from token
+      let userRole = decodedToken.role?.replace('ROLE_', '');
+      console.log('Extracted role from token:', userRole);
 
-      // First try to get role from token
-      userRole = this.extractRoleFromToken(decodedToken);
-
-      // Then try to get role from response data
-      if (!userRole && response.role) {
-        userRole = response.role.replace('ROLE_', '');
-        console.log('Using role from response data:', userRole);
-      }
-
-      // Finally try to get role from response authorities
-      if (!userRole && response.authorities && Array.isArray(response.authorities)) {
-        console.log('Found authorities in response:', response.authorities);
-        const roleAuthority = response.authorities.find(auth => auth.startsWith('ROLE_'));
-        if (roleAuthority) {
-          userRole = roleAuthority.replace('ROLE_', '');
-          console.log('Extracted role from response authorities:', userRole);
-        }
+      if (!userRole) {
+        // Fallback to response data if token doesn't have role
+        userRole = response.role?.replace('ROLE_', '');
+        console.log('Using role from response:', userRole);
       }
 
       // Validate role
@@ -235,7 +225,7 @@ export class AuthService {
 
       // Create user data object
       const userData: User = {
-        id: 0,
+        id: parseInt(response.userId) || 0,
         email: response.email,
         firstName: response.firstName,
         lastName: response.lastName,

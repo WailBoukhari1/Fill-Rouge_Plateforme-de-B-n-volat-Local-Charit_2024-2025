@@ -10,6 +10,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -95,6 +96,10 @@ public class VolunteerProfile {
     @Builder.Default
     private List<String> certifications = new ArrayList<>();
 
+    // Participations
+    @Builder.Default
+    private List<EventParticipation> participations = new ArrayList<>();
+
     // Metrics
     @PositiveOrZero
     private int totalEventsAttended = 0;
@@ -136,6 +141,12 @@ public class VolunteerProfile {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Builder.Default
+    private LocalDateTime joinDate = LocalDateTime.now();
+
+    @Builder.Default
+    private LocalDateTime lastActivityDate = LocalDateTime.now();
+
     public void updateRating(double newRating) {
         if (newRating < 0 || newRating > 5) {
             throw new IllegalArgumentException("Rating must be between 0 and 5");
@@ -176,5 +187,28 @@ public class VolunteerProfile {
         this.status = newStatus;
         this.isActive = "ACTIVE".equals(newStatus);
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateLastActivity() {
+        this.lastActivityDate = LocalDateTime.now();
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class EmergencyContact {
+        private String name;
+        private String relationship;
+        private String phone;
+    }
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class VolunteerStatistics {
+        private Integer experienceYears;
+        private Integer hoursPerWeek;
+        private String commitmentLength;
+        private Integer maxTravelDistance;
     }
 }

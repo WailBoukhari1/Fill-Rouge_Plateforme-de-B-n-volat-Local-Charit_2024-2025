@@ -60,7 +60,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**", "/api/public/**",
                                 "/v3/api-docs/**", "/swagger-ui/**",
-                                "/swagger-ui.html", "/auth/**")
+                                "/swagger-ui.html", "/auth/**",
+                                "/api/events/upcoming", "/api/events/registered", "/api/events/waitlist")
                         .permitAll()
                         .anyRequest().authenticated());
 
@@ -97,7 +98,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:3000"));
-        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"));
+        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-User-ID"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH"));
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);

@@ -1,61 +1,263 @@
-<mat-sidenav-container class="h-screen">
-  <!-- Sidebar -->
-  <mat-sidenav [opened]="isMenuOpen" mode="side" class="w-64 bg-white border-r">
-    <!-- Logo and Brand -->
-    <div class="p-4 border-b">
-      <h1 class="text-xl font-bold text-primary-600">Volunteer Hub</h1>
+<div class="container mx-auto px-4 py-8">
+  <!-- Loading and Error States -->
+  <div *ngIf="loading" class="flex justify-center items-center h-64">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  </div>
+
+  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+    <span class="block sm:inline">{{ error }}</span>
+  </div>
+
+  <!-- Volunteer Dashboard -->
+  <ng-container *ngIf="statistics$?.volunteerStats">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <!-- Core Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Core Metrics</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Total Hours</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.totalHoursVolunteered }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Events Participated</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.eventsParticipated }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Upcoming Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.upcomingEvents }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Performance</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Attendance Rate</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.attendanceRate | number:'1.0-0' }}%</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Average Rating</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.averageRating | number:'1.1-1' }}/5</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Impact Score</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.impactScore }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Growth</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Skills Acquired</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.skillsAcquired }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Certificates Earned</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.certificatesEarned }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Organizations Supported</p>
+            <p class="text-2xl font-bold">{{ statistics$.volunteerStats.organizationsSupported }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+        <div class="space-y-4">
+          <div *ngFor="let event of statistics$.volunteerStats.recentEvents" class="border-b pb-2">
+            <p class="font-medium">{{ event.eventName }}</p>
+            <p class="text-sm text-gray-600">{{ event.organizationName }}</p>
+            <p class="text-sm text-gray-500">{{ event.date | date }} - {{ event.hours }}h</p>
+          </div>
+        </div>
+      </div>
     </div>
+  </ng-container>
 
-    <!-- Navigation Menu -->
-    <mat-nav-list>
-      @for(item of getFilteredMenuItems(); track item.route) {
-        <a mat-list-item [routerLink]="item.route" routerLinkActive="bg-primary-50">
-          <mat-icon matListItemIcon>{{item.icon}}</mat-icon>
-          <span matListItemTitle>{{item.label}}</span>
-        </a>
-      }
-    </mat-nav-list>
-  </mat-sidenav>
+  <!-- Organization Dashboard -->
+  <ng-container *ngIf="statistics$?.organizationStats">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <!-- Volunteer Engagement -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Volunteer Engagement</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Total Volunteers</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.totalVolunteers }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Active Volunteers</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.activeVolunteers }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">New This Month</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.newVolunteersThisMonth }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Retention Rate</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.volunteerRetentionRate | number:'1.0-0' }}%</p>
+          </div>
+        </div>
+      </div>
 
-  <!-- Main Content -->
-  <mat-sidenav-content class="bg-gray-50">
-    <!-- Top Toolbar -->
-    <mat-toolbar class="bg-white border-b">
-      <button mat-icon-button (click)="toggleMenu()">
-        <mat-icon>menu</mat-icon>
-      </button>
+      <!-- Event Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Events</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Total Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.totalEvents }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Ongoing Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.ongoingEvents }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Upcoming Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.upcomingEvents }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Average Rating</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.averageEventRating | number:'1.1-1' }}/5</p>
+          </div>
+        </div>
+      </div>
 
-      <span class="flex-1"></span>
+      <!-- Impact Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Impact</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Total Hours</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.totalVolunteerHours }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Impact Score</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.impactScore }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Resources Shared</p>
+            <p class="text-2xl font-bold">{{ statistics$.organizationStats.resourcesShared }}</p>
+          </div>
+        </div>
+      </div>
 
-      <!-- User Menu -->
-      <button mat-button [matMenuTriggerFor]="userMenu" class="flex items-center">
-        <mat-icon class="mr-2">account_circle</mat-icon>
-        <span>{{userName}}</span>
-        <mat-icon>arrow_drop_down</mat-icon>
-      </button>
-
-      <mat-menu #userMenu="matMenu">
-        @if(userRole === 'VOLUNTEER') {
-          <a mat-menu-item routerLink="/dashboard/profile">
-            <mat-icon>person</mat-icon>
-            <span>My Profile</span>
-          </a>
-        } @else if(userRole === 'ORGANIZATION') {
-          <a mat-menu-item routerLink="/dashboard/profile">
-            <mat-icon>business</mat-icon>
-            <span>Organization Profile</span>
-          </a>
-        }
-        <button mat-menu-item (click)="logout()">
-          <mat-icon>exit_to_app</mat-icon>
-          <span>Logout</span>
-        </button>
-      </mat-menu>
-    </mat-toolbar>
-
-    <!-- Page Content -->
-    <div class="p-6">
-      <router-outlet></router-outlet>
+      <!-- Top Volunteers -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Top Volunteers</h3>
+        <div class="space-y-4">
+          <div *ngFor="let volunteer of statistics$.organizationStats.topVolunteers" class="border-b pb-2">
+            <p class="font-medium">{{ volunteer.name }}</p>
+            <p class="text-sm text-gray-600">{{ volunteer.hoursContributed }} hours</p>
+            <p class="text-sm text-gray-500">{{ volunteer.eventsAttended }} events</p>
+          </div>
+        </div>
+      </div>
     </div>
-  </mat-sidenav-content>
-</mat-sidenav-container> 
+  </ng-container>
+
+  <!-- Admin Dashboard -->
+  <ng-container *ngIf="statistics$?.adminStats">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <!-- Platform Overview -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Platform Overview</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Total Users</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.totalUsers }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Active Users</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.activeUsers }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Engagement Rate</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.platformEngagementRate | number:'1.0-0' }}%</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Organization Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Organizations</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Total Organizations</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.totalOrganizations }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Verified</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.verifiedOrganizations }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Pending Verification</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.pendingVerifications }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Events</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">Total Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.totalEvents }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Active Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.activeEvents }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Completed Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.completedEvents }}</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Canceled Events</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.canceledEvents }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Metrics -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Growth</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-gray-600">User Growth Rate</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.userGrowthRate | number:'1.0-0' }}%</p>
+          </div>
+          <div>
+            <p class="text-gray-600">Event Growth Rate</p>
+            <p class="text-2xl font-bold">{{ statistics$.adminStats.eventGrowthRate | number:'1.0-0' }}%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+      <canvas id="hoursChart"></canvas>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+      <canvas id="categoryChart"></canvas>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+      <canvas id="participationChart"></canvas>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+      <canvas id="growthChart"></canvas>
+    </div>
+  </div>
+</div> 

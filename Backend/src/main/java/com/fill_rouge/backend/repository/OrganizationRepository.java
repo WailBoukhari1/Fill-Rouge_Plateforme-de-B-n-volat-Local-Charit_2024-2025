@@ -1,12 +1,13 @@
 package com.fill_rouge.backend.repository;
 
-import com.fill_rouge.backend.domain.Organization;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.fill_rouge.backend.domain.Organization;
 
 @Repository
 public interface OrganizationRepository extends MongoRepository<Organization, String> {
@@ -42,4 +43,9 @@ public interface OrganizationRepository extends MongoRepository<Organization, St
     boolean existsByRegistrationNumber(String registrationNumber);
     
     boolean existsByTaxId(String taxId);
+
+    Optional<Organization> findByUserEmail(String email);
+
+    long countByVerifiedTrue();
+    long countByVerifiedFalse();
 }

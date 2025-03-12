@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.fill_rouge.backend.constant.ValidationConstants;
+import com.fill_rouge.backend.domain.Organization;
+import com.fill_rouge.backend.domain.SocialMediaLinks;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -77,8 +79,7 @@ public class OrganizationRequest {
     @Schema(description = "Social media links", example = "[\"https://twitter.com/globalhelp\"]")
     @Size(max = ValidationConstants.MAX_SOCIAL_MEDIA_LINKS, message = "Cannot exceed {max} social media links")
     @Builder.Default
-    private List<@Pattern(regexp = ValidationConstants.URL_REGEX, message = "Invalid social media URL format") String> 
-        socialMediaLinks = new ArrayList<>();
+    private SocialMediaLinks socialMediaLinks = new SocialMediaLinks();
 
     @Schema(description = "Registration number", example = "REG123456")
     @Pattern(regexp = ValidationConstants.REGISTRATION_REGEX, message = "Invalid registration number format")

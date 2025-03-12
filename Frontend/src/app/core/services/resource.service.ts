@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpEvent, HttpRequest } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpRequest, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Resource, ResourceType, ResourceUploadResponse } from '../models/resource.model';
@@ -8,12 +8,12 @@ import { Resource, ResourceType, ResourceUploadResponse } from '../models/resour
   providedIn: 'root'
 })
 export class ResourceService {
-  private apiUrl = `${environment.apiUrl}/api/resources`;
+  private apiUrl = `${environment.apiUrl}/resources`;
 
   constructor(private http: HttpClient) {}
 
   getResources(type?: ResourceType): Observable<Resource[]> {
-    const params = type ? { type } : {};
+    const params = new HttpParams().set('type', type || '');
     return this.http.get<Resource[]>(this.apiUrl, { params });
   }
 

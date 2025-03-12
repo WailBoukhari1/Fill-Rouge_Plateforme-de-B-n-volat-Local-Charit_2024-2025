@@ -322,6 +322,30 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success(hasSubmitted));
     }
 
+    @GetMapping("/registered")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    @Operation(summary = "Get registered events", description = "Get all events a volunteer is registered for")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getRegisteredEvents(
+            @RequestHeader("X-User-ID") String userId) {
+        List<Event> events = eventService.getEventsByParticipant(userId);
+        List<EventResponse> responses = events.stream()
+                .map(event -> eventMapper.toResponse(event, userId))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @GetMapping("/waitlist")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    @Operation(summary = "Get waitlisted events", description = "Get all events a volunteer is waitlisted for")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getWaitlistedEvents(
+            @RequestHeader("X-User-ID") String userId) {
+        List<Event> events = eventService.getEventsByWaitlistedParticipant(userId);
+        List<EventResponse> responses = events.stream()
+                .map(event -> eventMapper.toResponse(event, userId))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     // Helper method to create paged response
     private ResponseEntity<ApiResponse<List<EventResponse>>> createPagedResponse(
             Page<Event> eventPage,

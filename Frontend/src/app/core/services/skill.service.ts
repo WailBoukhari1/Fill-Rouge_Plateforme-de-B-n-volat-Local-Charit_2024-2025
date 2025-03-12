@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Skill, SkillCategory, SkillEndorsement } from '../models/skill.model';
@@ -8,12 +8,12 @@ import { Skill, SkillCategory, SkillEndorsement } from '../models/skill.model';
   providedIn: 'root'
 })
 export class SkillService {
-  private apiUrl = `${environment.apiUrl}/api/skills`;
+  private apiUrl = `${environment.apiUrl}/skills`;
 
   constructor(private http: HttpClient) {}
 
   getSkills(category?: SkillCategory): Observable<Skill[]> {
-    const params = category ? { category } : {};
+    const params = new HttpParams().set('category', category || '');
     return this.http.get<Skill[]>(this.apiUrl, { params });
   }
 

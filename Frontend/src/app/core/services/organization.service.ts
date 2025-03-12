@@ -30,7 +30,7 @@ export interface ImpactMetrics {
   providedIn: 'root'
 })
 export class OrganizationService {
-  private apiUrl = `${environment.apiUrl}/api/organizations`;
+  private apiUrl = `${environment.apiUrl}/organizations`;
 
   constructor(private http: HttpClient) {}
 

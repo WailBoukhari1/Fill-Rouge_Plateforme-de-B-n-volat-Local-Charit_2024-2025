@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-09T10:21:39+0000",
+    date = "2025-03-11T23:35:01+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -25,23 +25,23 @@ public class EventMapperImpl implements EventMapper {
             return null;
         }
 
-        Event event = new Event();
+        Event.EventBuilder event = Event.builder();
 
-        event.setCategory( request.getCategory() );
-        event.setContactEmail( request.getContactEmail() );
-        event.setContactPerson( request.getContactPerson() );
-        event.setContactPhone( request.getContactPhone() );
-        event.setDescription( request.getDescription() );
-        event.setEndDate( request.getEndDate() );
-        event.setLocation( request.getLocation() );
-        event.setMaxParticipants( request.getMaxParticipants() );
-        event.setStartDate( request.getStartDate() );
-        event.setTitle( request.getTitle() );
+        event.category( request.getCategory() );
+        event.contactEmail( request.getContactEmail() );
+        event.contactPerson( request.getContactPerson() );
+        event.contactPhone( request.getContactPhone() );
+        event.description( request.getDescription() );
+        event.endDate( request.getEndDate() );
+        event.location( request.getLocation() );
+        event.maxParticipants( request.getMaxParticipants() );
+        event.startDate( request.getStartDate() );
+        event.title( request.getTitle() );
 
-        event.setCreatedAt( LocalDateTime.now() );
-        event.setUpdatedAt( LocalDateTime.now() );
+        event.createdAt( LocalDateTime.now() );
+        event.updatedAt( LocalDateTime.now() );
 
-        return event;
+        return event.build();
     }
 
     @Override

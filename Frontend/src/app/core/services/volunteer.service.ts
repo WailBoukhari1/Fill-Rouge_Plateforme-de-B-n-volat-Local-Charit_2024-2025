@@ -81,7 +81,7 @@ interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class VolunteerService {
-  private apiUrl = environment.apiUrl + '/api/volunteers';
+  private apiUrl = environment.apiUrl + '/volunteers';
 
   constructor(
     private http: HttpClient,

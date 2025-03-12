@@ -8,7 +8,7 @@ import { Achievement, AchievementType, AchievementCategory } from '../models/ach
   providedIn: 'root'
 })
 export class AchievementService {
-  private apiUrl = `${environment.apiUrl}/api/achievements`;
+  private apiUrl = `${environment.apiUrl}/achievements`;
 
   constructor(private http: HttpClient) {}
 

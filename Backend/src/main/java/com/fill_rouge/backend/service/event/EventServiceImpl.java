@@ -4,11 +4,13 @@ import com.fill_rouge.backend.constant.EventCategory;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
 import com.fill_rouge.backend.repository.EventFeedbackRepository;
 import com.fill_rouge.backend.repository.EventRepository;
+import com.fill_rouge.backend.service.user.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ public class EventServiceImpl implements EventService {
     
     private final EventRepository eventRepository;
     private final EventFeedbackRepository feedbackRepository;
+    private final IUserService userService;
 
     @Override
     public Event createEvent(EventRequest request, String organizationId) {
@@ -275,5 +278,23 @@ public class EventServiceImpl implements EventService {
         double averageRating = getAverageRating(event.getId());
         event.setAverageRating(averageRating);
         eventRepository.save(event);
+    }
+
+    @Override
+    public List<Event> getEventsByParticipant(String userId) {
+        User user = userService.getUserById(userId);
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found with ID: " + userId);
+        }
+        return eventRepository.findByParticipantsContaining(user.getId());
+    }
+
+    @Override
+    public List<Event> getEventsByWaitlistedParticipant(String userId) {
+        User user = userService.getUserById(userId);
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found with ID: " + userId);
+        }
+        return eventRepository.findByWaitlistContaining(user.getId());
     }
 } 

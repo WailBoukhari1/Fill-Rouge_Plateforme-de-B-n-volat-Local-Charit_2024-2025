@@ -69,16 +69,23 @@ export const authReducer = createReducer(
     error: null
   })),
 
-  on(AuthActions.submitQuestionnaireSuccess, (state, { user }) => ({
-    ...state,
-    user: {
+  on(AuthActions.submitQuestionnaireSuccess, (state, { user }) => {
+    const updatedUser = {
       ...state.user,
       ...user,
       questionnaireCompleted: true
-    },
-    loading: false,
-    error: null
-  })),
+    };
+    
+    // Update localStorage
+    localStorage.setItem('user_data', JSON.stringify(updatedUser));
+    
+    return {
+      ...state,
+      user: updatedUser,
+      loading: false,
+      error: null
+    };
+  }),
 
   on(AuthActions.submitQuestionnaireFailure, (state, { error }) => ({
     ...state,

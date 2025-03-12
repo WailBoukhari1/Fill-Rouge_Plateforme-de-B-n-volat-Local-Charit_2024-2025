@@ -1,19 +1,8 @@
 package com.fill_rouge.backend.service.auth;
 
-import com.fill_rouge.backend.config.security.JwtService;
-import com.fill_rouge.backend.constant.Role;
-import com.fill_rouge.backend.domain.User;
-import com.fill_rouge.backend.domain.VolunteerProfile;
-import com.fill_rouge.backend.dto.request.LoginRequest;
-import com.fill_rouge.backend.dto.request.RegisterRequest;
-import com.fill_rouge.backend.dto.request.QuestionnaireRequest;
-import com.fill_rouge.backend.dto.response.AuthResponse;
-import com.fill_rouge.backend.repository.UserRepository;
-import com.fill_rouge.backend.repository.VolunteerProfileRepository;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +18,22 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import com.fill_rouge.backend.config.security.JwtService;
+import com.fill_rouge.backend.constant.Role;
+import com.fill_rouge.backend.domain.User;
+import com.fill_rouge.backend.domain.VolunteerProfile;
+import com.fill_rouge.backend.dto.request.LoginRequest;
+import com.fill_rouge.backend.dto.request.QuestionnaireRequest;
+import com.fill_rouge.backend.dto.request.RegisterRequest;
+import com.fill_rouge.backend.dto.response.AuthResponse;
+import com.fill_rouge.backend.repository.OrganizationRepository;
+import com.fill_rouge.backend.repository.UserRepository;
+import com.fill_rouge.backend.repository.VolunteerProfileRepository;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +44,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final UserRepository userRepository;
     private final VolunteerProfileRepository volunteerProfileRepository;
+    private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -288,38 +289,30 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         // Update user information based on questionnaire
-        // We'll store these in the volunteer profile instead of the user entity
-        boolean isOrganization = "ORGANIZATION".equals(request.getRole());
-        
         user.setQuestionnaireCompleted(true);
         
         // Handle role-specific information
-        if (isOrganization) {
-            user.setRole(Role.ORGANIZATION);
-            // Additional organization-specific logic can be added here
-            // For example, creating an organization profile
-        } else {
+        if (Role.VOLUNTEER.equals(request.getRole())) {
+            user.setRole(Role.VOLUNTEER);
             // Update volunteer profile
-            Optional<VolunteerProfile> profileOpt = volunteerProfileRepository.findByUserEmail(email);
-            
-            if (profileOpt.isEmpty()) {
-                throw new RuntimeException("Volunteer profile not found");
-            }
-            
-            VolunteerProfile profile = profileOpt.get();
+            VolunteerProfile profile = volunteerProfileRepository.findByUserEmail(email)
+                .orElseThrow(() -> new RuntimeException("Volunteer profile not found"));
             
             // Update profile with questionnaire data
             profile.setBio(request.getBio());
             profile.setPhoneNumber(request.getPhoneNumber());
             profile.setAddress(request.getAddress());
             profile.setCity(request.getCity());
-            profile.setCountry(request.getCountry());
             
-            // For now, we'll skip updating skills, interests, and availability
-            // These can be implemented in a future update
+            // Convert List to Set for skills and interests
+            if (request.getSkills() != null) {
+                profile.setSkills(new HashSet<>(request.getSkills()));
+            }
+            if (request.getInterests() != null) {
+                profile.setInterests(new HashSet<>(request.getInterests()));
+            }
             
             profile.setUpdatedAt(LocalDateTime.now());
-            
             volunteerProfileRepository.save(profile);
         }
         
@@ -327,10 +320,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user = userRepository.save(user);
         
         // Generate new tokens
-        String jwt = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        var jwtToken = jwtService.generateToken(user);
+        var refreshToken = jwtService.generateRefreshToken(user);
         
-        return createAuthResponse(user, jwt, refreshToken);
+        return AuthResponse.builder()
+                .token(jwtToken)
+                .refreshToken(refreshToken)
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .userId(user.getId())
+                .roles(user.getAuthorities().stream().map(Object::toString).collect(java.util.stream.Collectors.toSet()))
+                .emailVerified(user.isEmailVerified())
+                .twoFactorEnabled(user.isTwoFactorEnabled())
+                .lastLoginIp(user.getLastLoginIp())
+                .lastLoginAt(user.getLastLoginDate())
+                .accountLocked(!user.isAccountNonLocked())
+                .accountExpired(!user.isAccountNonExpired())
+                .credentialsExpired(!user.isCredentialsNonExpired())
+                .questionnaireCompleted(user.isQuestionnaireCompleted())
+                .build();
     }
 
     private void validatePassword(String password) {

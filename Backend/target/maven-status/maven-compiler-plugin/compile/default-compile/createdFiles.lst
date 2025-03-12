@@ -128,7 +128,6 @@ com\fill_rouge\backend\controller\MessageController.class
 com\fill_rouge\backend\domain\Notification$NotificationBuilder.class
 com\fill_rouge\backend\service\EventRegistrationService.class
 com\fill_rouge\backend\dto\response\EngagementReportResponse$EngagementReportResponseBuilder.class
-com\fill_rouge\backend\service\security\SecurityScanService$SecurityAction.class
 com\fill_rouge\backend\domain\Achievement.class
 com\fill_rouge\backend\service\communication\CommunicationServiceImpl.class
 com\fill_rouge\backend\controller\ReportController.class
@@ -165,7 +164,6 @@ com\fill_rouge\backend\config\ReportConfig.class
 com\fill_rouge\backend\dto\response\ApiResponse$Meta$MetaBuilder.class
 com\fill_rouge\backend\mapper\OrganizationMapperImpl.class
 com\fill_rouge\backend\service\report\ReportServiceImpl.class
-com\fill_rouge\backend\service\security\SecurityScanService.class
 com\fill_rouge\backend\service\EventAuditService.class
 com\fill_rouge\backend\domain\Communication.class
 com\fill_rouge\backend\service\volunteer\VolunteerProfileService.class
@@ -190,7 +188,6 @@ com\fill_rouge\backend\mapper\EventMapper.class
 com\fill_rouge\backend\constant\CommunicationConstants.class
 com\fill_rouge\backend\dto\request\AchievementRequest.class
 com\fill_rouge\backend\dto\response\ImpactReportResponse$ImpactReportResponseBuilder.class
-com\fill_rouge\backend\service\security\SecurityScanService$SecurityIssue.class
 com\fill_rouge\backend\dto\request\TwoFactorSetupRequest$TwoFactorSetupRequestBuilder.class
 com\fill_rouge\backend\dto\request\VolunteerAchievementRequest.class
 com\fill_rouge\backend\dto\response\EventResponse.class

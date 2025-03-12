@@ -33,6 +33,8 @@ public interface EventService {
     Event unregisterParticipant(String eventId, String userId);
     boolean isEventFull(String eventId);
     long getParticipantCount(String eventId);
+    List<Event> getEventsByParticipant(String userId);
+    List<Event> getEventsByWaitlistedParticipant(String userId);
     
     // Feedback & Rating
     EventFeedback submitFeedback(String eventId, String volunteerId, EventFeedback feedback);

@@ -2,6 +2,7 @@ package com.fill_rouge.backend.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fill_rouge.backend.domain.Organization;
+import com.fill_rouge.backend.domain.SocialMediaLinks;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -124,6 +125,16 @@ public class OrganizationResponse {
             return null;
         }
 
+        List<String> socialLinks = new ArrayList<>();
+        if (organization.getSocialMediaLinks() != null) {
+            SocialMediaLinks links = organization.getSocialMediaLinks();
+            if (links.getFacebook() != null) socialLinks.add(links.getFacebook());
+            if (links.getTwitter() != null) socialLinks.add(links.getTwitter());
+            if (links.getInstagram() != null) socialLinks.add(links.getInstagram());
+            if (links.getLinkedin() != null) socialLinks.add(links.getLinkedin());
+            if (links.getWebsite() != null) socialLinks.add(links.getWebsite());
+        }
+
         return OrganizationResponse.builder()
                 .id(organization.getId())
                 .userId(organization.getUser().getId())
@@ -139,7 +150,7 @@ public class OrganizationResponse {
                 .country(organization.getCountry())
                 .coordinates(organization.getCoordinates())
                 .focusAreas(organization.getFocusAreas())
-                .socialMediaLinks(organization.getSocialMediaLinks())
+                .socialMediaLinks(socialLinks)
                 .verified(organization.isVerified())
                 .verificationDate(organization.getVerificationDate())
                 .registrationNumber(organization.getRegistrationNumber())

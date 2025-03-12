@@ -6,6 +6,11 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Field;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import com.fill_rouge.backend.domain.SocialMediaLinks;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,6 +20,9 @@ import java.util.Set;
 
 @Data
 @Document(collection = "organizations")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Organization {
     @Id
     private String id;
@@ -62,10 +70,13 @@ public class Organization {
     private double[] coordinates;
     
     @NotEmpty(message = "At least one focus area is required")
+    @Builder.Default
     private Set<String> focusAreas = new HashSet<>();
     
-    private List<String> socialMediaLinks = new ArrayList<>();
+    @Field("social_media_links")
+    private SocialMediaLinks socialMediaLinks;
     
+    @Builder.Default
     private boolean verified = false;
     
     private LocalDateTime verificationDate;
@@ -80,47 +91,50 @@ public class Organization {
     
     @DecimalMin(value = "0.0", message = "Rating cannot be negative")
     @DecimalMax(value = "5.0", message = "Rating cannot exceed 5.0")
+    @Builder.Default
     private double rating = 0.0;
     
     @PositiveOrZero(message = "Number of ratings cannot be negative")
+    @Builder.Default
     private int numberOfRatings = 0;
     
     @PositiveOrZero(message = "Total events hosted cannot be negative")
+    @Builder.Default
     private int totalEventsHosted = 0;
     
+    @PositiveOrZero(message = "Total volunteers cannot be negative")
+    @Builder.Default
+    private int totalVolunteers = 0;
+    
     @PositiveOrZero(message = "Active volunteers cannot be negative")
+    @Builder.Default
     private int activeVolunteers = 0;
     
     @PositiveOrZero(message = "Total volunteer hours cannot be negative")
+    @Builder.Default
     private int totalVolunteerHours = 0;
     
     @DecimalMin(value = "0.0", message = "Impact score cannot be negative")
+    @Builder.Default
     private double impactScore = 0.0;
     
+    @Builder.Default
     private boolean acceptingVolunteers = true;
     
     @NotNull(message = "Created date is required")
-    private LocalDateTime createdAt;
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
     
     @NotNull(message = "Updated date is required")
-    private LocalDateTime updatedAt;
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
     
-    public Organization() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        this.verified = false;
-        this.rating = 0.0;
-        this.numberOfRatings = 0;
-        this.totalEventsHosted = 0;
-        this.activeVolunteers = 0;
-        this.totalVolunteerHours = 0;
-        this.impactScore = 0.0;
-        this.acceptingVolunteers = true;
-        this.focusAreas = new HashSet<>();
-        this.socialMediaLinks = new ArrayList<>();
-        this.documents = new ArrayList<>();
-    }
-
+    @DBRef
+    private List<VolunteerProfile> volunteerProfiles = new ArrayList<>();
+    
+    @DBRef
+    private List<Event> events = new ArrayList<>();
+    
     public void updateRating(int newRating) {
         if (newRating < 1 || newRating > 5) {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
@@ -129,5 +143,26 @@ public class Organization {
         this.numberOfRatings++;
         this.rating = totalRating / this.numberOfRatings;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public int getVolunteerCount() {
+        return volunteerProfiles.size();
+    }
+
+    public int getActiveVolunteerCount() {
+        LocalDateTime monthAgo = LocalDateTime.now().minusMonths(1);
+        return (int) volunteerProfiles.stream()
+            .filter(v -> v.getLastActivityDate() != null && v.getLastActivityDate().isAfter(monthAgo))
+            .count();
+    }
+
+    public int getTotalVolunteerHours() {
+        return events.stream()
+            .mapToInt(Event::getTotalVolunteerHours)
+            .sum();
+    }
+
+    public int getTotalEventsHosted() {
+        return events.size();
     }
 } 

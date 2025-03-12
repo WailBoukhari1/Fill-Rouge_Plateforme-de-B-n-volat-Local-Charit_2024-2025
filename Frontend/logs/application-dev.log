@@ -1,64 +1,379 @@
-2025-03-06 16:55:02.851 [restartedMain] INFO  c.f.backend.BackendApplication - Starting BackendApplication using Java 23.0.2 with PID 20032 (C:\Users\ssngn\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\Backend\target\classes started by ssngn in C:\Users\ssngn\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\Frontend)
-2025-03-06 16:55:02.855 [restartedMain] DEBUG c.f.backend.BackendApplication - Running with Spring Boot v3.2.2, Spring v6.1.3
-2025-03-06 16:55:02.858 [restartedMain] INFO  c.f.backend.BackendApplication - The following 1 profile is active: "dev"
-2025-03-06 16:55:03.010 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2025-03-06 16:55:03.011 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2025-03-06 16:55:05.933 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
-2025-03-06 16:55:06.384 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 425 ms. Found 12 MongoDB repository interfaces.
-2025-03-06 16:55:06.782 [restartedMain] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: java.lang.IllegalStateException: Unable to load cache item
-2025-03-06 16:55:06.809 [restartedMain] INFO  o.s.b.a.l.ConditionEvaluationReportLogger - 
-
-Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
-2025-03-06 16:55:06.846 [restartedMain] ERROR o.s.boot.SpringApplication - Application run failed
-java.lang.IllegalStateException: Unable to load cache item
-	at org.springframework.cglib.core.internal.LoadingCache.createEntry(LoadingCache.java:75)
-	at org.springframework.cglib.core.internal.LoadingCache.get(LoadingCache.java:34)
-	at org.springframework.cglib.core.AbstractClassGenerator$ClassLoaderData.get(AbstractClassGenerator.java:130)
-	at org.springframework.cglib.core.AbstractClassGenerator.create(AbstractClassGenerator.java:317)
-	at org.springframework.cglib.proxy.Enhancer.createHelper(Enhancer.java:562)
-	at org.springframework.cglib.proxy.Enhancer.createClass(Enhancer.java:407)
-	at org.springframework.context.annotation.ConfigurationClassEnhancer.createClass(ConfigurationClassEnhancer.java:138)
-	at org.springframework.context.annotation.ConfigurationClassEnhancer.enhance(ConfigurationClassEnhancer.java:109)
-	at org.springframework.context.annotation.ConfigurationClassPostProcessor.enhanceConfigurationClasses(ConfigurationClassPostProcessor.java:533)
-	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanFactory(ConfigurationClassPostProcessor.java:310)
-	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:363)
-	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:153)
-	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:788)
-	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:606)
-	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
-	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754)
-	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456)
-	at org.springframework.boot.SpringApplication.run(SpringApplication.java:334)
-	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
-	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
-	at com.fill_rouge.backend.BackendApplication.main(BackendApplication.java:17)
-	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
-Caused by: java.lang.NoClassDefFoundError: com/fill_rouge/backend/config/security/JwtConfig$RefreshToken
-	at java.base/java.lang.Class.getDeclaredMethods0(Native Method)
-	at java.base/java.lang.Class.privateGetDeclaredMethods(Class.java:3650)
-	at java.base/java.lang.Class.getDeclaredMethods(Class.java:2735)
-	at org.springframework.cglib.core.ReflectUtils.addAllMethods(ReflectUtils.java:396)
-	at org.springframework.cglib.proxy.Enhancer.getMethods(Enhancer.java:627)
-	at org.springframework.cglib.proxy.Enhancer.generateClass(Enhancer.java:664)
-	at org.springframework.cglib.transform.TransformingClassGenerator.generateClass(TransformingClassGenerator.java:35)
-	at org.springframework.cglib.core.DefaultGeneratorStrategy.generate(DefaultGeneratorStrategy.java:26)
-	at org.springframework.cglib.core.ClassLoaderAwareGeneratorStrategy.generate(ClassLoaderAwareGeneratorStrategy.java:57)
-	at org.springframework.cglib.core.AbstractClassGenerator.generate(AbstractClassGenerator.java:366)
-	at org.springframework.cglib.proxy.Enhancer.generate(Enhancer.java:575)
-	at org.springframework.cglib.core.AbstractClassGenerator$ClassLoaderData.lambda$new$1(AbstractClassGenerator.java:107)
-	at org.springframework.cglib.core.internal.LoadingCache.lambda$createEntry$1(LoadingCache.java:52)
-	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
-	at org.springframework.cglib.core.internal.LoadingCache.createEntry(LoadingCache.java:57)
-	... 23 common frames omitted
-Caused by: java.lang.ClassNotFoundException: com.fill_rouge.backend.config.security.JwtConfig$RefreshToken
-	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
-	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
-	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:528)
-	at java.base/java.lang.Class.forName0(Native Method)
-	at java.base/java.lang.Class.forName(Class.java:578)
-	at java.base/java.lang.Class.forName(Class.java:557)
-	at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass(RestartClassLoader.java:121)
-	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:528)
-	... 38 common frames omitted
+2025-03-12 17:08:59.214 [MessageBroker-1] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 3, active threads = 2, queued tasks = 0, completed tasks = 1]
+2025-03-12 17:18:58.388 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /auth/login
+2025-03-12 17:18:58.393 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Securing POST /auth/login
+2025-03-12 17:18:58.394 [http-nio-8080-exec-9] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-03-12 17:18:58.395 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Secured POST /auth/login
+2025-03-12 17:18:58.396 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - POST "/api/auth/login", parameters={}
+2025-03-12 17:18:58.397 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.AuthController#login(LoginRequest)
+2025-03-12 17:18:58.408 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/json;charset=UTF-8" to [LoginRequest(email=kalil@mailinator.com, password=Pa$$w0rd!, twoFactorCode=null)]
+2025-03-12 17:18:58.433 [http-nio-8080-exec-9] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:18:58.437 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:18:58.527 [http-nio-8080-exec-9] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:18:58.528 [http-nio-8080-exec-9] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:18:58.528 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:18:58.590 [http-nio-8080-exec-9] DEBUG o.s.s.a.d.DaoAuthenticationProvider - Authenticated user
+2025-03-12 17:18:58.593 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - Saving Document containing fields: [_id, firstName, lastName, email, password, role, enabled, accountNonLocked, emailVerified, lastLoginDate, lastLoginIp, createdAt, updatedAt, twoFactorEnabled, failedLoginAttempts, passwordLastChanged, previousPasswords, questionnaireCompleted, _class]
+2025-03-12 17:18:58.601 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:18:58.602 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Login successful, data=AuthResponse(token=eyJhbGciOiJIUzI1NiJ9.eyJ (truncated)...]
+2025-03-12 17:18:58.603 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-12 17:18:58.711 [http-nio-8080-exec-15] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /volunteers/profile
+2025-03-12 17:18:58.716 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Securing GET /volunteers/profile
+2025-03-12 17:18:58.721 [http-nio-8080-exec-7] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:18:58.722 [http-nio-8080-exec-7] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:18:58.722 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:18:58.727 [http-nio-8080-exec-7] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:18:58.728 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Secured GET /volunteers/profile
+2025-03-12 17:18:58.729 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/volunteers/profile", parameters={}
+2025-03-12 17:18:58.730 [http-nio-8080-exec-7] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-12 17:18:58.739 [http-nio-8080-exec-7] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-12 17:18:58.740 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-12 17:18:58.741 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:18:58.741 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-12T17:18:58.74 (truncated)...]
+2025-03-12 17:18:58.741 [http-nio-8080-exec-7] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource volunteers/profile.]
+2025-03-12 17:18:58.742 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-12 17:19:00.351 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /stats/volunteer/67
+2025-03-12 17:19:00.355 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /stats/user/67
+2025-03-12 17:19:00.367 [http-nio-8080-exec-21] DEBUG o.s.security.web.FilterChainProxy - Securing GET /stats/volunteer/67
+2025-03-12 17:19:00.369 [http-nio-8080-exec-21] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:00.370 [http-nio-8080-exec-21] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:00.371 [http-nio-8080-exec-21] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:00.378 [http-nio-8080-exec-21] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:00.379 [http-nio-8080-exec-12] DEBUG o.s.security.web.FilterChainProxy - Securing GET /stats/user/67
+2025-03-12 17:19:00.379 [http-nio-8080-exec-21] DEBUG o.s.security.web.FilterChainProxy - Secured GET /stats/volunteer/67
+2025-03-12 17:19:00.380 [http-nio-8080-exec-21] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/stats/volunteer/67", parameters={}
+2025-03-12 17:19:00.380 [http-nio-8080-exec-21] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-12 17:19:00.380 [http-nio-8080-exec-12] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:00.381 [http-nio-8080-exec-12] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:00.381 [http-nio-8080-exec-12] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:00.383 [http-nio-8080-exec-21] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-12 17:19:00.383 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-12 17:19:00.383 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:00.384 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-12T17:19:00.38 (truncated)...]
+2025-03-12 17:19:00.384 [http-nio-8080-exec-21] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource stats/volunteer/67.]
+2025-03-12 17:19:00.385 [http-nio-8080-exec-21] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-12 17:19:00.387 [http-nio-8080-exec-12] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:00.387 [http-nio-8080-exec-12] DEBUG o.s.security.web.FilterChainProxy - Secured GET /stats/user/67
+2025-03-12 17:19:00.387 [http-nio-8080-exec-12] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/stats/user/67", parameters={}
+2025-03-12 17:19:00.387 [http-nio-8080-exec-12] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-12 17:19:00.390 [http-nio-8080-exec-12] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-12 17:19:00.391 [http-nio-8080-exec-12] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-12 17:19:00.391 [http-nio-8080-exec-12] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:00.392 [http-nio-8080-exec-12] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-12T17:19:00.39 (truncated)...]
+2025-03-12 17:19:00.392 [http-nio-8080-exec-12] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource stats/user/67.]
+2025-03-12 17:19:00.393 [http-nio-8080-exec-12] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-12 17:19:00.813 [http-nio-8080-exec-11] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/events/upcoming
+2025-03-12 17:19:00.813 [http-nio-8080-exec-16] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/events/registered
+2025-03-12 17:19:00.813 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/events/waitlist
+2025-03-12 17:19:00.817 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/waitlist
+2025-03-12 17:19:00.817 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/upcoming
+2025-03-12 17:19:00.817 [http-nio-8080-exec-15] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/registered
+2025-03-12 17:19:00.820 [http-nio-8080-exec-7] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:00.820 [http-nio-8080-exec-9] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:00.820 [http-nio-8080-exec-15] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:00.821 [http-nio-8080-exec-7] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:00.821 [http-nio-8080-exec-15] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:00.821 [http-nio-8080-exec-9] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:00.821 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:00.821 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:00.821 [http-nio-8080-exec-15] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:00.828 [http-nio-8080-exec-15] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:00.829 [http-nio-8080-exec-9] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:00.829 [http-nio-8080-exec-7] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:00.830 [http-nio-8080-exec-15] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/registered
+2025-03-12 17:19:00.830 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/waitlist
+2025-03-12 17:19:00.830 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/upcoming
+2025-03-12 17:19:00.830 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/waitlist", parameters={}
+2025-03-12 17:19:00.830 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/upcoming", parameters={}
+2025-03-12 17:19:00.830 [http-nio-8080-exec-15] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/registered", parameters={}
+2025-03-12 17:19:00.831 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getUpcomingEvents(String, Pageable)
+2025-03-12 17:19:00.831 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getRegisteredEvents(String)
+2025-03-12 17:19:00.831 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getWaitlistedEvents(String)
+2025-03-12 17:19:00.833 [http-nio-8080-exec-7] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:00.833 [http-nio-8080-exec-15] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:00.834 [http-nio-8080-exec-15] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:00.834 [http-nio-8080-exec-7] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:00.835 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:00.835 [http-nio-8080-exec-15] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:00.836 [http-nio-8080-exec-9] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "status" : { "$java" : ACTIVE }, "startDate" : { "$gt" : { "$java" : 2025-03-12T17:19:00.834233100 } } }, Fields: {}, Sort: {}
+2025-03-12 17:19:00.837 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:00.837 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:00.838 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "status" : "ACTIVE", "startDate" : { "$gt" : { "$date" : "2025-03-12T17:19:00.834Z"}}} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Event in collection: events
+2025-03-12 17:19:00.838 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:00.838 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:00.839 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:00.838712100, statu (truncated)...]
+2025-03-12 17:19:00.839 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:00.838712100, statu (truncated)...]
+2025-03-12 17:19:00.840 [http-nio-8080-exec-15] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:00.840 [http-nio-8080-exec-7] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:00.840 [http-nio-8080-exec-15] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:19:00.840 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:19:00.843 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:00.843 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Success, data=[], errors=null, errorCode=null, timestamp=2025-03-1 (truncated)...]
+2025-03-12 17:19:00.845 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-12 17:19:01.386 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /volunteers/hours
+2025-03-12 17:19:01.395 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Securing GET /volunteers/hours
+2025-03-12 17:19:01.400 [http-nio-8080-exec-6] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:01.405 [http-nio-8080-exec-6] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:01.406 [http-nio-8080-exec-6] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:01.413 [http-nio-8080-exec-6] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:01.413 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Secured GET /volunteers/hours
+2025-03-12 17:19:01.414 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/volunteers/hours", parameters={}
+2025-03-12 17:19:01.414 [http-nio-8080-exec-6] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-12 17:19:01.416 [http-nio-8080-exec-6] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-12 17:19:01.417 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-12 17:19:01.417 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:01.418 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-12T17:19:01.41 (truncated)...]
+2025-03-12 17:19:01.419 [http-nio-8080-exec-6] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource volunteers/hours.]
+2025-03-12 17:19:01.419 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-12 17:19:03.069 [http-nio-8080-exec-21] DEBUG o.s.security.web.FilterChainProxy - Securing GET /volunteers/hours
+2025-03-12 17:19:03.071 [http-nio-8080-exec-21] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:03.071 [http-nio-8080-exec-21] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:03.071 [http-nio-8080-exec-21] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:03.074 [http-nio-8080-exec-21] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:03.074 [http-nio-8080-exec-21] DEBUG o.s.security.web.FilterChainProxy - Secured GET /volunteers/hours
+2025-03-12 17:19:03.075 [http-nio-8080-exec-21] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/volunteers/hours", parameters={}
+2025-03-12 17:19:03.075 [http-nio-8080-exec-21] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-12 17:19:03.075 [http-nio-8080-exec-21] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-12 17:19:03.076 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-12 17:19:03.076 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:03.076 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-12T17:19:03.07 (truncated)...]
+2025-03-12 17:19:03.076 [http-nio-8080-exec-21] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource volunteers/hours.]
+2025-03-12 17:19:03.076 [http-nio-8080-exec-21] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-12 17:19:04.104 [http-nio-8080-exec-12] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/upcoming
+2025-03-12 17:19:04.106 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/waitlist
+2025-03-12 17:19:04.106 [http-nio-8080-exec-16] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/registered
+2025-03-12 17:19:04.106 [http-nio-8080-exec-12] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:04.106 [http-nio-8080-exec-16] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:04.107 [http-nio-8080-exec-5] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:04.107 [http-nio-8080-exec-5] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:04.107 [http-nio-8080-exec-12] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:04.107 [http-nio-8080-exec-16] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:04.107 [http-nio-8080-exec-12] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:04.107 [http-nio-8080-exec-5] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:04.107 [http-nio-8080-exec-16] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:04.113 [http-nio-8080-exec-5] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:04.113 [http-nio-8080-exec-12] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:04.113 [http-nio-8080-exec-16] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:04.114 [http-nio-8080-exec-12] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/upcoming
+2025-03-12 17:19:04.114 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/waitlist
+2025-03-12 17:19:04.114 [http-nio-8080-exec-16] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/registered
+2025-03-12 17:19:04.114 [http-nio-8080-exec-12] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/upcoming", parameters={}
+2025-03-12 17:19:04.114 [http-nio-8080-exec-16] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/registered", parameters={}
+2025-03-12 17:19:04.114 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/waitlist", parameters={}
+2025-03-12 17:19:04.115 [http-nio-8080-exec-16] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getRegisteredEvents(String)
+2025-03-12 17:19:04.115 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getWaitlistedEvents(String)
+2025-03-12 17:19:04.115 [http-nio-8080-exec-12] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getUpcomingEvents(String, Pageable)
+2025-03-12 17:19:04.116 [http-nio-8080-exec-16] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:04.116 [http-nio-8080-exec-5] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:04.116 [http-nio-8080-exec-16] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:04.116 [http-nio-8080-exec-5] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:04.117 [http-nio-8080-exec-16] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:04.117 [http-nio-8080-exec-5] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:04.117 [http-nio-8080-exec-12] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "status" : { "$java" : ACTIVE }, "startDate" : { "$gt" : { "$java" : 2025-03-12T17:19:04.116317 } } }, Fields: {}, Sort: {}
+2025-03-12 17:19:04.118 [http-nio-8080-exec-12] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "status" : "ACTIVE", "startDate" : { "$gt" : { "$date" : "2025-03-12T17:19:04.116Z"}}} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Event in collection: events
+2025-03-12 17:19:04.119 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:04.119 [http-nio-8080-exec-16] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:04.119 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:04.119 [http-nio-8080-exec-12] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:04.119 [http-nio-8080-exec-16] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:04.120 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:04.119928600, statu (truncated)...]
+2025-03-12 17:19:04.120 [http-nio-8080-exec-12] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Success, data=[], errors=null, errorCode=null, timestamp=2025-03-1 (truncated)...]
+2025-03-12 17:19:04.120 [http-nio-8080-exec-16] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:04.119928600, statu (truncated)...]
+2025-03-12 17:19:04.121 [http-nio-8080-exec-16] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:04.121 [http-nio-8080-exec-5] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:04.121 [http-nio-8080-exec-12] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-12 17:19:04.121 [http-nio-8080-exec-16] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:19:04.121 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:19:04.607 [http-nio-8080-exec-11] DEBUG o.s.security.web.FilterChainProxy - Securing GET /volunteers/hours
+2025-03-12 17:19:04.609 [http-nio-8080-exec-11] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:04.609 [http-nio-8080-exec-11] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:04.610 [http-nio-8080-exec-11] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:04.614 [http-nio-8080-exec-11] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:04.615 [http-nio-8080-exec-11] DEBUG o.s.security.web.FilterChainProxy - Secured GET /volunteers/hours
+2025-03-12 17:19:04.615 [http-nio-8080-exec-11] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/volunteers/hours", parameters={}
+2025-03-12 17:19:04.615 [http-nio-8080-exec-11] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-12 17:19:04.616 [http-nio-8080-exec-11] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-12 17:19:04.617 [http-nio-8080-exec-11] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-12 17:19:04.617 [http-nio-8080-exec-11] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:04.617 [http-nio-8080-exec-11] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-12T17:19:04.61 (truncated)...]
+2025-03-12 17:19:04.618 [http-nio-8080-exec-11] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource volunteers/hours.]
+2025-03-12 17:19:04.618 [http-nio-8080-exec-11] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-12 17:19:05.531 [http-nio-8080-exec-15] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/upcoming
+2025-03-12 17:19:05.534 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/registered
+2025-03-12 17:19:05.534 [http-nio-8080-exec-15] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:05.534 [http-nio-8080-exec-15] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:05.535 [http-nio-8080-exec-15] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:05.535 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/waitlist
+2025-03-12 17:19:05.535 [http-nio-8080-exec-7] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:05.535 [http-nio-8080-exec-7] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:05.535 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:05.536 [http-nio-8080-exec-9] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:05.536 [http-nio-8080-exec-9] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:05.537 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:05.540 [http-nio-8080-exec-15] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:05.540 [http-nio-8080-exec-7] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:05.540 [http-nio-8080-exec-9] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:05.540 [http-nio-8080-exec-15] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/upcoming
+2025-03-12 17:19:05.540 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/registered
+2025-03-12 17:19:05.540 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/waitlist
+2025-03-12 17:19:05.541 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/registered", parameters={}
+2025-03-12 17:19:05.541 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/waitlist", parameters={}
+2025-03-12 17:19:05.541 [http-nio-8080-exec-15] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/upcoming", parameters={}
+2025-03-12 17:19:05.541 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getRegisteredEvents(String)
+2025-03-12 17:19:05.541 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getWaitlistedEvents(String)
+2025-03-12 17:19:05.541 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getUpcomingEvents(String, Pageable)
+2025-03-12 17:19:05.542 [http-nio-8080-exec-7] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:05.542 [http-nio-8080-exec-9] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:05.542 [http-nio-8080-exec-7] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:05.542 [http-nio-8080-exec-9] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:05.543 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:05.543 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:05.543 [http-nio-8080-exec-15] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "status" : { "$java" : ACTIVE }, "startDate" : { "$gt" : { "$java" : 2025-03-12T17:19:05.542439800 } } }, Fields: {}, Sort: {}
+2025-03-12 17:19:05.544 [http-nio-8080-exec-15] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "status" : "ACTIVE", "startDate" : { "$gt" : { "$date" : "2025-03-12T17:19:05.542Z"}}} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Event in collection: events
+2025-03-12 17:19:05.545 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:05.545 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:05.546 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:05.546 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:05.546 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:05.546 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:05.546430400, statu (truncated)...]
+2025-03-12 17:19:05.546 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Success, data=[], errors=null, errorCode=null, timestamp=2025-03-1 (truncated)...]
+2025-03-12 17:19:05.547 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:05.546430400, statu (truncated)...]
+2025-03-12 17:19:05.547 [http-nio-8080-exec-7] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:05.547 [http-nio-8080-exec-9] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:05.547 [http-nio-8080-exec-15] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-12 17:19:05.547 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:19:05.547 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:19:15.501 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/upcoming
+2025-03-12 17:19:15.502 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/registered
+2025-03-12 17:19:15.503 [http-nio-8080-exec-8] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:15.503 [http-nio-8080-exec-8] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:15.503 [http-nio-8080-exec-6] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:15.503 [http-nio-8080-exec-8] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:15.503 [http-nio-8080-exec-6] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:15.503 [http-nio-8080-exec-6] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:15.506 [http-nio-8080-exec-6] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:15.506 [http-nio-8080-exec-8] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:15.507 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/registered
+2025-03-12 17:19:15.507 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/upcoming
+2025-03-12 17:19:15.507 [http-nio-8080-exec-21] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/waitlist
+2025-03-12 17:19:15.507 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/registered", parameters={}
+2025-03-12 17:19:15.507 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/upcoming", parameters={}
+2025-03-12 17:19:15.507 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getRegisteredEvents(String)
+2025-03-12 17:19:15.507 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getUpcomingEvents(String, Pageable)
+2025-03-12 17:19:15.507 [http-nio-8080-exec-6] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:15.508 [http-nio-8080-exec-6] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:15.508 [http-nio-8080-exec-21] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:19:15.508 [http-nio-8080-exec-21] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:19:15.508 [http-nio-8080-exec-6] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:15.508 [http-nio-8080-exec-8] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "status" : { "$java" : ACTIVE }, "startDate" : { "$gt" : { "$java" : 2025-03-12T17:19:15.507897700 } } }, Fields: {}, Sort: {}
+2025-03-12 17:19:15.508 [http-nio-8080-exec-21] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:15.508 [http-nio-8080-exec-8] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "status" : "ACTIVE", "startDate" : { "$gt" : { "$date" : "2025-03-12T17:19:15.507Z"}}} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Event in collection: events
+2025-03-12 17:19:15.509 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:15.510 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:15.510 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:15.510 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:15.510086900, statu (truncated)...]
+2025-03-12 17:19:15.510 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Success, data=[], errors=null, errorCode=null, timestamp=2025-03-1 (truncated)...]
+2025-03-12 17:19:15.510 [http-nio-8080-exec-6] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:15.510 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-12 17:19:15.511 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:19:15.511 [http-nio-8080-exec-21] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:19:15.511 [http-nio-8080-exec-21] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/waitlist
+2025-03-12 17:19:15.512 [http-nio-8080-exec-21] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/waitlist", parameters={}
+2025-03-12 17:19:15.512 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getWaitlistedEvents(String)
+2025-03-12 17:19:15.512 [http-nio-8080-exec-21] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:15.513 [http-nio-8080-exec-21] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:19:15.514 [http-nio-8080-exec-21] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:19:15.515 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:19:15.515 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:19:15.516 [http-nio-8080-exec-21] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:19:15.515723300, statu (truncated)...]
+2025-03-12 17:19:15.516 [http-nio-8080-exec-21] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:19:15.516 [http-nio-8080-exec-21] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:31:20.661 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/registered
+2025-03-12 17:31:20.661 [http-nio-8080-exec-11] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/upcoming
+2025-03-12 17:31:20.662 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/waitlist
+2025-03-12 17:31:20.663 [http-nio-8080-exec-9] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:31:20.663 [http-nio-8080-exec-11] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:31:20.663 [http-nio-8080-exec-7] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:31:20.664 [http-nio-8080-exec-9] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:31:20.664 [http-nio-8080-exec-11] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:31:20.664 [http-nio-8080-exec-7] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:31:20.664 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:20.664 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:20.664 [http-nio-8080-exec-11] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:20.668 [http-nio-8080-exec-7] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:31:20.668 [http-nio-8080-exec-11] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:31:20.668 [http-nio-8080-exec-9] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:31:20.668 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/waitlist
+2025-03-12 17:31:20.669 [http-nio-8080-exec-11] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/upcoming
+2025-03-12 17:31:20.669 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/registered
+2025-03-12 17:31:20.669 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/waitlist", parameters={}
+2025-03-12 17:31:20.669 [http-nio-8080-exec-11] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/upcoming", parameters={}
+2025-03-12 17:31:20.669 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/registered", parameters={}
+2025-03-12 17:31:20.669 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getWaitlistedEvents(String)
+2025-03-12 17:31:20.669 [http-nio-8080-exec-11] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getUpcomingEvents(String, Pageable)
+2025-03-12 17:31:20.669 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getRegisteredEvents(String)
+2025-03-12 17:31:20.670 [http-nio-8080-exec-7] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:20.670 [http-nio-8080-exec-9] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:20.670 [http-nio-8080-exec-9] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:20.670 [http-nio-8080-exec-7] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:20.671 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:20.671 [http-nio-8080-exec-9] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:20.671 [http-nio-8080-exec-11] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "status" : { "$java" : ACTIVE }, "startDate" : { "$gt" : { "$java" : 2025-03-12T17:31:20.670455800 } } }, Fields: {}, Sort: {}
+2025-03-12 17:31:20.671 [http-nio-8080-exec-11] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "status" : "ACTIVE", "startDate" : { "$gt" : { "$date" : "2025-03-12T17:31:20.67Z"}}} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Event in collection: events
+2025-03-12 17:31:20.672 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:31:20.672 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:31:20.672 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:31:20.672 [http-nio-8080-exec-11] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:31:20.672 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:31:20.672 [http-nio-8080-exec-9] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:31:20.672124500, statu (truncated)...]
+2025-03-12 17:31:20.672 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:31:20.672124500, statu (truncated)...]
+2025-03-12 17:31:20.672 [http-nio-8080-exec-11] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Success, data=[], errors=null, errorCode=null, timestamp=2025-03-1 (truncated)...]
+2025-03-12 17:31:20.673 [http-nio-8080-exec-7] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:31:20.673 [http-nio-8080-exec-9] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:31:20.673 [http-nio-8080-exec-11] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-12 17:31:20.673 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:31:20.673 [http-nio-8080-exec-9] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:31:29.962 [http-nio-8080-exec-15] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/upcoming
+2025-03-12 17:31:29.963 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/registered
+2025-03-12 17:31:29.963 [http-nio-8080-exec-15] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:31:29.964 [http-nio-8080-exec-15] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:31:29.964 [http-nio-8080-exec-8] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:31:29.964 [http-nio-8080-exec-15] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:29.964 [http-nio-8080-exec-8] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:31:29.965 [http-nio-8080-exec-8] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:29.967 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/events/waitlist
+2025-03-12 17:31:29.969 [http-nio-8080-exec-6] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kalil@mailinator.com
+2025-03-12 17:31:29.969 [http-nio-8080-exec-8] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:31:29.969 [http-nio-8080-exec-15] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:31:29.969 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/registered
+2025-03-12 17:31:29.969 [http-nio-8080-exec-15] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/upcoming
+2025-03-12 17:31:29.969 [http-nio-8080-exec-6] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kalil@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-12 17:31:29.970 [http-nio-8080-exec-15] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/upcoming", parameters={}
+2025-03-12 17:31:29.970 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/registered", parameters={}
+2025-03-12 17:31:29.970 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getUpcomingEvents(String, Pageable)
+2025-03-12 17:31:29.971 [http-nio-8080-exec-6] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kalil@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:29.971 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getRegisteredEvents(String)
+2025-03-12 17:31:29.972 [http-nio-8080-exec-8] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:29.972 [http-nio-8080-exec-8] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getRegisteredEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:29.972 [http-nio-8080-exec-15] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "status" : { "$java" : ACTIVE }, "startDate" : { "$gt" : { "$java" : 2025-03-12T17:31:29.971685400 } } }, Fields: {}, Sort: {}
+2025-03-12 17:31:29.972 [http-nio-8080-exec-8] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:29.973 [http-nio-8080-exec-15] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "status" : "ACTIVE", "startDate" : { "$gt" : { "$date" : "2025-03-12T17:31:29.971Z"}}} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Event in collection: events
+2025-03-12 17:31:29.973 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:31:29.974 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:31:29.974 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:31:29.974 [http-nio-8080-exec-15] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Success, data=[], errors=null, errorCode=null, timestamp=2025-03-1 (truncated)...]
+2025-03-12 17:31:29.974 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:31:29.973944300, statu (truncated)...]
+2025-03-12 17:31:29.975 [http-nio-8080-exec-8] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:31:29.975 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-12 17:31:29.975 [http-nio-8080-exec-15] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-12 17:31:29.976 [http-nio-8080-exec-6] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kalil@mailinator.com
+2025-03-12 17:31:29.976 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/events/waitlist
+2025-03-12 17:31:29.977 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/events/waitlist", parameters={}
+2025-03-12 17:31:29.977 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.EventController#getWaitlistedEvents(String)
+2025-03-12 17:31:29.977 [http-nio-8080-exec-6] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorizing method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:29.978 [http-nio-8080-exec-6] DEBUG o.s.s.a.m.AuthorizationManagerBeforeMethodInterceptor - Authorized method invocation ReflectiveMethodInvocation: public org.springframework.http.ResponseEntity com.fill_rouge.backend.controller.EventController.getWaitlistedEvents(java.lang.String); target is of class [com.fill_rouge.backend.controller.EventController]
+2025-03-12 17:31:29.978 [http-nio-8080-exec-6] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-12 17:31:29.980 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-12 17:31:29.980 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-12 17:31:29.980 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=User not found with ID: 67, timestamp=2025-03-12T17:31:29.980342100, statu (truncated)...]
+2025-03-12 17:31:29.981 [http-nio-8080-exec-6] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: User not found with ID: 67]
+2025-03-12 17:31:29.982 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
