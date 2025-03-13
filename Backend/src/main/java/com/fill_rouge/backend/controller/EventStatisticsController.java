@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/events/statistics")
+@RequestMapping("/events/statistics")
 @RequiredArgsConstructor
 public class EventStatisticsController {
 

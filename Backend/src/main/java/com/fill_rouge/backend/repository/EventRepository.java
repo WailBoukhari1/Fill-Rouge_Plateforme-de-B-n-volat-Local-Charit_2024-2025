@@ -34,10 +34,10 @@ public interface EventRepository extends MongoRepository<Event, String> {
     Page<Event> findByStartDateBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
     
     @Query("{'registeredParticipants': ?0}")
-    List<Event> findByParticipantsContaining(String userId);
+    List<Event> findByRegisteredParticipantsContaining(String userId);
     
     @Query("{'waitlistedParticipants': ?0}")
-    List<Event> findByWaitlistContaining(String userId);
+    List<Event> findByWaitlistedParticipantsContaining(String userId);
     
     @Query(value = "{'organizationId': ?0}", count = true)
     long countByOrganization(String organizationId);
@@ -47,4 +47,12 @@ public interface EventRepository extends MongoRepository<Event, String> {
     
     @Query("{'_id': ?0, 'feedback.volunteerId': ?1}")
     Optional<Event> findEventWithFeedback(String eventId, String volunteerId);
+
+    @Query("{'registeredParticipants': ?0}")
+    List<Event> findEventsByParticipant(String userId);
+
+    @Query("{'registeredParticipants': ?0, 'startDate': { $gte: ?1, $lte: ?2 }}")
+    List<Event> findEventsByParticipantAndDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate);
+
+    Page<Event> findByStartDateAfterAndStatusOrderByStartDateAsc(LocalDateTime now, EventStatus status, Pageable pageable);
 }

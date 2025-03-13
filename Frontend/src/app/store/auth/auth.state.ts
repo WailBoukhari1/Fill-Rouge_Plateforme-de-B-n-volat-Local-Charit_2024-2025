@@ -1,12 +1,12 @@
 import { User } from '../../core/models/auth.models';
 
 export interface AuthState {
-  user: User | null;
+  user: any | null;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
   accessToken: string | null;
   refreshToken: string | null;
-  isAuthenticated: boolean;
-  error: string | null;
-  loading: boolean;
   requiresTwoFactor: boolean;
 }
 

@@ -23,7 +23,7 @@ import org.springframework.http.HttpStatus;
 import jakarta.validation.constraints.Size;
 
 @RestController
-@RequestMapping("/api/organizations")
+@RequestMapping("/organizations")
 @RequiredArgsConstructor
 @Tag(name = "Organization Management", description = "Endpoints for managing organizations")
 public class OrganizationController {

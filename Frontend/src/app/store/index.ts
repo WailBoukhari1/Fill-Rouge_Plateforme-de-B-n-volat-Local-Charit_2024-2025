@@ -1,15 +1,15 @@
 import { ActionReducerMap } from '@ngrx/store';
-import { VolunteerState } from './volunteer/volunteer.state';
-import { volunteerReducer } from './volunteer/volunteer.reducer';
-import { AuthState } from './auth/auth.state';
 import { authReducer } from './auth/auth.reducer';
+import { AuthState } from './auth/auth.state';
+import { EventState } from './event/event.reducer';
+import { eventReducer } from './event/event.reducer';
 
 export interface AppState {
-  volunteer: VolunteerState;
   auth: AuthState;
+  event: EventState;
 }
 
 export const reducers: ActionReducerMap<AppState> = {
-  volunteer: volunteerReducer,
-  auth: authReducer
+  auth: authReducer,
+  event: eventReducer
 }; 

@@ -76,15 +76,18 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    // First, clear local storage and state
-    this.clearStorage();
-    this.store.dispatch(AuthActions.logout());
-
-    // Then make the API call
+    // First make the API call
     return this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
+      tap(() => {
+        // Only clear storage and state after successful API call
+        this.clearStorage();
+        this.store.dispatch(AuthActions.logout());
+      }),
       catchError(error => {
         console.error('Logout API call failed:', error);
-        // We've already cleared the state, so just propagate the error
+        // If API call fails, still clear storage and state for security
+        this.clearStorage();
+        this.store.dispatch(AuthActions.logout());
         return throwError(() => error);
       })
     );
@@ -225,7 +228,7 @@ export class AuthService {
 
       // Create user data object
       const userData: User = {
-        id: parseInt(response.userId) || 0,
+        id: response.userId ? parseInt(response.userId) : 0,
         email: response.email,
         firstName: response.firstName,
         lastName: response.lastName,
@@ -247,6 +250,7 @@ export class AuthService {
       localStorage.setItem(this.userKey, JSON.stringify(userData));
       localStorage.setItem(this.tokenKey, response.token);
       localStorage.setItem('refreshToken', response.refreshToken);
+      localStorage.setItem('userId', response.userId || '');
 
       // Update store with user data
       this.store.dispatch(AuthActions.loginSuccess({
@@ -288,6 +292,7 @@ export class AuthService {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
     // Clear any other auth-related items you might have
     localStorage.removeItem('lastLoginTime');
     sessionStorage.clear(); // Clear any session storage as well

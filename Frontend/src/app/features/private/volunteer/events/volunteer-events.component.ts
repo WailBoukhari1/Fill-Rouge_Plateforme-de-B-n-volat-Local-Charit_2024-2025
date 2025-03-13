@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,9 +9,11 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { RouterModule } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { EventService } from '../../../../core/services/event.service';
-import { IEvent } from '../../../../core/models/event.types';
+import { IEvent, EventStatus } from '../../../../core/models/event.types';
 import * as EventActions from '../../../../store/event/event.actions';
 import * as EventSelectors from '../../../../store/event/event.selectors';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-volunteer-events',
@@ -165,34 +167,70 @@ import * as EventSelectors from '../../../../store/event/event.selectors';
     </div>
   `
 })
-export class VolunteerEventsComponent implements OnInit {
+export class VolunteerEventsComponent implements OnInit, OnDestroy {
   upcomingEvents: IEvent[] = [];
   registeredEvents: IEvent[] = [];
   waitlistedEvents: IEvent[] = [];
   loading = false;
+  private subscriptions = new Subscription();
 
   constructor(
     private store: Store,
-    private eventService: EventService
+    private eventService: EventService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadEvents();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   loadEvents(): void {
+    this.loading = true;
     this.store.dispatch(EventActions.loadUpcomingEvents());
     this.store.dispatch(EventActions.loadRegisteredEvents());
     this.store.dispatch(EventActions.loadWaitlistedEvents());
 
-    this.store.select(EventSelectors.selectUpcomingEvents).subscribe(
-      events => this.upcomingEvents = events
+    this.subscriptions.add(
+      this.store.select(EventSelectors.selectUpcomingEvents).subscribe(
+        events => {
+          this.upcomingEvents = events;
+          this.loading = false;
+        },
+        error => {
+          console.error('Error loading upcoming events:', error);
+          this.loading = false;
+        }
+      )
     );
-    this.store.select(EventSelectors.selectRegisteredEvents).subscribe(
-      events => this.registeredEvents = events
+
+    this.subscriptions.add(
+      this.store.select(EventSelectors.selectRegisteredEvents).subscribe(
+        events => {
+          this.registeredEvents = events;
+          this.loading = false;
+        },
+        error => {
+          console.error('Error loading registered events:', error);
+          this.loading = false;
+        }
+      )
     );
-    this.store.select(EventSelectors.selectWaitlistedEvents).subscribe(
-      events => this.waitlistedEvents = events
+
+    this.subscriptions.add(
+      this.store.select(EventSelectors.selectWaitlistedEvents).subscribe(
+        events => {
+          this.waitlistedEvents = events;
+          this.loading = false;
+        },
+        error => {
+          console.error('Error loading waitlisted events:', error);
+          this.loading = false;
+        }
+      )
     );
   }
 
@@ -201,36 +239,34 @@ export class VolunteerEventsComponent implements OnInit {
   }
 
   cancelRegistration(eventId: string): void {
-    this.store.dispatch(EventActions.cancelRegistration({ eventId }));
+    this.store.dispatch(EventActions.unregisterFromEvent({ eventId }));
   }
 
   leaveWaitlist(eventId: string): void {
     this.store.dispatch(EventActions.leaveWaitlist({ eventId }));
   }
 
-  getStatusColor(status: string): string {
-    return this.eventService.getStatusColor(status as any);
-  }
-
   isRegistered(event: IEvent): boolean {
-    return event.registeredParticipants.has(this.getCurrentUserId());
+    const userId = this.getCurrentUserId();
+    return event.registeredParticipants.has(userId);
   }
 
   isWaitlisted(event: IEvent): boolean {
-    return event.waitlistedParticipants.has(this.getCurrentUserId());
+    const userId = this.getCurrentUserId();
+    return event.waitlistedParticipants.has(userId);
   }
 
   isEventInProgress(event: IEvent): boolean {
     const now = new Date();
     return !event.isCancelled &&
-           event.status === 'APPROVED' &&
+           event.status === EventStatus.ACTIVE &&
            now >= new Date(event.startDate) &&
            now <= new Date(event.endDate);
   }
 
   isEventCompleted(event: IEvent): boolean {
     return !event.isCancelled &&
-           event.status === 'APPROVED' &&
+           event.status === EventStatus.COMPLETED &&
            new Date() > new Date(event.endDate);
   }
 
@@ -240,8 +276,32 @@ export class VolunteerEventsComponent implements OnInit {
     return waitlistArray.indexOf(userId) + 1;
   }
 
+  getStatusColor(status: EventStatus): string {
+    switch (status) {
+      case EventStatus.ACTIVE:
+        return 'primary';
+      case EventStatus.COMPLETED:
+        return 'accent';
+      case EventStatus.CANCELLED:
+        return 'warn';
+      case EventStatus.PENDING:
+        return 'basic';
+      case EventStatus.APPROVED:
+        return 'accent';
+      case EventStatus.DRAFT:
+        return 'basic';
+      case EventStatus.UPCOMING:
+        return 'accent';
+      case EventStatus.ONGOING:
+        return 'primary';
+      case EventStatus.PUBLISHED:
+        return 'primary';
+      default:
+        return 'basic';
+    }
+  }
+
   private getCurrentUserId(): string {
-    // This should be implemented to get the current user's ID from your auth service
-    return 'current-user-id';
+    return localStorage.getItem('userId') || '';
   }
 } 

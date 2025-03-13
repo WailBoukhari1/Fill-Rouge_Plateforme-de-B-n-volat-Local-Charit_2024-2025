@@ -17,6 +17,7 @@ import * as AuthActions from '../../../store/auth/auth.actions';
 import { selectAuthError, selectAuthLoading, selectUser } from '../../../store/auth/auth.selectors';
 import { filter, take } from 'rxjs/operators';
 import { UserRole } from '../../../core/models/auth.models';
+import { RegisterRequest } from '../../../core/models/auth.models';
 
 @Component({
   selector: 'app-register',
@@ -102,6 +103,18 @@ import { UserRole } from '../../../core/models/auth.models';
                     </mat-error>
                     <mat-error *ngIf="accountFormGroup.get('email')?.hasError('email') || accountFormGroup.get('email')?.hasError('pattern')">
                       Please enter a valid email address (e.g., example&#64;domain.com)
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Phone Number</mat-label>
+                    <input matInput formControlName="phoneNumber" required placeholder="Example: 0612345678">
+                    <mat-icon matPrefix class="mr-2 text-gray-500">phone</mat-icon>
+                    <mat-error *ngIf="accountFormGroup.get('phoneNumber')?.hasError('required')">
+                      Phone number is required
+                    </mat-error>
+                    <mat-error *ngIf="accountFormGroup.get('phoneNumber')?.hasError('pattern')">
+                      Please enter a valid Moroccan phone number (e.g., 0612345678 or +212612345678)
                     </mat-error>
                   </mat-form-field>
 
@@ -193,43 +206,162 @@ import { UserRole } from '../../../core/models/auth.models';
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Organization Type</mat-label>
+                      <mat-select formControlName="organizationType" required>
+                        <mat-option value="NGO">Non-Governmental Organization (NGO)</mat-option>
+                        <mat-option value="NONPROFIT">Non-Profit Organization</mat-option>
+                        <mat-option value="CHARITY">Charitable Organization</mat-option>
+                        <mat-option value="FOUNDATION">Foundation</mat-option>
+                        <mat-option value="SOCIAL_ENTERPRISE">Social Enterprise</mat-option>
+                        <mat-option value="COMMUNITY_GROUP">Community Group</mat-option>
+                      </mat-select>
+                      <mat-icon matPrefix class="mr-2 text-gray-500">category</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('organizationType')?.errors?.['required']">
+                        Organization type is required
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
                       <mat-label>Organization Website</mat-label>
                       <input matInput formControlName="organizationWebsite">
                       <mat-icon matPrefix class="mr-2 text-gray-500">language</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('organizationWebsite')?.errors?.['pattern']">
+                        Please enter a valid website URL
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Mission Statement</mat-label>
+                      <textarea matInput formControlName="missionStatement" rows="2" required></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500">assignment</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('missionStatement')?.errors?.['required']">
+                        Mission statement is required
+                      </mat-error>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-label>Organization Description</mat-label>
-                      <textarea matInput formControlName="organizationDescription" rows="3"></textarea>
+                      <textarea matInput formControlName="organizationDescription" rows="3" required></textarea>
                       <mat-icon matPrefix class="mr-2 text-gray-500">description</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('organizationDescription')?.errors?.['required']">
+                        Organization description is required
+                      </mat-error>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('organizationDescription')?.errors?.['maxlength']">
+                        Description cannot exceed 500 characters
+                      </mat-error>
                     </mat-form-field>
                   </div>
 
-                  <!-- Volunteer fields -->
-                  <div *ngIf="isVolunteer()" class="space-y-4">
-                    <div class="text-center mb-4">
-                      <h3 class="text-lg font-medium">Volunteer Details</h3>
-                      <p class="text-sm text-gray-600">Tell us a bit about yourself</p>
+                  <!-- Message for volunteers -->
+                  <div *ngIf="isVolunteer()" class="space-y-6">
+                    <div class="text-center">
+                      <h3 class="text-2xl font-bold text-gray-900 mb-2">Complete Your Profile</h3>
+                      <p class="text-gray-600 mb-6">
+                        Join our community of passionate volunteers making a difference
+                      </p>
                     </div>
 
-                    <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Phone Number</mat-label>
-                      <input matInput formControlName="phoneNumber">
-                      <mat-icon matPrefix class="mr-2 text-gray-500">phone</mat-icon>
-                    </mat-form-field>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Profile Preview -->
+                        <div class="space-y-4">
+                          <h4 class="text-lg font-semibold text-gray-900">Your Profile Preview</h4>
+                          <div class="bg-gray-50 rounded p-4 space-y-3">
+                            <div class="flex items-center space-x-3">
+                              <mat-icon class="text-indigo-600">account_circle</mat-icon>
+                              <div>
+                                <p class="font-medium">{{accountFormGroup.get('firstName')?.value}} {{accountFormGroup.get('lastName')?.value}}</p>
+                                <p class="text-sm text-gray-600">{{accountFormGroup.get('email')?.value}}</p>
+                              </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                              <mat-icon class="text-indigo-600">phone</mat-icon>
+                              <p class="text-gray-600">{{accountFormGroup.get('phoneNumber')?.value}}</p>
+                            </div>
+                          </div>
+                        </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>City</mat-label>
-                        <input matInput formControlName="city">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">location_city</mat-icon>
-                      </mat-form-field>
+                        <!-- Next Steps -->
+                        <div class="space-y-4">
+                          <h4 class="text-lg font-semibold text-gray-900">Next Steps</h4>
+                          <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                              <div class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-sm font-medium text-indigo-600">1</span>
+                              </div>
+                              <div>
+                                <p class="font-medium text-gray-900">Complete Your Profile</p>
+                                <p class="text-sm text-gray-600">Add your skills, interests, and availability</p>
+                              </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                              <div class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-sm font-medium text-indigo-600">2</span>
+                              </div>
+                              <div>
+                                <p class="font-medium text-gray-900">Set Your Preferences</p>
+                                <p class="text-sm text-gray-600">Choose causes and organizations you'd like to support</p>
+                              </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                              <div class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-sm font-medium text-indigo-600">3</span>
+                              </div>
+                              <div>
+                                <p class="font-medium text-gray-900">Start Volunteering</p>
+                                <p class="text-sm text-gray-600">Browse and apply for volunteer opportunities</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                      <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>Country</mat-label>
-                        <input matInput formControlName="country">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">public</mat-icon>
-                      </mat-form-field>
+                    <!-- Benefits -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center space-x-3 mb-3">
+                          <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <mat-icon class="text-green-600">handshake</mat-icon>
+                          </div>
+                          <h5 class="font-semibold text-gray-900">Personalized Matches</h5>
+                        </div>
+                        <p class="text-gray-600 text-sm">Get matched with opportunities that align with your skills and interests</p>
+                      </div>
+
+                      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center space-x-3 mb-3">
+                          <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <mat-icon class="text-blue-600">schedule</mat-icon>
+                          </div>
+                          <h5 class="font-semibold text-gray-900">Flexible Schedule</h5>
+                        </div>
+                        <p class="text-gray-600 text-sm">Choose opportunities that fit your availability and preferences</p>
+                      </div>
+
+                      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center space-x-3 mb-3">
+                          <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                            <mat-icon class="text-purple-600">diversity_3</mat-icon>
+                          </div>
+                          <h5 class="font-semibold text-gray-900">Community Impact</h5>
+                        </div>
+                        <p class="text-gray-600 text-sm">Make a real difference in your community while building valuable experience</p>
+                      </div>
+                    </div>
+
+                    <div class="bg-indigo-50 rounded-lg p-6 border border-indigo-100">
+                      <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0">
+                          <mat-icon class="text-indigo-600">info</mat-icon>
+                        </div>
+                        <div>
+                          <h5 class="font-medium text-indigo-900 mb-1">Ready to make a difference?</h5>
+                          <p class="text-indigo-700 text-sm">
+                            After registration, you'll be guided through a quick questionnaire to help us understand your interests and preferences better. This helps us match you with the perfect volunteering opportunities in your area.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -299,7 +431,7 @@ export class RegisterComponent implements OnInit {
     private store: Store,
     private router: Router
   ) {
-    this.initFormGroups();
+    this.initializeForm();
   }
 
   ngOnInit(): void {
@@ -307,20 +439,19 @@ export class RegisterComponent implements OnInit {
     this.store.dispatch(AuthActions.loginFailure({ error: '' }));
   }
 
-  initFormGroups(): void {
-    // Step 1: Account Information
+  initializeForm(): void {
     this.accountFormGroup = this.fb.group({
       firstName: ['', [
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(50),
-        Validators.pattern(/^[a-zA-Z\s\-']+$/)
+        Validators.pattern(/^[a-zA-ZÀ-ÿ\s\-']+$/)
       ]],
       lastName: ['', [
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(50),
-        Validators.pattern(/^[a-zA-Z\s\-']+$/)
+        Validators.pattern(/^[a-zA-ZÀ-ÿ\s\-']+$/)
       ]],
       email: ['', [
         Validators.required,
@@ -331,40 +462,42 @@ export class RegisterComponent implements OnInit {
         Validators.required,
         Validators.minLength(8),
         Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+      ]],
+      phoneNumber: ['', [
+        Validators.required,
+        Validators.pattern(/^(\+212|0)[5-7][0-9]{8}$/)
       ]]
     });
 
-    // Step 2: Role Selection
     this.roleFormGroup = this.fb.group({
       role: ['', Validators.required]
     });
 
-    // Step 3: Role-specific Information
     this.roleSpecificFormGroup = this.fb.group({
-      // Organization fields
-      organizationName: ['', [Validators.minLength(2), Validators.maxLength(100)]],
-      organizationWebsite: ['', Validators.pattern(/^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/)],
-      organizationDescription: ['', [Validators.minLength(10), Validators.maxLength(500)]],
-
-      // Volunteer fields
-      phoneNumber: ['', Validators.pattern(/^\+?[0-9\s\-\(\)]{8,20}$/)],
-      city: ['', [Validators.minLength(2), Validators.maxLength(50)]],
-      country: ['', [Validators.minLength(2), Validators.maxLength(50)]]
+      organizationName: [''],
+      organizationWebsite: ['', Validators.pattern(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/)],
+      organizationDescription: ['', [Validators.maxLength(500)]],
+      organizationType: [''],
+      missionStatement: ['']
     });
   }
 
   onRoleChange(): void {
     const role = this.roleFormGroup.get('role')?.value;
-
-    // Update validators based on role
+    
     if (role === UserRole.ORGANIZATION) {
       this.roleSpecificFormGroup.get('organizationName')?.setValidators([Validators.required]);
+      this.roleSpecificFormGroup.get('organizationDescription')?.setValidators([Validators.required]);
+      this.roleSpecificFormGroup.get('organizationType')?.setValidators([Validators.required]);
+      this.roleSpecificFormGroup.get('missionStatement')?.setValidators([Validators.required]);
     } else {
       this.roleSpecificFormGroup.get('organizationName')?.clearValidators();
+      this.roleSpecificFormGroup.get('organizationDescription')?.clearValidators();
+      this.roleSpecificFormGroup.get('organizationType')?.clearValidators();
+      this.roleSpecificFormGroup.get('missionStatement')?.clearValidators();
     }
-
-    // Update validation status
-    this.roleSpecificFormGroup.get('organizationName')?.updateValueAndValidity();
+    
+    this.roleSpecificFormGroup.updateValueAndValidity();
   }
 
   isOrganization(): boolean {
@@ -381,8 +514,13 @@ export class RegisterComponent implements OnInit {
     }
 
     // Check role-specific validation
-    if (this.isOrganization() && this.roleSpecificFormGroup.get('organizationName')?.invalid) {
-      return true;
+    if (this.isOrganization()) {
+      const orgName = this.roleSpecificFormGroup.get('organizationName');
+      const orgDesc = this.roleSpecificFormGroup.get('organizationDescription');
+      const orgType = this.roleSpecificFormGroup.get('organizationType');
+      const mission = this.roleSpecificFormGroup.get('missionStatement');
+
+      return !orgName?.valid || !orgDesc?.valid || !orgType?.valid || !mission?.valid;
     }
 
     return false;
@@ -393,14 +531,12 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
-    // Combine all form groups
     const formData = {
       ...this.accountFormGroup.value,
       ...this.roleFormGroup.value,
       ...this.roleSpecificFormGroup.value
     };
 
-    // Add additional validation before submission
     if (formData.email && !this.isValidEmail(formData.email)) {
       this.store.dispatch(AuthActions.registerFailure({
         error: 'Please enter a valid email address'
@@ -415,20 +551,25 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
-    // Dispatch register action with all form data
-    this.store.dispatch(AuthActions.register({
+    // Create the register request object with only the properties defined in RegisterRequest interface
+    const registerRequest: RegisterRequest = {
       email: formData.email,
       password: formData.password,
       firstName: formData.firstName,
       lastName: formData.lastName,
-      role: formData.role,
-      organizationName: formData.organizationName,
-      organizationWebsite: formData.organizationWebsite,
-      organizationDescription: formData.organizationDescription,
       phoneNumber: formData.phoneNumber,
-      city: formData.city,
-      country: formData.country
-    }));
+      role: formData.role,
+      ...(this.isOrganization() && {
+        organizationName: formData.organizationName,
+        organizationWebsite: formData.organizationWebsite,
+        organizationDescription: formData.organizationDescription,
+        organizationType: formData.organizationType,
+        missionStatement: formData.missionStatement
+      })
+    };
+
+    // Dispatch register action with the properly typed request
+    this.store.dispatch(AuthActions.register(registerRequest));
 
     // Subscribe to errors to provide more user-friendly messages
     this.error$.pipe(
@@ -438,7 +579,6 @@ export class RegisterComponent implements OnInit {
       if (error) {
         let userFriendlyError = error;
 
-        // Transform backend errors into user-friendly messages
         if (error.includes('Email already exists')) {
           userFriendlyError = 'This email is already registered. Please use a different email or try logging in.';
         } else if (error.includes('validation')) {
@@ -447,7 +587,6 @@ export class RegisterComponent implements OnInit {
           userFriendlyError = 'Server error. Please try again later.';
         }
 
-        // Update the error message
         this.store.dispatch(AuthActions.registerFailure({ error: userFriendlyError }));
       }
     });

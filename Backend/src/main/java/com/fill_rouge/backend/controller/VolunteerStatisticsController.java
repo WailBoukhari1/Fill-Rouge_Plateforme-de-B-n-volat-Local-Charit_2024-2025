@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/volunteers")
+@RequestMapping("/volunteers")
 @RequiredArgsConstructor
 @Tag(name = "Volunteer Statistics", description = "APIs for volunteer statistics")
 public class VolunteerStatisticsController {

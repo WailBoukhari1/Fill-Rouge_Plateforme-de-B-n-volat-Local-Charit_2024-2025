@@ -84,6 +84,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Email verified successfully"));
     }
 
+    @GetMapping("/verify-email/status")
+    public ResponseEntity<ApiResponse<Boolean>> checkEmailVerificationStatus(@RequestParam String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(ApiResponse.success(user.isEmailVerified(), "Email verification status retrieved"));
+    }
+
     @PostMapping("/resend-verification")
     public ResponseEntity<ApiResponse<Void>> resendVerificationCode(@RequestParam String email) {
         authenticationService.resendVerificationCode(email);

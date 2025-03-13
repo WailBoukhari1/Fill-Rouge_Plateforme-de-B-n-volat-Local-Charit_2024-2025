@@ -3,47 +3,38 @@
  */
 export interface QuestionnaireRequest {
   role: string;
-  phoneNumber: string;
-  address?: string;
-  city: string;
-  province: string;
-
-  // Organization specific fields
-  organizationName?: string;
-  website?: string;
-  description?: string;
-  organizationType?: string;
-  foundedYear?: number;
-  missionStatement?: string;
-  focusAreas?: string[];
-  socialMediaLinks?: {
-    facebook?: string;
-    twitter?: string;
-    instagram?: string;
-    linkedin?: string;
+  contact: {
+    phoneNumber: string;
+    address: string;
+    province: string;
+    city: string;
   };
-
-  // Volunteer specific fields
-  bio?: string;
-  skills?: string[];
-  interests?: string[];
-  availability?: string[];
-  education?: string;
-  experience?: string;
-  preferredCauses?: string[];
-  languages?: string[];
-  emergencyContact?: {
-    name?: string;
-    relationship?: string;
-    phone?: string;
+  organizationDetails?: {
+    type: string;
+    foundedYear?: number;
+    website?: string;
+    missionStatement: string;
+    focusAreas: string[];
+    socialMedia?: {
+      facebook?: string;
+      twitter?: string;
+      instagram?: string;
+      linkedin?: string;
+    };
   };
-  drivingLicense?: boolean;
-  specialNeeds?: string;
-  statistics?: {
-    experienceYears?: number;
-    hoursPerWeek?: number;
-    commitmentLength?: string;
-    maxTravelDistance?: number;
+  volunteerDetails?: {
+    bio: string;
+    education?: string;
+    experience?: string;
+    specialNeeds?: string;
+    skills: string[];
+    interests: string[];
+    languages: string[];
+    emergencyContact: {
+      name: string;
+      relationship?: string;
+      phone: string;
+    };
   };
 }
 
@@ -51,13 +42,11 @@ export interface QuestionnaireRequest {
  * Organization types
  */
 export enum OrganizationType {
-  NONPROFIT = 'NONPROFIT',
+  NGO = 'NGO',
   CHARITY = 'CHARITY',
   FOUNDATION = 'FOUNDATION',
-  COMMUNITY_GROUP = 'COMMUNITY_GROUP',
   SOCIAL_ENTERPRISE = 'SOCIAL_ENTERPRISE',
-  GOVERNMENT = 'GOVERNMENT',
-  EDUCATIONAL = 'EDUCATIONAL',
+  COMMUNITY_GROUP = 'COMMUNITY_GROUP',
   OTHER = 'OTHER'
 }
 
@@ -65,39 +54,28 @@ export enum OrganizationType {
  * Focus areas for organizations
  */
 export enum FocusArea {
-  EDUCATION = 'Education',
-  HEALTH = 'Health',
-  ENVIRONMENT = 'Environment',
-  POVERTY = 'Poverty Relief',
-  HUMAN_RIGHTS = 'Human Rights',
-  ANIMAL_WELFARE = 'Animal Welfare',
-  ARTS_CULTURE = 'Arts & Culture',
-  DISASTER_RELIEF = 'Disaster Relief',
-  COMMUNITY_DEVELOPMENT = 'Community Development',
-  YOUTH_DEVELOPMENT = 'Youth Development',
-  ELDERLY_CARE = 'Elderly Care',
-  DISABILITY_SUPPORT = 'Disability Support',
-  REFUGEE_SUPPORT = 'Refugee Support',
-  HOMELESSNESS = 'Homelessness',
-  FOOD_SECURITY = 'Food Security',
-  OTHER = 'Other'
+  EDUCATION = 'EDUCATION',
+  HEALTH = 'HEALTH',
+  ENVIRONMENT = 'ENVIRONMENT',
+  POVERTY = 'POVERTY',
+  HUMAN_RIGHTS = 'HUMAN_RIGHTS',
+  ARTS_CULTURE = 'ARTS_CULTURE',
+  COMMUNITY_DEVELOPMENT = 'COMMUNITY_DEVELOPMENT',
+  YOUTH = 'YOUTH',
+  ELDERLY = 'ELDERLY',
+  DISABILITY = 'DISABILITY',
+  OTHER = 'OTHER'
 }
 
 /**
  * Languages
  */
 export enum Language {
-  ARABIC = 'Arabic',
-  AMAZIGH = 'Amazigh',
-  FRENCH = 'French',
-  ENGLISH = 'English',
-  SPANISH = 'Spanish',
-  PORTUGUESE = 'Portuguese',
-  GERMAN = 'German',
-  ITALIAN = 'Italian',
-  CHINESE = 'Chinese',
-  JAPANESE = 'Japanese',
-  RUSSIAN = 'Russian',
-  HINDI = 'Hindi',
-  OTHER = 'Other'
+  ARABIC = 'ARABIC',
+  FRENCH = 'FRENCH',
+  ENGLISH = 'ENGLISH',
+  SPANISH = 'SPANISH',
+  GERMAN = 'GERMAN',
+  CHINESE = 'CHINESE',
+  OTHER = 'OTHER'
 }

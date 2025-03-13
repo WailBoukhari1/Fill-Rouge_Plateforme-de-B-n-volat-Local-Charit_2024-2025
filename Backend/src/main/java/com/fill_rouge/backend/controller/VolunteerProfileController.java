@@ -24,7 +24,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 
 @RestController
-@RequestMapping("/api/volunteer-profiles")
+@RequestMapping("/volunteer-profiles")
 @RequiredArgsConstructor
 @Tag(name = "Volunteer Profile", description = "Volunteer profile management endpoints")
 public class VolunteerProfileController {

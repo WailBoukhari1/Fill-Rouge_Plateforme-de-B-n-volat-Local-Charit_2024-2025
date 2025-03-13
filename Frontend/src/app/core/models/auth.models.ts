@@ -10,6 +10,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
+  phoneNumber?: string;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   accountLocked: boolean;
@@ -35,20 +36,20 @@ export interface AuthState {
 }
 
 export interface ApiResponse<T> {
-  status: number;
-  message: string;
   data: T;
+  message?: string;
+  status?: string;
 }
 
 export interface AuthResponse {
   token: string;
   refreshToken: string;
+  userId: string;
   email: string;
   firstName: string;
   lastName: string;
-  userId: string;
-  role?: UserRole;
-  authorities?: string[];
+  role?: string;
+  phoneNumber?: string;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   accountLocked: boolean;
@@ -76,14 +77,13 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  phoneNumber: string;
   role: UserRole;
-  phoneNumber?: string;
-  address?: string;
-  city?: string;
-  country?: string;
   organizationName?: string;
   organizationWebsite?: string;
   organizationDescription?: string;
+  organizationType?: string;
+  missionStatement?: string;
 }
 
 export interface EmailVerificationRequest {

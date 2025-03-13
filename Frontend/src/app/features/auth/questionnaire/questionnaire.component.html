@@ -1,627 +1,403 @@
-<div class="questionnaire-container">
-  <mat-card class="main-card">
-    <mat-card-header>
-      <mat-card-title>Complete Your Profile</mat-card-title>
-      <mat-card-subtitle>Please provide additional information to complete your profile</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <form [formGroup]="questionnaireForm" (ngSubmit)="$event.preventDefault(); onSubmit()">
-        <!-- Form Error Message -->
-        <div *ngIf="errorMessage" class="form-error-message">
-          <mat-icon>error</mat-icon>
-          <span>{{ errorMessage }}</span>
-        </div>
+<!-- Main Container -->
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
+      <p class="text-lg text-gray-600">Help us understand you better to match you with the perfect opportunities</p>
+    </div>
 
-        <mat-stepper #stepper [linear]="false">
-          <!-- Progress Indicator -->
-          <div class="progress-indicator">
-            <div class="progress-text">Step {{ (stepper?.selectedIndex ?? 0) + 1 }} of 3</div>
-            <mat-progress-bar mode="determinate" [value]="getStepProgress()"></mat-progress-bar>
-          </div>
+    <!-- Progress Bar -->
+    <div class="mb-8">
+      <mat-progress-bar mode="determinate" [value]="getProgressValue()"></mat-progress-bar>
+      <div class="text-center mt-2 text-sm text-gray-600">
+        Step {{currentStep}} of {{totalSteps}}
+      </div>
+    </div>
 
-          <!-- Step 1: Role Selection -->
-          <mat-step [stepControl]="roleFormGroup" errorMessage="Please select a role" [completed]="isRoleFormValid()">
-            <ng-template matStepLabel>Select Your Role</ng-template>
-            <div formGroupName="role" class="role-selection">
-              <h3>I am a:</h3>
-              <mat-radio-group formControlName="type" class="role-radio-group" (change)="onRoleChange()">
-                <mat-radio-button value="VOLUNTEER">Volunteer</mat-radio-button>
-                <mat-radio-button value="ORGANIZATION">Organization</mat-radio-button>
-              </mat-radio-group>
-              <div *ngIf="roleFormGroup.get('role.type')?.hasError('required') && roleFormGroup.get('role.type')?.touched" class="error-message">
-                Please select a role
+    <!-- Main Form Card -->
+    <mat-card class="shadow-lg">
+      <mat-card-content class="p-6">
+        <form [formGroup]="questionnaireForm">
+          <mat-stepper [linear]="true" #stepper>
+            <!-- Step 1: Role Selection -->
+            <mat-step [stepControl]="roleFormGroup" errorMessage="Please select a role" [completed]="isRoleFormValid()">
+              <ng-template matStepLabel>Select Your Role</ng-template>
+              <div [formGroup]="roleFormGroup" class="role-selection space-y-6">
+                <div class="text-center">
+                  <h2 class="text-2xl font-semibold text-gray-900 mb-2">How would you like to participate?</h2>
+                  <p class="text-gray-600">Choose your role in our community</p>
+                </div>
+
+                <mat-radio-group formControlName="type" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Volunteer Option -->
+                  <div class="role-card cursor-pointer" [class.selected]="roleFormGroup.get('type')?.value === 'VOLUNTEER'">
+                    <mat-radio-button value="VOLUNTEER" class="w-full">
+                      <div class="p-6 text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <mat-icon class="text-3xl text-indigo-600">volunteer_activism</mat-icon>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">Volunteer</h3>
+                        <p class="text-gray-600">Join our community of passionate volunteers making a difference</p>
+                        <ul class="mt-4 text-left text-sm text-gray-600 space-y-2">
+                          <li class="flex items-center">
+                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            Find opportunities that match your skills
+                          </li>
+                          <li class="flex items-center">
+                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            Flexible scheduling options
+                          </li>
+                          <li class="flex items-center">
+                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            Make a real impact in your community
+                          </li>
+                        </ul>
+                      </div>
+                    </mat-radio-button>
+                  </div>
+
+                  <!-- Organization Option -->
+                  <div class="role-card cursor-pointer" [class.selected]="roleFormGroup.get('type')?.value === 'ORGANIZATION'">
+                    <mat-radio-button value="ORGANIZATION" class="w-full">
+                      <div class="p-6 text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <mat-icon class="text-3xl text-indigo-600">business</mat-icon>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">Organization</h3>
+                        <p class="text-gray-600">Connect with volunteers and expand your impact</p>
+                        <ul class="mt-4 text-left text-sm text-gray-600 space-y-2">
+                          <li class="flex items-center">
+                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            Post volunteer opportunities
+                          </li>
+                          <li class="flex items-center">
+                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            Manage volunteers efficiently
+                          </li>
+                          <li class="flex items-center">
+                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            Track impact and engagement
+                          </li>
+                        </ul>
+                      </div>
+                    </mat-radio-button>
+                  </div>
+                </mat-radio-group>
+
+                <div class="flex justify-end mt-6">
+                  <button mat-raised-button color="primary" (click)="goToNextStep()" [disabled]="!isRoleFormValid()">
+                    Next <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </div>
               </div>
-              <div class="step-actions">
-                <button mat-raised-button color="primary" (click)="goToNextStep()" [disabled]="!isRoleFormValid()">Next</button>
-                <button mat-button type="button" (click)="debugFormValidity()">Debug Form</button>
-                <button mat-button type="button" (click)="debugCurrentStep()">Debug Step</button>
+            </mat-step>
+
+            <!-- Step 2: Contact Information -->
+            <mat-step [stepControl]="contactFormGroup" errorMessage="Please complete contact information" [completed]="isContactFormValid()">
+              <ng-template matStepLabel>Contact Information</ng-template>
+              <div [formGroup]="contactFormGroup" class="space-y-6">
+                <div class="text-center">
+                  <h2 class="text-2xl font-semibold text-gray-900 mb-2">Contact Information</h2>
+                  <p class="text-gray-600">How can we reach you?</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Phone Number <span class="required-field">*</span></mat-label>
+                    <input matInput formControlName="phoneNumber" placeholder="Example: 0612345678">
+                    <mat-icon matPrefix class="mr-2 text-gray-500">phone</mat-icon>
+                    <mat-error *ngIf="contactFormGroup.get('phoneNumber')?.hasError('required')">
+                      Phone number is required
+                    </mat-error>
+                    <mat-error *ngIf="contactFormGroup.get('phoneNumber')?.hasError('pattern')">
+                      Please enter a valid Moroccan phone number
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Address <span class="required-field">*</span></mat-label>
+                    <input matInput formControlName="address" placeholder="Your street address">
+                    <mat-icon matPrefix class="mr-2 text-gray-500">location_on</mat-icon>
+                    <mat-error *ngIf="contactFormGroup.get('address')?.hasError('required')">
+                      Address is required
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Province <span class="required-field">*</span></mat-label>
+                    <mat-select formControlName="province" (selectionChange)="onProvinceChange()">
+                      <mat-option *ngFor="let province of moroccanProvinces" [value]="province">
+                        {{province}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matPrefix class="mr-2 text-gray-500">public</mat-icon>
+                    <mat-error *ngIf="contactFormGroup.get('province')?.hasError('required')">
+                      Province is required
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>City <span class="required-field">*</span></mat-label>
+                    <mat-select formControlName="city">
+                      <mat-option *ngFor="let city of citiesInProvince" [value]="city">
+                        {{city}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matPrefix class="mr-2 text-gray-500">location_city</mat-icon>
+                    <mat-error *ngIf="contactFormGroup.get('city')?.hasError('required')">
+                      City is required
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="flex justify-between mt-6">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>arrow_back</mat-icon> Back
+                  </button>
+                  <button mat-raised-button color="primary" (click)="goToNextStep()" [disabled]="!isContactFormValid()">
+                    Next <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </div>
               </div>
-            </div>
-          </mat-step>
+            </mat-step>
 
-          <!-- Step 2: Contact Information -->
-          <mat-step [stepControl]="contactFormGroup" errorMessage="Please complete contact information" [completed]="isContactFormValid()">
-            <ng-template matStepLabel>Contact Information</ng-template>
+            <!-- Step 3: Role-specific Information -->
+            <mat-step [stepControl]="roleSpecificFormGroup" errorMessage="Please complete all required fields" [completed]="isRoleSpecificFormValid()">
+              <ng-template matStepLabel>Additional Information</ng-template>
+              <div [formGroup]="roleSpecificFormGroup">
+                <!-- Organization Form -->
+                <div *ngIf="isOrganization()" formGroupName="organization" class="space-y-6">
+                  <div class="text-center">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-2">Organization Details</h2>
+                    <p class="text-gray-600">Tell us about your organization</p>
+                  </div>
 
-            <!-- Required Fields Legend -->
-            <div class="required-fields-legend">
-              <p><span class="required-field">*</span> indicates required fields</p>
-            </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Organization Type <span class="required-field">*</span></mat-label>
+                      <mat-select formControlName="type">
+                        <mat-option *ngFor="let type of organizationTypes" [value]="type">
+                          {{type}}
+                        </mat-option>
+                      </mat-select>
+                      <mat-icon matPrefix class="mr-2 text-gray-500">category</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('organization.type')?.hasError('required')">
+                        Organization type is required
+                      </mat-error>
+                    </mat-form-field>
 
-            <div class="step-description">
-              <p>Please provide your contact information. This information will be used to communicate with you about volunteer opportunities.</p>
-            </div>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Founded Year</mat-label>
+                      <input matInput type="number" formControlName="foundedYear" [min]="1800" [max]="currentYear">
+                      <mat-icon matPrefix class="mr-2 text-gray-500">calendar_today</mat-icon>
+                    </mat-form-field>
 
-            <div formGroupName="contact" class="contact-info">
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Phone Number <span class="required-field">*</span></mat-label>
-                  <input matInput formControlName="phoneNumber" placeholder="Enter your phone number">
-                  <mat-icon matPrefix>phone</mat-icon>
-                  <mat-error *ngIf="contactFormGroup.get('contact.phoneNumber')?.hasError('required')">
-                    Phone number is required
-                  </mat-error>
-                  <mat-error *ngIf="contactFormGroup.get('contact.phoneNumber')?.hasError('pattern')">
-                    Please enter a valid Moroccan phone number (e.g., 0612345678 or +212612345678)
-                  </mat-error>
-                  <mat-hint>Required - Enter a valid Moroccan phone number (e.g., 0612345678 or +212612345678)</mat-hint>
-                </mat-form-field>
-              </div>
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Address</mat-label>
-                  <input matInput formControlName="address" placeholder="Enter your address">
-                  <mat-icon matPrefix>home</mat-icon>
-                  <mat-hint>Optional</mat-hint>
-                </mat-form-field>
-              </div>
-              <div class="form-row two-columns">
-                <mat-form-field appearance="outline">
-                  <mat-label>Province/Region <span class="required-field">*</span></mat-label>
-                  <mat-select formControlName="province" (selectionChange)="onProvinceChange()">
-                    <mat-option *ngFor="let province of moroccanProvinces" [value]="province">
-                      {{province}}
-                    </mat-option>
-                  </mat-select>
-                  <mat-icon matPrefix>map</mat-icon>
-                  <mat-error *ngIf="contactFormGroup.get('contact.province')?.hasError('required')">
-                    Province/Region is required
-                  </mat-error>
-                  <mat-hint>Required</mat-hint>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>City <span class="required-field">*</span></mat-label>
-                  <mat-select formControlName="city">
-                    <mat-option *ngIf="citiesInProvince.length === 0 && contactFormGroup.get('contact.province')?.value" disabled>
-                      No cities available for this province
-                    </mat-option>
-                    <mat-option *ngIf="citiesInProvince.length === 0 && !contactFormGroup.get('contact.province')?.value" disabled>
-                      Please select a province first
-                    </mat-option>
-                    <mat-option *ngFor="let city of citiesInProvince" [value]="city">
-                      {{city}}
-                    </mat-option>
-                  </mat-select>
-                  <mat-icon matPrefix>location_city</mat-icon>
-                  <mat-error *ngIf="contactFormGroup.get('contact.city')?.hasError('required')">
-                    City is required
-                  </mat-error>
-                  <mat-hint>Required - Select a province first to see available cities</mat-hint>
-                </mat-form-field>
-              </div>
-              <div class="step-actions">
-                <button mat-button matStepperPrevious>Back</button>
-                <button mat-raised-button color="primary" (click)="goToNextStep()" [disabled]="!isContactFormValid()">Next</button>
-                <button mat-button type="button" (click)="debugCityLoading()">Debug Cities</button>
-                <button mat-button type="button" (click)="debugCurrentStep()">Debug Step</button>
-              </div>
-            </div>
-          </mat-step>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Website</mat-label>
+                      <input matInput formControlName="website" placeholder="https://example.com">
+                      <mat-icon matPrefix class="mr-2 text-gray-500">language</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('organization.website')?.hasError('pattern')">
+                        Please enter a valid website URL
+                      </mat-error>
+                    </mat-form-field>
 
-          <!-- Step 3: Role-specific Information -->
-          <mat-step [stepControl]="roleSpecificFormGroup" errorMessage="Please complete all required fields">
-            <ng-template matStepLabel>Additional Information</ng-template>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Mission Statement <span class="required-field">*</span></mat-label>
+                      <textarea matInput formControlName="missionStatement" rows="3" placeholder="What is your organization's mission?"></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500">assignment</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('organization.missionStatement')?.hasError('required')">
+                        Mission statement is required
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
 
-            <!-- Required Fields Legend -->
-            <div class="required-fields-legend">
-              <p><span class="required-field">*</span> indicates required fields</p>
-            </div>
-
-            <!-- Step Description -->
-            <div class="step-description">
-              <p>Please provide additional information to complete your profile. This will help us match you with the right opportunities.</p>
-            </div>
-
-            <!-- Organization Form -->
-            <div *ngIf="isOrganization()" class="organization-info">
-              <h3>Organization Details</h3>
-
-              <mat-accordion>
-                <!-- Basic Information Panel -->
-                <mat-expansion-panel expanded>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">business</mat-icon>
-                      Basic Information
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-
-                  <div formGroupName="organization">
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Organization Name <span class="required-field">*</span></mat-label>
-                        <input matInput formControlName="name" placeholder="Enter organization name">
-                        <mat-icon matPrefix>business</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.name')?.hasError('required')">
-                          Organization name is required
+                  <!-- Social Media Section -->
+                  <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media Presence</h3>
+                    <div formGroupName="socialMedia" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Facebook</mat-label>
+                        <input matInput formControlName="facebook" placeholder="Facebook profile URL">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">facebook</mat-icon>
+                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.facebook')?.hasError('pattern')">
+                          Please enter a valid Facebook URL
                         </mat-error>
-                        <mat-hint>Required</mat-hint>
                       </mat-form-field>
-                    </div>
 
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Organization Type <span class="required-field">*</span></mat-label>
-                        <mat-select formControlName="organizationType">
-                          <mat-option *ngFor="let type of organizationTypes" [value]="type">
-                            {{type}}
-                          </mat-option>
-                        </mat-select>
-                        <mat-icon matPrefix>category</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.organizationType')?.hasError('required')">
-                          Organization type is required
-                        </mat-error>
-                        <mat-hint>Required</mat-hint>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Founded Year</mat-label>
-                        <input matInput formControlName="foundedYear" type="number" placeholder="Year organization was founded">
-                        <mat-icon matPrefix>event</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.foundedYear')?.hasError('min')">
-                          Year must be after 1800
-                        </mat-error>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.foundedYear')?.hasError('max')">
-                          Year cannot be in the future
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Twitter</mat-label>
+                        <input matInput formControlName="twitter" placeholder="Twitter profile URL">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">twitter</mat-icon>
+                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.twitter')?.hasError('pattern')">
+                          Please enter a valid Twitter URL
                         </mat-error>
                       </mat-form-field>
-                    </div>
 
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Website</mat-label>
-                        <input matInput formControlName="website" placeholder="Enter organization website">
-                        <mat-icon matPrefix>language</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.website')?.hasError('pattern')">
-                          Please enter a valid website URL
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Instagram</mat-label>
+                        <input matInput formControlName="instagram" placeholder="Instagram profile URL">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">photo_camera</mat-icon>
+                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.instagram')?.hasError('pattern')">
+                          Please enter a valid Instagram URL
                         </mat-error>
-                        <mat-hint>Include http:// or https:// for complete URLs (e.g., https://example.org)</mat-hint>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>LinkedIn</mat-label>
+                        <input matInput formControlName="linkedin" placeholder="LinkedIn profile URL">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">linkedin</mat-icon>
+                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.linkedin')?.hasError('pattern')">
+                          Please enter a valid LinkedIn URL
+                        </mat-error>
                       </mat-form-field>
                     </div>
                   </div>
-                </mat-expansion-panel>
+                </div>
 
-                <!-- Mission and Focus Panel -->
-                <mat-expansion-panel>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">assignment</mat-icon>
-                      Mission and Focus Areas
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-
-                  <div formGroupName="organization">
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Mission Statement <span class="required-field">*</span></mat-label>
-                        <textarea matInput formControlName="missionStatement" placeholder="Describe your organization's mission" rows="3"></textarea>
-                        <mat-icon matPrefix>lightbulb</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.missionStatement')?.hasError('required')">
-                          Mission statement is required
-                        </mat-error>
-                        <mat-hint>Required - Describe your organization's mission and purpose</mat-hint>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Description <span class="required-field">*</span></mat-label>
-                        <textarea matInput formControlName="description" placeholder="Describe your organization" rows="4"></textarea>
-                        <mat-icon matPrefix>description</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.description')?.hasError('required')">
-                          Description is required
-                        </mat-error>
-                        <mat-hint>Required - Provide details about your organization's activities and impact</mat-hint>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Focus Areas</mat-label>
-                        <mat-chip-grid #chipGridFocusAreas aria-label="Focus Areas selection">
-                          <mat-chip-row *ngFor="let area of focusAreas" (removed)="removeFocusArea(area)">
-                            {{area}}
-                            <button matChipRemove [attr.aria-label]="'remove ' + area">
-                              <mat-icon>cancel</mat-icon>
-                            </button>
-                          </mat-chip-row>
-                          <input placeholder="Add focus areas..."
-                                [matChipInputFor]="chipGridFocusAreas"
-                                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                                (matChipInputTokenEnd)="addFocusArea($event)">
-                        </mat-chip-grid>
-                        <mat-hint>Examples: Education, Health, Environment, Poverty Relief</mat-hint>
-                      </mat-form-field>
-                    </div>
+                <!-- Volunteer Form -->
+                <div *ngIf="isVolunteer()" formGroupName="volunteer" class="space-y-6">
+                  <div class="text-center">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-2">Volunteer Details</h2>
+                    <p class="text-gray-600">Tell us about yourself</p>
                   </div>
-                </mat-expansion-panel>
 
-                <!-- Social Media Panel -->
-                <mat-expansion-panel>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">share</mat-icon>
-                      Social Media
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Bio <span class="required-field">*</span></mat-label>
+                      <textarea matInput formControlName="bio" rows="3" placeholder="Tell us about yourself"></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500">person</mat-icon>
+                      <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.bio')?.hasError('required')">
+                        Bio is required
+                      </mat-error>
+                    </mat-form-field>
 
-                  <div formGroupName="organization">
-                    <div formGroupName="socialMedia">
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Facebook</mat-label>
-                          <input matInput formControlName="facebook" placeholder="Facebook page URL">
-                          <mat-icon matPrefix>facebook</mat-icon>
-                          <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.facebook')?.hasError('pattern')">
-                            Please enter a valid Facebook URL
-                          </mat-error>
-                        </mat-form-field>
-                      </div>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Education</mat-label>
+                      <textarea matInput formControlName="education" rows="3" placeholder="Your educational background"></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500">school</mat-icon>
+                    </mat-form-field>
 
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Twitter</mat-label>
-                          <input matInput formControlName="twitter" placeholder="Twitter profile URL">
-                          <mat-icon matPrefix>twitter</mat-icon>
-                          <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.twitter')?.hasError('pattern')">
-                            Please enter a valid Twitter URL
-                          </mat-error>
-                        </mat-form-field>
-                      </div>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Experience</mat-label>
+                      <textarea matInput formControlName="experience" rows="3" placeholder="Your relevant experience"></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500">work</mat-icon>
+                    </mat-form-field>
 
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Instagram</mat-label>
-                          <input matInput formControlName="instagram" placeholder="Instagram profile URL">
-                          <mat-icon matPrefix>photo_camera</mat-icon>
-                          <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.instagram')?.hasError('pattern')">
-                            Please enter a valid Instagram URL
-                          </mat-error>
-                        </mat-form-field>
-                      </div>
-
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>LinkedIn</mat-label>
-                          <input matInput formControlName="linkedin" placeholder="LinkedIn profile URL">
-                          <mat-icon matPrefix>linkedin</mat-icon>
-                          <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.linkedin')?.hasError('pattern')">
-                            Please enter a valid LinkedIn URL
-                          </mat-error>
-                        </mat-form-field>
-                      </div>
-                    </div>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Special Needs</mat-label>
+                      <input matInput formControlName="specialNeeds" placeholder="Any special requirements or accommodations">
+                      <mat-icon matPrefix class="mr-2 text-gray-500">accessibility</mat-icon>
+                    </mat-form-field>
                   </div>
-                </mat-expansion-panel>
-              </mat-accordion>
-            </div>
 
-            <!-- Volunteer Form -->
-            <div *ngIf="isVolunteer()" class="volunteer-info">
-              <h3>Volunteer Profile</h3>
-
-              <mat-accordion>
-                <!-- Basic Information Panel -->
-                <mat-expansion-panel expanded>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">person</mat-icon>
-                      Basic Information
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-
-                  <div formGroupName="volunteer">
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Bio <span class="required-field">*</span></mat-label>
-                        <textarea matInput formControlName="bio" placeholder="Tell us about yourself" rows="3"></textarea>
-                        <mat-icon matPrefix>person_outline</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.bio')?.hasError('required')">
-                          Bio is required
-                        </mat-error>
-                        <mat-hint>Required - Please provide a brief description about yourself</mat-hint>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Education</mat-label>
-                        <textarea matInput formControlName="education" placeholder="Your educational background" rows="2"></textarea>
-                        <mat-icon matPrefix>school</mat-icon>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Experience</mat-label>
-                        <textarea matInput formControlName="experience" placeholder="Your volunteer experience" rows="2"></textarea>
-                        <mat-icon matPrefix>work</mat-icon>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-checkbox formControlName="drivingLicense" color="primary">
-                        I have a valid driving license
-                      </mat-checkbox>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Special Needs or Accommodations</mat-label>
-                        <textarea matInput formControlName="specialNeeds" placeholder="Any special needs or accommodations we should be aware of" rows="2"></textarea>
-                        <mat-icon matPrefix>accessibility</mat-icon>
-                      </mat-form-field>
-                    </div>
-                  </div>
-                </mat-expansion-panel>
-
-                <!-- Skills and Interests Panel -->
-                <mat-expansion-panel>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">psychology</mat-icon>
-                      Skills and Interests
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-
-                  <div>
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
+                  <!-- Skills Section -->
+                  <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Skills & Interests</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Skills</mat-label>
-                        <mat-chip-grid #chipGridSkills aria-label="Skills selection">
+                        <mat-chip-grid #chipGrid>
                           <mat-chip-row *ngFor="let skill of skills" (removed)="removeSkill(skill)">
                             {{skill}}
-                            <button matChipRemove [attr.aria-label]="'remove ' + skill">
+                            <button matChipRemove>
                               <mat-icon>cancel</mat-icon>
                             </button>
                           </mat-chip-row>
-                          <input placeholder="Add skills..."
-                                [matChipInputFor]="chipGridSkills"
-                                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                                (matChipInputTokenEnd)="addSkill($event)">
                         </mat-chip-grid>
-                        <mat-hint>Examples: Teaching, First Aid, Web Design, Cooking</mat-hint>
+                        <input placeholder="New skill..."
+                               [matChipInputFor]="chipGrid"
+                               [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                               (matChipInputTokenEnd)="addSkill($event)">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">psychology</mat-icon>
                       </mat-form-field>
-                    </div>
 
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
+                      <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Interests</mat-label>
-                        <mat-chip-grid #chipGridInterests aria-label="Interests selection">
+                        <mat-chip-grid #chipGrid2>
                           <mat-chip-row *ngFor="let interest of interests" (removed)="removeInterest(interest)">
                             {{interest}}
-                            <button matChipRemove [attr.aria-label]="'remove ' + interest">
+                            <button matChipRemove>
                               <mat-icon>cancel</mat-icon>
                             </button>
                           </mat-chip-row>
-                          <input placeholder="Add interests..."
-                                [matChipInputFor]="chipGridInterests"
-                                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                                (matChipInputTokenEnd)="addInterest($event)">
                         </mat-chip-grid>
-                        <mat-hint>Examples: Reading, Sports, Music, Travel</mat-hint>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Preferred Causes</mat-label>
-                        <mat-chip-grid #chipGridCauses aria-label="Preferred Causes selection">
-                          <mat-chip-row *ngFor="let cause of preferredCauses" (removed)="removePreferredCause(cause)">
-                            {{cause}}
-                            <button matChipRemove [attr.aria-label]="'remove ' + cause">
-                              <mat-icon>cancel</mat-icon>
-                            </button>
-                          </mat-chip-row>
-                          <input placeholder="Add preferred causes..."
-                                [matChipInputFor]="chipGridCauses"
-                                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                                (matChipInputTokenEnd)="addPreferredCause($event)">
-                        </mat-chip-grid>
-                        <mat-hint>Examples: Education, Environment, Animal Welfare</mat-hint>
-                      </mat-form-field>
-                    </div>
-
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Languages</mat-label>
-                        <mat-chip-grid #chipGridLanguages aria-label="Languages selection">
-                          <mat-chip-row *ngFor="let language of languages" (removed)="removeLanguage(language)">
-                            {{language}}
-                            <button matChipRemove [attr.aria-label]="'remove ' + language">
-                              <mat-icon>cancel</mat-icon>
-                            </button>
-                          </mat-chip-row>
-                          <input placeholder="Add languages..."
-                                [matChipInputFor]="chipGridLanguages"
-                                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                                (matChipInputTokenEnd)="addLanguage($event)">
-                        </mat-chip-grid>
-                        <mat-hint>Examples: English, French, Spanish, Arabic, Amazigh</mat-hint>
+                        <input placeholder="New interest..."
+                               [matChipInputFor]="chipGrid2"
+                               [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                               (matChipInputTokenEnd)="addInterest($event)">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">favorite</mat-icon>
                       </mat-form-field>
                     </div>
                   </div>
-                </mat-expansion-panel>
 
-                <!-- Statistics Panel -->
-                <mat-expansion-panel>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">bar_chart</mat-icon>
-                      Volunteer Statistics
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-
-                  <div formGroupName="volunteer">
-                    <div formGroupName="statistics">
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Previous Volunteer Experience (Years)</mat-label>
-                          <input matInput type="number" formControlName="experienceYears" min="0" max="100">
-                          <mat-icon matPrefix>history</mat-icon>
-                          <mat-hint>How many years of volunteer experience do you have?</mat-hint>
-                        </mat-form-field>
-                      </div>
-
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Hours Available Per Week</mat-label>
-                          <input matInput type="number" formControlName="hoursPerWeek" min="0" max="168">
-                          <mat-icon matPrefix>schedule</mat-icon>
-                          <mat-hint>How many hours can you volunteer per week?</mat-hint>
-                        </mat-form-field>
-                      </div>
-
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Preferred Commitment Length</mat-label>
-                          <mat-select formControlName="commitmentLength">
-                            <mat-option value="one_time">One-time event</mat-option>
-                            <mat-option value="short_term">Short-term (1-3 months)</mat-option>
-                            <mat-option value="medium_term">Medium-term (3-6 months)</mat-option>
-                            <mat-option value="long_term">Long-term (6+ months)</mat-option>
-                          </mat-select>
-                          <mat-icon matPrefix>date_range</mat-icon>
-                          <mat-hint>What is your preferred commitment length?</mat-hint>
-                        </mat-form-field>
-                      </div>
-
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Maximum Travel Distance (km)</mat-label>
-                          <input matInput type="number" formControlName="maxTravelDistance" min="0" max="1000">
-                          <mat-icon matPrefix>commute</mat-icon>
-                          <mat-hint>How far are you willing to travel for volunteer opportunities?</mat-hint>
-                        </mat-form-field>
-                      </div>
-                    </div>
+                  <!-- Languages Section -->
+                  <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Languages</h3>
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Languages</mat-label>
+                      <mat-chip-grid #chipGrid3>
+                        <mat-chip-row *ngFor="let language of languages" (removed)="removeLanguage(language)">
+                          {{language}}
+                          <button matChipRemove>
+                            <mat-icon>cancel</mat-icon>
+                          </button>
+                        </mat-chip-row>
+                      </mat-chip-grid>
+                      <input placeholder="New language..."
+                             [matChipInputFor]="chipGrid3"
+                             [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                             (matChipInputTokenEnd)="addLanguage($event)">
+                      <mat-icon matPrefix class="mr-2 text-gray-500">translate</mat-icon>
+                    </mat-form-field>
                   </div>
-                </mat-expansion-panel>
 
-                <!-- Availability Panel -->
-                <mat-expansion-panel>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">schedule</mat-icon>
-                      Availability
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
+                  <!-- Emergency Contact Section -->
+                  <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Emergency Contact</h3>
+                    <div formGroupName="emergencyContact" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Name <span class="required-field">*</span></mat-label>
+                        <input matInput formControlName="name" placeholder="Emergency contact name">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">person</mat-icon>
+                        <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.name')?.hasError('required')">
+                          Emergency contact name is required
+                        </mat-error>
+                      </mat-form-field>
 
-                  <div formGroupName="volunteer">
-                    <div class="form-row">
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Availability</mat-label>
-                        <mat-select formControlName="availability" multiple>
-                          <mat-option value="weekday_morning">Weekday Mornings</mat-option>
-                          <mat-option value="weekday_afternoon">Weekday Afternoons</mat-option>
-                          <mat-option value="weekday_evening">Weekday Evenings</mat-option>
-                          <mat-option value="weekend_morning">Weekend Mornings</mat-option>
-                          <mat-option value="weekend_afternoon">Weekend Afternoons</mat-option>
-                          <mat-option value="weekend_evening">Weekend Evenings</mat-option>
-                        </mat-select>
-                        <mat-icon matPrefix>access_time</mat-icon>
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Relationship</mat-label>
+                        <input matInput formControlName="relationship" placeholder="Relationship to you">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">people</mat-icon>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Phone <span class="required-field">*</span></mat-label>
+                        <input matInput formControlName="phone" placeholder="Emergency contact phone">
+                        <mat-icon matPrefix class="mr-2 text-gray-500">phone</mat-icon>
+                        <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.phone')?.hasError('required')">
+                          Emergency contact phone is required
+                        </mat-error>
+                        <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.phone')?.hasError('pattern')">
+                          Please enter a valid phone number
+                        </mat-error>
                       </mat-form-field>
                     </div>
                   </div>
-                </mat-expansion-panel>
-
-                <!-- Emergency Contact Panel -->
-                <mat-expansion-panel expanded>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      <mat-icon class="panel-icon">emergency</mat-icon>
-                      Emergency Contact
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-
-                  <div formGroupName="volunteer">
-                    <div formGroupName="emergencyContact">
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Contact Name <span class="required-field">*</span></mat-label>
-                          <input matInput formControlName="name" placeholder="Emergency contact name">
-                          <mat-icon matPrefix>person</mat-icon>
-                          <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.name')?.hasError('required')">
-                            Emergency contact name is required
-                          </mat-error>
-                          <mat-hint>Required - Please provide an emergency contact name</mat-hint>
-                        </mat-form-field>
-                      </div>
-
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Relationship</mat-label>
-                          <input matInput formControlName="relationship" placeholder="Relationship to you">
-                          <mat-icon matPrefix>people</mat-icon>
-                        </mat-form-field>
-                      </div>
-
-                      <div class="form-row">
-                        <mat-form-field appearance="outline" class="full-width">
-                          <mat-label>Phone Number <span class="required-field">*</span></mat-label>
-                          <input matInput formControlName="phone" placeholder="Emergency contact phone">
-                          <mat-icon matPrefix>phone</mat-icon>
-                          <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.phone')?.hasError('required')">
-                            Emergency contact phone is required
-                          </mat-error>
-                          <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.phone')?.hasError('pattern')">
-                            Please enter a valid Moroccan phone number (e.g., 0612345678 or +212612345678)
-                          </mat-error>
-                          <mat-hint>Required - Enter a valid Moroccan phone number (e.g., 0612345678 or +212612345678)</mat-hint>
-                        </mat-form-field>
-                      </div>
-                    </div>
-                  </div>
-                </mat-expansion-panel>
-              </mat-accordion>
-            </div>
-
-            <div class="step-actions">
-              <button mat-button matStepperPrevious>Back</button>
-              <button mat-raised-button color="primary" type="submit" [disabled]="!validateForm() || isSubmitting" class="submit-button">
-                <div class="button-content">
-                  <mat-spinner *ngIf="isSubmitting" diameter="20" class="spinner-button"></mat-spinner>
-                  <span *ngIf="!isSubmitting">Complete Profile</span>
                 </div>
-              </button>
-              <button mat-button type="button" (click)="debugFormValidity()">Debug Form</button>
-              <button mat-button type="button" (click)="debugCurrentStep()">Debug Step</button>
-            </div>
-          </mat-step>
-        </mat-stepper>
-      </form>
-    </mat-card-content>
-  </mat-card>
+              </div>
 
-  <div *ngIf="errorMessage" class="error-container">
-    <mat-card class="error-card">
-      <mat-card-content>
-        <div class="error-content">
-          <mat-icon class="error-icon">error</mat-icon>
-          <p class="error-message">{{ errorMessage }}</p>
-        </div>
+              <div class="flex justify-between mt-6">
+                <button mat-button matStepperPrevious>
+                  <mat-icon>arrow_back</mat-icon> Back
+                </button>
+                <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isRoleSpecificFormValid()">
+                  Submit <mat-icon>check</mat-icon>
+                </button>
+              </div>
+            </mat-step>
+          </mat-stepper>
+        </form>
       </mat-card-content>
     </mat-card>
   </div>

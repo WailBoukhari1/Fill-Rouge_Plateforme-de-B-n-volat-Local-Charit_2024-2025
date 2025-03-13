@@ -1,6 +1,7 @@
 import { createAction, props } from '@ngrx/store';
 import { User } from '../../core/models/auth.models';
 import { UserRole } from '../../core/models/auth.models';
+import { QuestionnaireRequest } from '../../core/models/questionnaire.model';
 
 // Login
 export const login = createAction(
@@ -109,4 +110,9 @@ export const loadStoredUserSuccess = createAction(
 export const loadStoredUserFailure = createAction(
   '[Auth] Load Stored User Failure',
   props<{ error: string }>()
+);
+
+export const updateUserProfile = createAction(
+  '[Auth] Update User Profile',
+  props<{ profile: any }>()
 );

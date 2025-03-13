@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
@@ -11,11 +11,17 @@ import {
   EventStatus
 } from '../models/event.types';
 
+interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  status?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class EventService {
-  private apiUrl = `${environment.apiUrl}/api/events`;
+  private apiUrl = `${environment.apiUrl}/events`;
 
   constructor(private http: HttpClient) {}
 
@@ -41,17 +47,7 @@ export class EventService {
 
     return this.http.get<{ content: IEvent[]; totalElements: number }>(this.apiUrl, { params }).pipe(
       map(response => ({
-        content: response.content.map(event => ({
-          ...event,
-          registeredParticipants: new Set(event.registeredParticipants),
-          waitlistedParticipants: new Set(event.waitlistedParticipants),
-          approvedParticipants: new Set(event.approvedParticipants),
-          rejectedParticipants: new Set(event.rejectedParticipants),
-          pendingParticipants: new Set(event.pendingParticipants),
-          tags: new Set(event.tags),
-          resources: new Set(event.resources),
-          sponsors: new Set(event.sponsors)
-        })),
+        content: this.mapEvents(response.content),
         totalElements: response.totalElements
       }))
     );
@@ -74,20 +70,8 @@ export class EventService {
   }
 
   getUpcomingEvents(): Observable<IEvent[]> {
-    const headers = new HttpHeaders().set('X-User-ID', localStorage.getItem('userId') || '');
-    return this.http.get<{ content: IEvent[] }>(`${this.apiUrl}/upcoming`, { headers }).pipe(
-      map(response => response.content || []),
-      map(events => events.map(event => ({
-        ...event,
-        registeredParticipants: new Set(event.registeredParticipants),
-        waitlistedParticipants: new Set(event.waitlistedParticipants),
-        approvedParticipants: new Set(event.approvedParticipants),
-        rejectedParticipants: new Set(event.rejectedParticipants),
-        pendingParticipants: new Set(event.pendingParticipants),
-        tags: new Set(event.tags),
-        resources: new Set(event.resources),
-        sponsors: new Set(event.sponsors)
-      }))),
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/upcoming`).pipe(
+      map(response => this.mapEvents(response.data || [])),
       catchError(error => {
         console.error('Error loading upcoming events:', error);
         return of([]);
@@ -241,7 +225,8 @@ export class EventService {
       [EventStatus.DRAFT]: 'basic',
       [EventStatus.UPCOMING]: 'accent',
       [EventStatus.ONGOING]: 'primary',
-      [EventStatus.PUBLISHED]: 'primary'
+      [EventStatus.PUBLISHED]: 'primary',
+      [EventStatus.ACTIVE]: 'primary'
     };
     return statusColors[status] || 'basic';
   }
@@ -270,40 +255,9 @@ export class EventService {
     return event.rejectedParticipants.has(userId);
   }
 
-  private getUserId(): string | null {
-    const userData = localStorage.getItem('user_data');
-    if (!userData) {
-      console.error('User data not found in localStorage');
-      return null;
-    }
-    try {
-      const user = JSON.parse(userData);
-      return user.id?.toString() || null;
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      return null;
-    }
-  }
-
   getRegisteredEvents(): Observable<IEvent[]> {
-    const userId = this.getUserId();
-    if (!userId) {
-      console.error('User ID not found in localStorage');
-      return of([]);
-    }
-    const headers = new HttpHeaders().set('X-User-ID', userId);
-    return this.http.get<IEvent[]>(`${this.apiUrl}/registered`, { headers }).pipe(
-      map(events => events.map(event => ({
-        ...event,
-        registeredParticipants: new Set(event.registeredParticipants),
-        waitlistedParticipants: new Set(event.waitlistedParticipants),
-        approvedParticipants: new Set(event.approvedParticipants),
-        rejectedParticipants: new Set(event.rejectedParticipants),
-        pendingParticipants: new Set(event.pendingParticipants),
-        tags: new Set(event.tags),
-        resources: new Set(event.resources),
-        sponsors: new Set(event.sponsors)
-      }))),
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/registered`).pipe(
+      map(response => this.mapEvents(response.data || [])),
       catchError(error => {
         console.error('Error fetching registered events:', error);
         return of([]);
@@ -312,28 +266,26 @@ export class EventService {
   }
 
   getWaitlistedEvents(): Observable<IEvent[]> {
-    const userId = this.getUserId();
-    if (!userId) {
-      console.error('User ID not found in localStorage');
-      return of([]);
-    }
-    const headers = new HttpHeaders().set('X-User-ID', userId);
-    return this.http.get<IEvent[]>(`${this.apiUrl}/waitlist`, { headers }).pipe(
-      map(events => events.map(event => ({
-        ...event,
-        registeredParticipants: new Set(event.registeredParticipants),
-        waitlistedParticipants: new Set(event.waitlistedParticipants),
-        approvedParticipants: new Set(event.approvedParticipants),
-        rejectedParticipants: new Set(event.rejectedParticipants),
-        pendingParticipants: new Set(event.pendingParticipants),
-        tags: new Set(event.tags),
-        resources: new Set(event.resources),
-        sponsors: new Set(event.sponsors)
-      }))),
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/waitlist`).pipe(
+      map(response => this.mapEvents(response.data || [])),
       catchError(error => {
         console.error('Error fetching waitlisted events:', error);
         return of([]);
       })
     );
+  }
+
+  private mapEvents(events: IEvent[]): IEvent[] {
+    return events.map(event => ({
+      ...event,
+      registeredParticipants: new Set(event.registeredParticipants),
+      waitlistedParticipants: new Set(event.waitlistedParticipants),
+      approvedParticipants: new Set(event.approvedParticipants),
+      rejectedParticipants: new Set(event.rejectedParticipants),
+      pendingParticipants: new Set(event.pendingParticipants),
+      tags: new Set(event.tags),
+      resources: new Set(event.resources),
+      sponsors: new Set(event.sponsors)
+    }));
   }
 } 

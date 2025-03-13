@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/events")
+@RequestMapping("/events")
 @RequiredArgsConstructor
 @Tag(name = "Event Management", description = "APIs for managing events and feedback")
 public class EventController {

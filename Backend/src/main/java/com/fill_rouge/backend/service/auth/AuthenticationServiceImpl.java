@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fill_rouge.backend.config.security.JwtService;
 import com.fill_rouge.backend.constant.Role;
+import com.fill_rouge.backend.domain.Organization;
 import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.request.LoginRequest;
@@ -70,7 +71,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setLastName(registerRequest.getLastName());
             user.setEmail(registerRequest.getEmail());
             user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            user.setRole(Role.VOLUNTEER);
+            user.setRole(registerRequest.getRole() != null ? registerRequest.getRole() : Role.VOLUNTEER);
             user.setVerificationCode(generateVerificationCode());
             user.setVerificationCodeExpiry(LocalDateTime.now().plusHours(24));
             user.setEnabled(false);
@@ -80,18 +81,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             
             user = userRepository.save(user);
 
-            // Create volunteer profile
-            VolunteerProfile profile = new VolunteerProfile();
-            profile.setUser(user);
-            profile.setFirstName(user.getFirstName());
-            profile.setLastName(user.getLastName());
-            profile.setEmail(user.getEmail());
-            profile.setCreatedAt(LocalDateTime.now());
-            profile.setUpdatedAt(LocalDateTime.now());
-            profile.setStatus("ACTIVE");
-            profile.setActive(true);
-            profile.setProfileVisible(true);
-            volunteerProfileRepository.save(profile);
+            // Create profile based on role
+            if (user.getRole() == Role.VOLUNTEER) {
+                createVolunteerProfile(user);
+            } else if (user.getRole() == Role.ORGANIZATION) {
+                createOrganizationProfile(user, registerRequest);
+            }
 
             // Generate tokens
             String jwt = jwtService.generateToken(user);
@@ -467,5 +462,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private String generateVerificationCode() {
         return String.format("%06d", new java.util.Random().nextInt(1000000));
+    }
+
+    private void createVolunteerProfile(User user) {
+        VolunteerProfile profile = new VolunteerProfile();
+        profile.setUser(user);
+        profile.setFirstName(user.getFirstName());
+        profile.setLastName(user.getLastName());
+        profile.setEmail(user.getEmail());
+        profile.setCreatedAt(LocalDateTime.now());
+        profile.setUpdatedAt(LocalDateTime.now());
+        profile.setStatus("ACTIVE");
+        profile.setActive(true);
+        profile.setProfileVisible(true);
+        volunteerProfileRepository.save(profile);
+    }
+
+    private Organization createOrganizationProfile(User user, RegisterRequest request) {
+        Organization organization = Organization.builder()
+                .user(user)
+                .name(request.getOrganizationName())
+                .description(request.getOrganizationDescription())
+                .mission("Organization mission statement")
+                .verified(false)
+                .acceptingVolunteers(true)
+                .build();
+        return organizationRepository.save(organization);
     }
 } 
