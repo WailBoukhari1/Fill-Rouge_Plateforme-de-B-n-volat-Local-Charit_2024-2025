@@ -3,39 +3,51 @@
  */
 export interface QuestionnaireRequest {
   role: string;
-  contact: {
-    phoneNumber: string;
-    address: string;
-    province: string;
-    city: string;
-  };
-  organizationDetails?: {
-    type: string;
-    foundedYear?: number;
-    website?: string;
-    missionStatement: string;
-    focusAreas: string[];
-    socialMedia?: {
-      facebook?: string;
-      twitter?: string;
-      instagram?: string;
-      linkedin?: string;
-    };
-  };
-  volunteerDetails?: {
-    bio: string;
-    education?: string;
-    experience?: string;
-    specialNeeds?: string;
-    skills: string[];
-    interests: string[];
-    languages: string[];
-    emergencyContact: {
-      name: string;
-      relationship?: string;
-      phone: string;
-    };
-  };
+  phoneNumber: string;
+  address: string;
+  city: string;
+  province: string;
+  country: string;
+  
+  // Organization specific fields
+  type?: string;
+  name?: string;
+  description?: string;
+  missionStatement?: string;
+  vision?: string;
+  website?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  focusAreas?: Set<string>;
+  foundedYear?: number | null;
+  socialMediaLinks?: SocialMediaLinksDTO;
+  
+  // Volunteer specific fields
+  bio?: string;
+  education?: string;
+  experience?: string;
+  specialNeeds?: string;
+  skills?: Set<string>;
+  interests?: Set<string>;
+  availableDays?: Set<string>;
+  preferredTimeOfDay?: string;
+  languages?: string[];
+  certifications?: string[];
+  availableForEmergency?: boolean;
+  emergencyContact?: EmergencyContactDTO;
+}
+
+export interface SocialMediaLinksDTO {
+  facebook?: string;
+  twitter?: string;
+  instagram?: string;
+  linkedin?: string;
+}
+
+export interface EmergencyContactDTO {
+  name: string;
+  relationship?: string;
+  phone: string;
 }
 
 /**
@@ -59,11 +71,13 @@ export enum FocusArea {
   ENVIRONMENT = 'ENVIRONMENT',
   POVERTY = 'POVERTY',
   HUMAN_RIGHTS = 'HUMAN_RIGHTS',
+  ANIMAL_WELFARE = 'ANIMAL_WELFARE',
   ARTS_CULTURE = 'ARTS_CULTURE',
   COMMUNITY_DEVELOPMENT = 'COMMUNITY_DEVELOPMENT',
-  YOUTH = 'YOUTH',
-  ELDERLY = 'ELDERLY',
-  DISABILITY = 'DISABILITY',
+  DISASTER_RELIEF = 'DISASTER_RELIEF',
+  YOUTH_DEVELOPMENT = 'YOUTH_DEVELOPMENT',
+  ELDERLY_CARE = 'ELDERLY_CARE',
+  DISABILITY_SUPPORT = 'DISABILITY_SUPPORT',
   OTHER = 'OTHER'
 }
 
@@ -77,5 +91,6 @@ export enum Language {
   SPANISH = 'SPANISH',
   GERMAN = 'GERMAN',
   CHINESE = 'CHINESE',
+  JAPANESE = 'JAPANESE',
   OTHER = 'OTHER'
 }

@@ -1,20 +1,23 @@
 package com.fill_rouge.backend.config.security;
 
-import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-
+import com.fill_rouge.backend.config.security.JwtConfig;
+import com.fill_rouge.backend.domain.User;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class JwtService {
@@ -37,8 +40,34 @@ public class JwtService {
         
         Map<String, Object> claims = new HashMap<>(extraClaims);
         claims.put("sub", userDetails.getUsername());
-        claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
         claims.put("created", now);
+        
+        if (userDetails instanceof User) {
+            User user = (User) userDetails;
+            logger.debug("Generating token for user: {} with role: {}", user.getEmail(), user.getRole());
+            
+            // Ensure role is not null before adding to claims
+            if (user.getRole() != null) {
+                claims.put("role", "ROLE_" + user.getRole().name());
+                claims.put("needs_questionnaire", user.getRole() == com.fill_rouge.backend.constant.Role.UNASSIGNED);
+                claims.put("can_access_questionnaire", user.getRole() == com.fill_rouge.backend.constant.Role.UNASSIGNED);
+            } else {
+                claims.put("role", "ROLE_UNASSIGNED");
+                claims.put("needs_questionnaire", true);
+                claims.put("can_access_questionnaire", true);
+            }
+            
+            claims.put("email_verified", user.isEmailVerified());
+            claims.put("questionnaire_completed", user.isQuestionnaireCompleted());
+            claims.put("user_id", user.getId());
+            claims.put("first_name", user.getFirstName());
+            claims.put("last_name", user.getLastName());
+            
+            logger.debug("Token claims: {}", claims);
+        } else {
+            // Fallback for non-User UserDetails implementations
+            claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
+        }
 
         return Jwts.builder()
                 .setClaims(claims)

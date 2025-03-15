@@ -30,3 +30,63 @@ body {
 }
 
 html, body { height: 100%; }
+
+// Error message styles
+.error-message {
+  @apply bg-red-50 border border-red-200 rounded-md p-4 mb-4;
+  
+  .mat-icon {
+    @apply text-red-500;
+  }
+  
+  .action-button {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors;
+    
+    .mat-icon {
+      @apply text-white mr-1 text-sm;
+    }
+  }
+}
+
+// Snackbar styles
+.error-snackbar {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+
+  .mat-simple-snackbar {
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .mat-simple-snackbar-action {
+    color: #dc2626 !important;
+    font-weight: 600;
+  }
+}
+
+.mat-mdc-snack-bar-container {
+  &.error-snackbar {
+    --mdc-snackbar-container-color: #fee2e2;
+    --mat-mdc-snack-bar-button-color: #dc2626;
+    --mdc-snackbar-supporting-text-color: #991b1b;
+  }
+}
+
+// Animation
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}

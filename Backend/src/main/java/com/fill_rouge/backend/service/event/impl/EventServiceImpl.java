@@ -14,6 +14,7 @@ import com.fill_rouge.backend.service.event.EventService;
 import com.fill_rouge.backend.service.user.IUserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -73,15 +74,38 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventStatisticsResponse getEventStatistics(String eventId) {
-        Event event = eventRepository.findById(eventId)
-            .orElseThrow(() -> new RuntimeException("Event not found"));
+        try {
+            Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
             
-        return EventStatisticsResponse.builder()
-            .participantCount(event.getRegisteredParticipants().size())
-            .totalVolunteerHours(0)
-            .averageRating(event.getAverageRating())
-            .successRate(0.0)
-            .build();
+            // Get basic counts
+            int participantCount = event.getRegisteredParticipants().size();
+            
+            // Calculate total hours based on event duration
+            int totalHours = 0;
+            if (event.getStartDate() != null && event.getEndDate() != null) {
+                totalHours = (int) java.time.Duration.between(event.getStartDate(), event.getEndDate()).toHours() * participantCount;
+            }
+            
+            // Get average rating from feedback
+            List<EventFeedback> feedbacks = eventFeedbackRepository.findByEventId(eventId, Pageable.unpaged()).getContent();
+            double averageRating = feedbacks.stream()
+                .mapToDouble(EventFeedback::getRating)
+                .average()
+                .orElse(0.0);
+            
+            // Calculate success rate (completed vs registered)
+            double successRate = event.getStatus() == EventStatus.COMPLETED ? 100.0 : 0.0;
+
+            return EventStatisticsResponse.builder()
+                .participantCount(participantCount)
+                .totalVolunteerHours(totalHours)
+                .averageRating(averageRating)
+                .successRate(successRate)
+                .build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get event statistics", e);
+        }
     }
 
     @Override
@@ -167,7 +191,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<Event> getEventsByOrganization(String organizationId, Pageable pageable) {
-        return eventRepository.findByOrganizationId(organizationId, pageable);
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, pageable);
+        return new PageImpl<>(events, pageable, events.size());
     }
 
     @Override

@@ -1,7 +1,8 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
   VOLUNTEER = 'VOLUNTEER',
-  ORGANIZATION = 'ORGANIZATION'
+  ORGANIZATION = 'ORGANIZATION',
+  UNASSIGNED = 'UNASSIGNED'
 }
 
 export interface User {
@@ -10,6 +11,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
+  roles?: string[];
   phoneNumber?: string;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
@@ -36,29 +38,30 @@ export interface AuthState {
 }
 
 export interface ApiResponse<T> {
+  success?: boolean;
   data: T;
   message?: string;
   status?: string;
 }
 
 export interface AuthResponse {
-  token: string;
-  refreshToken: string;
   userId: string;
   email: string;
   firstName: string;
   lastName: string;
   role?: string;
-  phoneNumber?: string;
-  emailVerified: boolean;
-  twoFactorEnabled: boolean;
-  accountLocked: boolean;
-  accountExpired: boolean;
-  credentialsExpired: boolean;
+  roles?: string[];
+  token: string;
+  refreshToken: string;
+  emailVerified?: boolean;
+  twoFactorEnabled?: boolean;
+  accountLocked?: boolean;
+  accountExpired?: boolean;
+  credentialsExpired?: boolean;
   profilePicture?: string;
   lastLoginIp?: string;
   lastLoginAt?: string;
-  questionnaireCompleted: boolean;
+  questionnaireCompleted?: boolean;
 }
 
 export interface AuthError {
@@ -75,15 +78,10 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
+  confirmPassword: string;
   firstName: string;
   lastName: string;
-  phoneNumber: string;
-  role: UserRole;
-  organizationName?: string;
-  organizationWebsite?: string;
-  organizationDescription?: string;
-  organizationType?: string;
-  missionStatement?: string;
+  role?: UserRole;
 }
 
 export interface EmailVerificationRequest {

@@ -1,60 +1,41 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { map, mergeMap, catchError, switchMap, take } from 'rxjs/operators';
-import { VolunteerService } from '../../core/services/volunteer.service';
+import { catchError, map, mergeMap, withLatestFrom } from 'rxjs/operators';
 import { StatisticsService } from '../../core/services/statistics.service';
 import { AuthService } from '../../core/services/auth.service';
 import * as VolunteerActions from './volunteer.actions';
+import { StatisticsResponse, VolunteerStats } from '../../core/models/statistics.model';
 
 @Injectable()
 export class VolunteerEffects {
-  loadStatistics$ = createEffect(() => this.actions$.pipe(
-    ofType(VolunteerActions.loadStatistics),
-    switchMap(() => this.authService.currentUser$.pipe(
-      take(1),
-      switchMap(user => {
-        if (!user?.id) {
-          return of(VolunteerActions.loadStatisticsFailure({ error: 'User not found' }));
-        }
-        return this.statisticsService.getVolunteerStats(user.id.toString()).pipe(
-          map(volunteerStats => VolunteerActions.loadStatisticsSuccess({ 
-            statistics: { volunteerStats, organizationStats: undefined, adminStats: undefined } 
-          })),
+  loadStatistics$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(VolunteerActions.loadStatistics),
+      mergeMap(() => {
+        const userId = localStorage.getItem('userId') || '';
+        return this.statisticsService.getVolunteerStatistics(userId).pipe(
+          map((stats: VolunteerStats) => {
+            const response: StatisticsResponse = {
+              userId,
+              userRole: 'VOLUNTEER',
+              volunteerStats: stats,
+              adminStats: undefined,
+              organizationStats: undefined
+            };
+            return VolunteerActions.loadStatisticsSuccess({ statistics: response });
+          }),
           catchError(error => of(VolunteerActions.loadStatisticsFailure({ error: error.message })))
         );
       })
-    ))
-  ));
-
-  loadDetailedStats$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(VolunteerActions.loadDetailedStats),
-      mergeMap(() =>
-        this.statisticsService.getDetailedVolunteerStats().pipe(
-          map(detailedStats => VolunteerActions.loadDetailedStatsSuccess({ detailedStats })),
-          catchError(error => of(VolunteerActions.loadDetailedStatsFailure({ error: error.message })))
-        )
-      )
-    )
-  );
-
-  loadHours$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(VolunteerActions.loadHours),
-      mergeMap(() =>
-        this.volunteerService.getVolunteerHours().pipe(
-          map(hours => VolunteerActions.loadHoursSuccess({ hours })),
-          catchError(error => of(VolunteerActions.loadHoursFailure({ error: error.message })))
-        )
-      )
     )
   );
 
   constructor(
     private actions$: Actions,
-    private volunteerService: VolunteerService,
     private statisticsService: StatisticsService,
+    private store: Store,
     private authService: AuthService
   ) {}
 } 

@@ -22,4 +22,6 @@ public class LoginRequest {
     private String password;
 
     private String twoFactorCode;
+    
+    private String ipAddress;
 } 

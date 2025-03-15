@@ -80,13 +80,18 @@ export const authReducer = createReducer(
   })),
 
   on(AuthActions.submitQuestionnaireSuccess, (state, { user }) => {
+    // Get the role from the user object
+    const role = user.role;
+    
     const updatedUser = {
       ...state.user,
       ...user,
+      role: role,  // Use the role directly
+      roles: [role],  // Set roles array with the single role
       questionnaireCompleted: true
     };
     
-    // Update localStorage
+    // Update localStorage with the complete user data
     localStorage.setItem('user_data', JSON.stringify(updatedUser));
     
     return {
@@ -110,15 +115,26 @@ export const authReducer = createReducer(
     error: null
   })),
 
-  on(AuthActions.logoutSuccess, () => ({
-    ...initialState
-  })),
+  on(AuthActions.logoutSuccess, () => {
+    // Clear any remaining localStorage items
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Return to initial state
+    return {
+      ...initialState,
+      loading: false
+    };
+  }),
 
-  on(AuthActions.logoutFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
+  on(AuthActions.logoutFailure, (state, { error }) => {
+    // Even on failure, clear the state but keep the error
+    return {
+      ...initialState,
+      loading: false,
+      error
+    };
+  }),
 
   // Refresh Token
   on(AuthActions.refreshToken, (state) => ({

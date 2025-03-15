@@ -195,14 +195,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('participationChart') participationChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('growthChart') growthChartRef!: ElementRef<HTMLCanvasElement>;
 
-  statistics$: Observable<StatisticsResponse | null>;
+  statistics$: Observable<VolunteerStats | null>;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
 
   volunteerStats: VolunteerStats | null = null;
   organizationStats: OrganizationStats | null = null;
   adminStats: AdminStats | null = null;
-  detailedVolunteerStats: DetailedVolunteerStats | null = null;
+  detailedVolunteerStats: VolunteerStats | null = null;
 
   private hoursChart: Chart<'line'> | null = null;
   private categoryChart: Chart<'pie'> | null = null;
@@ -221,7 +221,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.store.dispatch(VolunteerActions.loadStatistics());
     this.loadStatistics();
   }
 
@@ -235,46 +234,17 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   private loadStatistics(): void {
-    const userRole = this.authService.getUserRole();
-    
-    this.authService.currentUser$.pipe(
-      take(1)
-    ).subscribe(user => {
-      if (user?.id) {
-        const userId = user.id.toString();
-        this.statisticsService.getStatisticsByRole(userId).subscribe({
-          next: (response) => {
-            this.volunteerStats = response.volunteerStats ?? null;
-            this.organizationStats = response.organizationStats ?? null;
-            this.adminStats = response.adminStats ?? null;
-
-            if (userRole === 'VOLUNTEER') {
-              this.loadDetailedVolunteerStats();
-            }
-          },
-          error: (error) => {
-            this.snackBar.open('Failed to load statistics', 'Close', {
-              duration: 3000,
-              horizontalPosition: 'end',
-              verticalPosition: 'top'
-            });
-          }
-        });
-      }
-    });
+    this.store.dispatch(VolunteerActions.loadStatistics());
   }
 
-  private loadDetailedVolunteerStats(): void {
-    this.statisticsService.getDetailedVolunteerStats().subscribe({
-      next: (stats) => {
+  private loadDetailedStats(): void {
+    const userId = 'current-user-id'; 
+    this.statisticsService.getVolunteerStatistics(userId).subscribe({
+      next: (stats: VolunteerStats) => {
         this.detailedVolunteerStats = stats;
       },
-      error: (error) => {
-        this.snackBar.open('Failed to load detailed statistics', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
-        });
+      error: (error: Error) => {
+        console.error('Error loading detailed stats:', error);
       }
     });
   }
@@ -362,23 +332,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private updateCharts(stats: StatisticsResponse): void {
-    const volunteerStats = stats.volunteerStats;
-    if (!volunteerStats) return;
+  private updateCharts(stats: VolunteerStats): void {
+    if (!stats) return;
 
     // Update Hours Chart
-    if (this.hoursChart && volunteerStats.totalHoursVolunteered) {
+    if (this.hoursChart && stats.totalHoursVolunteered) {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-      const data = months.map(() => volunteerStats.totalHoursVolunteered / 6); // Distribute hours evenly
+      const data = months.map(() => stats.totalHoursVolunteered / 6); // Distribute hours evenly
       this.hoursChart.data.labels = months;
       this.hoursChart.data.datasets[0].data = data;
       this.hoursChart.update();
     }
 
     // Update Category Chart
-    if (this.categoryChart && volunteerStats.eventsParticipated) {
+    if (this.categoryChart && stats.eventsParticipated) {
       const categories = ['Education', 'Health', 'Environment', 'Social'];
-      const data = categories.map(() => volunteerStats.eventsParticipated / 4); // Distribute events evenly
+      const data = categories.map(() => stats.eventsParticipated / 4); // Distribute events evenly
       this.categoryChart.data.labels = categories;
       this.categoryChart.data.datasets[0].data = data;
       this.categoryChart.update();
@@ -387,7 +356,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Update Participation Chart
     if (this.participationChart) {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const data = days.map(() => volunteerStats.eventsParticipated / 7); // Distribute events evenly
+      const data = days.map(() => stats.eventsParticipated / 7); // Distribute events evenly
       this.participationChart.data.datasets[0].data = data;
       this.participationChart.update();
     }
@@ -395,8 +364,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Update Growth Chart
     if (this.growthChart) {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-      const participationData = months.map(() => (volunteerStats.eventsParticipated / 6) * 100);
-      const hoursData = months.map(() => (volunteerStats.totalHoursVolunteered / 6) * 100);
+      const participationData = months.map(() => (stats.eventsParticipated / 6) * 100);
+      const hoursData = months.map(() => (stats.totalHoursVolunteered / 6) * 100);
       this.growthChart.data.datasets[0].data = participationData;
       this.growthChart.data.datasets[1].data = hoursData;
       this.growthChart.update();
@@ -404,6 +373,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   retryLoading() {
-    this.store.dispatch(VolunteerActions.loadStatistics());
+    this.loadStatistics();
   }
 }

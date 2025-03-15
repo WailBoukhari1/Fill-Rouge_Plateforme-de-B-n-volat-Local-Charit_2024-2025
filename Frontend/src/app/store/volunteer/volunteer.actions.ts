@@ -1,9 +1,11 @@
 import { createAction, props } from '@ngrx/store';
-import { VolunteerStatistics, VolunteerHours } from '../../core/services/volunteer.service';
-import { VolunteerStats, OrganizationStats, AdminStats, DetailedVolunteerStats, StatisticsResponse } from '../../core/models/statistics.model';
+import { DetailedVolunteerStats, VolunteerHours } from '../../core/models/statistics.models';
+import { StatisticsResponse } from '../../core/models/statistics.model';
 
-// Load Statistics Actions
-export const loadStatistics = createAction('[Volunteer] Load Statistics');
+// Load Statistics
+export const loadStatistics = createAction(
+  '[Volunteer] Load Statistics'
+);
 
 export const loadStatisticsSuccess = createAction(
   '[Volunteer] Load Statistics Success',
@@ -16,7 +18,10 @@ export const loadStatisticsFailure = createAction(
 );
 
 // Load Detailed Statistics Actions
-export const loadDetailedStats = createAction('[Volunteer] Load Detailed Stats');
+export const loadDetailedStats = createAction(
+  '[Volunteer] Load Detailed Stats',
+  props<{ userId: string }>()
+);
 
 export const loadDetailedStatsSuccess = createAction(
   '[Volunteer] Load Detailed Stats Success',
@@ -25,18 +30,21 @@ export const loadDetailedStatsSuccess = createAction(
 
 export const loadDetailedStatsFailure = createAction(
   '[Volunteer] Load Detailed Stats Failure',
-  props<{ error: string }>()
+  props<{ error: any }>()
 );
 
 // Load Hours Actions
-export const loadHours = createAction('[Volunteer] Load Hours');
+export const loadVolunteerHours = createAction(
+  '[Volunteer] Load Volunteer Hours',
+  props<{ userId: string }>()
+);
 
-export const loadHoursSuccess = createAction(
-  '[Volunteer] Load Hours Success',
+export const loadVolunteerHoursSuccess = createAction(
+  '[Volunteer] Load Volunteer Hours Success',
   props<{ hours: VolunteerHours[] }>()
 );
 
-export const loadHoursFailure = createAction(
-  '[Volunteer] Load Hours Failure',
-  props<{ error: string }>()
+export const loadVolunteerHoursFailure = createAction(
+  '[Volunteer] Load Volunteer Hours Failure',
+  props<{ error: any }>()
 ); 

@@ -139,7 +139,14 @@
 
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>City <span class="required-field">*</span></mat-label>
-                    <mat-select formControlName="city">
+                    <mat-select formControlName="city" [disabled]="isLoadingCities || !contactFormGroup.get('province')?.value">
+                      <mat-option *ngIf="isLoadingCities">
+                        <mat-spinner diameter="20"></mat-spinner>
+                        Loading cities...
+                      </mat-option>
+                      <mat-option *ngIf="!isLoadingCities && citiesInProvince.length === 0 && contactFormGroup.get('province')?.value">
+                        No cities available for this province
+                      </mat-option>
                       <mat-option *ngFor="let city of citiesInProvince" [value]="city">
                         {{city}}
                       </mat-option>

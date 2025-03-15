@@ -230,7 +230,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Transactional
     public void updateStatistics(String organizationId) {
         Organization organization = getOrganizationEntity(organizationId);
-        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged()).getContent();
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged());
         
         // Update event statistics
         organization.setTotalEventsHosted(events.size());
@@ -301,7 +301,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public void updateVolunteerCount(String organizationId) {
         Organization organization = getOrganizationEntity(organizationId);
-        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged()).getContent();
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged());
         Set<String> activeVolunteers = calculateActiveVolunteers(events);
         organization.setActiveVolunteers(activeVolunteers.size());
         organization.setUpdatedAt(LocalDateTime.now());

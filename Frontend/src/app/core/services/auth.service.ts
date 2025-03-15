@@ -53,17 +53,51 @@ export class AuthService {
       tap(response => {
         console.log('Login response:', response);
         if (!response.data) {
-          throw new Error('No data in response');
+          console.error('No data in response:', response);
+          throw new Error('Invalid response format');
         }
         this.handleAuthResponse(response.data);
       }),
       catchError(error => {
-        console.error('Login error:', error);
+        console.error('Login error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          error: error.error,
+          message: error.message
+        });
+        
         this.clearStorage();
-        this.store.dispatch(AuthActions.loginFailure({
-          error: error.message || 'Authentication failed'
-        }));
-        return throwError(() => error);
+        
+        let errorMessage: string;
+        
+        // Check if it's a backend validation error
+        if (error.error?.violations) {
+          errorMessage = error.error.violations.map((v: any) => v.message).join(', ');
+        }
+        // Check if it's a backend error message
+        else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        // Handle specific HTTP status codes
+        else if (error.status === 404) {
+          errorMessage = 'Account not found. Please check your email or register if you don\'t have an account.';
+        } else if (error.status === 401) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (error.status === 403) {
+          errorMessage = 'Your account is locked. Please try again later or contact support.';
+        } else if (error.status === 500) {
+          errorMessage = 'A server error occurred. Please try again later.';
+        } else if (error.status === 0) {
+          errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+        } else {
+          errorMessage = 'An unexpected error occurred. Please try again later.';
+        }
+
+        // Log the final error message for debugging
+        console.error('Final error message:', errorMessage);
+
+        this.store.dispatch(AuthActions.loginFailure({ error: errorMessage }));
+        return throwError(() => errorMessage);
       })
     );
   }
@@ -76,18 +110,32 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    // First make the API call
-    return this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
+    // Get the token before clearing storage
+    const token = this.getToken();
+    
+    // Clear storage first to prevent any race conditions
+    this.clearStorage();
+    
+    // If no token, just complete the logout process
+    if (!token) {
+      this.store.dispatch(AuthActions.logoutSuccess());
+      this.router.navigate(['/auth/login']);
+      return of(void 0);
+    }
+
+    // Make the API call with the token
+    return this.http.post<void>(`${this.apiUrl}/logout`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).pipe(
       tap(() => {
-        // Only clear storage and state after successful API call
-        this.clearStorage();
-        this.store.dispatch(AuthActions.logout());
+        this.store.dispatch(AuthActions.logoutSuccess());
+        this.router.navigate(['/auth/login']);
       }),
       catchError(error => {
         console.error('Logout API call failed:', error);
-        // If API call fails, still clear storage and state for security
-        this.clearStorage();
-        this.store.dispatch(AuthActions.logout());
+        // Even if API call fails, ensure we're logged out locally
+        this.store.dispatch(AuthActions.logoutSuccess());
+        this.router.navigate(['/auth/login']);
         return throwError(() => error);
       })
     );
@@ -152,8 +200,63 @@ export class AuthService {
     return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/2fa/verify`, request);
   }
 
-  submitQuestionnaire(formData: any): Observable<ApiResponse<User>> {
-    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/questionnaire`, formData);
+  submitQuestionnaire(formData: any): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/questionnaire`, formData).pipe(
+      tap(response => {
+        if (!response.data) {
+          throw new Error('No data in response');
+        }
+
+        // Get the role from the response
+        const userRole = response.data.roles?.[0]?.replace('ROLE_', '');
+
+        if (!userRole) {
+          throw new Error('No role found in response');
+        }
+
+        // Update the stored user data
+        const userData: User = {
+          id: response.data.userId ? parseInt(response.data.userId) : 0,
+          email: response.data.email,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          role: userRole as UserRole,
+          roles: [userRole],
+          emailVerified: response.data.emailVerified || false,
+          twoFactorEnabled: response.data.twoFactorEnabled || false,
+          accountLocked: response.data.accountLocked || false,
+          accountExpired: response.data.accountExpired || false,
+          credentialsExpired: response.data.credentialsExpired || false,
+          profilePicture: response.data.profilePicture,
+          lastLoginIp: response.data.lastLoginIp,
+          lastLoginAt: response.data.lastLoginAt,
+          questionnaireCompleted: response.data.questionnaireCompleted || false
+        };
+
+        // Store the new tokens and user data
+        localStorage.setItem(this.tokenKey, response.data.token);
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+        localStorage.setItem(this.userKey, JSON.stringify(userData));
+
+        // Update the auth state with new tokens
+        this.store.dispatch(AuthActions.loginSuccess({
+          user: userData,
+          token: response.data.token,
+          refreshToken: response.data.refreshToken,
+          redirect: false
+        }));
+
+        console.log('Questionnaire completed - Updated auth state:', {
+          user: userData,
+          newRole: userRole,
+          token: response.data.token?.substring(0, 20) + '...'
+        });
+      }),
+      catchError(error => {
+        console.error('Questionnaire submission error:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   private decodeToken(token: string): DecodedToken {
@@ -192,10 +295,42 @@ export class AuthService {
   private handleAuthResponse(response: AuthResponse): void {
     if (!response) {
       console.error('Invalid auth response:', response);
-      return;
+      throw new Error('Invalid response format');
     }
 
     try {
+      // Check if we have tokens
+      if (!response.token || !response.refreshToken) {
+        console.warn('No tokens in response, handling as unverified user');
+        // Create minimal user data for unverified users
+        const userData: User = {
+          id: response.userId ? parseInt(response.userId) : 0,
+          email: response.email,
+          firstName: response.firstName,
+          lastName: response.lastName,
+          role: response.roles?.[0]?.replace('ROLE_', '') as UserRole || UserRole.UNASSIGNED,
+          roles: response.roles?.map(r => r.replace('ROLE_', '')) || [UserRole.UNASSIGNED],
+          emailVerified: false,
+          twoFactorEnabled: false,
+          accountLocked: false,
+          accountExpired: false,
+          credentialsExpired: false,
+          questionnaireCompleted: false
+        };
+
+        // Store user data without tokens
+        localStorage.setItem(this.userKey, JSON.stringify(userData));
+        
+        // Dispatch action with user data but no tokens
+        this.store.dispatch(AuthActions.loginSuccess({
+          user: userData,
+          token: '',
+          refreshToken: '',
+          redirect: true
+        }));
+        return;
+      }
+
       // Decode and validate token
       const decodedToken = this.decodeToken(response.token);
       console.log('Decoded token:', decodedToken);
@@ -204,20 +339,32 @@ export class AuthService {
         throw new Error('Token is expired');
       }
 
-      // Extract role from token
-      let userRole = decodedToken.role?.replace('ROLE_', '');
-      console.log('Extracted role from token:', userRole);
+      // Extract role from response or token
+      let userRole: string | undefined;
 
-      if (!userRole) {
-        // Fallback to response data if token doesn't have role
-        userRole = response.role?.replace('ROLE_', '');
-        console.log('Using role from response:', userRole);
+      // First try to get role from response roles
+      if (response.roles && response.roles.length > 0) {
+        userRole = response.roles[0].replace('ROLE_', '');
+        console.log('Using role from response roles:', userRole);
+      }
+      // If no role from response, try token role
+      else if (decodedToken.role) {
+        userRole = decodedToken.role.replace('ROLE_', '');
+        console.log('Using role from token:', userRole);
+      }
+      // If still no role, try token authorities
+      else if (decodedToken.authorities && Array.isArray(decodedToken.authorities)) {
+        const roleAuthority = decodedToken.authorities.find(auth => auth.startsWith('ROLE_'));
+        if (roleAuthority) {
+          userRole = roleAuthority.replace('ROLE_', '');
+          console.log('Using role from token authorities:', userRole);
+        }
       }
 
-      // Validate role
+      // Default to UNASSIGNED if no role found
       if (!userRole) {
-        console.error('No role found in token or response');
-        throw new Error('No role found in authentication data');
+        console.warn('No role found, defaulting to UNASSIGNED');
+        userRole = UserRole.UNASSIGNED;
       }
 
       // Validate role is a valid UserRole enum value
@@ -233,15 +380,16 @@ export class AuthService {
         firstName: response.firstName,
         lastName: response.lastName,
         role: userRole as UserRole,
-        emailVerified: response.emailVerified,
-        twoFactorEnabled: response.twoFactorEnabled,
-        accountLocked: response.accountLocked,
-        accountExpired: response.accountExpired,
-        credentialsExpired: response.credentialsExpired,
+        roles: [userRole],
+        emailVerified: response.emailVerified || false,
+        twoFactorEnabled: response.twoFactorEnabled || false,
+        accountLocked: response.accountLocked || false,
+        accountExpired: response.accountExpired || false,
+        credentialsExpired: response.credentialsExpired || false,
         profilePicture: response.profilePicture,
         lastLoginIp: response.lastLoginIp,
         lastLoginAt: response.lastLoginAt,
-        questionnaireCompleted: response.questionnaireCompleted
+        questionnaireCompleted: response.questionnaireCompleted || false
       };
 
       console.log('Created user data:', userData);
@@ -256,7 +404,8 @@ export class AuthService {
       this.store.dispatch(AuthActions.loginSuccess({
         user: userData,
         token: response.token,
-        refreshToken: response.refreshToken
+        refreshToken: response.refreshToken,
+        redirect: true
       }));
     } catch (error) {
       console.error('Error handling auth response:', error);

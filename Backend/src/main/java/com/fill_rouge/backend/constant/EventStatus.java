@@ -6,5 +6,6 @@ public enum EventStatus {
     FULL,       // Maximum participants reached
     ONGOING,    // Event is currently happening
     COMPLETED,  // Event has ended
-    CANCELLED   // Event has been cancelled
+    CANCELLED,  // Event has been cancelled
+    SCHEDULED   // Event is scheduled but not yet active
 } 

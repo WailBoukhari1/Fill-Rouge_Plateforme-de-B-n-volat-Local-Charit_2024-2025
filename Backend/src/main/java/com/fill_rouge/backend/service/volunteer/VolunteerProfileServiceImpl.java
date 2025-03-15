@@ -1,6 +1,7 @@
 package com.fill_rouge.backend.service.volunteer;
 
 import com.fill_rouge.backend.domain.VolunteerProfile;
+import com.fill_rouge.backend.domain.Skill;
 import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.repository.VolunteerProfileRepository;
@@ -184,7 +185,14 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         profile.setEmergencyContact(request.getEmergencyContact());
         profile.setEmergencyPhone(request.getEmergencyPhone());
         profile.setPreferredCategories(request.getPreferredCategories());
-        profile.setSkills(request.getSkills());
+        List<Skill> skills = request.getSkills().stream()
+            .map(skillName -> {
+                Skill skill = new Skill();
+                skill.setName(skillName);
+                return skill;
+            })
+            .collect(Collectors.toList());
+        profile.setSkills(skills);
         profile.setInterests(request.getInterests());
         profile.setAvailableDays(request.getAvailableDays());
         profile.setPreferredTimeOfDay(request.getPreferredTimeOfDay());
@@ -215,7 +223,7 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         }
         
         String lowercaseQuery = query.toLowerCase();
-        return profile.getSkills().stream().anyMatch(skill -> skill.toLowerCase().contains(lowercaseQuery)) ||
+        return profile.getSkills().stream().anyMatch(skill -> skill.getName().toLowerCase().contains(lowercaseQuery)) ||
                profile.getInterests().stream().anyMatch(interest -> interest.toLowerCase().contains(lowercaseQuery)) ||
                profile.getCity().toLowerCase().contains(lowercaseQuery) ||
                profile.getCountry().toLowerCase().contains(lowercaseQuery);
@@ -237,7 +245,7 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
             .totalEventsAttended(profile.getTotalEventsAttended())
             .totalVolunteerHours(profile.getTotalHoursVolunteered())
             .averageEventRating(profile.getAverageRating())
-            .skills(profile.getSkills())
+            .skills(profile.getSkills().stream().map(Skill::getName).collect(Collectors.toSet()))
             .interests(profile.getInterests())
             .preferredCauses(profile.getPreferredCategories())
             .city(profile.getCity())

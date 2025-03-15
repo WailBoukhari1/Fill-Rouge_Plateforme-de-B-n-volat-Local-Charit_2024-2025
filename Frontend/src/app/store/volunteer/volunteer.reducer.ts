@@ -1,32 +1,24 @@
 import { createReducer, on } from '@ngrx/store';
 import * as VolunteerActions from './volunteer.actions';
-import { VolunteerState } from './volunteer.state';
-
-export const initialState: VolunteerState = {
-  statistics: null,
-  detailedStats: null,
-  hours: [],
-  loading: false,
-  error: null
-};
+import { initialState } from './volunteer.state';
 
 export const volunteerReducer = createReducer(
   initialState,
-
-  // Statistics
+  
+  // Load Statistics
   on(VolunteerActions.loadStatistics, state => ({
     ...state,
     loading: true,
     error: null
   })),
-
+  
   on(VolunteerActions.loadStatisticsSuccess, (state, { statistics }) => ({
     ...state,
     statistics,
     loading: false,
     error: null
   })),
-
+  
   on(VolunteerActions.loadStatisticsFailure, (state, { error }) => ({
     ...state,
     loading: false,

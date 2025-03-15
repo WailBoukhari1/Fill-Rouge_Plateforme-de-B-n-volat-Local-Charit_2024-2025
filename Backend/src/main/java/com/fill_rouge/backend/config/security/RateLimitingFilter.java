@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fill_rouge.backend.config.FeatureConfig;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -16,39 +17,41 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class RateLimitingFilter extends OncePerRequestFilter {
     private static final int MAX_REQUESTS_PER_HOUR = 100;
     private static final int MAX_REQUESTS_PER_MINUTE = 20;
 
-    private final LoadingCache<String, Integer> hourRequestsCache;
-    private final LoadingCache<String, Integer> minuteRequestsCache;
+    private final FeatureConfig featureConfig;
+    private final LoadingCache<String, Integer> hourRequestsCache = CacheBuilder.newBuilder()
+            .expireAfterWrite(1, TimeUnit.HOURS)
+            .build(new CacheLoader<>() {
+                @Override
+                public Integer load(String key) {
+                    return 0;
+                }
+            });
 
-    public RateLimitingFilter() {
-        super();
-        hourRequestsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.HOURS)
-                .build(new CacheLoader<>() {
-                    @Override
-                    public Integer load(String key) {
-                        return 0;
-                    }
-                });
-
-        minuteRequestsCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.MINUTES)
-                .build(new CacheLoader<>() {
-                    @Override
-                    public Integer load(String key) {
-                        return 0;
-                    }
-                });
-    }
+    private final LoadingCache<String, Integer> minuteRequestsCache = CacheBuilder.newBuilder()
+            .expireAfterWrite(1, TimeUnit.MINUTES)
+            .build(new CacheLoader<>() {
+                @Override
+                public Integer load(String key) {
+                    return 0;
+                }
+            });
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
+        if (!featureConfig.isRateLimiting()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String clientIp = getClientIP(request);
         
         try {

@@ -1,36 +1,26 @@
 package com.fill_rouge.backend.domain;
 
+import com.fill_rouge.backend.constant.EventParticipationStatus;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DBRef;
-import com.fill_rouge.backend.constant.EventParticipationStatus;
-
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Document(collection = "event_participations")
 public class EventParticipation {
     @Id
     private String id;
-    private EventParticipationStatus status;
-    private LocalDateTime registrationDate;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
+    private String volunteerId;
+    private String organizationId;
     @DBRef
     private Event event;
-
-    @DBRef
-    private VolunteerProfile volunteer;
-
-    public boolean isAttended() {
-        return status == EventParticipationStatus.ATTENDED;
-    }
+    private EventParticipationStatus status;
+    private Integer hours;
+    private Double rating;
+    private String feedback;
+    private LocalDateTime registeredDate;
+    private LocalDateTime completedDate;
+    private LocalDateTime updatedAt;
 } 

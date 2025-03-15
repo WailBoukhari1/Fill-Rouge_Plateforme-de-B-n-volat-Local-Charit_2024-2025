@@ -373,8 +373,7 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     }
 
     private double calculateOrganizationAverageRating(String organizationId) {
-        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
-                .getContent();
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged());
         if (events.isEmpty()) {
             return 0.0;
         }
@@ -387,7 +386,7 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
 
     private int calculateOrganizationVolunteerHours(String organizationId) {
         return eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
-                .getContent().stream()
+                .stream()
                 .filter(event -> event.getStatus() == EventStatus.COMPLETED)
                 .mapToInt(this::calculateEventHours)
                 .sum();
@@ -395,23 +394,20 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
 
     private double calculateOrganizationSuccessRate(String organizationId) {
         List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
-                .getContent().stream()
+                .stream()
                 .filter(event -> event.getStatus() == EventStatus.COMPLETED)
                 .collect(Collectors.toList());
         if (events.isEmpty()) {
             return 0.0;
         }
         
-        return events.stream()
-                .mapToDouble(event -> calculateEventSuccessRate(event.getId()))
-                .average()
-                .orElse(0.0);
+        return (double) events.size() / eventRepository.findByOrganizationId(organizationId, Pageable.unpaged()).size() * 100;
     }
 
     private long calculateOrganizationParticipantsInRange(
             String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
         return eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
-                .getContent().stream()
+                .stream()
                 .filter(event -> event.getStartDate().isAfter(startDate) && 
                                event.getStartDate().isBefore(endDate))
                 .mapToLong(event -> event.getRegisteredParticipants().size())
@@ -421,7 +417,7 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     private double calculateOrganizationAverageRatingInRange(
             String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
         List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
-                .getContent().stream()
+                .stream()
                 .filter(event -> event.getStartDate().isAfter(startDate) && 
                                event.getStartDate().isBefore(endDate))
                 .collect(Collectors.toList());
@@ -438,7 +434,7 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     private int calculateOrganizationVolunteerHoursInRange(
             String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
         return eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
-                .getContent().stream()
+                .stream()
                 .filter(event -> event.getStatus() == EventStatus.COMPLETED &&
                                event.getStartDate().isAfter(startDate) && 
                                event.getStartDate().isBefore(endDate))
@@ -449,7 +445,7 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     private double calculateOrganizationSuccessRateInRange(
             String organizationId, LocalDateTime startDate, LocalDateTime endDate) {
         List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
-                .getContent().stream()
+                .stream()
                 .filter(event -> event.getStatus() == EventStatus.COMPLETED &&
                                event.getStartDate().isAfter(startDate) && 
                                event.getStartDate().isBefore(endDate))
@@ -458,10 +454,12 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
             return 0.0;
         }
         
-        return events.stream()
-                .mapToDouble(event -> calculateEventSuccessRate(event.getId()))
-                .average()
-                .orElse(0.0);
+        long totalEvents = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged())
+                .stream()
+                .filter(event -> event.getStartDate().isAfter(startDate) && 
+                               event.getStartDate().isBefore(endDate))
+                .count();
+        return totalEvents > 0 ? (double) events.size() / totalEvents * 100 : 0.0;
     }
 
     private int calculateVolunteerEventCount(String volunteerId) {

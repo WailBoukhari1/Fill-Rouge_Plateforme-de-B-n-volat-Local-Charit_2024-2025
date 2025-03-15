@@ -5,20 +5,15 @@ export const selectVolunteerState = createFeatureSelector<VolunteerState>('volun
 
 export const selectVolunteerStatistics = createSelector(
   selectVolunteerState,
-  (state) => state.statistics
-);
-
-export const selectVolunteerHours = createSelector(
-  selectVolunteerState,
-  (state) => state.hours
+  state => state.statistics
 );
 
 export const selectVolunteerLoading = createSelector(
   selectVolunteerState,
-  (state) => state.loading
+  state => state.loading
 );
 
 export const selectVolunteerError = createSelector(
   selectVolunteerState,
-  (state) => state.error
+  state => state.error
 ); 

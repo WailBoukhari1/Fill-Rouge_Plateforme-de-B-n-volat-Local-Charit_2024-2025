@@ -80,7 +80,7 @@ public class VolunteerProfile {
     private Set<String> preferredCategories = new HashSet<>();
     
     @Builder.Default
-    private Set<String> skills = new HashSet<>();
+    private List<Skill> skills = new ArrayList<>();
     
     @Builder.Default
     private Set<String> interests = new HashSet<>();
@@ -163,12 +163,12 @@ public class VolunteerProfile {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void addSkill(String skill) {
+    public void addSkill(Skill skill) {
         this.skills.add(skill);
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void removeSkill(String skill) {
+    public void removeSkill(Skill skill) {
         this.skills.remove(skill);
         this.updatedAt = LocalDateTime.now();
     }
@@ -210,5 +210,13 @@ public class VolunteerProfile {
         private Integer hoursPerWeek;
         private String commitmentLength;
         private Integer maxTravelDistance;
+    }
+
+    public List<Skill> getSkills() {
+        return skills;
+    }
+
+    public void setSkills(List<Skill> skills) {
+        this.skills = skills;
     }
 }

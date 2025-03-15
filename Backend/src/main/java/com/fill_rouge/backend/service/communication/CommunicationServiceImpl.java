@@ -186,7 +186,7 @@ public class CommunicationServiceImpl implements CommunicationService {
     public void notifyOrganizationMembers(String organizationId, String content) {
         Organization org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
-        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged()).getContent();
+        List<Event> events = eventRepository.findByOrganizationId(organizationId, Pageable.unpaged());
         List<String> memberIds = events.stream()
                 .flatMap(event -> event.getRegisteredParticipants().stream())
                 .distinct()
