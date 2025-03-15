@@ -2,7 +2,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   VOLUNTEER = 'VOLUNTEER',
   ORGANIZATION = 'ORGANIZATION',
-  UNASSIGNED = 'UNASSIGNED'
+  UNASSIGNED = 'UNASSIGNED',
 }
 
 export interface User {
@@ -26,7 +26,7 @@ export interface User {
 
 export interface AuthState {
   user: User | null;
-  accessToken: string | null;
+  token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
   error: string | null;

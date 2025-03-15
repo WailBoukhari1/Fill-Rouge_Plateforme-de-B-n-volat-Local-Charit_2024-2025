@@ -1,9 +1,14 @@
-import { Injectable, Inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Injectable } from '@angular/core';
+import {
+  HttpClient,
+  HttpHeaders,
+  HttpErrorResponse,
+} from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
+import { ApiResponse } from '../models/profile.model';
 
 export interface VolunteerProfile {
   id: string;
@@ -12,8 +17,11 @@ export interface VolunteerProfile {
   address: string;
   city: string;
   country: string;
-  emergencyContact: string;
-  emergencyPhone: string;
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relationship?: string;
+  };
   preferredCategories: string[];
   skills: string[];
   interests: string[];
@@ -30,35 +38,28 @@ export interface VolunteerProfile {
   receiveNotifications: boolean;
   notificationPreferences: string[];
   profileVisible: boolean;
-  backgroundChecked: boolean;
-  backgroundCheckDate?: Date;
-  backgroundCheckStatus: string;
+  backgroundCheck: {
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_SUBMITTED';
+    date?: Date;
+    expiryDate?: Date;
+  };
 }
 
 export interface VolunteerStatistics {
-  // Event Statistics
   totalEventsAttended: number;
   upcomingEvents: number;
   completedEvents: number;
   canceledEvents: number;
-  eventsByCategory: { [key: string]: number };
-
-  // Time Statistics
+  eventsByCategory: Record<string, number>;
   totalHoursVolunteered: number;
   averageHoursPerEvent: number;
-  hoursByMonth: { [key: string]: number };
-
-  // Performance Statistics
+  hoursByMonth: Record<string, number>;
   averageRating: number;
   reliabilityScore: number;
   organizationsWorkedWith: number;
-
-  // Growth Statistics
   participationGrowthRate: number;
   hoursGrowthRate: number;
-
-  // Engagement Statistics
-  participationByDay: { [key: string]: number };
+  participationByDay: Record<string, number>;
 }
 
 export interface VolunteerHours {
@@ -71,146 +72,215 @@ export interface VolunteerHours {
   notes?: string;
 }
 
-interface ApiResponse<T> {
-  status: number;
-  message: string;
-  data: T;
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  earnedDate: Date;
+  category: string;
+  level?: string;
+  currentPoints: number;
+  requiredPoints: number;
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  earnedDate: Date;
+  type: string;
+  value: number;
+  icon?: string;
+  category: string;
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class VolunteerService {
-  private apiUrl = environment.apiUrl + '/volunteers';
+  private readonly apiUrl = `${environment.apiUrl}/volunteers`;
 
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService
-  ) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
-  // Get volunteer profile
   getProfile(): Observable<VolunteerProfile> {
-    return this.http.get<VolunteerProfile>(`${this.apiUrl}/profile`, { withCredentials: true });
+    return this.http
+      .get<ApiResponse<VolunteerProfile>>(`${this.apiUrl}/profile`)
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Update volunteer profile
-  updateProfile(profile: Partial<VolunteerProfile>): Observable<VolunteerProfile> {
-    return this.http.put<VolunteerProfile>(`${this.apiUrl}/profile`, profile, { withCredentials: true });
+  updateProfile(
+    profile: Partial<VolunteerProfile>
+  ): Observable<VolunteerProfile> {
+    return this.http
+      .put<ApiResponse<VolunteerProfile>>(`${this.apiUrl}/profile`, profile)
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Get volunteer statistics
   getStatistics(): Observable<VolunteerStatistics> {
-    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
-    return this.http.get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/statistics`, { 
-      headers,
-      withCredentials: true 
-    }).pipe(
-      map(response => response.data),
-      catchError(error => {
-        console.error('Error fetching volunteer statistics:', error);
-        // Return default statistics if the API fails
-        return of({
-          totalEventsAttended: 0,
-          upcomingEvents: 0,
-          completedEvents: 0,
-          canceledEvents: 0,
-          eventsByCategory: {},
-          totalHoursVolunteered: 0,
-          averageHoursPerEvent: 0,
-          hoursByMonth: {},
-          averageRating: 0,
-          reliabilityScore: 0,
-          organizationsWorkedWith: 0,
-          participationGrowthRate: 0,
-          hoursGrowthRate: 0,
-          participationByDay: {}
-        });
-      })
-    );
+    return this.http
+      .get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/stats`)
+      .pipe(
+        map((response) => response.data),
+        catchError(() =>
+          of({
+            totalEventsAttended: 0,
+            upcomingEvents: 0,
+            completedEvents: 0,
+            canceledEvents: 0,
+            eventsByCategory: {},
+            totalHoursVolunteered: 0,
+            averageHoursPerEvent: 0,
+            hoursByMonth: {},
+            averageRating: 0,
+            reliabilityScore: 0,
+            organizationsWorkedWith: 0,
+            participationGrowthRate: 0,
+            hoursGrowthRate: 0,
+            participationByDay: {},
+          })
+        )
+      );
   }
 
-  // Get volunteer achievements
-  getAchievements(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/achievements`);
-  }
-
-  // Get volunteer hours
   getVolunteerHours(): Observable<VolunteerHours[]> {
-    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
-    return this.http.get<ApiResponse<VolunteerHours[]>>(`${this.apiUrl}/hours`, { 
-      headers,
-      withCredentials: true 
-    }).pipe(
-      map(response => response.data),
-      catchError(error => {
-        console.error('Error fetching volunteer hours:', error);
-        return of([]);
+    return this.http
+      .get<ApiResponse<VolunteerHours[]>>(`${this.apiUrl}/hours`)
+      .pipe(
+        map((response) => response.data),
+        catchError(() => of([]))
+      );
+  }
+
+  updateAvailability(availability: {
+    availableDays: string[];
+    preferredTimeOfDay: string;
+    availableForEmergency: boolean;
+  }): Observable<VolunteerProfile> {
+    return this.http
+      .put<ApiResponse<VolunteerProfile>>(
+        `${this.apiUrl}/availability`,
+        availability
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
+  updateNotificationPreferences(
+    preferences: string[]
+  ): Observable<VolunteerProfile> {
+    return this.http
+      .put<ApiResponse<VolunteerProfile>>(`${this.apiUrl}/notifications`, {
+        preferences,
       })
-    );
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Update volunteer availability
-  updateAvailability(availability: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/availability`, availability, { withCredentials: true });
-  }
-
-  // Update notification preferences
-  updateNotificationPreferences(preferences: string[]): Observable<any> {
-    return this.http.put(`${this.apiUrl}/notifications`, { preferences }, { withCredentials: true });
-  }
-
-  // Upload profile picture
-  uploadProfilePicture(file: File): Observable<any> {
+  uploadProfilePicture(file: File): Observable<{ url: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post(`${this.apiUrl}/profile/picture`, formData, { withCredentials: true });
+    return this.http
+      .post<ApiResponse<{ url: string }>>(
+        `${this.apiUrl}/profile/picture`,
+        formData
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Add certification
-  addCertification(certification: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/certifications`, certification);
+  addCertification(certification: {
+    name: string;
+    issuer: string;
+    issueDate: Date;
+    expiryDate?: Date;
+    documentUrl?: string;
+  }): Observable<VolunteerProfile> {
+    return this.http
+      .post<ApiResponse<VolunteerProfile>>(
+        `${this.apiUrl}/certifications`,
+        certification
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Remove certification
-  removeCertification(certificationId: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/certifications/${certificationId}`);
+  removeCertification(certificationId: string): Observable<VolunteerProfile> {
+    return this.http
+      .delete<ApiResponse<VolunteerProfile>>(
+        `${this.apiUrl}/certifications/${certificationId}`
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Get volunteer badges
-  getBadges(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/badges`);
+  getAchievements(): Observable<Achievement[]> {
+    return this.http
+      .get<ApiResponse<Achievement[]>>(`${this.apiUrl}/achievements`)
+      .pipe(
+        map((response) => response.data),
+        catchError(() => of([]))
+      );
   }
 
-  // Get background check status
-  getBackgroundCheckStatus(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/background-check`);
+  getBadges(): Observable<Badge[]> {
+    return this.http.get<ApiResponse<Badge[]>>(`${this.apiUrl}/badges`).pipe(
+      map((response) => response.data),
+      catchError(() => of([]))
+    );
   }
 
-  // Request background check
-  requestBackgroundCheck(): Observable<any> {
-    return this.http.post(`${this.apiUrl}/background-check/request`, {});
+  getBackgroundCheckStatus(): Observable<VolunteerProfile['backgroundCheck']> {
+    return this.http
+      .get<ApiResponse<VolunteerProfile['backgroundCheck']>>(
+        `${this.apiUrl}/background-check`
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Get volunteer dashboard statistics
-  getDashboardStats(): Observable<any> {
-    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
-    return this.http.get(`${this.apiUrl}/dashboard`, { headers });
+  requestBackgroundCheck(): Observable<VolunteerProfile> {
+    return this.http
+      .post<ApiResponse<VolunteerProfile>>(
+        `${this.apiUrl}/background-check/request`,
+        {}
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
   }
 
-  // Get volunteer dashboard statistics by date range
-  getDashboardStatsByDateRange(startDate: Date, endDate: Date): Observable<any> {
-    const headers = new HttpHeaders().set('X-User-ID', this.authService.getCurrentUserId());
-    return this.http.get(`${this.apiUrl}/dashboard/range`, {
-      headers,
-      params: {
-        start: startDate.toISOString(),
-        end: endDate.toISOString()
-      }
-    });
-  }
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An error occurred';
 
-  // Get volunteer reliability score
-  getReliabilityScore(): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/reliability-score`);
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = `Client error: ${error.error.message}`;
+    } else {
+      errorMessage = `Server error: ${error.status} - ${
+        error.error?.message || error.statusText
+      }`;
+    }
+
+    console.error('VolunteerService Error:', errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
-} 
+}

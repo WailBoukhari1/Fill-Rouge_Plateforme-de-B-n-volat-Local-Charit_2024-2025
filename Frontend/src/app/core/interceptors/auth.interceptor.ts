@@ -4,7 +4,7 @@ import {
   HttpHandlerFn,
   HttpEvent,
   HttpErrorResponse,
-  HttpInterceptorFn
+  HttpInterceptorFn,
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, switchMap, take } from 'rxjs/operators';
@@ -20,7 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (
 
   return store.select(selectAccessToken).pipe(
     take(1),
-    switchMap(token => {
+    switchMap((token) => {
       if (token) {
         request = addToken(request, token);
       }
@@ -36,11 +36,21 @@ export const authInterceptor: HttpInterceptorFn = (
   );
 };
 
-const addToken = (request: HttpRequest<unknown>, token: string): HttpRequest<unknown> => {
+const addToken = (
+  request: HttpRequest<unknown>,
+  token: string
+): HttpRequest<unknown> => {
+  const userId = localStorage.getItem('userId');
+  const headers: { [key: string]: string } = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  if (userId) {
+    headers['X-User-ID'] = userId;
+  }
+
   return request.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`
-    }
+    setHeaders: headers,
   });
 };
 
@@ -50,10 +60,10 @@ const handle401Error = (
   store: Store
 ): Observable<HttpEvent<unknown>> => {
   store.dispatch(AuthActions.refreshToken());
-  
+
   return store.select(selectAccessToken).pipe(
     take(1),
-    switchMap(newToken => {
+    switchMap((newToken) => {
       if (newToken) {
         return next(addToken(request, newToken));
       }
@@ -61,4 +71,4 @@ const handle401Error = (
       return throwError(() => new Error('Session expired'));
     })
   );
-}; 
+};

@@ -5,17 +5,17 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  accessToken: string | null;
+  token: string | null;
   refreshToken: string | null;
   requiresTwoFactor: boolean;
 }
 
 export const initialAuthState: AuthState = {
   user: null,
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
-  error: null,
   loading: false,
-  requiresTwoFactor: false
-}; 
+  error: null,
+  isAuthenticated: false,
+  token: null,
+  refreshToken: null,
+  requiresTwoFactor: false,
+};

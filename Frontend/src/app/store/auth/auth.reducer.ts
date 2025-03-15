@@ -1,44 +1,68 @@
 import { createReducer, on } from '@ngrx/store';
 import * as AuthActions from './auth.actions';
-import { AuthState } from './auth.state';
-
-export const initialState: AuthState = {
-  user: null,
-  loading: false,
-  error: null,
-  isAuthenticated: false,
-  accessToken: null,
-  refreshToken: null,
-  requiresTwoFactor: false
-};
+import { AuthState, initialAuthState } from './auth.state';
 
 export const authReducer = createReducer(
-  initialState,
+  initialAuthState,
 
-  // Login
+  // Login actions
   on(AuthActions.login, (state) => ({
     ...state,
     loading: true,
     error: null,
-    requiresTwoFactor: false
   })),
 
   on(AuthActions.loginSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
-    accessToken: token,
+    token,
     refreshToken,
     isAuthenticated: true,
     loading: false,
     error: null,
-    requiresTwoFactor: false
   })),
 
   on(AuthActions.loginFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error,
-    requiresTwoFactor: false
+  })),
+
+  // Logout actions
+  on(AuthActions.logout, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+
+  on(AuthActions.logoutSuccess, () => ({
+    ...initialAuthState,
+  })),
+
+  on(AuthActions.logoutFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
+
+  // Questionnaire actions
+  on(AuthActions.submitQuestionnaire, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+
+  on(AuthActions.submitQuestionnaireSuccess, (state, { user }) => ({
+    ...state,
+    user,
+    loading: false,
+    error: null,
+  })),
+
+  on(AuthActions.submitQuestionnaireFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
   })),
 
   // Two Factor Required
@@ -46,123 +70,62 @@ export const authReducer = createReducer(
     ...state,
     loading: false,
     error: null,
-    requiresTwoFactor: true
+    requiresTwoFactor: true,
   })),
 
   // Register
   on(AuthActions.register, (state) => ({
     ...state,
     loading: true,
-    error: null
+    error: null,
   })),
 
   on(AuthActions.registerSuccess, (state, { user, token, refreshToken }) => ({
     ...state,
     user,
-    accessToken: token,
+    token,
     refreshToken,
     isAuthenticated: true,
     loading: false,
-    error: null
+    error: null,
   })),
 
   on(AuthActions.registerFailure, (state, { error }) => ({
     ...state,
     loading: false,
-    error
+    error,
   })),
-
-  // Questionnaire
-  on(AuthActions.submitQuestionnaire, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-
-  on(AuthActions.submitQuestionnaireSuccess, (state, { user }) => {
-    // Get the role from the user object
-    const role = user.role;
-    
-    const updatedUser = {
-      ...state.user,
-      ...user,
-      role: role,  // Use the role directly
-      roles: [role],  // Set roles array with the single role
-      questionnaireCompleted: true
-    };
-    
-    // Update localStorage with the complete user data
-    localStorage.setItem('user_data', JSON.stringify(updatedUser));
-    
-    return {
-      ...state,
-      user: updatedUser,
-      loading: false,
-      error: null
-    };
-  }),
-
-  on(AuthActions.submitQuestionnaireFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-
-  // Logout
-  on(AuthActions.logout, (state) => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-
-  on(AuthActions.logoutSuccess, () => {
-    // Clear any remaining localStorage items
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    // Return to initial state
-    return {
-      ...initialState,
-      loading: false
-    };
-  }),
-
-  on(AuthActions.logoutFailure, (state, { error }) => {
-    // Even on failure, clear the state but keep the error
-    return {
-      ...initialState,
-      loading: false,
-      error
-    };
-  }),
 
   // Refresh Token
   on(AuthActions.refreshToken, (state) => ({
     ...state,
     loading: true,
-    error: null
+    error: null,
   })),
 
-  on(AuthActions.refreshTokenSuccess, (state, { user, token, refreshToken }) => ({
-    ...state,
-    user,
-    accessToken: token,
-    refreshToken,
-    loading: false,
-    error: null
-  })),
+  on(
+    AuthActions.refreshTokenSuccess,
+    (state, { user, token, refreshToken }) => ({
+      ...state,
+      user,
+      token,
+      refreshToken,
+      loading: false,
+      error: null,
+    })
+  ),
 
   on(AuthActions.refreshTokenFailure, (state, { error }) => ({
     ...state,
     loading: false,
-    error
+    error,
   })),
 
   // Load Stored User
   on(AuthActions.loadStoredUser, (state) => ({
     ...state,
     loading: true,
-    error: null
+    error: null,
   })),
 
   on(AuthActions.loadStoredUserSuccess, (state, { user }) => ({
@@ -170,6 +133,6 @@ export const authReducer = createReducer(
     user,
     isAuthenticated: !!user,
     loading: false,
-    error: null
+    error: null,
   }))
 );

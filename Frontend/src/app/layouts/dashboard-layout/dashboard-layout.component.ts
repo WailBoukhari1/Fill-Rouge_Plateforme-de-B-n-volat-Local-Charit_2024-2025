@@ -20,7 +20,7 @@ import { AuthService } from '../../core/services/auth.service';
     MatButtonModule,
     MatIconModule,
     MatListModule,
-    MatMenuModule
+    MatMenuModule,
   ],
   template: `
     <mat-sidenav-container class="h-screen">
@@ -39,55 +39,95 @@ import { AuthService } from '../../core/services/auth.service';
           </a>
 
           @if (userRole === 'ADMIN') {
-            <a mat-list-item routerLink="/dashboard/users" routerLinkActive="active">
-              <mat-icon matListItemIcon>people</mat-icon>
-              <span matListItemTitle>Users</span>
-            </a>
-            <a mat-list-item routerLink="/dashboard/organizations" routerLinkActive="active">
-              <mat-icon matListItemIcon>business</mat-icon>
-              <span matListItemTitle>Organizations</span>
-            </a>
-            <a mat-list-item routerLink="/dashboard/events" routerLinkActive="active">
-              <mat-icon matListItemIcon>event</mat-icon>
-              <span matListItemTitle>Events</span>
-            </a>
-            <a mat-list-item routerLink="/dashboard/reports" routerLinkActive="active">
-              <mat-icon matListItemIcon>assessment</mat-icon>
-              <span matListItemTitle>Reports</span>
-            </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/users"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>people</mat-icon>
+            <span matListItemTitle>Users</span>
+          </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/organizations"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>business</mat-icon>
+            <span matListItemTitle>Organizations</span>
+          </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/events"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>event</mat-icon>
+            <span matListItemTitle>Events</span>
+          </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/reports"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>assessment</mat-icon>
+            <span matListItemTitle>Reports</span>
+          </a>
+          } @if (userRole === 'VOLUNTEER') {
+          <a
+            mat-list-item
+            routerLink="/dashboard/volunteer/events"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>event</mat-icon>
+            <span matListItemTitle>My Events</span>
+          </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/volunteer/hours"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>schedule</mat-icon>
+            <span matListItemTitle>My Hours</span>
+          </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/volunteer/achievements"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>emoji_events</mat-icon>
+            <span matListItemTitle>Achievements</span>
+          </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/volunteer/waitlist"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>pending</mat-icon>
+            <span matListItemTitle>Waitlist</span>
+          </a>
+          } @if (userRole === 'ORGANIZATION') {
+          <a
+            mat-list-item
+            routerLink="/dashboard/events"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>event</mat-icon>
+            <span matListItemTitle>Events</span>
+          </a>
+          <a
+            mat-list-item
+            routerLink="/dashboard/reports"
+            routerLinkActive="active"
+          >
+            <mat-icon matListItemIcon>assessment</mat-icon>
+            <span matListItemTitle>Reports</span>
+          </a>
           }
 
-          @if (userRole === 'VOLUNTEER') {
-            <a mat-list-item routerLink="/dashboard/volunteer/events" routerLinkActive="active">
-              <mat-icon matListItemIcon>event</mat-icon>
-              <span matListItemTitle>My Events</span>
-            </a>
-            <a mat-list-item routerLink="/dashboard/volunteer/hours" routerLinkActive="active">
-              <mat-icon matListItemIcon>schedule</mat-icon>
-              <span matListItemTitle>My Hours</span>
-            </a>
-            <a mat-list-item routerLink="/dashboard/volunteer/achievements" routerLinkActive="active">
-              <mat-icon matListItemIcon>emoji_events</mat-icon>
-              <span matListItemTitle>Achievements</span>
-            </a>
-            <a mat-list-item routerLink="/dashboard/volunteer/waitlist" routerLinkActive="active">
-              <mat-icon matListItemIcon>pending</mat-icon>
-              <span matListItemTitle>Waitlist</span>
-            </a>
-          }
-
-          @if (userRole === 'ORGANIZATION') {
-            <a mat-list-item routerLink="/dashboard/events" routerLinkActive="active">
-              <mat-icon matListItemIcon>event</mat-icon>
-              <span matListItemTitle>Events</span>
-            </a>
-            <a mat-list-item routerLink="/dashboard/reports" routerLinkActive="active">
-              <mat-icon matListItemIcon>assessment</mat-icon>
-              <span matListItemTitle>Reports</span>
-            </a>
-          }
-
-          <a mat-list-item routerLink="/dashboard/profile" routerLinkActive="active">
+          <a
+            mat-list-item
+            routerLink="/dashboard/profile"
+            routerLinkActive="active"
+          >
             <mat-icon matListItemIcon>person</mat-icon>
             <span matListItemTitle>Profile</span>
           </a>
@@ -105,14 +145,21 @@ import { AuthService } from '../../core/services/auth.service';
 
             <!-- User Menu -->
             <div>
-              <button mat-button [matMenuTriggerFor]="userMenu" class="flex items-center">
+              <button
+                mat-button
+                [matMenuTriggerFor]="userMenu"
+                class="flex items-center"
+              >
                 <mat-icon class="mr-2">account_circle</mat-icon>
-                <span>{{userName}}</span>
+                <span>{{ userName }}</span>
                 <mat-icon>arrow_drop_down</mat-icon>
               </button>
 
               <mat-menu #userMenu="matMenu">
-                <a mat-menu-item [routerLink]="userRole === 'VOLUNTEER' ? '/dashboard/volunteer/profile' : '/dashboard/profile'">
+                <a
+                  mat-menu-item
+                  [routerLink]="['/dashboard/profile', userRole.toLowerCase()]"
+                >
                   <mat-icon>person</mat-icon>
                   <span>Profile</span>
                 </a>
@@ -132,30 +179,29 @@ import { AuthService } from '../../core/services/auth.service';
       </mat-sidenav-content>
     </mat-sidenav-container>
   `,
-  styles: [`
-    :host {
-      display: block;
-      height: 100vh;
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        height: 100vh;
+      }
 
-    .mat-sidenav-container {
-      height: 100%;
-    }
+      .mat-sidenav-container {
+        height: 100%;
+      }
 
-    .active {
-      background-color: rgba(var(--primary-color), 0.1);
-      color: rgb(var(--primary-color));
-    }
-  `]
+      .active {
+        background-color: rgba(var(--primary-color), 0.1);
+        color: rgb(var(--primary-color));
+      }
+    `,
+  ],
 })
 export class DashboardLayoutComponent implements OnInit {
   userRole: string = '';
   userName: string = '';
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.userRole = this.authService.getUserRole();
@@ -171,7 +217,7 @@ export class DashboardLayoutComponent implements OnInit {
         console.error('Logout failed:', error);
         // Still navigate to login page even if logout fails
         this.router.navigate(['/auth/login']);
-      }
+      },
     });
   }
-} 
+}

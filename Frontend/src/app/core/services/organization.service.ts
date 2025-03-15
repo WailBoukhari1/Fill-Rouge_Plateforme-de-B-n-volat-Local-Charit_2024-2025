@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpEvent, HttpRequest, HttpParams } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpEvent,
+  HttpRequest,
+  HttpParams,
+} from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -7,18 +12,9 @@ import {
   OrganizationType,
   OrganizationCategory,
   OrganizationDocument,
-  DocumentType
+  DocumentType,
 } from '../models/organization.model';
-
-export interface OrganizationStats {
-  totalEvents: number;
-  activeEvents: number;
-  totalVolunteers: number;
-  activeVolunteers: number;
-  totalHours: number;
-  averageRating: number;
-  impactScore: number;
-}
+import { OrganizationStats } from '../../store/organization/organization.types';
 
 export interface ImpactMetrics {
   peopleServed: number;
@@ -27,7 +23,7 @@ export interface ImpactMetrics {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class OrganizationService {
   private apiUrl = `${environment.apiUrl}/organizations`;
@@ -35,13 +31,17 @@ export class OrganizationService {
   constructor(private http: HttpClient) {}
 
   // Get all organizations with pagination and filters
-  getOrganizations(page: number = 0, size: number = 10, filters?: any): Observable<any> {
+  getOrganizations(
+    page: number = 0,
+    size: number = 10,
+    filters?: any
+  ): Observable<any> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
 
     if (filters) {
-      Object.keys(filters).forEach(key => {
+      Object.keys(filters).forEach((key) => {
         if (filters[key]) {
           params = params.set(key, filters[key]);
         }
@@ -53,17 +53,25 @@ export class OrganizationService {
 
   // Get organization by ID
   getOrganizationById(id: string): Observable<Organization> {
-    return this.http.get<Organization>(`${this.apiUrl}/${id}`);
+    return this.http.get<Organization>(`${this.apiUrl}/${id}/profile`);
   }
 
   // Create new organization
-  createOrganization(organization: Partial<Organization>): Observable<Organization> {
+  createOrganization(
+    organization: Partial<Organization>
+  ): Observable<Organization> {
     return this.http.post<Organization>(this.apiUrl, organization);
   }
 
   // Update organization
-  updateOrganization(id: string, organization: Partial<Organization>): Observable<Organization> {
-    return this.http.put<Organization>(`${this.apiUrl}/${id}`, organization);
+  updateOrganization(
+    id: string,
+    organization: Partial<Organization>
+  ): Observable<Organization> {
+    return this.http.put<Organization>(
+      `${this.apiUrl}/${id}/profile`,
+      organization
+    );
   }
 
   // Delete organization
@@ -73,20 +81,34 @@ export class OrganizationService {
 
   // Get organization statistics
   getOrganizationStats(organizationId: string): Observable<OrganizationStats> {
-    return this.http.get<OrganizationStats>(`${this.apiUrl}/${organizationId}/stats`);
+    return this.http.get<OrganizationStats>(
+      `${this.apiUrl}/${organizationId}/stats`
+    );
   }
 
   // Verify organization
-  verifyOrganization(organizationId: string, approved?: boolean, reason?: string): Observable<Organization> {
+  verifyOrganization(
+    organizationId: string,
+    approved?: boolean,
+    reason?: string
+  ): Observable<Organization> {
     if (approved === undefined) {
-      return this.http.post<Organization>(`${this.apiUrl}/${organizationId}/verify`, {});
+      return this.http.post<Organization>(
+        `${this.apiUrl}/${organizationId}/verify`,
+        {}
+      );
     }
-    return this.http.put<Organization>(`${this.apiUrl}/${organizationId}/verify`, { approved, reason });
+    return this.http.put<Organization>(
+      `${this.apiUrl}/${organizationId}/verify`,
+      { approved, reason }
+    );
   }
 
   // Suspend organization
   suspendOrganization(id: string, reason: string): Observable<Organization> {
-    return this.http.post<Organization>(`${this.apiUrl}/${id}/suspend`, { reason });
+    return this.http.post<Organization>(`${this.apiUrl}/${id}/suspend`, {
+      reason,
+    });
   }
 
   // Reactivate organization
@@ -95,24 +117,37 @@ export class OrganizationService {
   }
 
   // Get organization events
-  getOrganizationEvents(organizationId: string, page: number = 0, size: number = 10, status?: string): Observable<any> {
+  getOrganizationEvents(
+    organizationId: string,
+    page: number = 0,
+    size: number = 10,
+    status?: string
+  ): Observable<any> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    
+
     if (status) {
       params = params.set('status', status);
     }
-    
-    return this.http.get<any>(`${this.apiUrl}/${organizationId}/events`, { params });
+
+    return this.http.get<any>(`${this.apiUrl}/${organizationId}/events`, {
+      params,
+    });
   }
 
   // Get organization volunteers
-  getOrganizationVolunteers(organizationId: string, page: number = 0, size: number = 10): Observable<any> {
+  getOrganizationVolunteers(
+    organizationId: string,
+    page: number = 0,
+    size: number = 10
+  ): Observable<any> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<any>(`${this.apiUrl}/${organizationId}/volunteers`, { params });
+    return this.http.get<any>(`${this.apiUrl}/${organizationId}/volunteers`, {
+      params,
+    });
   }
 
   // Upload organization logo
@@ -132,27 +167,44 @@ export class OrganizationService {
     formData.append('file', file);
     formData.append('type', type);
 
-    const req = new HttpRequest('POST', `${this.apiUrl}/${organizationId}/documents`, formData, {
-      reportProgress: true
-    });
+    const req = new HttpRequest(
+      'POST',
+      `${this.apiUrl}/${organizationId}/documents`,
+      formData,
+      {
+        reportProgress: true,
+      }
+    );
 
     return this.http.request(req);
   }
 
   getDocuments(organizationId: string): Observable<OrganizationDocument[]> {
-    return this.http.get<OrganizationDocument[]>(`${this.apiUrl}/${organizationId}/documents`);
+    return this.http.get<OrganizationDocument[]>(
+      `${this.apiUrl}/${organizationId}/documents`
+    );
   }
 
   deleteDocument(organizationId: string, documentId: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${organizationId}/documents/${documentId}`);
+    return this.http.delete<void>(
+      `${this.apiUrl}/${organizationId}/documents/${documentId}`
+    );
   }
 
   // Impact metrics
-  updateImpactMetrics(organizationId: string, metrics: Partial<ImpactMetrics>): Observable<Organization> {
-    return this.http.put<Organization>(`${this.apiUrl}/${organizationId}/impact-metrics`, metrics);
+  updateImpactMetrics(
+    organizationId: string,
+    metrics: Partial<ImpactMetrics>
+  ): Observable<Organization> {
+    return this.http.put<Organization>(
+      `${this.apiUrl}/${organizationId}/impact-metrics`,
+      metrics
+    );
   }
 
   getImpactMetrics(organizationId: string): Observable<ImpactMetrics> {
-    return this.http.get<ImpactMetrics>(`${this.apiUrl}/${organizationId}/impact-metrics`);
+    return this.http.get<ImpactMetrics>(
+      `${this.apiUrl}/${organizationId}/impact-metrics`
+    );
   }
-} 
+}

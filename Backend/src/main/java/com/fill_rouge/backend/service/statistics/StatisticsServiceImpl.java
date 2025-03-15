@@ -62,41 +62,56 @@ public class StatisticsServiceImpl implements StatisticsService {
     public StatisticsResponse.VolunteerStats getVolunteerStats(String volunteerId) {
         LocalDateTime now = LocalDateTime.now();
         
-        // Get participation metrics
-        long totalEventsParticipated = participationRepository.countByVolunteerId(volunteerId);
-        long activeEvents = participationRepository.countByVolunteerIdAndEventStatusAndEndDateAfter(volunteerId, EventStatus.ACTIVE.name(), now);
-        long completedEvents = participationRepository.countByVolunteerIdAndEventStatusAndEndDateBefore(volunteerId, EventStatus.COMPLETED.name(), now);
-        long totalVolunteerHours = calculateVolunteerTotalHours(volunteerId);
+        // Get all participations for the volunteer
+        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
+        
+        // Calculate basic metrics
+        long totalEventsParticipated = participations.size();
+        long activeEvents = participations.stream()
+            .filter(p -> p.getEvent().getStatus() == EventStatus.ACTIVE && 
+                        p.getEvent().getEndDate().isAfter(now))
+            .count();
+        long completedEvents = participations.stream()
+            .filter(p -> p.getEvent().getStatus() == EventStatus.COMPLETED && 
+                        p.getEvent().getEndDate().isBefore(now))
+            .count();
+        long totalVolunteerHours = participations.stream()
+            .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
+            .mapToLong(EventParticipation::getHours)
+            .sum();
 
         // Calculate performance metrics
-        double reliabilityScore = calculateVolunteerReliabilityScore(volunteerId);
-        double avgEventRating = calculateVolunteerAverageEventRating(volunteerId);
-        long skillsEndorsements = calculateVolunteerSkillsEndorsements(volunteerId);
+        double reliabilityScore = calculateReliabilityScore(participations);
+        double avgEventRating = calculateAverageRating(participations);
+        long skillsEndorsements = calculateSkillsEndorsements(volunteerId);
         
-        // Get progress tracking data
-        List<StatisticsResponse.TimeSeriesData> hoursContributed = getVolunteerHoursContributed(volunteerId);
-        List<StatisticsResponse.TimeSeriesData> eventsParticipation = getVolunteerEventsParticipation(volunteerId);
-        Map<String, Long> eventsByCategory = getVolunteerEventsByCategory(volunteerId);
+        // Get time series data
+        List<StatisticsResponse.TimeSeriesData> hoursContributed = getHoursContributedByMonth(participations);
+        List<StatisticsResponse.TimeSeriesData> eventsParticipation = getEventsParticipationByMonth(participations);
+        Map<String, Long> eventsByCategory = getEventsByCategory(participations);
         
         // Calculate impact metrics
-        long peopleImpacted = calculatePeopleImpacted(volunteerId);
-        long organizationsSupported = calculateOrganizationsSupported(volunteerId);
-        Map<String, Long> impactByCategory = calculateImpactByCategory(volunteerId);
+        long peopleImpacted = calculatePeopleImpacted(participations);
+        long organizationsSupported = participations.stream()
+            .map(p -> p.getEvent().getOrganizationId())
+            .distinct()
+            .count();
+        Map<String, Long> impactByCategory = calculateImpactByCategory(participations);
 
         return StatisticsResponse.VolunteerStats.builder()
-                .totalEventsParticipated(totalEventsParticipated)
-                .activeEvents(activeEvents)
+            .totalEventsParticipated(totalEventsParticipated)
+            .activeEvents(activeEvents)
             .completedEvents(completedEvents)
-                .totalVolunteerHours(totalVolunteerHours)
-                .reliabilityScore(reliabilityScore)
-                .averageEventRating(avgEventRating)
-                .skillsEndorsements(skillsEndorsements)
-                .hoursContributed(hoursContributed)
-                .eventsParticipation(eventsParticipation)
-                .eventsByCategory(eventsByCategory)
-                .peopleImpacted(peopleImpacted)
+            .totalVolunteerHours(totalVolunteerHours)
+            .reliabilityScore(reliabilityScore)
+            .averageEventRating(avgEventRating)
+            .skillsEndorsements(skillsEndorsements)
+            .hoursContributed(hoursContributed)
+            .eventsParticipation(eventsParticipation)
+            .eventsByCategory(eventsByCategory)
+            .peopleImpacted(peopleImpacted)
             .organizationsSupported(organizationsSupported)
-                .impactByCategory(impactByCategory)
+            .impactByCategory(impactByCategory)
             .build();
     }
 
@@ -105,45 +120,65 @@ public class StatisticsServiceImpl implements StatisticsService {
     public StatisticsResponse.OrganizationStats getOrganizationStats(String organizationId) {
         LocalDateTime now = LocalDateTime.now();
         
-        // Get basic event counts
-        long totalEvents = eventRepository.countByOrganizationId(organizationId);
-        long activeEvents = eventRepository.countByOrganizationIdAndStatusAndEndDateAfter(organizationId, EventStatus.ACTIVE.name(), now);
-        long completedEvents = eventRepository.countByOrganizationIdAndStatusAndEndDateBefore(organizationId, EventStatus.COMPLETED.name(), now);
-        long upcomingEvents = eventRepository.countByOrganizationIdAndStatusAndStartDateAfter(organizationId, EventStatus.SCHEDULED.name(), now);
+        // Get all events for the organization
+        List<Event> events = eventRepository.findAllByOrganizationId(organizationId);
+        List<EventParticipation> participations = participationRepository.findByOrganizationId(organizationId);
         
-        // Get volunteer engagement metrics
-        long totalVolunteers = participationRepository.countDistinctVolunteersByOrganizationId(organizationId);
-        long activeVolunteers = participationRepository.countActiveVolunteersByOrganizationId(organizationId);
-        double avgVolunteersPerEvent = calculateOrganizationAverageVolunteersPerEvent(organizationId);
-        long totalVolunteerHours = calculateOrganizationTotalVolunteerHours(organizationId);
-        
+        // Calculate event metrics
+        long totalEvents = events.size();
+        long activeEvents = events.stream()
+            .filter(e -> e.getStatus() == EventStatus.ACTIVE && e.getEndDate().isAfter(now))
+            .count();
+        long completedEvents = events.stream()
+            .filter(e -> e.getStatus() == EventStatus.COMPLETED && e.getEndDate().isBefore(now))
+            .count();
+        long upcomingEvents = events.stream()
+            .filter(e -> e.getStatus() == EventStatus.SCHEDULED && e.getStartDate().isAfter(now))
+            .count();
+
+        // Calculate volunteer metrics
+        long totalVolunteers = participations.stream()
+            .map(EventParticipation::getVolunteerId)
+            .distinct()
+            .count();
+        long activeVolunteers = participations.stream()
+            .filter(p -> p.getEvent().getEndDate().isAfter(now.minusMonths(3)))
+            .map(EventParticipation::getVolunteerId)
+            .distinct()
+            .count();
+        double avgVolunteersPerEvent = totalEvents > 0 ? (double) totalVolunteers / totalEvents : 0;
+        long totalVolunteerHours = participations.stream()
+            .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
+            .mapToLong(EventParticipation::getHours)
+            .sum();
+
         // Calculate performance metrics
-        double eventSuccessRate = calculateEventSuccessRate(organizationId);
-        double retentionRate = calculateOrganizationVolunteerRetentionRate(organizationId);
-        double avgEventRating = calculateOrganizationAverageEventRating(organizationId);
-        
-        // Get time-based analysis
-        List<StatisticsResponse.TimeSeriesData> eventTrends = getOrganizationEventTrends(organizationId);
-        List<StatisticsResponse.TimeSeriesData> volunteerTrends = getOrganizationVolunteerTrends(organizationId);
-        Map<String, Long> eventsByCategory = getOrganizationEventsByCategory(organizationId);
-        Map<String, Long> volunteersBySkill = getOrganizationVolunteersBySkill(organizationId);
+        double eventSuccessRate = calculateEventSuccessRate(events);
+        double retentionRate = calculateVolunteerRetentionRate(participations);
+        double avgEventRating = calculateOrganizationEventRating(events);
+
+        // Get time series data
+        List<StatisticsResponse.TimeSeriesData> eventTrends = getEventTrendsByMonth(events);
+        List<StatisticsResponse.TimeSeriesData> volunteerTrends = getVolunteerTrendsByMonth(participations);
+        Map<String, Long> eventsByCategory = getEventsByCategoryMap(events);
+        Map<String, Long> volunteersBySkill = getVolunteersBySkill(participations);
 
         return StatisticsResponse.OrganizationStats.builder()
-                .totalEvents(totalEvents)
-                .activeEvents(activeEvents)
-                .completedEvents(completedEvents)
-                .upcomingEvents(upcomingEvents)
+            .totalEvents(totalEvents)
+            .activeEvents(activeEvents)
+            .completedEvents(completedEvents)
+            .upcomingEvents(upcomingEvents)
             .totalVolunteers(totalVolunteers)
             .activeVolunteers(activeVolunteers)
-                .averageVolunteersPerEvent(avgVolunteersPerEvent)
-                .totalVolunteerHours(totalVolunteerHours)
-                .eventSuccessRate(eventSuccessRate)
+            .averageVolunteersPerEvent(avgVolunteersPerEvent)
+            .totalVolunteerHours(totalVolunteerHours)
+            .eventSuccessRate(eventSuccessRate)
             .volunteerRetentionRate(retentionRate)
-                .averageEventRating(avgEventRating)
-                .eventTrends(eventTrends)
-                .volunteerTrends(volunteerTrends)
-                .eventsByCategory(eventsByCategory)
-                .volunteersBySkill(volunteersBySkill)
+            .averageEventRating(avgEventRating)
+            .eventTrends(eventTrends)
+            .volunteerTrends(volunteerTrends)
+            .eventsByCategory(eventsByCategory)
+            .volunteersBySkill(volunteersBySkill)
             .build();
     }
 
@@ -235,12 +270,30 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     private double calculateAverageVolunteersPerEvent() {
-        return participationRepository.calculateAverageVolunteersPerEvent();
+        long totalEvents = eventRepository.count();
+        if (totalEvents == 0) return 0.0;
+        
+        long totalParticipants = participationRepository.count();
+        return (double) totalParticipants / totalEvents;
     }
 
     private double calculateVolunteerRetentionRate() {
-        // Implementation for volunteer retention rate calculation
-        return 0.0; // TODO: Implement
+        LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
+        
+        // Get all volunteers who have ever participated
+        Set<String> allVolunteers = participationRepository.findAll().stream()
+                .map(EventParticipation::getVolunteerId)
+                .collect(Collectors.toSet());
+                
+        if (allVolunteers.isEmpty()) return 0.0;
+        
+        // Get volunteers who participated in the last 3 months
+        Set<String> recentVolunteers = participationRepository.findAll().stream()
+                .filter(p -> p.getEvent().getStartDate().isAfter(threeMonthsAgo))
+                .map(EventParticipation::getVolunteerId)
+                .collect(Collectors.toSet());
+        
+        return (double) recentVolunteers.size() / allVolunteers.size() * 100;
     }
 
     private Map<String, Long> getVolunteersByLocation() {
@@ -266,28 +319,23 @@ public class StatisticsServiceImpl implements StatisticsService {
             .sum();
     }
 
-    private double calculateVolunteerReliabilityScore(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
+    private double calculateReliabilityScore(List<EventParticipation> participations) {
         if (participations.isEmpty()) return 0.0;
-
-        long totalEvents = participations.size();
         long completedEvents = participations.stream()
-                .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
+            .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
             .count();
-
-        return (double) completedEvents / totalEvents * 100;
+        return (double) completedEvents / participations.size() * 100;
     }
 
-    private double calculateVolunteerAverageEventRating(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
+    private double calculateAverageRating(List<EventParticipation> participations) {
         return participations.stream()
-                .filter(p -> p.getRating() != null)
-                .mapToDouble(EventParticipation::getRating)
-                .average()
-                .orElse(0.0);
+            .filter(p -> p.getRating() != null)
+            .mapToDouble(EventParticipation::getRating)
+            .average()
+            .orElse(0.0);
     }
 
-    private long calculateVolunteerSkillsEndorsements(String volunteerId) {
+    private long calculateSkillsEndorsements(String volunteerId) {
         VolunteerProfile profile = volunteerProfileRepository.findByUserId(volunteerId)
                 .orElseThrow(() -> new RuntimeException("Volunteer profile not found"));
         if (profile.getSkills() == null) {
@@ -298,184 +346,149 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .sum();
     }
 
-    private List<StatisticsResponse.TimeSeriesData> getVolunteerHoursContributed(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
-        Map<String, Long> hoursByDate = participations.stream()
-                .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
-                .collect(Collectors.groupingBy(
-                    p -> p.getCompletedDate().format(DateTimeFormatter.ISO_DATE),
-                    Collectors.summingLong(EventParticipation::getHours)
-                ));
-
-        return hoursByDate.entrySet().stream()
-                .map(entry -> StatisticsResponse.TimeSeriesData.builder()
-                        .date(entry.getKey())
-                        .value(entry.getValue())
-                        .build())
-                .collect(Collectors.toList());
-    }
-
-    private List<StatisticsResponse.TimeSeriesData> getVolunteerEventsParticipation(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
-        Map<String, Long> eventsByDate = participations.stream()
-                .collect(Collectors.groupingBy(
-                    p -> p.getEvent().getStartDate().format(DateTimeFormatter.ISO_DATE),
-                    Collectors.counting()
-                ));
-
-        return eventsByDate.entrySet().stream()
-                .map(entry -> StatisticsResponse.TimeSeriesData.builder()
-                        .date(entry.getKey())
-                        .value(entry.getValue())
-                        .build())
-                .collect(Collectors.toList());
-    }
-
-    private Map<String, Long> getVolunteerEventsByCategory(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
-        return participations.stream()
-                .collect(Collectors.groupingBy(
-                    p -> p.getEvent().getCategory().toString(),
-                    Collectors.counting()
-                ));
-    }
-
-    private long calculatePeopleImpacted(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
-        return participations.stream()
-                .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
-                .mapToLong(p -> p.getEvent().getParticipantCount())
-                .sum();
-    }
-
-    private long calculateOrganizationsSupported(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
-        return participations.stream()
-                .map(p -> p.getEvent().getOrganizationId())
-                .distinct()
-            .count();
-    }
-
-    private Map<String, Long> calculateImpactByCategory(String volunteerId) {
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
-        return participations.stream()
-                .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
+    private List<StatisticsResponse.TimeSeriesData> getHoursContributedByMonth(List<EventParticipation> participations) {
+        Map<String, Long> hoursByMonth = participations.stream()
+            .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
             .collect(Collectors.groupingBy(
-                    p -> p.getEvent().getCategory().toString(),
-                    Collectors.summingLong(p -> p.getEvent().getParticipantCount())
-                ));
+                p -> p.getCompletedDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                Collectors.summingLong(EventParticipation::getHours)
+            ));
+
+        return hoursByMonth.entrySet().stream()
+            .map(entry -> StatisticsResponse.TimeSeriesData.builder()
+                .date(entry.getKey())
+                .value(entry.getValue())
+                .build())
+            .sorted(Comparator.comparing(StatisticsResponse.TimeSeriesData::getDate))
+            .collect(Collectors.toList());
+    }
+
+    private List<StatisticsResponse.TimeSeriesData> getEventsParticipationByMonth(List<EventParticipation> participations) {
+        Map<String, Long> eventsByMonth = participations.stream()
+            .collect(Collectors.groupingBy(
+                p -> p.getEvent().getStartDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                Collectors.counting()
+            ));
+
+        return eventsByMonth.entrySet().stream()
+            .map(entry -> StatisticsResponse.TimeSeriesData.builder()
+                .date(entry.getKey())
+                .value(entry.getValue())
+                .build())
+            .sorted(Comparator.comparing(StatisticsResponse.TimeSeriesData::getDate))
+            .collect(Collectors.toList());
+    }
+
+    private Map<String, Long> getEventsByCategory(List<EventParticipation> participations) {
+        return participations.stream()
+            .collect(Collectors.groupingBy(
+                p -> p.getEvent().getCategory().toString(),
+                Collectors.counting()
+            ));
+    }
+
+    private long calculatePeopleImpacted(List<EventParticipation> participations) {
+        return participations.stream()
+            .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
+            .mapToLong(p -> p.getEvent().getParticipantCount())
+            .sum();
+    }
+
+    private Map<String, Long> calculateImpactByCategory(List<EventParticipation> participations) {
+        return participations.stream()
+            .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
+            .collect(Collectors.groupingBy(
+                p -> p.getEvent().getCategory().toString(),
+                Collectors.summingLong(p -> p.getEvent().getParticipantCount())
+            ));
     }
 
     // Additional helper methods for organization statistics
-    private double calculateOrganizationAverageVolunteersPerEvent(String organizationId) {
-        List<Event> events = eventRepository.findAllByOrganizationId(organizationId);
+    private double calculateEventSuccessRate(List<Event> events) {
         if (events.isEmpty()) return 0.0;
-
-        long totalVolunteers = events.stream()
-                .mapToLong(Event::getParticipantCount)
-                .sum();
-        return (double) totalVolunteers / events.size();
-    }
-
-    private long calculateOrganizationTotalVolunteerHours(String organizationId) {
-        List<EventParticipation> participations = participationRepository.findByOrganizationId(organizationId);
-        return participations.stream()
-                .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
-                .mapToLong(EventParticipation::getHours)
-                .sum();
-    }
-
-    private double calculateEventSuccessRate(String organizationId) {
-        List<Event> events = eventRepository.findAllByOrganizationId(organizationId);
-        if (events.isEmpty()) return 0.0;
-
         long completedEvents = events.stream()
-                .filter(e -> e.getStatus() == EventStatus.COMPLETED)
+            .filter(e -> e.getStatus() == EventStatus.COMPLETED)
             .count();
         return (double) completedEvents / events.size() * 100;
     }
 
-    private double calculateOrganizationVolunteerRetentionRate(String organizationId) {
-        List<EventParticipation> participations = participationRepository.findByOrganizationId(organizationId);
+    private double calculateVolunteerRetentionRate(List<EventParticipation> participations) {
         if (participations.isEmpty()) return 0.0;
-
         LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
-        long totalVolunteers = participations.stream()
-                .map(EventParticipation::getVolunteerId)
-                .distinct()
-                .count();
-        long retainedVolunteers = participations.stream()
-                .filter(p -> p.getCompletedDate().isAfter(threeMonthsAgo))
-                .map(EventParticipation::getVolunteerId)
-                .distinct()
-                .count();
+        
+        Set<String> allVolunteers = participations.stream()
+            .map(EventParticipation::getVolunteerId)
+            .collect(Collectors.toSet());
             
-        return (double) retainedVolunteers / totalVolunteers * 100;
+        Set<String> recentVolunteers = participations.stream()
+            .filter(p -> p.getEvent().getEndDate().isAfter(threeMonthsAgo))
+            .map(EventParticipation::getVolunteerId)
+            .collect(Collectors.toSet());
+            
+        return (double) recentVolunteers.size() / allVolunteers.size() * 100;
     }
 
-    private double calculateOrganizationAverageEventRating(String organizationId) {
-        List<Event> events = eventRepository.findAllByOrganizationId(organizationId);
-        if (events.isEmpty()) {
-            return 0.0;
-        }
+    private double calculateOrganizationEventRating(List<Event> events) {
         return events.stream()
-                .filter(e -> e.getRating() != null)
-                .mapToDouble(e -> e.getRating())
-                .average()
-                .orElse(0.0);
+            .filter(e -> e.getRating() != null)
+            .mapToDouble(Event::getRating)
+            .average()
+            .orElse(0.0);
     }
 
-    private List<StatisticsResponse.TimeSeriesData> getOrganizationEventTrends(String organizationId) {
-        List<Event> events = eventRepository.findAllByOrganizationId(organizationId);
-        Map<String, Long> eventsByDate = events.stream()
-                .collect(Collectors.groupingBy(
-                    e -> e.getStartDate().format(DateTimeFormatter.ISO_DATE),
-                    Collectors.counting()
-                ));
+    private List<StatisticsResponse.TimeSeriesData> getEventTrendsByMonth(List<Event> events) {
+        Map<String, Long> eventsByMonth = events.stream()
+            .collect(Collectors.groupingBy(
+                e -> e.getStartDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                Collectors.counting()
+            ));
 
-        return eventsByDate.entrySet().stream()
-                .map(entry -> StatisticsResponse.TimeSeriesData.builder()
-                        .date(entry.getKey())
-                        .value(entry.getValue())
-                        .build())
-                .collect(Collectors.toList());
+        return eventsByMonth.entrySet().stream()
+            .map(entry -> StatisticsResponse.TimeSeriesData.builder()
+                .date(entry.getKey())
+                .value(entry.getValue())
+                .build())
+            .sorted(Comparator.comparing(StatisticsResponse.TimeSeriesData::getDate))
+            .collect(Collectors.toList());
     }
 
-    private List<StatisticsResponse.TimeSeriesData> getOrganizationVolunteerTrends(String organizationId) {
-        List<EventParticipation> participations = participationRepository.findByOrganizationId(organizationId);
-        Map<String, Long> volunteersByDate = participations.stream()
-                .collect(Collectors.groupingBy(
-                    p -> p.getEvent().getStartDate().format(DateTimeFormatter.ISO_DATE),
-                    Collectors.collectingAndThen(
-                        Collectors.mapping(EventParticipation::getVolunteerId, Collectors.toSet()),
-                        volunteers -> (long) volunteers.size()
-                    )
-                ));
+    private List<StatisticsResponse.TimeSeriesData> getVolunteerTrendsByMonth(List<EventParticipation> participations) {
+        Map<String, Long> volunteersByMonth = participations.stream()
+            .collect(Collectors.groupingBy(
+                p -> p.getEvent().getStartDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                Collectors.collectingAndThen(
+                    Collectors.mapping(EventParticipation::getVolunteerId, Collectors.toSet()),
+                    volunteers -> (long) volunteers.size()
+                )
+            ));
 
-        return volunteersByDate.entrySet().stream()
-                .map(entry -> StatisticsResponse.TimeSeriesData.builder()
-                        .date(entry.getKey())
-                        .value(entry.getValue())
-                        .build())
-                .collect(Collectors.toList());
+        return volunteersByMonth.entrySet().stream()
+            .map(entry -> StatisticsResponse.TimeSeriesData.builder()
+                .date(entry.getKey())
+                .value(entry.getValue())
+                .build())
+            .sorted(Comparator.comparing(StatisticsResponse.TimeSeriesData::getDate))
+            .collect(Collectors.toList());
     }
 
-    private Map<String, Long> getOrganizationEventsByCategory(String organizationId) {
-        List<Event> events = eventRepository.findAllByOrganizationId(organizationId);
+    private Map<String, Long> getEventsByCategoryMap(List<Event> events) {
         return events.stream()
-                .collect(Collectors.groupingBy(
-                    e -> e.getCategory().toString(),
-                    Collectors.counting()
-                ));
+            .collect(Collectors.groupingBy(
+                e -> e.getCategory().toString(),
+                Collectors.counting()
+            ));
     }
 
-    private Map<String, Long> getOrganizationVolunteersBySkill(String organizationId) {
-        List<EventParticipation> participations = participationRepository.findByOrganizationId(organizationId);
+    private Map<String, Long> getVolunteersBySkill(List<EventParticipation> participations) {
         Map<String, Long> skillCounts = new HashMap<>();
         
-        for (EventParticipation participation : participations) {
-            VolunteerProfile profile = volunteerProfileRepository.findByUserId(participation.getVolunteerId())
-                    .orElse(null);
+        Set<String> uniqueVolunteers = participations.stream()
+            .map(EventParticipation::getVolunteerId)
+            .collect(Collectors.toSet());
+            
+        for (String volunteerId : uniqueVolunteers) {
+            VolunteerProfile profile = volunteerProfileRepository.findByUserId(volunteerId)
+                .orElse(null);
             if (profile != null && profile.getSkills() != null) {
                 for (Skill skill : profile.getSkills()) {
                     skillCounts.merge(skill.getName(), 1L, Long::sum);

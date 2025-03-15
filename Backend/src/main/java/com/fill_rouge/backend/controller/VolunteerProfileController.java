@@ -24,46 +24,48 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 
 @RestController
-@RequestMapping("/volunteer-profiles")
+@RequestMapping("/volunteers")
 @RequiredArgsConstructor
 @Tag(name = "Volunteer Profile", description = "Volunteer profile management endpoints")
 public class VolunteerProfileController {
     private final VolunteerProfileService profileService;
 
-    @PostMapping("/{volunteerId}")
-    @PreAuthorize("hasRole('VOLUNTEER') and #volunteerId == authentication.principal.id")
+    @PostMapping("/profile")
+    @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Create volunteer profile", description = "Create a new volunteer profile")
     @ApiResponse(responseCode = "201", description = "Profile created successfully")
     public ResponseEntity<VolunteerProfileResponse> createProfile(
-            @PathVariable String volunteerId,
+            @RequestHeader("X-User-ID") String volunteerId,
             @Valid @RequestBody VolunteerProfileRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(profileService.createProfile(volunteerId, request));
     }
 
-    @PutMapping("/{volunteerId}")
-    @PreAuthorize("hasRole('VOLUNTEER') and #volunteerId == authentication.principal.id")
+    @PutMapping("/profile")
+    @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Update volunteer profile", description = "Update an existing volunteer profile")
     @ApiResponse(responseCode = "200", description = "Profile updated successfully")
     public ResponseEntity<VolunteerProfileResponse> updateProfile(
-            @PathVariable String volunteerId,
+            @RequestHeader("X-User-ID") String volunteerId,
             @Valid @RequestBody VolunteerProfileRequest request) {
         return ResponseEntity.ok(profileService.updateProfile(volunteerId, request));
     }
 
-    @GetMapping("/{volunteerId}")
-    @Operation(summary = "Get volunteer profile", description = "Retrieve a volunteer profile by ID")
+    @GetMapping("/profile")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    @Operation(summary = "Get volunteer profile", description = "Retrieve a volunteer profile")
     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully")
     @ApiResponse(responseCode = "404", description = "Profile not found")
-    public ResponseEntity<VolunteerProfileResponse> getProfile(@PathVariable String volunteerId) {
+    public ResponseEntity<VolunteerProfileResponse> getProfile(
+            @RequestHeader("X-User-ID") String volunteerId) {
         return ResponseEntity.ok(profileService.getProfile(volunteerId));
     }
 
-    @DeleteMapping("/{volunteerId}")
-    @PreAuthorize("hasRole('VOLUNTEER') and #volunteerId == authentication.principal.id")
+    @DeleteMapping("/profile")
+    @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Delete volunteer profile", description = "Delete a volunteer profile")
     @ApiResponse(responseCode = "204", description = "Profile deleted successfully")
-    public ResponseEntity<Void> deleteProfile(@PathVariable String volunteerId) {
+    public ResponseEntity<Void> deleteProfile(@RequestHeader("X-User-ID") String volunteerId) {
         profileService.deleteProfile(volunteerId);
         return ResponseEntity.noContent().build();
     }
@@ -76,35 +78,35 @@ public class VolunteerProfileController {
         return ResponseEntity.ok(profileService.searchVolunteers(query));
     }
 
-    @PostMapping("/{volunteerId}/stats")
+    @PostMapping("/stats")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Update volunteer stats", description = "Update volunteer statistics")
     @ApiResponse(responseCode = "200", description = "Stats updated successfully")
     public ResponseEntity<Void> updateStats(
-            @PathVariable String volunteerId,
+            @RequestHeader("X-User-ID") String volunteerId,
             @RequestParam @Positive int hoursVolunteered,
             @RequestParam @DecimalMin("0.0") @DecimalMax("5.0") double rating) {
         profileService.updateVolunteerStats(volunteerId, hoursVolunteered, rating);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{volunteerId}/badges")
+    @PostMapping("/badges")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Award badge", description = "Award a badge to a volunteer")
     @ApiResponse(responseCode = "200", description = "Badge awarded successfully")
     public ResponseEntity<Void> awardBadge(
-            @PathVariable String volunteerId,
+            @RequestHeader("X-User-ID") String volunteerId,
             @RequestParam @NotBlank String badge) {
         profileService.awardBadge(volunteerId, badge);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/{volunteerId}/background-check")
+    @PutMapping("/background-check")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update background check", description = "Update volunteer background check status")
     @ApiResponse(responseCode = "200", description = "Background check status updated successfully")
     public ResponseEntity<Void> updateBackgroundCheckStatus(
-            @PathVariable String volunteerId,
+            @RequestHeader("X-User-ID") String volunteerId,
             @RequestParam @Pattern(regexp = "^(PENDING|APPROVED|REJECTED)$") String status) {
         profileService.updateBackgroundCheckStatus(volunteerId, status);
         return ResponseEntity.ok().build();
