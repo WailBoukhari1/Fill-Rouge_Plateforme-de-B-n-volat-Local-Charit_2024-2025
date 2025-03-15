@@ -195,9 +195,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('participationChart') participationChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('growthChart') growthChartRef!: ElementRef<HTMLCanvasElement>;
 
-  statistics$: Observable<VolunteerStats | null>;
-  loading$: Observable<boolean>;
-  error$: Observable<string | null>;
+  statistics$ = this.store.select(VolunteerSelectors.selectStatistics);
+  loading$ = this.store.select(VolunteerSelectors.selectLoading);
+  error$ = this.store.select(VolunteerSelectors.selectError);
 
   volunteerStats: VolunteerStats | null = null;
   organizationStats: OrganizationStats | null = null;
@@ -215,9 +215,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private statisticsService: StatisticsService,
     private authService: AuthService
   ) {
-    this.statistics$ = this.store.select(VolunteerSelectors.selectVolunteerStatistics);
-    this.loading$ = this.store.select(VolunteerSelectors.selectVolunteerLoading);
-    this.error$ = this.store.select(VolunteerSelectors.selectVolunteerError);
   }
 
   ngOnInit(): void {
@@ -332,7 +329,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private updateCharts(stats: VolunteerStats): void {
+  private updateCharts(stats: VolunteerStatistics): void {
     if (!stats) return;
 
     // Update Hours Chart
@@ -345,9 +342,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }
 
     // Update Category Chart
-    if (this.categoryChart && stats.eventsParticipated) {
-      const categories = ['Education', 'Health', 'Environment', 'Social'];
-      const data = categories.map(() => stats.eventsParticipated / 4); // Distribute events evenly
+    if (this.categoryChart && stats.totalEventsAttended) {
+      const categories = Object.keys(stats.eventsByCategory);
+      const data = categories.map(category => stats.eventsByCategory[category] || 0);
       this.categoryChart.data.labels = categories;
       this.categoryChart.data.datasets[0].data = data;
       this.categoryChart.update();
@@ -356,7 +353,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Update Participation Chart
     if (this.participationChart) {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const data = days.map(() => stats.eventsParticipated / 7); // Distribute events evenly
+      const data = days.map(day => stats.participationByDay[day] || 0);
       this.participationChart.data.datasets[0].data = data;
       this.participationChart.update();
     }
@@ -364,8 +361,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Update Growth Chart
     if (this.growthChart) {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-      const participationData = months.map(() => (stats.eventsParticipated / 6) * 100);
-      const hoursData = months.map(() => (stats.totalHoursVolunteered / 6) * 100);
+      const participationData = months.map(() => stats.participationGrowthRate);
+      const hoursData = months.map(() => stats.hoursGrowthRate);
       this.growthChart.data.datasets[0].data = participationData;
       this.growthChart.data.datasets[1].data = hoursData;
       this.growthChart.update();

@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from '../../core/services/auth.service';
+import { UserRole } from '../../core/models/auth.models';
 
 @Component({
   selector: 'app-dashboard-layout',
@@ -33,104 +34,67 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- Navigation Menu -->
         <mat-nav-list>
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+          <a mat-list-item routerLink="/" routerLinkActive="active">
             <mat-icon matListItemIcon>dashboard</mat-icon>
             <span matListItemTitle>Dashboard</span>
           </a>
 
-          @if (userRole === 'ADMIN') {
-          <a
-            mat-list-item
-            routerLink="/dashboard/users"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>people</mat-icon>
-            <span matListItemTitle>Users</span>
-          </a>
-          <a
-            mat-list-item
-            routerLink="/dashboard/organizations"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>business</mat-icon>
-            <span matListItemTitle>Organizations</span>
-          </a>
-          <a
-            mat-list-item
-            routerLink="/dashboard/events"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>event</mat-icon>
-            <span matListItemTitle>Events</span>
-          </a>
-          <a
-            mat-list-item
-            routerLink="/dashboard/reports"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>assessment</mat-icon>
-            <span matListItemTitle>Reports</span>
-          </a>
-          } @if (userRole === 'VOLUNTEER') {
-          <a
-            mat-list-item
-            routerLink="/dashboard/volunteer/events"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>event</mat-icon>
-            <span matListItemTitle>My Events</span>
-          </a>
-          <a
-            mat-list-item
-            routerLink="/dashboard/volunteer/hours"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>schedule</mat-icon>
-            <span matListItemTitle>My Hours</span>
-          </a>
-          <a
-            mat-list-item
-            routerLink="/dashboard/volunteer/achievements"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>emoji_events</mat-icon>
-            <span matListItemTitle>Achievements</span>
-          </a>
-          <a
-            mat-list-item
-            routerLink="/dashboard/volunteer/waitlist"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>pending</mat-icon>
-            <span matListItemTitle>Waitlist</span>
-          </a>
-          } @if (userRole === 'ORGANIZATION') {
-          <a
-            mat-list-item
-            routerLink="/dashboard/events"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>event</mat-icon>
-            <span matListItemTitle>Events</span>
-          </a>
-          <a
-            mat-list-item
-            routerLink="/dashboard/reports"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>assessment</mat-icon>
-            <span matListItemTitle>Reports</span>
-          </a>
+          @if (userRole === UserRole.ADMIN) {
+            <a mat-list-item routerLink="/users" routerLinkActive="active">
+              <mat-icon matListItemIcon>people</mat-icon>
+              <span matListItemTitle>Users</span>
+            </a>
+            <a mat-list-item routerLink="/organizations" routerLinkActive="active">
+              <mat-icon matListItemIcon>business</mat-icon>
+              <span matListItemTitle>Organizations</span>
+            </a>
+            <a mat-list-item routerLink="/events" routerLinkActive="active">
+              <mat-icon matListItemIcon>event</mat-icon>
+              <span matListItemTitle>Events</span>
+            </a>
+            <a mat-list-item routerLink="/reports" routerLinkActive="active">
+              <mat-icon matListItemIcon>assessment</mat-icon>
+              <span matListItemTitle>Reports</span>
+            </a>
           }
 
-          <a
-            mat-list-item
-            routerLink="/dashboard/profile"
-            routerLinkActive="active"
-          >
-            <mat-icon matListItemIcon>person</mat-icon>
-            <span matListItemTitle>Profile</span>
-          </a>
+          @if (userRole === UserRole.VOLUNTEER) {
+            <a mat-list-item routerLink="/volunteer/profile" routerLinkActive="active">
+              <mat-icon matListItemIcon>person</mat-icon>
+              <span matListItemTitle>Profile</span>
+            </a>
+            <a mat-list-item routerLink="/volunteer/events" routerLinkActive="active">
+              <mat-icon matListItemIcon>event</mat-icon>
+              <span matListItemTitle>My Events</span>
+            </a>
+            <a mat-list-item routerLink="/volunteer/hours" routerLinkActive="active">
+              <mat-icon matListItemIcon>schedule</mat-icon>
+              <span matListItemTitle>My Hours</span>
+            </a>
+            <a mat-list-item routerLink="/volunteer/achievements" routerLinkActive="active">
+              <mat-icon matListItemIcon>emoji_events</mat-icon>
+              <span matListItemTitle>Achievements</span>
+            </a>
+            <a mat-list-item routerLink="/volunteer/waitlist" routerLinkActive="active">
+              <mat-icon matListItemIcon>hourglass_empty</mat-icon>
+              <span matListItemTitle>Waitlist</span>
+            </a>
+          }
+
+          @if (userRole === UserRole.ORGANIZATION) {
+            <a mat-list-item routerLink="/profile/organization" routerLinkActive="active">
+              <mat-icon matListItemIcon>business</mat-icon>
+              <span matListItemTitle>Profile</span>
+            </a>
+            <a mat-list-item routerLink="/events" routerLinkActive="active">
+              <mat-icon matListItemIcon>event</mat-icon>
+              <span matListItemTitle>Events</span>
+            </a>
+            <a mat-list-item routerLink="/reports" routerLinkActive="active">
+              <mat-icon matListItemIcon>assessment</mat-icon>
+              <span matListItemTitle>Reports</span>
+            </a>
+          }
         </mat-nav-list>
       </mat-sidenav>
 
@@ -156,13 +120,17 @@ import { AuthService } from '../../core/services/auth.service';
               </button>
 
               <mat-menu #userMenu="matMenu">
-                <a
-                  mat-menu-item
-                  [routerLink]="['/dashboard/profile', userRole.toLowerCase()]"
-                >
-                  <mat-icon>person</mat-icon>
-                  <span>Profile</span>
-                </a>
+                @if (userRole === UserRole.VOLUNTEER) {
+                  <a mat-menu-item routerLink="/volunteer/profile">
+                    <mat-icon>person</mat-icon>
+                    <span>Profile</span>
+                  </a>
+                } @else if (userRole === UserRole.ORGANIZATION) {
+                  <a mat-menu-item routerLink="/profile/organization">
+                    <mat-icon>business</mat-icon>
+                    <span>Profile</span>
+                  </a>
+                }
                 <button mat-menu-item (click)="onLogout()">
                   <mat-icon>exit_to_app</mat-icon>
                   <span>Logout</span>
@@ -194,17 +162,32 @@ import { AuthService } from '../../core/services/auth.service';
         background-color: rgba(var(--primary-color), 0.1);
         color: rgb(var(--primary-color));
       }
+
+      mat-sidenav {
+        background-color: #f8f9fa;
+        border-right: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      mat-toolbar {
+        background-color: #ffffff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      .text-primary-600 {
+        color: rgb(var(--primary-color));
+      }
     `,
   ],
 })
 export class DashboardLayoutComponent implements OnInit {
-  userRole: string = '';
+  userRole: UserRole | null = null;
   userName: string = '';
+  protected readonly UserRole = UserRole;
 
   constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
-    this.userRole = this.authService.getUserRole();
+    this.userRole = this.authService.getUserRole() as UserRole;
     this.userName = this.authService.getUserName();
   }
 

@@ -20,11 +20,11 @@ export class ProfileService {
   private readonly endpoints = {
     volunteer: {
       profile: `${this.apiUrl}/volunteers/profile`,
-      stats: `${this.apiUrl}/volunteers/stats`,
+      stats: `${this.apiUrl}/volunteers/statistics`,
     },
     organization: {
       profile: `${this.apiUrl}/organizations/profile`,
-      stats: `${this.apiUrl}/organizations/stats`,
+      stats: `${this.apiUrl}/organizations/statistics`,
     },
   };
 

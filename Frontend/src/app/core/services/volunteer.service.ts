@@ -10,39 +10,89 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { ApiResponse } from '../models/profile.model';
 
+export interface EmergencyContact {
+  name: string;
+  phone: string;
+  relationship: string;
+}
+
+export interface NotificationPreferences {
+  enabled: boolean;
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+}
+
+export interface Availability {
+  [key: string]: {
+    start: string;
+    end: string;
+  };
+}
+
 export interface VolunteerProfile {
   id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+  country: string;
+  bio: string;
+  profilePicture: string;
+  emergencyContact: string;
+  emergencyPhone: string;
+  skills: string[];
+  interests: string[];
+  preferredCategories: string[];
+  availableDays: string[];
+  preferredTimeOfDay: string;
+  certifications: string[];
+  languages: string[];
+  availableForEmergency: boolean;
+  receiveNotifications: boolean;
+  notificationPreferences: string[];
+  profileVisible: boolean;
+  totalEventsAttended: number;
+  totalVolunteerHours: number;
+  averageEventRating: number;
+  reliabilityScore: number;
+  backgroundChecked: boolean;
+  backgroundCheckDate: string;
+  backgroundCheckStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  status: string;
+  maxHoursPerWeek: number;
+  preferredRadius: number;
+  joinedAt: string;
+  completionPercentage: number;
+  impactScore: number;
+  references: string[];
+}
+
+export interface VolunteerProfileRequest {
   bio: string;
   phoneNumber: string;
   address: string;
   city: string;
   country: string;
-  emergencyContact: {
-    name: string;
-    phone: string;
-    relationship?: string;
-  };
+  emergencyContact: string;
+  emergencyPhone: string;
   preferredCategories: string[];
   skills: string[];
   interests: string[];
   availableDays: string[];
   preferredTimeOfDay: string;
-  languages: string[];
   certifications: string[];
-  totalEventsAttended: number;
-  totalHoursVolunteered: number;
-  averageRating: number;
-  reliabilityScore: number;
-  badges: string[];
+  languages: string[];
   availableForEmergency: boolean;
   receiveNotifications: boolean;
   notificationPreferences: string[];
   profileVisible: boolean;
-  backgroundCheck: {
-    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_SUBMITTED';
-    date?: Date;
-    expiryDate?: Date;
-  };
+  profilePicture?: string;
 }
 
 export interface VolunteerStatistics {
@@ -103,29 +153,35 @@ export class VolunteerService {
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
-  getProfile(): Observable<VolunteerProfile> {
-    return this.http
-      .get<ApiResponse<VolunteerProfile>>(`${this.apiUrl}/profile`)
-      .pipe(
-        map((response) => response.data),
-        catchError(this.handleError)
-      );
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An error occurred';
+    
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = error.error.message;
+    } else {
+      // Server-side error
+      errorMessage = error.error?.message || error.message || 'Server error';
+    }
+
+    console.error('API Error:', error);
+    return throwError(() => new Error(errorMessage));
   }
 
-  updateProfile(
-    profile: Partial<VolunteerProfile>
-  ): Observable<VolunteerProfile> {
-    return this.http
-      .put<ApiResponse<VolunteerProfile>>(`${this.apiUrl}/profile`, profile)
-      .pipe(
-        map((response) => response.data),
-        catchError(this.handleError)
-      );
+  getProfile(): Observable<VolunteerProfile> {
+    return this.http.get<VolunteerProfile>(`${this.apiUrl}/profile`);
+  }
+
+  updateProfile(profile: VolunteerProfileRequest): Observable<VolunteerProfile> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    return this.http.put<VolunteerProfile>(`${this.apiUrl}/profile`, profile, { headers });
   }
 
   getStatistics(): Observable<VolunteerStatistics> {
     return this.http
-      .get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/stats`)
+      .get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/statistics`)
       .pipe(
         map((response) => response.data),
         catchError(() =>
@@ -158,47 +214,26 @@ export class VolunteerService {
       );
   }
 
-  updateAvailability(availability: {
-    availableDays: string[];
-    preferredTimeOfDay: string;
-    availableForEmergency: boolean;
-  }): Observable<VolunteerProfile> {
-    return this.http
-      .put<ApiResponse<VolunteerProfile>>(
-        `${this.apiUrl}/availability`,
-        availability
-      )
-      .pipe(
-        map((response) => response.data),
-        catchError(this.handleError)
-      );
+  updateAvailability(availability: Availability): Observable<VolunteerProfile> {
+    return this.http.put<VolunteerProfile>(`${this.apiUrl}/profile/availability`, availability);
   }
 
-  updateNotificationPreferences(
-    preferences: string[]
-  ): Observable<VolunteerProfile> {
-    return this.http
-      .put<ApiResponse<VolunteerProfile>>(`${this.apiUrl}/notifications`, {
-        preferences,
-      })
-      .pipe(
-        map((response) => response.data),
-        catchError(this.handleError)
-      );
+  updateNotificationPreferences(preferences: NotificationPreferences): Observable<VolunteerProfile> {
+    return this.http.put<VolunteerProfile>(`${this.apiUrl}/profile/notifications`, preferences);
   }
 
-  uploadProfilePicture(file: File): Observable<{ url: string }> {
+  uploadProfilePicture(file: File): Observable<VolunteerProfile> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http
-      .post<ApiResponse<{ url: string }>>(
-        `${this.apiUrl}/profile/picture`,
-        formData
-      )
-      .pipe(
-        map((response) => response.data),
-        catchError(this.handleError)
-      );
+    const headers = new HttpHeaders({
+      'X-User-ID': this.authService.getCurrentUserId()
+    });
+    return this.http.post<VolunteerProfile>(`${this.apiUrl}/profile/picture`, formData, { headers });
+  }
+
+  getProfilePictureUrl(fileId: string): string {
+    if (!fileId) return '';
+    return `${environment.apiUrl}/files/${fileId}`;
   }
 
   addCertification(certification: {
@@ -246,9 +281,9 @@ export class VolunteerService {
     );
   }
 
-  getBackgroundCheckStatus(): Observable<VolunteerProfile['backgroundCheck']> {
+  getBackgroundCheckStatus(): Observable<{ status: string }> {
     return this.http
-      .get<ApiResponse<VolunteerProfile['backgroundCheck']>>(
+      .get<ApiResponse<{ status: string }>>(
         `${this.apiUrl}/background-check`
       )
       .pipe(
@@ -269,18 +304,12 @@ export class VolunteerService {
       );
   }
 
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
-
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Client error: ${error.error.message}`;
-    } else {
-      errorMessage = `Server error: ${error.status} - ${
-        error.error?.message || error.statusText
-      }`;
-    }
-
-    console.error('VolunteerService Error:', errorMessage);
-    return throwError(() => new Error(errorMessage));
+  closeAccount(): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/volunteers/me`).pipe(
+      catchError((error) => {
+        console.error('Error closing account:', error);
+        return throwError(() => new Error('Failed to close account'));
+      })
+    );
   }
 }

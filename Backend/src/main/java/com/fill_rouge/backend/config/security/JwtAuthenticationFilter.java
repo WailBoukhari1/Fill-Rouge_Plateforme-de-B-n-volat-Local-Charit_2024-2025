@@ -96,14 +96,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private boolean shouldSkipTokenProcessing(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.startsWith("/api/auth/") || 
-               path.startsWith("/auth/") ||
+        String path = request.getServletPath();
+        logger.debug("Checking path for token processing: {}", path);
+        return path.startsWith("/auth/") ||
+               path.startsWith("/api/auth/") ||
                path.startsWith("/api/public/") ||
-               path.startsWith("/swagger-ui/") ||
-               path.startsWith("/v3/api-docs/") ||
-               path.equals("/actuator/health") ||
-               path.equals("/error");
+               path.startsWith("/api/files/") ||
+               path.startsWith("/files/") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-ui/");
     }
 
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {

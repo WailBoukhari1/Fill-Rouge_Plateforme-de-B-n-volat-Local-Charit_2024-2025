@@ -21,6 +21,8 @@ public class VolunteerProfileRequest {
     private static final String TIME_REGEX = "^(MORNING|AFTERNOON|EVENING|FLEXIBLE)$";
     private static final String NOTIFICATION_REGEX = "^(EMAIL|SMS|PUSH|IN_APP)$";
 
+    private String profilePicture;
+
     @Size(min = 20, max = 1000, message = "Bio must be between {min} and {max} characters")
     private String bio;
 

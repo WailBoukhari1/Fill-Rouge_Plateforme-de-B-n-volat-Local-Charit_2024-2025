@@ -3,13 +3,17 @@ package com.fill_rouge.backend.controller;
 import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
+import com.fill_rouge.backend.service.storage.GridFsService;
+import com.fill_rouge.backend.domain.VolunteerProfile;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +33,7 @@ import jakarta.validation.constraints.Positive;
 @Tag(name = "Volunteer Profile", description = "Volunteer profile management endpoints")
 public class VolunteerProfileController {
     private final VolunteerProfileService profileService;
+    private final GridFsService gridFsService;
 
     @PostMapping("/profile")
     @PreAuthorize("hasRole('VOLUNTEER')")
@@ -110,5 +115,56 @@ public class VolunteerProfileController {
             @RequestParam @Pattern(regexp = "^(PENDING|APPROVED|REJECTED)$") String status) {
         profileService.updateBackgroundCheckStatus(volunteerId, status);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/profile/picture")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    @Operation(summary = "Upload profile picture", description = "Upload a profile picture for the volunteer")
+    @ApiResponse(responseCode = "200", description = "Profile picture uploaded successfully")
+    public ResponseEntity<VolunteerProfileResponse> uploadProfilePicture(
+            @RequestHeader("X-User-ID") String volunteerId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Invalid file type. Only image files are allowed.");
+        }
+
+        // Validate file size (5MB limit)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds 5MB limit.");
+        }
+
+        // Store the file using GridFS
+        String fileUrl = gridFsService.store(file);
+
+        // Get current profile
+        VolunteerProfile currentProfile = profileService.getVolunteerProfile(volunteerId);
+
+        // Create update request with all required fields
+        VolunteerProfileRequest request = VolunteerProfileRequest.builder()
+            .profilePicture(fileUrl)
+            .bio(currentProfile.getBio())
+            .phoneNumber(currentProfile.getPhoneNumber())
+            .address(currentProfile.getAddress())
+            .city(currentProfile.getCity())
+            .country(currentProfile.getCountry())
+            .emergencyContact(currentProfile.getEmergencyContact())
+            .emergencyPhone(currentProfile.getEmergencyPhone())
+            .preferredCategories(currentProfile.getPreferredCategories())
+            .skills(currentProfile.getSkills().stream().map(skill -> skill.getName()).collect(java.util.stream.Collectors.toSet()))
+            .interests(currentProfile.getInterests())
+            .availableDays(currentProfile.getAvailableDays())
+            .preferredTimeOfDay(currentProfile.getPreferredTimeOfDay())
+            .languages(currentProfile.getLanguages())
+            .certifications(currentProfile.getCertifications())
+            .availableForEmergency(currentProfile.isAvailableForEmergency())
+            .receiveNotifications(currentProfile.isReceiveNotifications())
+            .notificationPreferences(currentProfile.getNotificationPreferences())
+            .profileVisible(currentProfile.isProfileVisible())
+            .build();
+
+        // Update profile and return response
+        return ResponseEntity.ok(profileService.updateProfile(volunteerId, request));
     }
 } 

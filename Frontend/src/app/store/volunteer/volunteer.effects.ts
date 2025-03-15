@@ -7,6 +7,7 @@ import { StatisticsService } from '../../core/services/statistics.service';
 import { AuthService } from '../../core/services/auth.service';
 import * as VolunteerActions from './volunteer.actions';
 import { StatisticsResponse, VolunteerStats } from '../../core/models/statistics.model';
+import { VolunteerStatistics } from '../../core/services/volunteer.service';
 
 @Injectable()
 export class VolunteerEffects {
@@ -24,7 +25,26 @@ export class VolunteerEffects {
               adminStats: undefined,
               organizationStats: undefined
             };
-            return VolunteerActions.loadStatisticsSuccess({ statistics: response });
+            
+            // Convert VolunteerStats to VolunteerStatistics
+            const statistics: VolunteerStatistics = {
+              totalEventsAttended: stats.eventsParticipated,
+              upcomingEvents: 0, // Add these fields based on your data
+              completedEvents: 0,
+              canceledEvents: 0,
+              eventsByCategory: {},
+              totalHoursVolunteered: stats.totalHoursVolunteered,
+              averageHoursPerEvent: stats.totalHoursVolunteered / stats.eventsParticipated || 0,
+              hoursByMonth: {},
+              averageRating: stats.impactScore,
+              reliabilityScore: stats.attendanceRate,
+              organizationsWorkedWith: 0,
+              participationGrowthRate: 0,
+              hoursGrowthRate: 0,
+              participationByDay: {}
+            };
+            
+            return VolunteerActions.loadStatisticsSuccess({ statistics });
           }),
           catchError(error => of(VolunteerActions.loadStatisticsFailure({ error: error.message })))
         );

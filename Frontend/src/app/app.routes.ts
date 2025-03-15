@@ -9,10 +9,7 @@ export const routes: Routes = [
     path: 'auth',
     children: AUTH_ROUTES
   },
-  {
-    path: 'dashboard',
-    children: PRIVATE_ROUTES
-  },
+  ...PRIVATE_ROUTES,
   {
     path: '**',
     loadComponent: () => import('./features/public/not-found/not-found.component').then(m => m.NotFoundComponent)

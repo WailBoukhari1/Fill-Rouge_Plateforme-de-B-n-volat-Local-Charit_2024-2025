@@ -2,18 +2,30 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { selectUserRole } from '../../../store/auth/auth.selectors';
-import { take, catchError } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ProfileService } from '../../../core/services/profile.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { UserRole } from '../../../core/models/auth.models';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  templateUrl: './profile.component.html',
-  styleUrls: ['./profile.component.scss'],
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatSnackBarModule
+  ],
+  template: `
+    <router-outlet></router-outlet>
+  `,
+  styles: [`
+    :host {
+      display: block;
+      height: 100%;
+    }
+  `]
 })
 export class ProfileComponent implements OnInit {
   constructor(
@@ -34,9 +46,23 @@ export class ProfileComponent implements OnInit {
             return;
           }
 
-          const path = role.toLowerCase();
-          if (this.router.url === '/dashboard/profile') {
-            this.router.navigate(['/dashboard/profile', path]);
+          // Redirect to the appropriate profile route based on user role
+          switch (role) {
+            case UserRole.VOLUNTEER:
+              if (this.router.url === '/profile') {
+                this.router.navigate(['/volunteer/profile']);
+              }
+              break;
+            case UserRole.ORGANIZATION:
+              if (this.router.url === '/profile') {
+                this.router.navigate(['/profile/organization']);
+              }
+              break;
+            case UserRole.ADMIN:
+              this.router.navigate(['/users']);
+              break;
+            default:
+              this.router.navigate(['/']);
           }
         },
         error: (error) => {
@@ -46,6 +72,8 @@ export class ProfileComponent implements OnInit {
             'Close',
             {
               duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
             }
           );
         },
@@ -63,6 +91,8 @@ export class ProfileComponent implements OnInit {
             'Close',
             {
               duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
             }
           );
         },

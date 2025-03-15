@@ -17,34 +17,7 @@ export const PRIVATE_ROUTES: Routes = [
             (m) => m.DashboardComponent
           ),
       },
-      {
-        path: 'profile',
-        children: [
-          {
-            path: '',
-            redirectTo: 'volunteer',
-            pathMatch: 'full',
-          },
-          {
-            path: 'volunteer',
-            loadComponent: () =>
-              import('./volunteer/profile/volunteer-profile.component').then(
-                (m) => m.VolunteerProfileComponent
-              ),
-            canActivate: [RoleGuard],
-            data: { roles: ['VOLUNTEER'] },
-          },
-          {
-            path: 'organization',
-            loadComponent: () =>
-              import(
-                './organization/profile/organization-profile.component'
-              ).then((m) => m.OrganizationProfileComponent),
-            canActivate: [RoleGuard],
-            data: { roles: ['ORGANIZATION'] },
-          },
-        ],
-      },
+      // Admin Routes
       {
         path: 'users',
         loadComponent: () =>
@@ -81,6 +54,16 @@ export const PRIVATE_ROUTES: Routes = [
         canActivate: [RoleGuard],
         data: { roles: ['ADMIN', 'ORGANIZATION'] },
       },
+      // Organization Routes
+      {
+        path: 'profile/organization',
+        loadComponent: () =>
+          import(
+            './organization/profile/organization-profile.component'
+          ).then((m) => m.OrganizationProfileComponent),
+        canActivate: [RoleGuard],
+        data: { roles: ['ORGANIZATION'] },
+      },
       // Volunteer Routes
       {
         path: 'volunteer',
@@ -89,10 +72,22 @@ export const PRIVATE_ROUTES: Routes = [
         children: [
           {
             path: 'profile',
-            loadComponent: () =>
-              import('./volunteer/profile/volunteer-profile.component').then(
-                (m) => m.VolunteerProfileComponent
-              ),
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./volunteer/volunteer-profile/volunteer-profile.component').then(
+                    (m) => m.VolunteerProfileComponent
+                  ),
+              },
+              {
+                path: 'edit',
+                loadComponent: () =>
+                  import('./volunteer/volunteer-profile/edit/edit-profile.component').then(
+                    (m) => m.EditProfileComponent
+                  ),
+              }
+            ]
           },
           {
             path: 'events',

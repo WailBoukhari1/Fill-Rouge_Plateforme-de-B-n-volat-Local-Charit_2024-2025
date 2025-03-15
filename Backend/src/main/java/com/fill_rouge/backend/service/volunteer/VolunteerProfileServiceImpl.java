@@ -185,6 +185,7 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         profile.setEmergencyContact(request.getEmergencyContact());
         profile.setEmergencyPhone(request.getEmergencyPhone());
         profile.setPreferredCategories(request.getPreferredCategories());
+        profile.setProfilePicture(request.getProfilePicture());
         List<Skill> skills = request.getSkills().stream()
             .map(skillName -> {
                 Skill skill = new Skill();

@@ -68,12 +68,12 @@ interface MenuItem {
 
           <mat-menu #userMenu="matMenu">
             @if(userRole === 'VOLUNTEER') {
-              <a mat-menu-item routerLink="/dashboard/profile">
+              <a mat-menu-item routerLink="/volunteer/profile">
                 <mat-icon>person</mat-icon>
                 <span>My Profile</span>
               </a>
             } @else if(userRole === 'ORGANIZATION') {
-              <a mat-menu-item routerLink="/dashboard/profile">
+              <a mat-menu-item routerLink="/organization/profile">
                 <mat-icon>business</mat-icon>
                 <span>Organization Profile</span>
               </a>

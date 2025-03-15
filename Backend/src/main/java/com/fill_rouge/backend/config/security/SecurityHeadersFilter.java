@@ -20,9 +20,9 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
                 "default-src 'self'; " +
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
                 "style-src 'self' 'unsafe-inline'; " +
-                "img-src 'self' data: https:; " +
+                "img-src 'self' data: blob: *; " +
                 "font-src 'self' data: https:; " +
-                "connect-src 'self' https:;");
+                "connect-src 'self' *;");
 
         // XSS Protection
         response.setHeader("X-XSS-Protection", "1; mode=block");
@@ -52,5 +52,11 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/files/");  // Skip security headers for file requests
     }
 } 

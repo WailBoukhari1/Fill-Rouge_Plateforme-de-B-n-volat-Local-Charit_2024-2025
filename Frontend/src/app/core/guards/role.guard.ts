@@ -35,7 +35,19 @@ export class RoleGuard implements CanActivate {
         }
 
         // If roles don't match, redirect to the appropriate profile page
-        this.router.navigate(['/dashboard/profile', userRole.toLowerCase()]);
+        switch (userRole) {
+          case 'VOLUNTEER':
+            this.router.navigate(['/volunteer/profile']);
+            break;
+          case 'ORGANIZATION':
+            this.router.navigate(['/organization/profile']);
+            break;
+          case 'ADMIN':
+            this.router.navigate(['/users']);
+            break;
+          default:
+            this.router.navigate(['/']);
+        }
         return false;
       })
     );
