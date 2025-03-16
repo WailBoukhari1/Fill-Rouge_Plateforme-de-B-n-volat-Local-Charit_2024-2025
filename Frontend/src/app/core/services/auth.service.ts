@@ -524,6 +524,7 @@ export class AuthService {
     // First try to get from localStorage
     const userId = localStorage.getItem('userId');
     if (userId) {
+      console.log('Found user ID in localStorage:', userId);
       return userId;
     }
 
@@ -536,16 +537,35 @@ export class AuthService {
 
     try {
       const decoded = this.decodeToken(token);
-      const tokenUserId = decoded.user_id || decoded.sub;
+      console.log('Decoded token:', decoded);
+      
+      // Try to get user_id from token claims
+      const tokenUserId = decoded.user_id;
       if (tokenUserId) {
-        // Store in localStorage for future use
+        console.log('Found user_id in token:', tokenUserId);
         localStorage.setItem('userId', tokenUserId);
         return tokenUserId;
       }
+
+      // If no user_id, try sub claim
+      if (decoded.sub) {
+        // In your case, sub might be the email, so we need to get the user ID from userData
+        const userData = localStorage.getItem(this.userKey);
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.id) {
+            const parsedUserId = user.id.toString();
+            console.log('Found user ID in user data:', parsedUserId);
+            localStorage.setItem('userId', parsedUserId);
+            return parsedUserId;
+          }
+        }
+      }
     } catch (error) {
-      console.error('Error decoding token:', error);
+      console.error('Error getting user ID from token:', error);
     }
 
+    console.error('Could not find user ID in any source');
     return '';
   }
 }

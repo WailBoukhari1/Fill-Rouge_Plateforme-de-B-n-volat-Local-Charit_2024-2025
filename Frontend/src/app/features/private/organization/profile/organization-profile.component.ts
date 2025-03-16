@@ -169,17 +169,20 @@ export class OrganizationProfileComponent implements OnInit {
       socialMedia: this.fb.group({
         facebook: [
           '',
-          Validators.pattern('https?://(www\\.)?facebook\\.com/.+'),
+          [Validators.pattern('(https?://)?(www\\.)?facebook\\.com/[a-zA-Z0-9.\\-_]+/?')]
         ],
-        twitter: ['', Validators.pattern('https?://(www\\.)?twitter\\.com/.+')],
+        twitter: [
+          '',
+          [Validators.pattern('(https?://)?(www\\.)?twitter\\.com/[a-zA-Z0-9_]+/?')]
+        ],
         linkedin: [
           '',
-          Validators.pattern('https?://(www\\.)?linkedin\\.com/.+'),
+          [Validators.pattern('(https?://)?(www\\.)?linkedin\\.com/(company/[a-zA-Z0-9\\-]+|in/[a-zA-Z0-9\\-]+)/?')]
         ],
         instagram: [
           '',
-          Validators.pattern('https?://(www\\.)?instagram\\.com/.+'),
-        ],
+          [Validators.pattern('(https?://)?(www\\.)?instagram\\.com/[a-zA-Z0-9_.]+/?')]
+        ]
       }),
     });
   }

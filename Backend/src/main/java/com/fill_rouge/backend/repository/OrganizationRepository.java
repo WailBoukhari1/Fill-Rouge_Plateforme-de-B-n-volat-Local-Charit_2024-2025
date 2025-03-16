@@ -13,7 +13,10 @@ import com.fill_rouge.backend.domain.Organization;
 public interface OrganizationRepository extends MongoRepository<Organization, String> {
     Optional<Organization> findByName(String name);
     
-    Optional<Organization> findByUser(String userId);
+    Optional<Organization> findByUserId(String userId);
+    
+    @Query("{'user._id': ?0}")
+    Optional<Organization> findByUserReference(String userId);
     
     List<Organization> findByVerifiedTrue();
     
@@ -43,8 +46,6 @@ public interface OrganizationRepository extends MongoRepository<Organization, St
     boolean existsByRegistrationNumber(String registrationNumber);
     
     boolean existsByTaxId(String taxId);
-
-    Optional<Organization> findByUserEmail(String email);
 
     long countByVerifiedTrue();
     long countByVerifiedFalse();

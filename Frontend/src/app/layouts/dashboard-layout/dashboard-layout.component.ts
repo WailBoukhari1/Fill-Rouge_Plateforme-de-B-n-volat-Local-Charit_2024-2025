@@ -83,19 +83,23 @@ import { UserRole } from '../../core/models/auth.models';
           </ng-container>
 
           @if (userRole === UserRole.ORGANIZATION) {
-            <a mat-list-item routerLink="/dashboard/profile/organization" routerLinkActive="active">
+            <a mat-list-item routerLink="/organization/dashboard" routerLinkActive="active">
+              <mat-icon matListItemIcon>dashboard</mat-icon>
+              <span matListItemTitle>Dashboard</span>
+            </a>
+            <a mat-list-item routerLink="/organization/profile" routerLinkActive="active">
               <mat-icon matListItemIcon>business</mat-icon>
               <span matListItemTitle>Profile</span>
             </a>
-            <a mat-list-item routerLink="/dashboard/events" routerLinkActive="active">
+            <a mat-list-item routerLink="/organization/events" routerLinkActive="active">
               <mat-icon matListItemIcon>event_note</mat-icon>
               <span matListItemTitle>Event Management</span>
             </a>
-            <a mat-list-item routerLink="/dashboard/volunteers" routerLinkActive="active">
+            <a mat-list-item routerLink="/organization/volunteers" routerLinkActive="active">
               <mat-icon matListItemIcon>people</mat-icon>
               <span matListItemTitle>Volunteers</span>
             </a>
-            <a mat-list-item routerLink="/dashboard/reports" routerLinkActive="active">
+            <a mat-list-item routerLink="/organization/reports" routerLinkActive="active">
               <mat-icon matListItemIcon>assessment</mat-icon>
               <span matListItemTitle>Reports</span>
             </a>
@@ -126,12 +130,12 @@ import { UserRole } from '../../core/models/auth.models';
 
               <mat-menu #userMenu="matMenu">
                 @if (userRole === UserRole.VOLUNTEER) {
-                  <a mat-menu-item routerLink="/dashboard/volunteer/profile">
+                  <a mat-menu-item routerLink="/volunteer/profile">
                     <mat-icon>person</mat-icon>
                     <span>Profile</span>
                   </a>
                 } @else if (userRole === UserRole.ORGANIZATION) {
-                  <a mat-menu-item routerLink="/dashboard/profile/organization">
+                  <a mat-menu-item routerLink="/organization/profile">
                     <mat-icon>business</mat-icon>
                     <span>Profile</span>
                   </a>

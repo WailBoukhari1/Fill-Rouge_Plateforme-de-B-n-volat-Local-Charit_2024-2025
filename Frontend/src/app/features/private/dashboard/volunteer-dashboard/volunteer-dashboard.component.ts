@@ -7,6 +7,7 @@ import { StatisticsService, VolunteerStatistics } from '../../../../core/service
 import { AuthService } from '../../../../core/auth/auth.service';
 import { User } from '../../../../core/models/auth.models';
 import * as echarts from 'echarts';
+import { tap } from 'rxjs/operators';
 
 interface MonthlyParticipation {
   month: string;
@@ -168,21 +169,30 @@ export class VolunteerDashboardComponent implements OnInit, AfterViewInit, OnDes
 
   private loadStatistics(): void {
     this.loading = true;
+    
+    // Try to get user ID from auth service
     const userId = this.authService.getCurrentUserId();
-    console.log('Current user ID:', userId); // Debug log
+    console.log('Attempting to load statistics for user ID:', userId);
 
     if (!userId) {
-      console.error('User ID not available - waiting for auth state...');
       // Try to get user ID from localStorage as fallback
-      const localStorageUserId = localStorage.getItem('userId');
-      if (localStorageUserId) {
-        console.log('Found user ID in localStorage:', localStorageUserId);
-        this.fetchStatistics(localStorageUserId);
-        return;
+      const userData = localStorage.getItem('user_data');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user.id) {
+            const parsedUserId = user.id.toString();
+            console.log('Got user ID from localStorage:', parsedUserId);
+            this.fetchStatistics(parsedUserId);
+            return;
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
       }
 
+      console.error('No user ID available');
       this.loading = false;
-      console.error('Could not retrieve user ID from any source');
       return;
     }
 
@@ -190,6 +200,12 @@ export class VolunteerDashboardComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private fetchStatistics(userId: string): void {
+    if (!userId) {
+      console.error('Attempted to fetch statistics with no user ID');
+      this.loading = false;
+      return;
+    }
+
     console.log('Fetching statistics for user:', userId);
     this.statisticsService.getVolunteerStatistics(userId).subscribe({
       next: (data: VolunteerStatistics) => {

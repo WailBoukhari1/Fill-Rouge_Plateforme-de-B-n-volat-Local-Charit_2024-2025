@@ -123,4 +123,66 @@ export interface OrganizationStats {
     fundsRaised?: number;
     projectsCompleted?: number;
   };
-} 
+}
+
+export interface SocialMediaLinks {
+  facebook?: string;
+  twitter?: string;
+  linkedin?: string;
+  instagram?: string;
+  website?: string;
+}
+
+export interface OrganizationProfile {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  mission: string;
+  vision?: string;
+  logo?: string;
+  website?: string;
+  phoneNumber?: string;
+  address: string;
+  city: string;
+  country: string;
+  coordinates?: [number, number];
+  focusAreas: Set<string>;
+  socialMediaLinks?: SocialMediaLinks;
+  verified: boolean;
+  verificationDate?: Date;
+  registrationNumber: string;
+  taxId?: string;
+  documents?: string[];
+  rating: number;
+  numberOfRatings: number;
+  totalEventsHosted: number;
+  activeVolunteers: number;
+  totalVolunteerHours: number;
+  impactScore: number;
+  acceptingVolunteers: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OrganizationRequest {
+  name: string;
+  description: string;
+  mission: string;
+  vision?: string;
+  logo?: string;
+  website?: string;
+  phoneNumber?: string;
+  address: string;
+  city: string;
+  country: string;
+  coordinates?: [number, number];
+  focusAreas: Set<string>;
+  socialMediaLinks?: SocialMediaLinks;
+  registrationNumber: string;
+  taxId?: string;
+  documents?: string[];
+  acceptingVolunteers?: boolean;
+}
+
+export interface OrganizationResponse extends OrganizationProfile {} 

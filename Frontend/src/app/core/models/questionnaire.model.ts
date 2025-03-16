@@ -18,7 +18,7 @@ export interface QuestionnaireRequest {
   website?: string;
   registrationNumber?: string;
   taxId?: string;
-  focusAreas?: Set<string>;
+  focusAreas?: string[];
   foundedYear?: number | null;
   socialMediaLinks?: SocialMediaLinksDTO;
   
@@ -27,9 +27,9 @@ export interface QuestionnaireRequest {
   education?: string;
   experience?: string;
   specialNeeds?: string;
-  skills?: Set<string>;
-  interests?: Set<string>;
-  availableDays?: Set<string>;
+  skills?: string[];
+  interests?: string[];
+  availableDays?: string[];
   preferredTimeOfDay?: string;
   languages?: string[];
   certifications?: string[];

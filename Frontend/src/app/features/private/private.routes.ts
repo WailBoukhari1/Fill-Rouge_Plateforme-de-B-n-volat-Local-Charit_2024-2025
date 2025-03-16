@@ -60,6 +60,18 @@ export const PRIVATE_ROUTES: Routes = [
         data: { roles: ['ORGANIZATION'] },
         children: [
           {
+            path: '',
+            redirectTo: 'dashboard',
+            pathMatch: 'full'
+          },
+          {
+            path: 'dashboard',
+            loadComponent: () =>
+              import('./organization/dashboard/organization-dashboard.component').then(
+                (m) => m.OrganizationDashboardComponent
+              ),
+          },
+          {
             path: 'profile',
             loadComponent: () =>
               import('./organization/profile/organization-profile.component').then(
@@ -68,23 +80,27 @@ export const PRIVATE_ROUTES: Routes = [
           },
           {
             path: 'events',
+            loadChildren: () => import('./events/events.routes').then(m => m.EVENTS_ROUTES)
+          },
+          {
+            path: 'volunteers',
             loadComponent: () =>
-              import('./admin/event-management/event-management.component').then(
-                (m) => m.EventManagementComponent
+              import('./organization/volunteers/volunteer-management.component').then(
+                (m) => m.VolunteerManagementComponent
               ),
           },
           {
             path: 'reports',
             loadComponent: () =>
-              import('./admin/reports/reports.component').then(
-                (m) => m.ReportsComponent
+              import('./organization/reports/organization-reports.component').then(
+                (m) => m.OrganizationReportsComponent
               ),
           }
         ]
       },
       // Volunteer Routes
       {
-        path: 'dashboard',
+        path: 'volunteer',
         canActivate: [RoleGuard],
         data: { roles: ['VOLUNTEER'] },
         loadChildren: () => import('./volunteer/volunteer.routes').then(m => m.VOLUNTEER_ROUTES)

@@ -6,6 +6,7 @@ import {
   HttpParams,
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   Organization,
@@ -13,52 +14,25 @@ import {
   OrganizationCategory,
   OrganizationDocument,
   DocumentType,
+  OrganizationProfile,
+  OrganizationRequest,
+  OrganizationResponse,
+  SocialMediaLinks,
 } from '../models/organization.model';
 import { OrganizationStats } from '../../store/organization/organization.types';
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
 
 export interface ImpactMetrics {
   peopleServed: number;
   fundsRaised: number;
   projectsCompleted: number;
-}
-
-export interface OrganizationProfile {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  category: string;
-  size: string;
-  rating: number;
-  totalEvents: number;
-  totalVolunteers: number;
-  totalHours: number;
-  profilePicture?: string;
-  website?: string;
-  contactEmail: string;
-  contactPhone?: string;
-  address?: string;
-  foundedDate?: Date;
-  mission?: string;
-  vision?: string;
-  values?: string[];
-  achievements?: string[];
-  certifications?: string[];
-  socialMedia?: {
-    facebook?: string;
-    twitter?: string;
-    linkedin?: string;
-    instagram?: string;
-  };
-  settings: {
-    emailNotifications: boolean;
-    pushNotifications: boolean;
-    eventReminders: boolean;
-    volunteerUpdates: boolean;
-  };
-  status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 @Injectable({
@@ -69,77 +43,105 @@ export class OrganizationService {
 
   constructor(private http: HttpClient) {}
 
-  // Get all organizations with pagination and filters
-  getOrganizations(
-    page: number = 0,
-    size: number = 10,
-    filters?: any
-  ): Observable<any> {
-    let params = new HttpParams()
+  // For admin and management views that need full organization details
+  getOrganizationsDetailed(page: number = 0, size: number = 10): Observable<PaginatedResponse<Organization>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('detailed', 'true');
+
+    return this.http.get<PaginatedResponse<Organization>>(this.apiUrl, { params });
+  }
+
+  // For public views that only need profile information
+  getOrganizations(page: number = 0, size: number = 10): Observable<PaginatedResponse<OrganizationProfile>> {
+    const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
 
-    if (filters) {
-      Object.keys(filters).forEach((key) => {
-        if (filters[key]) {
-          params = params.set(key, filters[key]);
-        }
-      });
-    }
-
-    return this.http.get<any>(this.apiUrl, { params });
+    return this.http.get<PaginatedResponse<OrganizationProfile>>(this.apiUrl, { params });
   }
 
-  // Get organization by ID
-  getOrganizationById(id: string): Observable<Organization> {
-    return this.http.get<Organization>(`${this.apiUrl}/${id}/profile`);
+  // Get detailed organization information
+  getOrganizationDetailed(id: string): Observable<Organization> {
+    return this.http.get<Organization>(`${this.apiUrl}/${id}/detailed`);
   }
 
-  // Create new organization
-  createOrganization(
-    organization: Partial<Organization>
-  ): Observable<Organization> {
-    return this.http.post<Organization>(this.apiUrl, organization);
+  // Get organization profile information
+  getOrganization(id: string): Observable<OrganizationProfile> {
+    return this.http.get<OrganizationProfile>(`${this.apiUrl}/${id}`);
   }
 
-  // Update organization
-  updateOrganization(
-    id: string,
-    organization: Partial<Organization>
-  ): Observable<Organization> {
-    return this.http.put<Organization>(
-      `${this.apiUrl}/${id}/profile`,
-      organization
-    );
+  createOrganization(request: OrganizationRequest): Observable<OrganizationProfile> {
+    return this.http.post<OrganizationResponse>(this.apiUrl, request);
   }
 
-  // Delete organization
+  updateOrganization(id: string, request: OrganizationRequest): Observable<OrganizationProfile> {
+    return this.http.put<OrganizationResponse>(`${this.apiUrl}/${id}`, request);
+  }
+
   deleteOrganization(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  searchOrganizations(query: string): Observable<OrganizationProfile[]> {
+    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/search`, {
+      params: { query }
+    });
+  }
+
+  findByFocusAreas(areas: string[]): Observable<OrganizationProfile[]> {
+    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/focus-areas`, {
+      params: { areas: areas.join(',') }
+    });
+  }
+
+  findNearbyOrganizations(latitude: number, longitude: number, radius: number): Observable<OrganizationProfile[]> {
+    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/nearby`, {
+      params: { latitude: latitude.toString(), longitude: longitude.toString(), radius: radius.toString() }
+    });
+  }
+
+  findByCity(city: string): Observable<OrganizationProfile[]> {
+    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/city/${city}`);
+  }
+
+  findByCountry(country: string): Observable<OrganizationProfile[]> {
+    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/country/${country}`);
+  }
+
+  findByMinimumRating(minRating: number): Observable<OrganizationProfile[]> {
+    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/rating`, {
+      params: { minRating: minRating.toString() }
+    });
+  }
+
+  findAcceptingVolunteers(): Observable<OrganizationProfile[]> {
+    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/accepting-volunteers`);
+  }
+
+  verifyOrganization(id: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${id}/verify`, {});
+  }
+
+  addDocument(id: string, documentUrl: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${id}/documents`, { documentUrl });
+  }
+
+  removeDocument(id: string, documentUrl: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}/documents`, {
+      params: { documentUrl }
+    });
+  }
+
+  setAcceptingVolunteers(id: string, accepting: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/accepting-volunteers`, { accepting });
   }
 
   // Get organization statistics
   getOrganizationStats(organizationId: string): Observable<OrganizationStats> {
     return this.http.get<OrganizationStats>(
       `${this.apiUrl}/${organizationId}/stats`
-    );
-  }
-
-  // Verify organization
-  verifyOrganization(
-    organizationId: string,
-    approved?: boolean,
-    reason?: string
-  ): Observable<Organization> {
-    if (approved === undefined) {
-      return this.http.post<Organization>(
-        `${this.apiUrl}/${organizationId}/verify`,
-        {}
-      );
-    }
-    return this.http.put<Organization>(
-      `${this.apiUrl}/${organizationId}/verify`,
-      { approved, reason }
     );
   }
 

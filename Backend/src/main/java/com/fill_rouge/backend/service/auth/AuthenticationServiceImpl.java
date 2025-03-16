@@ -405,7 +405,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setRole(Role.ORGANIZATION);
             // Create or update organization profile
             final User finalUser = user;
-            Organization org = organizationRepository.findByUserEmail(email)
+            Organization org = organizationRepository.findByUserId(finalUser.getId())
                 .orElseGet(() -> {
                     Organization newOrg = new Organization();
                     newOrg.setUser(finalUser);
