@@ -540,32 +540,28 @@ export class AuthService {
       console.log('Decoded token:', decoded);
       
       // Try to get user_id from token claims
-      const tokenUserId = decoded.user_id;
-      if (tokenUserId) {
-        console.log('Found user_id in token:', tokenUserId);
-        localStorage.setItem('userId', tokenUserId);
-        return tokenUserId;
+      if (decoded.user_id) {
+        console.log('Found user_id in token:', decoded.user_id);
+        localStorage.setItem('userId', decoded.user_id);
+        return decoded.user_id;
       }
 
-      // If no user_id, try sub claim
-      if (decoded.sub) {
-        // In your case, sub might be the email, so we need to get the user ID from userData
-        const userData = localStorage.getItem(this.userKey);
-        if (userData) {
-          const user = JSON.parse(userData);
-          if (user.id) {
-            const parsedUserId = user.id.toString();
-            console.log('Found user ID in user data:', parsedUserId);
-            localStorage.setItem('userId', parsedUserId);
-            return parsedUserId;
-          }
+      // If no user_id in token, try to get from stored user data
+      const userData = localStorage.getItem(this.userKey);
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.id) {
+          console.log('Found user ID in stored user data:', user.id);
+          localStorage.setItem('userId', user.id);
+          return user.id;
         }
       }
-    } catch (error) {
-      console.error('Error getting user ID from token:', error);
-    }
 
-    console.error('Could not find user ID in any source');
-    return '';
+      console.error('Could not find user ID in token or stored data');
+      return '';
+    } catch (error) {
+      console.error('Error getting user ID:', error);
+      return '';
+    }
   }
 }

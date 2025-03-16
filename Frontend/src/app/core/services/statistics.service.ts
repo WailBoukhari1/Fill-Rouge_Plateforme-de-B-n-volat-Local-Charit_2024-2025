@@ -28,20 +28,25 @@ export class StatisticsService {
       .pipe(map(response => response.data));
   }
 
-  getVolunteerStatistics(userId: string): Observable<VolunteerStatistics> {
-    // Ensure we're using the MongoDB ObjectId format
-    const mongoId = userId.includes('_') ? userId.split('_')[1] : userId;
-    return this.http.get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/volunteer/${mongoId}`).pipe(
-      map(response => response.data)
-    );
+  getVolunteerStatistics(volunteerId: string): Observable<ApiResponse<VolunteerStatistics>> {
+    return this.http.get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/volunteer/${volunteerId}`);
   }
 
-  getOrganizationStatistics(orgId: string): Observable<OrganizationStatistics> {
-    return this.http.get<OrganizationStatistics>(`${this.apiUrl}/organization/${orgId}`);
+  getOrganizationStatistics(organizationId: string): Observable<ApiResponse<OrganizationStatistics>> {
+    console.log('Calling organization statistics API for ID:', organizationId);
+    return this.http.get<ApiResponse<OrganizationStatistics>>(`${this.apiUrl}/organization/${organizationId}`);
   }
 
-  getAdminStatistics(): Observable<AdminStatistics> {
-    return this.http.get<AdminStatistics>(`${this.apiUrl}/admin`);
+  getAdminStatistics(): Observable<ApiResponse<AdminStatistics>> {
+    return this.http.get<ApiResponse<AdminStatistics>>(`${this.apiUrl}/admin`);
+  }
+
+  getCurrentUserStatistics(): Observable<ApiResponse<StatisticsResponse>> {
+    return this.http.get<ApiResponse<StatisticsResponse>>(`${this.apiUrl}/current`);
+  }
+
+  getUserStatistics(userId: string): Observable<ApiResponse<StatisticsResponse>> {
+    return this.http.get<ApiResponse<StatisticsResponse>>(`${this.apiUrl}/user/${userId}`);
   }
 
   // Helper methods for chart data transformation

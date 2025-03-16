@@ -18,40 +18,41 @@ import org.springframework.web.bind.annotation.*;
 public class StatisticsController {
     private final StatisticsService statisticsService;
 
-    @GetMapping("/volunteer/{userId}")
-    @Operation(summary = "Get volunteer statistics")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @GetMapping("/volunteer/{volunteerId}") 
+    @Operation(summary = "Get volunteer statistics by ID")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('VOLUNTEER') and #volunteerId == authentication.principal.id)")
     public ResponseEntity<StatisticsResponse.VolunteerStats> getVolunteerStats(
-            @PathVariable String userId) {
-        return ResponseEntity.ok(statisticsService.getVolunteerStats(userId));
+            @PathVariable String volunteerId) {
+        return ResponseEntity.ok(statisticsService.getVolunteerStats(volunteerId));
     }
 
-    @GetMapping("/user/{userId}")
-    @Operation(summary = "Get user statistics")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER', 'ORGANIZATION')")
-    public ResponseEntity<StatisticsResponse> getUserStats(
-            @PathVariable String userId) {
-        return ResponseEntity.ok(statisticsService.getStatisticsByRole(userId, null));
-    }
-
-    @GetMapping("/organizations/statistics")
-    @Operation(summary = "Get organization statistics")
-    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/organization/{organizationId}")
+    @Operation(summary = "Get organization statistics by ID")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('ORGANIZATION') and #organizationId == authentication.principal.id)")
     public ResponseEntity<StatisticsResponse.OrganizationStats> getOrganizationStats(
-            @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(statisticsService.getOrganizationStats(user.getId()));
+            @PathVariable String organizationId) {
+        return ResponseEntity.ok(statisticsService.getOrganizationStats(organizationId));
     }
 
-    @GetMapping("/admin/statistics")
-    @Operation(summary = "Get admin statistics")
+    @GetMapping("/admin")
+    @Operation(summary = "Get admin dashboard statistics")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<StatisticsResponse.AdminStats> getAdminStats() {
         return ResponseEntity.ok(statisticsService.getAdminStats());
     }
 
-    @GetMapping("/statistics")
-    @Operation(summary = "Get statistics based on user role")
-    public ResponseEntity<StatisticsResponse> getStatistics(@AuthenticationPrincipal User user) {
+    @GetMapping("/current")
+    @Operation(summary = "Get current user's statistics based on their role")
+    public ResponseEntity<StatisticsResponse> getCurrentUserStats(
+            @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(statisticsService.getStatisticsByRole(user.getId(), user.getRole()));
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get user statistics by ID (Admin only)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<StatisticsResponse> getUserStats(
+            @PathVariable String userId) {
+        return ResponseEntity.ok(statisticsService.getStatisticsByRole(userId, null));
     }
 } 

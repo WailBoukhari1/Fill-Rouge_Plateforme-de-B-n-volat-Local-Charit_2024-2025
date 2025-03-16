@@ -126,8 +126,13 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
 
   private loadStatistics(): void {
     this.statisticsService.getAdminStatistics().subscribe({
-      next: (data: AdminStatistics) => {
-        this.stats = data;
+      next: (response) => {
+        if (!response.data) {
+          console.error('No data in response');
+          this.loading = false;
+          return;
+        }
+        this.stats = response.data;
         this.loading = false;
         this.initializeCharts();
       },

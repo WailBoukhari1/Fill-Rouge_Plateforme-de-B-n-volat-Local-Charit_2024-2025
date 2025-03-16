@@ -208,9 +208,14 @@ export class VolunteerDashboardComponent implements OnInit, AfterViewInit, OnDes
 
     console.log('Fetching statistics for user:', userId);
     this.statisticsService.getVolunteerStatistics(userId).subscribe({
-      next: (data: VolunteerStatistics) => {
-        console.log('Received volunteer statistics:', data);
-        this.stats = data;
+      next: (response) => {
+        if (!response.data) {
+          console.error('No data in response');
+          this.loading = false;
+          return;
+        }
+        console.log('Received volunteer statistics:', response.data);
+        this.stats = response.data;
         this.loading = false;
         this.initializeCharts();
       },

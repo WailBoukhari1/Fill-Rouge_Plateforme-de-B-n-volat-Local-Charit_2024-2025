@@ -3430,3 +3430,745 @@ org.springframework.security.web.firewall.RequestRejectedException: The request 
 2025-03-16 23:28:28.537 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /error
 2025-03-16 23:28:28.537 [http-nio-8080-exec-3] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
 2025-03-16 23:28:28.537 [http-nio-8080-exec-3] DEBUG o.s.s.w.a.Http403ForbiddenEntryPoint - Pre-authenticated entry point called. Rejecting access
+2025-03-16 23:29:06.392 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Securing GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:29:06.395 [http-nio-8080-exec-4] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:29:06.401 [http-nio-8080-exec-4] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:29:06.402 [http-nio-8080-exec-4] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:29:06.404 [http-nio-8080-exec-4] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:29:06.412 [http-nio-8080-exec-4] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:29:06.413 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Secured GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:29:06.414 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/organizations/67d6a5396e8da56f8d918517", parameters={}
+2025-03-16 23:29:06.415 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.OrganizationController#getOrganization(String)
+2025-03-16 23:29:06.416 [http-nio-8080-exec-4] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67d6a5396e8da56f8d918517"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Organization in collection: organizations
+2025-03-16 23:29:06.420 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-16 23:29:06.421 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:29:06.422 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=Organization with id '67d6a5396e8da56f8d918517' not found, timestamp=2025- (truncated)...]
+2025-03-16 23:29:06.424 [http-nio-8080-exec-4] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: Organization with id '67d6a5396e8da56f8d918517' not found]
+2025-03-16 23:29:06.425 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-16 23:29:13.755 [http-nio-8080-exec-9] DEBUG o.s.s.w.f.HttpStatusRequestRejectedHandler - Rejecting request due to: The request was rejected because the URL contained a potentially malicious String "//"
+org.springframework.security.web.firewall.RequestRejectedException: The request was rejected because the URL contained a potentially malicious String "//"
+	at org.springframework.security.web.firewall.StrictHttpFirewall.rejectedBlocklistedUrls(StrictHttpFirewall.java:535) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.security.web.firewall.StrictHttpFirewall.getFirewalledRequest(StrictHttpFirewall.java:505) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:211) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195) ~[spring-webmvc-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:225) ~[spring-security-config-6.2.1.jar:6.2.1]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+2025-03-16 23:29:13.756 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /error
+2025-03-16 23:29:13.757 [http-nio-8080-exec-9] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-03-16 23:29:13.757 [http-nio-8080-exec-9] DEBUG o.s.s.w.a.Http403ForbiddenEntryPoint - Pre-authenticated entry point called. Rejecting access
+2025-03-16 23:29:21.098 [http-nio-8080-exec-5] DEBUG o.s.s.w.f.HttpStatusRequestRejectedHandler - Rejecting request due to: The request was rejected because the URL contained a potentially malicious String "//"
+org.springframework.security.web.firewall.RequestRejectedException: The request was rejected because the URL contained a potentially malicious String "//"
+	at org.springframework.security.web.firewall.StrictHttpFirewall.rejectedBlocklistedUrls(StrictHttpFirewall.java:535) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.security.web.firewall.StrictHttpFirewall.getFirewalledRequest(StrictHttpFirewall.java:505) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:211) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.2.1.jar:6.2.1]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195) ~[spring-webmvc-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:225) ~[spring-security-config-6.2.1.jar:6.2.1]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.3.jar:6.1.3]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:174) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:149) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:340) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1744) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) ~[tomcat-embed-core-10.1.18.jar:10.1.18]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+2025-03-16 23:29:21.105 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /error
+2025-03-16 23:29:21.108 [http-nio-8080-exec-5] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-03-16 23:29:21.109 [http-nio-8080-exec-5] DEBUG o.s.s.w.a.Http403ForbiddenEntryPoint - Pre-authenticated entry point called. Rejecting access
+2025-03-16 23:30:25.485 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Securing GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:30:25.487 [http-nio-8080-exec-7] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:30:25.493 [http-nio-8080-exec-7] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:30:25.497 [http-nio-8080-exec-7] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:30:25.500 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:30:25.519 [http-nio-8080-exec-7] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:30:25.520 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Secured GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:30:25.523 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/organizations/67d6a5396e8da56f8d918517", parameters={}
+2025-03-16 23:30:25.526 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.OrganizationController#getOrganization(String)
+2025-03-16 23:30:25.530 [http-nio-8080-exec-7] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67d6a5396e8da56f8d918517"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Organization in collection: organizations
+2025-03-16 23:30:25.535 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-16 23:30:25.537 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:30:25.538 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=Organization with id '67d6a5396e8da56f8d918517' not found, timestamp=2025- (truncated)...]
+2025-03-16 23:30:25.540 [http-nio-8080-exec-7] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: Organization with id '67d6a5396e8da56f8d918517' not found]
+2025-03-16 23:30:25.540 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-16 23:34:41.738 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Securing GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:34:41.739 [http-nio-8080-exec-1] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:34:41.741 [http-nio-8080-exec-1] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:34:41.742 [http-nio-8080-exec-1] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:34:41.744 [http-nio-8080-exec-1] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:34:41.754 [http-nio-8080-exec-1] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:34:41.756 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Secured GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:34:41.756 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/organizations/67d6a5396e8da56f8d918517", parameters={}
+2025-03-16 23:34:41.756 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.OrganizationController#getOrganization(String)
+2025-03-16 23:34:41.758 [http-nio-8080-exec-1] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67d6a5396e8da56f8d918517"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Organization in collection: organizations
+2025-03-16 23:34:41.760 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-16 23:34:41.761 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:34:41.761 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=Organization with id '67d6a5396e8da56f8d918517' not found, timestamp=2025- (truncated)...]
+2025-03-16 23:34:41.761 [http-nio-8080-exec-1] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: Organization with id '67d6a5396e8da56f8d918517' not found]
+2025-03-16 23:34:41.761 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-16 23:35:01.124 [http-nio-8080-exec-10] DEBUG o.s.security.web.FilterChainProxy - Securing GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:35:01.125 [http-nio-8080-exec-10] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:35:01.127 [http-nio-8080-exec-10] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:35:01.128 [http-nio-8080-exec-10] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:35:01.128 [http-nio-8080-exec-10] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:35:01.133 [http-nio-8080-exec-10] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:35:01.133 [http-nio-8080-exec-10] DEBUG o.s.security.web.FilterChainProxy - Secured GET /organizations/67d6a5396e8da56f8d918517
+2025-03-16 23:35:01.134 [http-nio-8080-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/organizations/67d6a5396e8da56f8d918517", parameters={}
+2025-03-16 23:35:01.134 [http-nio-8080-exec-10] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.OrganizationController#getOrganization(String)
+2025-03-16 23:35:01.135 [http-nio-8080-exec-10] DEBUG o.s.data.mongodb.core.MongoTemplate - findOne using query: { "id" : "67d6a5396e8da56f8d918517"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.Organization in collection: organizations
+2025-03-16 23:35:01.136 [http-nio-8080-exec-10] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleResourceNotFoundException(ResourceNotFoundException)
+2025-03-16 23:35:01.136 [http-nio-8080-exec-10] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:35:01.136 [http-nio-8080-exec-10] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Not Found, message=Organization with id '67d6a5396e8da56f8d918517' not found, timestamp=2025- (truncated)...]
+2025-03-16 23:35:01.136 [http-nio-8080-exec-10] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [com.fill_rouge.backend.exception.ResourceNotFoundException: Organization with id '67d6a5396e8da56f8d918517' not found]
+2025-03-16 23:35:01.137 [http-nio-8080-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - Completed 404 NOT_FOUND
+2025-03-16 23:35:01.912 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /stats/organization/
+2025-03-16 23:35:01.923 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Securing GET /stats/organization/
+2025-03-16 23:35:01.926 [http-nio-8080-exec-3] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /stats/organization/
+2025-03-16 23:35:01.931 [http-nio-8080-exec-3] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:35:01.932 [http-nio-8080-exec-3] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:35:01.934 [http-nio-8080-exec-3] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:35:01.953 [http-nio-8080-exec-3] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:35:01.954 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Secured GET /stats/organization/
+2025-03-16 23:35:01.956 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/stats/organization/", parameters={}
+2025-03-16 23:35:01.959 [http-nio-8080-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-16 23:35:01.963 [http-nio-8080-exec-3] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-16 23:35:01.965 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-16 23:35:01.968 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:35:01.970 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-16T23:35:01.96 (truncated)...]
+2025-03-16 23:35:01.972 [http-nio-8080-exec-3] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource stats/organization.]
+2025-03-16 23:35:01.972 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-16 23:36:23.258 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2025-03-16 23:36:23.260 [Thread-42] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:23.261 [Thread-42] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:23.261 [Thread-42] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-03-16 23:36:23.261 [Thread-42] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24a86bc2]]
+2025-03-16 23:36:23.261 [Thread-42] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24a86bc2]
+2025-03-16 23:36:23.261 [Thread-42] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24a86bc2]
+2025-03-16 23:36:23.261 [Thread-42] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-03-16 23:36:23.262 [Thread-42] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:23.262 [Thread-42] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:23.400 [restartedMain] INFO  c.f.backend.BackendApplication - Starting BackendApplication using Java 23.0.2 with PID 4520 (C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\Backend\target\classes started by TSUKII in C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025)
+2025-03-16 23:36:23.402 [restartedMain] DEBUG c.f.backend.BackendApplication - Running with Spring Boot v3.2.2, Spring v6.1.3
+2025-03-16 23:36:23.403 [restartedMain] INFO  c.f.backend.BackendApplication - The following 1 profile is active: "dev"
+2025-03-16 23:36:24.155 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2025-03-16 23:36:24.317 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 161 ms. Found 14 MongoDB repository interfaces.
+2025-03-16 23:36:24.546 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-03-16 23:36:24.548 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-03-16 23:36:24.548 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.18]
+2025-03-16 23:36:24.589 [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-03-16 23:36:24.590 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1181 ms
+2025-03-16 23:36:24.709 [restartedMain] INFO  org.mongodb.driver.client - MongoClient with metadata {"driver": {"name": "mongo-java-driver|sync|spring-boot", "version": "4.11.1"}, "os": {"type": "Windows", "name": "Windows 11", "architecture": "amd64", "version": "10.0"}, "platform": "Java/Oracle Corporation/23.0.2+7-58"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=null, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=null, transportSettings=null, streamFactoryFactory=null, commandListeners=[], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, EnumCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@590f5e1a, com.mongodb.Jep395RecordCodecProvider@61c662f7, com.mongodb.KotlinCodecProvider@5c87a5e]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[localhost:27017], srvServiceName=mongodb, mode=SINGLE, requiredClusterType=UNKNOWN, requiredReplicaSetName='null', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=false, invalidHostNameAllowed=false, context=null}, applicationName='null', compressorList=[], uuidRepresentation=JAVA_LEGACY, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null}
+2025-03-16 23:36:24.712 [cluster-ClusterId{value='67d76078e3af8374b338238c', description='null'}-localhost:27017] INFO  org.mongodb.driver.cluster - Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=2250700}
+2025-03-16 23:36:24.955 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Message for index information
+2025-03-16 23:36:24.978 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventParticipation for index information
+2025-03-16 23:36:24.981 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerAchievement for index information
+2025-03-16 23:36:24.989 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Token for index information
+2025-03-16 23:36:24.990 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventFeedback for index information
+2025-03-16 23:36:24.996 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.User for index information
+2025-03-16 23:36:25.003 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Organization for index information
+2025-03-16 23:36:25.013 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VerificationToken for index information
+2025-03-16 23:36:25.020 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.SocialMediaLinks for index information
+2025-03-16 23:36:25.021 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Notification for index information
+2025-03-16 23:36:25.024 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Conversation for index information
+2025-03-16 23:36:25.029 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.audit.AuditLog for index information
+2025-03-16 23:36:25.038 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Event for index information
+2025-03-16 23:36:25.043 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Communication for index information
+2025-03-16 23:36:25.048 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Skill for index information
+2025-03-16 23:36:25.049 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Achievement for index information
+2025-03-16 23:36:25.052 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Resource for index information
+2025-03-16 23:36:25.053 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerProfile for index information
+2025-03-16 23:36:25.150 [restartedMain] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2025-03-16 23:36:25.150 [restartedMain] DEBUG c.f.b.c.security.RateLimitingFilter - Filter 'rateLimitingFilter' configured for use
+2025-03-16 23:36:25.150 [restartedMain] DEBUG o.s.web.filter.CorsFilter - Filter 'corsFilter' configured for use
+2025-03-16 23:36:25.150 [restartedMain] DEBUG c.f.b.c.s.SecurityHeadersFilter - Filter 'securityHeadersFilter' configured for use
+2025-03-16 23:36:25.159 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2025-03-16 23:36:25.386 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class interface java.util.Map for index information
+2025-03-16 23:36:25.826 [restartedMain] INFO  c.f.b.s.storage.StorageServiceImpl - Storage initialized at: C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\uploads
+2025-03-16 23:36:25.907 [restartedMain] DEBUG o.s.w.s.s.s.WebSocketHandlerMapping - Patterns [/ws/**] in 'stompWebSocketHandlerMapping'
+2025-03-16 23:36:25.973 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 128 mappings in 'requestMappingHandlerMapping'
+2025-03-16 23:36:25.997 [restartedMain] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2025-03-16 23:36:26.024 [restartedMain] INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@56aa225a, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@b8af89c, org.springframework.security.web.context.SecurityContextHolderFilter@4182a8c6, org.springframework.security.web.header.HeaderWriterFilter@5ab34760, org.springframework.web.filter.CorsFilter@4c617f2d, org.springframework.security.web.authentication.logout.LogoutFilter@5b10cdae, com.fill_rouge.backend.config.security.JwtAuthenticationFilter@75df2dcd, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@6ac2482, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4664fb70, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1cdf4106, org.springframework.security.web.session.SessionManagementFilter@3bde4e72, org.springframework.security.web.access.ExceptionTranslationFilter@6ac5b589, org.springframework.security.web.access.intercept.AuthorizationFilter@5d21a9fe]
+2025-03-16 23:36:26.052 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ErrorHandlingConfig:
+	
+2025-03-16 23:36:26.052 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AchievementController:
+	
+2025-03-16 23:36:26.052 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AuthController:
+	
+2025-03-16 23:36:26.053 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventController:
+	
+2025-03-16 23:36:26.053 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventStatisticsController:
+	
+2025-03-16 23:36:26.053 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.FileController:
+	
+2025-03-16 23:36:26.053 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.MessageController:
+	
+2025-03-16 23:36:26.053 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.NotificationController:
+	
+2025-03-16 23:36:26.054 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.OrganizationController:
+	
+2025-03-16 23:36:26.054 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ReportController:
+	
+2025-03-16 23:36:26.054 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.StatisticsController:
+	
+2025-03-16 23:36:26.054 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.TwoFactorAuthController:
+	
+2025-03-16 23:36:26.055 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerProfileController:
+	
+2025-03-16 23:36:26.055 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerStatisticsController:
+	
+2025-03-16 23:36:26.056 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.a.OpenApiWebMvcResource:
+	
+2025-03-16 23:36:26.056 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerWelcomeWebMvc:
+	
+2025-03-16 23:36:26.056 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerConfigResource:
+	
+2025-03-16 23:36:26.078 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-03-16 23:36:26.084 [restartedMain] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-03-16 23:36:26.146 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/api'
+2025-03-16 23:36:26.146 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel added SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:26.146 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:26.146 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-03-16 23:36:26.147 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24ec6e6c]
+2025-03-16 23:36:26.147 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24ec6e6c]
+2025-03-16 23:36:26.147 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24ec6e6c]]
+2025-03-16 23:36:26.147 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-03-16 23:36:26.147 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:26.147 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:26.157 [restartedMain] INFO  c.f.backend.BackendApplication - Started BackendApplication in 2.817 seconds (process running for 3186.262)
+2025-03-16 23:36:26.161 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2025-03-16 23:36:33.892 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2025-03-16 23:36:33.896 [Thread-46] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:33.897 [Thread-46] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:33.897 [Thread-46] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-03-16 23:36:33.898 [Thread-46] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24ec6e6c]]
+2025-03-16 23:36:33.898 [Thread-46] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24ec6e6c]
+2025-03-16 23:36:33.898 [Thread-46] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@24ec6e6c]
+2025-03-16 23:36:33.898 [Thread-46] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-03-16 23:36:33.899 [Thread-46] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:33.899 [Thread-46] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:34.021 [restartedMain] INFO  c.f.backend.BackendApplication - Starting BackendApplication using Java 23.0.2 with PID 4520 (C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\Backend\target\classes started by TSUKII in C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025)
+2025-03-16 23:36:34.022 [restartedMain] DEBUG c.f.backend.BackendApplication - Running with Spring Boot v3.2.2, Spring v6.1.3
+2025-03-16 23:36:34.023 [restartedMain] INFO  c.f.backend.BackendApplication - The following 1 profile is active: "dev"
+2025-03-16 23:36:34.293 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2025-03-16 23:36:34.350 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 56 ms. Found 14 MongoDB repository interfaces.
+2025-03-16 23:36:34.477 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-03-16 23:36:34.479 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-03-16 23:36:34.480 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.18]
+2025-03-16 23:36:34.504 [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-03-16 23:36:34.504 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 476 ms
+2025-03-16 23:36:34.585 [restartedMain] INFO  org.mongodb.driver.client - MongoClient with metadata {"driver": {"name": "mongo-java-driver|sync|spring-boot", "version": "4.11.1"}, "os": {"type": "Windows", "name": "Windows 11", "architecture": "amd64", "version": "10.0"}, "platform": "Java/Oracle Corporation/23.0.2+7-58"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=null, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=null, transportSettings=null, streamFactoryFactory=null, commandListeners=[], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, EnumCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@590f5e1a, com.mongodb.Jep395RecordCodecProvider@61c662f7, com.mongodb.KotlinCodecProvider@5c87a5e]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[localhost:27017], srvServiceName=mongodb, mode=SINGLE, requiredClusterType=UNKNOWN, requiredReplicaSetName='null', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=false, invalidHostNameAllowed=false, context=null}, applicationName='null', compressorList=[], uuidRepresentation=JAVA_LEGACY, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null}
+2025-03-16 23:36:34.589 [cluster-ClusterId{value='67d76082e3af8374b338238d', description='null'}-localhost:27017] INFO  org.mongodb.driver.cluster - Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=1086100}
+2025-03-16 23:36:34.722 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventFeedback for index information
+2025-03-16 23:36:34.739 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Conversation for index information
+2025-03-16 23:36:34.746 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.SocialMediaLinks for index information
+2025-03-16 23:36:34.748 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.audit.AuditLog for index information
+2025-03-16 23:36:34.768 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventParticipation for index information
+2025-03-16 23:36:34.771 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VerificationToken for index information
+2025-03-16 23:36:34.786 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerProfile for index information
+2025-03-16 23:36:34.794 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Achievement for index information
+2025-03-16 23:36:34.798 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Skill for index information
+2025-03-16 23:36:34.799 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Resource for index information
+2025-03-16 23:36:34.800 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Organization for index information
+2025-03-16 23:36:34.809 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Token for index information
+2025-03-16 23:36:34.810 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Message for index information
+2025-03-16 23:36:34.817 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.User for index information
+2025-03-16 23:36:34.825 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Event for index information
+2025-03-16 23:36:34.836 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Communication for index information
+2025-03-16 23:36:34.843 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Notification for index information
+2025-03-16 23:36:34.848 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerAchievement for index information
+2025-03-16 23:36:34.982 [restartedMain] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2025-03-16 23:36:34.984 [restartedMain] DEBUG c.f.b.c.security.RateLimitingFilter - Filter 'rateLimitingFilter' configured for use
+2025-03-16 23:36:34.985 [restartedMain] DEBUG o.s.web.filter.CorsFilter - Filter 'corsFilter' configured for use
+2025-03-16 23:36:34.986 [restartedMain] DEBUG c.f.b.c.s.SecurityHeadersFilter - Filter 'securityHeadersFilter' configured for use
+2025-03-16 23:36:34.997 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2025-03-16 23:36:35.171 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class interface java.util.Map for index information
+2025-03-16 23:36:35.954 [restartedMain] INFO  c.f.b.s.storage.StorageServiceImpl - Storage initialized at: C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\uploads
+2025-03-16 23:36:36.124 [restartedMain] DEBUG o.s.w.s.s.s.WebSocketHandlerMapping - Patterns [/ws/**] in 'stompWebSocketHandlerMapping'
+2025-03-16 23:36:36.172 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 128 mappings in 'requestMappingHandlerMapping'
+2025-03-16 23:36:36.211 [restartedMain] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2025-03-16 23:36:36.243 [restartedMain] INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4ce93306, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6aef72e6, org.springframework.security.web.context.SecurityContextHolderFilter@4f8c4c4a, org.springframework.security.web.header.HeaderWriterFilter@67ab8f16, org.springframework.web.filter.CorsFilter@151dd142, org.springframework.security.web.authentication.logout.LogoutFilter@24a05005, com.fill_rouge.backend.config.security.JwtAuthenticationFilter@482bf007, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@50369cbf, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6b5e6a90, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@65319448, org.springframework.security.web.session.SessionManagementFilter@5947631f, org.springframework.security.web.access.ExceptionTranslationFilter@ec23cf8, org.springframework.security.web.access.intercept.AuthorizationFilter@58850b32]
+2025-03-16 23:36:36.262 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ErrorHandlingConfig:
+	
+2025-03-16 23:36:36.263 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AchievementController:
+	
+2025-03-16 23:36:36.263 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AuthController:
+	
+2025-03-16 23:36:36.263 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventController:
+	
+2025-03-16 23:36:36.263 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventStatisticsController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.FileController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.MessageController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.NotificationController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.OrganizationController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ReportController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.StatisticsController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.TwoFactorAuthController:
+	
+2025-03-16 23:36:36.264 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerProfileController:
+	
+2025-03-16 23:36:36.265 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerStatisticsController:
+	
+2025-03-16 23:36:36.265 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.a.OpenApiWebMvcResource:
+	
+2025-03-16 23:36:36.265 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerWelcomeWebMvc:
+	
+2025-03-16 23:36:36.265 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerConfigResource:
+	
+2025-03-16 23:36:36.284 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-03-16 23:36:36.288 [restartedMain] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-03-16 23:36:36.372 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/api'
+2025-03-16 23:36:36.378 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel added SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:36.379 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:36.384 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-03-16 23:36:36.385 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@561100f1]
+2025-03-16 23:36:36.386 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@561100f1]
+2025-03-16 23:36:36.386 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@561100f1]]
+2025-03-16 23:36:36.387 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-03-16 23:36:36.388 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:36.388 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:36.398 [restartedMain] INFO  c.f.backend.BackendApplication - Started BackendApplication in 2.413 seconds (process running for 3196.503)
+2025-03-16 23:36:36.401 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2025-03-16 23:36:36.717 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-03-16 23:36:36.718 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-03-16 23:36:36.718 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-03-16 23:36:36.718 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-03-16 23:36:36.718 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-03-16 23:36:36.720 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@390a8790
+2025-03-16 23:36:36.721 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@3c827900
+2025-03-16 23:36:36.721 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-03-16 23:36:36.722 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 3 ms
+2025-03-16 23:36:36.724 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Securing GET /stats/organization/
+2025-03-16 23:36:36.726 [http-nio-8080-exec-1] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /stats/organization/
+2025-03-16 23:36:36.732 [http-nio-8080-exec-1] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:36:36.733 [http-nio-8080-exec-1] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:36:36.733 [http-nio-8080-exec-1] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:36:36.761 [http-nio-8080-exec-1] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:36:36.764 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Secured GET /stats/organization/
+2025-03-16 23:36:36.778 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/stats/organization/", parameters={}
+2025-03-16 23:36:36.788 [http-nio-8080-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-16 23:36:36.796 [http-nio-8080-exec-1] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-16 23:36:36.797 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-16 23:36:36.805 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:36:36.809 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-16T23:36:36.79 (truncated)...]
+2025-03-16 23:36:36.834 [http-nio-8080-exec-1] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource stats/organization.]
+2025-03-16 23:36:36.836 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-16 23:36:48.731 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2025-03-16 23:36:48.732 [Thread-50] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:48.733 [Thread-50] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:48.733 [Thread-50] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-03-16 23:36:48.733 [Thread-50] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@561100f1]]
+2025-03-16 23:36:48.733 [Thread-50] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@561100f1]
+2025-03-16 23:36:48.733 [Thread-50] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@561100f1]
+2025-03-16 23:36:48.733 [Thread-50] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-03-16 23:36:48.733 [Thread-50] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:48.733 [Thread-50] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:48.840 [restartedMain] INFO  c.f.backend.BackendApplication - Starting BackendApplication using Java 23.0.2 with PID 4520 (C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\Backend\target\classes started by TSUKII in C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025)
+2025-03-16 23:36:48.841 [restartedMain] DEBUG c.f.backend.BackendApplication - Running with Spring Boot v3.2.2, Spring v6.1.3
+2025-03-16 23:36:48.841 [restartedMain] INFO  c.f.backend.BackendApplication - The following 1 profile is active: "dev"
+2025-03-16 23:36:49.049 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2025-03-16 23:36:49.108 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 58 ms. Found 14 MongoDB repository interfaces.
+2025-03-16 23:36:49.315 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-03-16 23:36:49.317 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-03-16 23:36:49.318 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.18]
+2025-03-16 23:36:49.344 [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-03-16 23:36:49.345 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 500 ms
+2025-03-16 23:36:49.440 [restartedMain] INFO  org.mongodb.driver.client - MongoClient with metadata {"driver": {"name": "mongo-java-driver|sync|spring-boot", "version": "4.11.1"}, "os": {"type": "Windows", "name": "Windows 11", "architecture": "amd64", "version": "10.0"}, "platform": "Java/Oracle Corporation/23.0.2+7-58"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=null, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=null, transportSettings=null, streamFactoryFactory=null, commandListeners=[], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, EnumCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@590f5e1a, com.mongodb.Jep395RecordCodecProvider@61c662f7, com.mongodb.KotlinCodecProvider@5c87a5e]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[localhost:27017], srvServiceName=mongodb, mode=SINGLE, requiredClusterType=UNKNOWN, requiredReplicaSetName='null', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=false, invalidHostNameAllowed=false, context=null}, applicationName='null', compressorList=[], uuidRepresentation=JAVA_LEGACY, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null}
+2025-03-16 23:36:49.443 [cluster-ClusterId{value='67d76091e3af8374b338238e', description='null'}-localhost:27017] INFO  org.mongodb.driver.cluster - Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=1911600}
+2025-03-16 23:36:49.546 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Organization for index information
+2025-03-16 23:36:49.558 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.User for index information
+2025-03-16 23:36:49.563 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Notification for index information
+2025-03-16 23:36:49.573 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventParticipation for index information
+2025-03-16 23:36:49.574 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Message for index information
+2025-03-16 23:36:49.580 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Event for index information
+2025-03-16 23:36:49.585 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Communication for index information
+2025-03-16 23:36:49.590 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Conversation for index information
+2025-03-16 23:36:49.598 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Achievement for index information
+2025-03-16 23:36:49.602 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Resource for index information
+2025-03-16 23:36:49.604 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerProfile for index information
+2025-03-16 23:36:49.607 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerAchievement for index information
+2025-03-16 23:36:49.611 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.SocialMediaLinks for index information
+2025-03-16 23:36:49.611 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Token for index information
+2025-03-16 23:36:49.611 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VerificationToken for index information
+2025-03-16 23:36:49.618 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.audit.AuditLog for index information
+2025-03-16 23:36:49.620 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Skill for index information
+2025-03-16 23:36:49.621 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventFeedback for index information
+2025-03-16 23:36:49.733 [restartedMain] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2025-03-16 23:36:49.733 [restartedMain] DEBUG c.f.b.c.security.RateLimitingFilter - Filter 'rateLimitingFilter' configured for use
+2025-03-16 23:36:49.734 [restartedMain] DEBUG o.s.web.filter.CorsFilter - Filter 'corsFilter' configured for use
+2025-03-16 23:36:49.735 [restartedMain] DEBUG c.f.b.c.s.SecurityHeadersFilter - Filter 'securityHeadersFilter' configured for use
+2025-03-16 23:36:49.745 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2025-03-16 23:36:50.005 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class interface java.util.Map for index information
+2025-03-16 23:36:50.951 [restartedMain] INFO  c.f.b.s.storage.StorageServiceImpl - Storage initialized at: C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\uploads
+2025-03-16 23:36:51.022 [restartedMain] DEBUG o.s.w.s.s.s.WebSocketHandlerMapping - Patterns [/ws/**] in 'stompWebSocketHandlerMapping'
+2025-03-16 23:36:51.061 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 128 mappings in 'requestMappingHandlerMapping'
+2025-03-16 23:36:51.083 [restartedMain] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2025-03-16 23:36:51.099 [restartedMain] INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@6f556259, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@73254137, org.springframework.security.web.context.SecurityContextHolderFilter@3c3e3cad, org.springframework.security.web.header.HeaderWriterFilter@45223693, org.springframework.web.filter.CorsFilter@4d86d8f0, org.springframework.security.web.authentication.logout.LogoutFilter@4ffa72c6, com.fill_rouge.backend.config.security.JwtAuthenticationFilter@68eafc76, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@ba38858, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@5f61b111, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@7f4b3749, org.springframework.security.web.session.SessionManagementFilter@1be8c708, org.springframework.security.web.access.ExceptionTranslationFilter@1da551fb, org.springframework.security.web.access.intercept.AuthorizationFilter@ab70900]
+2025-03-16 23:36:51.121 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ErrorHandlingConfig:
+	
+2025-03-16 23:36:51.122 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AchievementController:
+	
+2025-03-16 23:36:51.122 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AuthController:
+	
+2025-03-16 23:36:51.122 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventController:
+	
+2025-03-16 23:36:51.122 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventStatisticsController:
+	
+2025-03-16 23:36:51.122 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.FileController:
+	
+2025-03-16 23:36:51.122 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.MessageController:
+	
+2025-03-16 23:36:51.123 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.NotificationController:
+	
+2025-03-16 23:36:51.123 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.OrganizationController:
+	
+2025-03-16 23:36:51.123 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ReportController:
+	
+2025-03-16 23:36:51.123 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.StatisticsController:
+	
+2025-03-16 23:36:51.123 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.TwoFactorAuthController:
+	
+2025-03-16 23:36:51.123 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerProfileController:
+	
+2025-03-16 23:36:51.124 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerStatisticsController:
+	
+2025-03-16 23:36:51.124 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.a.OpenApiWebMvcResource:
+	
+2025-03-16 23:36:51.125 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerWelcomeWebMvc:
+	
+2025-03-16 23:36:51.125 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerConfigResource:
+	
+2025-03-16 23:36:51.146 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-03-16 23:36:51.151 [restartedMain] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-03-16 23:36:51.218 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/api'
+2025-03-16 23:36:51.219 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel added SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:51.219 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:51.219 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-03-16 23:36:51.219 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a338753]
+2025-03-16 23:36:51.219 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a338753]
+2025-03-16 23:36:51.220 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a338753]]
+2025-03-16 23:36:51.220 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-03-16 23:36:51.220 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:51.220 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:51.222 [restartedMain] INFO  c.f.backend.BackendApplication - Started BackendApplication in 2.415 seconds (process running for 3211.328)
+2025-03-16 23:36:51.223 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2025-03-16 23:36:52.682 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 1 class path change (0 additions, 0 deletions, 1 modification)
+2025-03-16 23:36:52.683 [Thread-54] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel removed SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:52.684 [Thread-54] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:52.684 [Thread-54] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-03-16 23:36:52.684 [Thread-54] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a338753]]
+2025-03-16 23:36:52.684 [Thread-54] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a338753]
+2025-03-16 23:36:52.684 [Thread-54] DEBUG org.springframework.web.SimpLogging - brokerChannel removed SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a338753]
+2025-03-16 23:36:52.684 [Thread-54] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-03-16 23:36:52.684 [Thread-54] DEBUG org.springframework.web.SimpLogging - clientInboundChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:52.684 [Thread-54] DEBUG org.springframework.web.SimpLogging - brokerChannel removed UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:52.766 [restartedMain] INFO  c.f.backend.BackendApplication - Starting BackendApplication using Java 23.0.2 with PID 4520 (C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\Backend\target\classes started by TSUKII in C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025)
+2025-03-16 23:36:52.766 [restartedMain] DEBUG c.f.backend.BackendApplication - Running with Spring Boot v3.2.2, Spring v6.1.3
+2025-03-16 23:36:52.767 [restartedMain] INFO  c.f.backend.BackendApplication - The following 1 profile is active: "dev"
+2025-03-16 23:36:52.927 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2025-03-16 23:36:52.954 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 27 ms. Found 14 MongoDB repository interfaces.
+2025-03-16 23:36:53.045 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-03-16 23:36:53.046 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-03-16 23:36:53.046 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.18]
+2025-03-16 23:36:53.058 [restartedMain] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+2025-03-16 23:36:53.059 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 286 ms
+2025-03-16 23:36:53.094 [restartedMain] INFO  org.mongodb.driver.client - MongoClient with metadata {"driver": {"name": "mongo-java-driver|sync|spring-boot", "version": "4.11.1"}, "os": {"type": "Windows", "name": "Windows 11", "architecture": "amd64", "version": "10.0"}, "platform": "Java/Oracle Corporation/23.0.2+7-58"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=null, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=null, transportSettings=null, streamFactoryFactory=null, commandListeners=[], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, EnumCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@590f5e1a, com.mongodb.Jep395RecordCodecProvider@61c662f7, com.mongodb.KotlinCodecProvider@5c87a5e]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[localhost:27017], srvServiceName=mongodb, mode=SINGLE, requiredClusterType=UNKNOWN, requiredReplicaSetName='null', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=false, invalidHostNameAllowed=false, context=null}, applicationName='null', compressorList=[], uuidRepresentation=JAVA_LEGACY, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null}
+2025-03-16 23:36:53.096 [cluster-ClusterId{value='67d76095e3af8374b338238f', description='null'}-localhost:27017] INFO  org.mongodb.driver.cluster - Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=1578500}
+2025-03-16 23:36:53.148 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Achievement for index information
+2025-03-16 23:36:53.152 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Token for index information
+2025-03-16 23:36:53.153 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerProfile for index information
+2025-03-16 23:36:53.155 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventParticipation for index information
+2025-03-16 23:36:53.155 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Organization for index information
+2025-03-16 23:36:53.157 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.User for index information
+2025-03-16 23:36:53.158 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Conversation for index information
+2025-03-16 23:36:53.159 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Notification for index information
+2025-03-16 23:36:53.160 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Skill for index information
+2025-03-16 23:36:53.160 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Communication for index information
+2025-03-16 23:36:53.161 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.SocialMediaLinks for index information
+2025-03-16 23:36:53.161 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VolunteerAchievement for index information
+2025-03-16 23:36:53.162 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.audit.AuditLog for index information
+2025-03-16 23:36:53.163 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Message for index information
+2025-03-16 23:36:53.163 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Resource for index information
+2025-03-16 23:36:53.164 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.EventFeedback for index information
+2025-03-16 23:36:53.165 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.VerificationToken for index information
+2025-03-16 23:36:53.167 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class class com.fill_rouge.backend.domain.Event for index information
+2025-03-16 23:36:53.213 [restartedMain] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2025-03-16 23:36:53.213 [restartedMain] DEBUG c.f.b.c.security.RateLimitingFilter - Filter 'rateLimitingFilter' configured for use
+2025-03-16 23:36:53.214 [restartedMain] DEBUG o.s.web.filter.CorsFilter - Filter 'corsFilter' configured for use
+2025-03-16 23:36:53.214 [restartedMain] DEBUG c.f.b.c.s.SecurityHeadersFilter - Filter 'securityHeadersFilter' configured for use
+2025-03-16 23:36:53.216 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2025-03-16 23:36:53.289 [restartedMain] DEBUG o.s.d.m.c.i.MongoPersistentEntityIndexCreator - Analyzing class interface java.util.Map for index information
+2025-03-16 23:36:53.528 [restartedMain] INFO  c.f.b.s.storage.StorageServiceImpl - Storage initialized at: C:\Users\TSUKII\Documents\Fill-Rouge_Plateforme-de-B-n-volat-Local-Charit_2024-2025\uploads
+2025-03-16 23:36:53.570 [restartedMain] DEBUG o.s.w.s.s.s.WebSocketHandlerMapping - Patterns [/ws/**] in 'stompWebSocketHandlerMapping'
+2025-03-16 23:36:53.597 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 128 mappings in 'requestMappingHandlerMapping'
+2025-03-16 23:36:53.611 [restartedMain] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2025-03-16 23:36:53.624 [restartedMain] INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@5e2a637f, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@7737c527, org.springframework.security.web.context.SecurityContextHolderFilter@17941460, org.springframework.security.web.header.HeaderWriterFilter@247b457d, org.springframework.web.filter.CorsFilter@2826216f, org.springframework.security.web.authentication.logout.LogoutFilter@487c2914, com.fill_rouge.backend.config.security.JwtAuthenticationFilter@5db7dee7, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@50021a83, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2e2ced53, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@47193a04, org.springframework.security.web.session.SessionManagementFilter@43225465, org.springframework.security.web.access.ExceptionTranslationFilter@1a3bad5c, org.springframework.security.web.access.intercept.AuthorizationFilter@41e5c6a1]
+2025-03-16 23:36:53.640 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ErrorHandlingConfig:
+	
+2025-03-16 23:36:53.641 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AchievementController:
+	
+2025-03-16 23:36:53.641 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.AuthController:
+	
+2025-03-16 23:36:53.641 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventController:
+	
+2025-03-16 23:36:53.641 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.EventStatisticsController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.FileController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.MessageController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.NotificationController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.OrganizationController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.ReportController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.StatisticsController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.TwoFactorAuthController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerProfileController:
+	
+2025-03-16 23:36:53.642 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	c.f.b.c.VolunteerStatisticsController:
+	
+2025-03-16 23:36:53.643 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.a.OpenApiWebMvcResource:
+	
+2025-03-16 23:36:53.643 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerWelcomeWebMvc:
+	
+2025-03-16 23:36:53.643 [restartedMain] DEBUG o.s.w.s.m.WebSocketAnnotationMethodMessageHandler - 
+	o.s.w.u.SwaggerConfigResource:
+	
+2025-03-16 23:36:53.666 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-03-16 23:36:53.670 [restartedMain] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-03-16 23:36:53.720 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/api'
+2025-03-16 23:36:53.721 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientOutboundChannel added SubProtocolWebSocketHandler[StompSubProtocolHandler[v10.stomp, v11.stomp, v12.stomp]]
+2025-03-16 23:36:53.721 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added WebSocketAnnotationMethodMessageHandler[prefixes=[/app/]]
+2025-03-16 23:36:53.721 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-03-16 23:36:53.721 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@12457b48]
+2025-03-16 23:36:53.721 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@12457b48]
+2025-03-16 23:36:53.721 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@12457b48]]
+2025-03-16 23:36:53.722 [restartedMain] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-03-16 23:36:53.722 [restartedMain] DEBUG org.springframework.web.SimpLogging - clientInboundChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:53.722 [restartedMain] DEBUG org.springframework.web.SimpLogging - brokerChannel added UserDestinationMessageHandler[DefaultUserDestinationResolver[prefix=/user/]]
+2025-03-16 23:36:53.724 [restartedMain] INFO  c.f.backend.BackendApplication - Started BackendApplication in 0.977 seconds (process running for 3213.829)
+2025-03-16 23:36:53.724 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2025-03-16 23:36:57.540 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[localhost].[/api] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-03-16 23:36:57.541 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-03-16 23:36:57.542 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-03-16 23:36:57.542 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-03-16 23:36:57.543 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-03-16 23:36:57.544 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@442b8e6
+2025-03-16 23:36:57.545 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@72ba8690
+2025-03-16 23:36:57.545 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-03-16 23:36:57.546 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 4 ms
+2025-03-16 23:36:57.548 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Securing GET /stats/organization/
+2025-03-16 23:36:57.549 [http-nio-8080-exec-1] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /stats/organization/
+2025-03-16 23:36:57.553 [http-nio-8080-exec-1] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:36:57.554 [http-nio-8080-exec-1] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:36:57.555 [http-nio-8080-exec-1] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:36:57.580 [http-nio-8080-exec-1] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:36:57.582 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Secured GET /stats/organization/
+2025-03-16 23:36:57.583 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/stats/organization/", parameters={}
+2025-03-16 23:36:57.585 [http-nio-8080-exec-1] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-16 23:36:57.587 [http-nio-8080-exec-1] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-16 23:36:57.587 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-16 23:36:57.591 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:36:57.591 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-16T23:36:57.58 (truncated)...]
+2025-03-16 23:36:57.593 [http-nio-8080-exec-1] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource stats/organization.]
+2025-03-16 23:36:57.594 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-16 23:37:35.643 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/v1/statistics/organization/
+2025-03-16 23:37:35.655 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/v1/statistics/organization/
+2025-03-16 23:37:35.658 [http-nio-8080-exec-3] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /api/v1/statistics/organization/
+2025-03-16 23:37:35.661 [http-nio-8080-exec-3] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:37:35.662 [http-nio-8080-exec-3] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:37:35.663 [http-nio-8080-exec-3] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:37:35.670 [http-nio-8080-exec-3] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:37:35.671 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/v1/statistics/organization/
+2025-03-16 23:37:35.671 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/v1/statistics/organization/", parameters={}
+2025-03-16 23:37:35.672 [http-nio-8080-exec-3] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-16 23:37:35.674 [http-nio-8080-exec-3] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-16 23:37:35.674 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-16 23:37:35.675 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:37:35.675 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-16T23:37:35.67 (truncated)...]
+2025-03-16 23:37:35.677 [http-nio-8080-exec-3] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource api/v1/statistics/organization.]
+2025-03-16 23:37:35.677 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR
+2025-03-16 23:37:53.720 [MessageBroker-1] INFO  o.s.w.s.c.WebSocketMessageBrokerStats - WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 2, active threads = 1, queued tasks = 1, completed tasks = 0]
+2025-03-16 23:44:00.760 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Securing POST /auth/logout
+2025-03-16 23:44:00.763 [http-nio-8080-exec-4] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /auth/logout
+2025-03-16 23:44:00.763 [http-nio-8080-exec-4] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-03-16 23:44:00.764 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Secured POST /auth/logout
+2025-03-16 23:44:00.764 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - POST "/api/auth/logout", parameters={}
+2025-03-16 23:44:00.765 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.AuthController#logout(String)
+2025-03-16 23:44:00.778 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:44:00.779 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Logged out successfully, data=null, errors=null, errorCode=null, t (truncated)...]
+2025-03-16 23:44:00.780 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-16 23:44:09.813 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing POST /auth/login
+2025-03-16 23:44:09.815 [http-nio-8080-exec-5] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /auth/login
+2025-03-16 23:44:09.816 [http-nio-8080-exec-5] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-03-16 23:44:09.817 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Secured POST /auth/login
+2025-03-16 23:44:09.820 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - POST "/api/auth/login", parameters={}
+2025-03-16 23:44:09.821 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.fill_rouge.backend.controller.AuthController#login(LoginRequest, HttpServletRequest)
+2025-03-16 23:44:09.829 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/json;charset=UTF-8" to [LoginRequest(email=kono@mailinator.com, password=Pa$$w0rd!, twoFactorCode=null, ipAddress=null)]
+2025-03-16 23:44:09.841 [http-nio-8080-exec-5] DEBUG c.f.b.s.a.AuthenticationServiceImpl - Attempting login for email: kono@mailinator.com
+2025-03-16 23:44:09.843 [http-nio-8080-exec-5] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:44:09.845 [http-nio-8080-exec-5] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:44:10.019 [http-nio-8080-exec-5] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:44:10.020 [http-nio-8080-exec-5] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:44:10.020 [http-nio-8080-exec-5] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:44:10.088 [http-nio-8080-exec-5] DEBUG o.s.s.a.d.DaoAuthenticationProvider - Authenticated user
+2025-03-16 23:44:10.090 [http-nio-8080-exec-5] DEBUG c.f.b.config.security.JwtService - Generating token for user: kono@mailinator.com with role: ORGANIZATION
+2025-03-16 23:44:10.090 [http-nio-8080-exec-5] DEBUG c.f.b.config.security.JwtService - Token claims: {sub=kono@mailinator.com, needs_questionnaire=false, role=ROLE_ORGANIZATION, email_verified=true, user_id=67d6a5396e8da56f8d918517, created=Sun Mar 16 23:44:10 GMT 2025, last_name=Cooke, questionnaire_completed=true, first_name=Thomas, can_access_questionnaire=false}
+2025-03-16 23:44:10.098 [http-nio-8080-exec-5] DEBUG o.s.data.mongodb.core.MongoTemplate - Saving Document containing fields: [_id, firstName, lastName, email, password, role, enabled, accountNonLocked, emailVerified, lastLoginDate, lastLoginIp, createdAt, updatedAt, twoFactorEnabled, failedLoginAttempts, passwordLastChanged, previousPasswords, questionnaireCompleted, _class]
+2025-03-16 23:44:10.103 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:44:10.105 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [ApiResponse(success=true, message=Login successful, data=AuthResponse(token=eyJhbGciOiJIUzI1NiJ9.eyJ (truncated)...]
+2025-03-16 23:44:10.112 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-03-16 23:48:57.087 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/v1/statistics/organization/67d6a5396e8da56f8d918517
+2025-03-16 23:48:57.183 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/v1/statistics/organization/67d6a5396e8da56f8d918517
+2025-03-16 23:48:57.186 [http-nio-8080-exec-8] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Checking path for token processing: /api/v1/statistics/organization/67d6a5396e8da56f8d918517
+2025-03-16 23:48:57.196 [http-nio-8080-exec-8] DEBUG c.f.b.s.u.CustomUserDetailsService - Loading user by email: kono@mailinator.com
+2025-03-16 23:48:57.203 [http-nio-8080-exec-8] DEBUG o.s.d.m.r.query.MongoQueryCreator - Created query Query: { "email" : "kono@mailinator.com"}, Fields: {}, Sort: {}
+2025-03-16 23:48:57.206 [http-nio-8080-exec-8] DEBUG o.s.data.mongodb.core.MongoTemplate - find using query: { "email" : "kono@mailinator.com"} fields: Document{{}} for class: class com.fill_rouge.backend.domain.User in collection: users
+2025-03-16 23:48:57.221 [http-nio-8080-exec-8] DEBUG c.f.b.c.s.JwtAuthenticationFilter - Successfully authenticated user: kono@mailinator.com
+2025-03-16 23:48:57.222 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/v1/statistics/organization/67d6a5396e8da56f8d918517
+2025-03-16 23:48:57.223 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/api/v1/statistics/organization/67d6a5396e8da56f8d918517", parameters={}
+2025-03-16 23:48:57.229 [http-nio-8080-exec-8] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Mapped to ResourceHttpRequestHandler [classpath [META-INF/resources/], classpath [resources/], classpath [static/], classpath [public/], ServletContext [/]]
+2025-03-16 23:48:57.242 [http-nio-8080-exec-8] DEBUG o.s.w.s.r.ResourceHttpRequestHandler - Resource not found
+2025-03-16 23:48:57.244 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Using @ExceptionHandler com.fill_rouge.backend.exception.GlobalExceptionHandler#handleGenericException(Exception)
+2025-03-16 23:48:57.248 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-03-16 23:48:57.250 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [{error=Internal Server Error, message=An unexpected error occurred, timestamp=2025-03-16T23:48:57.24 (truncated)...]
+2025-03-16 23:48:57.253 [http-nio-8080-exec-8] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource api/v1/statistics/organization/67d6a5396e8da56f8d918517.]
+2025-03-16 23:48:57.254 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 500 INTERNAL_SERVER_ERROR

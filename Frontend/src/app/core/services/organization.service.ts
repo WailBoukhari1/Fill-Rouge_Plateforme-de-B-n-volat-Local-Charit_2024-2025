@@ -19,7 +19,6 @@ import {
   OrganizationResponse,
   SocialMediaLinks,
 } from '../models/organization.model';
-import { OrganizationStats } from '../../store/organization/organization.types';
 
 export interface PaginatedResponse<T> {
   content: T[];
@@ -138,12 +137,6 @@ export class OrganizationService {
     return this.http.patch<void>(`${this.apiUrl}/${id}/accepting-volunteers`, { accepting });
   }
 
-  // Get organization statistics
-  getOrganizationStats(organizationId: string): Observable<OrganizationStats> {
-    return this.http.get<OrganizationStats>(
-      `${this.apiUrl}/${organizationId}/stats`
-    );
-  }
 
   // Suspend organization
   suspendOrganization(id: string, reason: string): Observable<Organization> {

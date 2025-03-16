@@ -8,6 +8,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OrganizationService } from '../../../../core/services/organization.service';
 import { OrganizationStats } from '../../../../store/organization/organization.types';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { StatisticsService } from '../../../../core/services/statistics.service';
+import { take } from 'rxjs/operators';
+import { User } from '../../../../core/models/auth.models';
 
 @Component({
   selector: 'app-organization-dashboard',
@@ -146,7 +149,8 @@ export class OrganizationDashboardComponent implements OnInit {
 
   constructor(
     private organizationService: OrganizationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private statisticsService: StatisticsService
   ) {}
 
   ngOnInit() {
@@ -155,10 +159,72 @@ export class OrganizationDashboardComponent implements OnInit {
 
   private loadStats() {
     this.loading = true;
-    const organizationId = this.authService.getCurrentUserId();
-    this.organizationService.getOrganizationStats(organizationId).subscribe({
-      next: (stats) => {
-        this.stats = stats;
+    
+    // Try to get user ID from auth service
+    const userId = this.authService.getCurrentUserId();
+    console.log('Attempting to load statistics for user ID:', userId);
+
+    if (!userId) {
+      // Try to get user ID from localStorage as fallback
+      const userData = localStorage.getItem('user_data');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user.id) {
+            const parsedUserId = user.id.toString();
+            console.log('Got user ID from localStorage:', parsedUserId);
+            this.fetchStatistics(parsedUserId);
+            return;
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+
+      console.error('No user ID available');
+      this.loading = false;
+      return;
+    }
+
+    this.fetchStatistics(userId);
+  }
+
+  private fetchStatistics(userId: string): void {
+    if (!userId) {
+      console.error('Attempted to fetch statistics with no user ID');
+      this.loading = false;
+      return;
+    }
+
+    console.log('Fetching statistics for organization:', userId);
+    this.statisticsService.getOrganizationStatistics(userId).subscribe({
+      next: (response) => {
+        if (!response.data) {
+          console.error('No data in response');
+          this.loading = false;
+          return;
+        }
+
+        const stats = response.data;
+        // Calculate impact score based on available metrics
+        const impactScore = ((stats.activeVolunteers / (stats.totalVolunteers || 1)) * 100) || 0;
+        
+        this.stats = {
+          totalEvents: stats.totalEvents || 0,
+          activeEvents: stats.activeEvents || 0,
+          totalVolunteers: stats.totalVolunteers || 0,
+          activeVolunteers: stats.activeVolunteers || 0,
+          totalHours: stats.totalVolunteerHours || 0,
+          averageRating: stats.averageEventRating || 0,
+          impactScore,
+          totalEventsHosted: stats.totalEvents || 0,
+          recentActivity: [{
+            id: new Date().toISOString(),
+            icon: 'info',
+            description: 'Statistics loaded',
+            timestamp: new Date()
+          }]
+        };
         this.loading = false;
       },
       error: (error) => {

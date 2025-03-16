@@ -16,7 +16,11 @@ export class VolunteerEffects {
       mergeMap(() => {
         const userId = localStorage.getItem('userId') || '';
         return this.statisticsService.getVolunteerStatistics(userId).pipe(
-          map((stats) => {
+          map((response) => {
+            if (!response.data) {
+              throw new Error('No data in response');
+            }
+            const stats = response.data;
             const statistics: VolunteerStatistics = {
               totalEventsAttended: stats.totalEventsParticipated,
               upcomingEvents: stats.activeEvents,

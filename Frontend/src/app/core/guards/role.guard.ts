@@ -4,6 +4,7 @@ import {
   ActivatedRouteSnapshot,
   RouterStateSnapshot,
   Router,
+  UrlTree,
 } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
@@ -19,7 +20,7 @@ export class RoleGuard implements CanActivate {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
-  ): Observable<boolean> {
+  ): Observable<boolean | UrlTree> {
     const allowedRoles = route.data['roles'] as string[];
 
     return this.store.select(selectUserRole).pipe(
@@ -34,21 +35,7 @@ export class RoleGuard implements CanActivate {
           return true;
         }
 
-        // If roles don't match, redirect to the appropriate profile page
-        switch (userRole) {
-          case 'VOLUNTEER':
-            this.router.navigate(['/volunteer/profile']);
-            break;
-          case 'ORGANIZATION':
-            this.router.navigate(['/organization/profile']);
-            break;
-          case 'ADMIN':
-            this.router.navigate(['/users']);
-            break;
-          default:
-            this.router.navigate(['/']);
-        }
-        return false;
+        return this.router.createUrlTree(['/dashboard']);
       })
     );
   }
