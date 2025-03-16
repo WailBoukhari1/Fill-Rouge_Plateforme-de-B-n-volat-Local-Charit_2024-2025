@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { QuestionnaireCompletedGuard } from '../auth/guards/questionnaire-completed.guard';
 import { DashboardLayoutComponent } from '../../layouts/dashboard-layout/dashboard-layout.component';
+import { RoleGuard } from '../../core/guards/role.guard';
 
 export const PRIVATE_ROUTES: Routes = [
   {
@@ -10,58 +11,83 @@ export const PRIVATE_ROUTES: Routes = [
     canActivate: [AuthGuard, QuestionnaireCompletedGuard],
     children: [
       {
-        path: '',
-        loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent
+          ),
       },
+      // Admin Routes
       {
-        path: 'profile',
-        loadComponent: () => import('./profile/profile.component').then(m => m.ProfileComponent)
-      },
-      {
-        path: 'users',
-        loadComponent: () => import('./admin/user-management/user-management.component').then(m => m.UserManagementComponent)
-      },
-      {
-        path: 'organizations',
-        loadComponent: () => import('./admin/organization-management/organization-management.component').then(m => m.OrganizationManagementComponent)
-      },
-      {
-        path: 'events',
-        loadComponent: () => import('./admin/event-management/event-management.component').then(m => m.EventManagementComponent)
-      },
-      {
-        path: 'reports',
-        loadComponent: () => import('./admin/reports/reports.component').then(m => m.ReportsComponent)
-      },
-      // Volunteer Routes
-      {
-        path: 'volunteer',
+        path: 'admin',
+        canActivate: [RoleGuard],
+        data: { roles: ['ADMIN'] },
         children: [
           {
-            path: 'profile',
-            loadComponent: () => import('./volunteer/profile/volunteer-profile.component').then(m => m.VolunteerProfileComponent)
+            path: 'users',
+            loadComponent: () =>
+              import('./admin/user-management/user-management.component').then(
+                (m) => m.UserManagementComponent
+              ),
+          },
+          {
+            path: 'organizations',
+            loadComponent: () =>
+              import('./admin/organization-management/organization-management.component').then(
+                (m) => m.OrganizationManagementComponent
+              ),
           },
           {
             path: 'events',
-            loadComponent: () => import('./volunteer/events/volunteer-events.component').then(m => m.VolunteerEventsComponent)
+            loadComponent: () =>
+              import('./admin/event-management/event-management.component').then(
+                (m) => m.EventManagementComponent
+              ),
           },
           {
-            path: 'hours',
-            loadComponent: () => import('./volunteer/hours/volunteer-hours.component').then(m => m.VolunteerHoursComponent)
-          },
-          {
-            path: 'achievements',
-            loadComponent: () => import('./volunteer/achievements/volunteer-achievements.component').then(m => m.VolunteerAchievementsComponent)
-          },
-          {
-            path: 'waitlist',
-            loadComponent: () => import('./volunteer/waitlist/volunteer-waitlist.component').then(m => m.VolunteerWaitlistComponent)
-          },
-          {
-            path: 'feedback/:eventId',
-            loadComponent: () => import('./volunteer/feedback/volunteer-feedback.component').then(m => m.VolunteerFeedbackComponent)
+            path: 'reports',
+            loadComponent: () =>
+              import('./admin/reports/reports.component').then(
+                (m) => m.ReportsComponent
+              ),
           }
         ]
+      },
+      // Organization Routes
+      {
+        path: 'organization',
+        canActivate: [RoleGuard],
+        data: { roles: ['ORGANIZATION'] },
+        children: [
+          {
+            path: 'profile',
+            loadComponent: () =>
+              import('./organization/profile/organization-profile.component').then(
+                (m) => m.OrganizationProfileComponent
+              ),
+          },
+          {
+            path: 'events',
+            loadComponent: () =>
+              import('./admin/event-management/event-management.component').then(
+                (m) => m.EventManagementComponent
+              ),
+          },
+          {
+            path: 'reports',
+            loadComponent: () =>
+              import('./admin/reports/reports.component').then(
+                (m) => m.ReportsComponent
+              ),
+          }
+        ]
+      },
+      // Volunteer Routes
+      {
+        path: 'dashboard',
+        canActivate: [RoleGuard],
+        data: { roles: ['VOLUNTEER'] },
+        loadChildren: () => import('./volunteer/volunteer.routes').then(m => m.VOLUNTEER_ROUTES)
       }
     ]
   }

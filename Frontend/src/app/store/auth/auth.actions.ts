@@ -37,16 +37,10 @@ export const register = createAction(
   props<{
     email: string;
     password: string;
+    confirmPassword: string;
     firstName: string;
     lastName: string;
-    role: UserRole;
-    organizationName?: string;
-    organizationWebsite?: string;
-    organizationDescription?: string;
-    phoneNumber?: string;
-    address?: string;
-    city?: string;
-    country?: string;
+    role?: UserRole;
   }>()
 );
 
@@ -115,4 +109,9 @@ export const loadStoredUserFailure = createAction(
 export const updateUserProfile = createAction(
   '[Auth] Update User Profile',
   props<{ profile: any }>()
+);
+
+export const questionnaireCompleted = createAction(
+  '[Auth] Questionnaire Completed',
+  props<{ user: any }>()
 );

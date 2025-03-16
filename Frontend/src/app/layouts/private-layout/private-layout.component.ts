@@ -68,14 +68,19 @@ interface MenuItem {
 
           <mat-menu #userMenu="matMenu">
             @if(userRole === 'VOLUNTEER') {
-              <a mat-menu-item routerLink="/dashboard/profile">
+              <a mat-menu-item routerLink="/dashboard/volunteer/profile">
                 <mat-icon>person</mat-icon>
                 <span>My Profile</span>
               </a>
             } @else if(userRole === 'ORGANIZATION') {
-              <a mat-menu-item routerLink="/dashboard/profile">
+              <a mat-menu-item routerLink="/dashboard/profile/organization">
                 <mat-icon>business</mat-icon>
                 <span>Organization Profile</span>
+              </a>
+            } @else if(userRole === 'ADMIN') {
+              <a mat-menu-item routerLink="/dashboard/users">
+                <mat-icon>manage_accounts</mat-icon>
+                <span>User Management</span>
               </a>
             }
             <button mat-menu-item (click)="logout()">
@@ -125,19 +130,25 @@ export class PrivateLayoutComponent {
     {
       label: 'My Events',
       icon: 'event',
-      route: '/dashboard/events',
+      route: '/dashboard/volunteer/events',
       roles: ['VOLUNTEER']
     },
     {
       label: 'My Hours',
       icon: 'schedule',
-      route: '/dashboard/hours',
+      route: '/dashboard/volunteer/hours',
       roles: ['VOLUNTEER']
     },
     {
       label: 'Achievements',
       icon: 'emoji_events',
-      route: '/dashboard/achievements',
+      route: '/dashboard/volunteer/achievements',
+      roles: ['VOLUNTEER']
+    },
+    {
+      label: 'Waitlist',
+      icon: 'hourglass_empty',
+      route: '/dashboard/volunteer/waitlist',
       roles: ['VOLUNTEER']
     },
 
@@ -157,7 +168,7 @@ export class PrivateLayoutComponent {
     {
       label: 'Volunteers',
       icon: 'people',
-      route: '/dashboard',
+      route: '/dashboard/volunteers',
       roles: ['ORGANIZATION']
     },
     {
@@ -190,6 +201,12 @@ export class PrivateLayoutComponent {
       label: 'Events',
       icon: 'event_available',
       route: '/dashboard/events',
+      roles: ['ADMIN']
+    },
+    {
+      label: 'Reports',
+      icon: 'assessment',
+      route: '/dashboard/reports',
       roles: ['ADMIN']
     }
   ];

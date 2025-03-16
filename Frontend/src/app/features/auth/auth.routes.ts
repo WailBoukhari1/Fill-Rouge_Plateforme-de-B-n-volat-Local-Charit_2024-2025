@@ -37,7 +37,10 @@ export const AUTH_ROUTES: Routes = [
         loadComponent: () => import('./questionnaire/questionnaire.component').then(m => m.QuestionnaireComponent),
         title: 'Complete Profile',
         canActivate: [AuthGuard, QuestionnaireGuard],
-        data: { layout: 'auth' }
+        data: { 
+          layout: 'auth',
+          requiresUnassignedRole: true
+        }
       },
       {
         path: 'verify-email',

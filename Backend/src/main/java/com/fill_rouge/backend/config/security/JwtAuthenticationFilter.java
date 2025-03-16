@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -61,13 +62,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 userEmail = jwtService.extractUsername(jwt);
             } catch (ExpiredJwtException e) {
                 logger.warn("JWT token has expired: {}", e.getMessage());
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token has expired");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has expired");
                 return;
             } catch (MalformedJwtException | SignatureException e) {
                 logger.warn("Invalid JWT token: {}", e.getMessage());
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Invalid token");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
                 return;
             }
 
@@ -85,24 +84,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     logger.debug("Successfully authenticated user: {}", userEmail);
                 } else {
                     logger.warn("Token validation failed for user: {}", userEmail);
+                    sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token validation failed");
+                    return;
                 }
             }
             filterChain.doFilter(request, response);
         } catch (Exception e) {
             logger.error("Error processing JWT token: {}", e.getMessage(), e);
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("Internal server error during authentication");
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal server error during authentication");
         }
     }
 
     private boolean shouldSkipTokenProcessing(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.startsWith("/api/auth/") || 
-               path.startsWith("/auth/") ||
+        String path = request.getServletPath();
+        logger.debug("Checking path for token processing: {}", path);
+        return path.startsWith("/auth/") ||
+               path.startsWith("/api/auth/") ||
                path.startsWith("/api/public/") ||
-               path.startsWith("/swagger-ui/") ||
-               path.startsWith("/v3/api-docs/") ||
-               path.equals("/actuator/health") ||
-               path.equals("/error");
+               path.startsWith("/api/files/") ||
+               path.startsWith("/files/") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-ui/");
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        String jsonResponse = String.format("{\"status\":%d,\"error\":\"%s\",\"message\":\"%s\"}", 
+            status, 
+            HttpStatus.valueOf(status).getReasonPhrase(), 
+            message);
+        response.getWriter().write(jsonResponse);
     }
 } 

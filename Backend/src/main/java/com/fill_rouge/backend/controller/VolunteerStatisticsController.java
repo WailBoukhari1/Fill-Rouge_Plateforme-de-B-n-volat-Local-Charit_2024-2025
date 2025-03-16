@@ -1,8 +1,13 @@
 package com.fill_rouge.backend.controller;
 
+import com.fill_rouge.backend.domain.VolunteerAchievement;
+import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.response.ApiResponse;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
+import com.fill_rouge.backend.dto.response.VolunteerAchievementResponse;
 import com.fill_rouge.backend.service.event.EventStatisticsService;
+import com.fill_rouge.backend.service.achievement.AchievementService;
+import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/volunteers")
@@ -20,6 +27,8 @@ import java.time.LocalDateTime;
 public class VolunteerStatisticsController {
 
     private final EventStatisticsService statisticsService;
+    private final AchievementService achievementService;
+    private final VolunteerProfileService volunteerProfileService;
 
     @GetMapping("/statistics")
     @Operation(summary = "Get volunteer statistics", description = "Get statistics for the authenticated volunteer")
@@ -57,5 +66,33 @@ public class VolunteerStatisticsController {
             @RequestHeader("X-User-ID") String volunteerId) {
         double reliabilityScore = statisticsService.calculateVolunteerReliabilityScore(volunteerId);
         return ResponseEntity.ok(ApiResponse.success(reliabilityScore, "Volunteer reliability score retrieved successfully"));
+    }
+
+    @GetMapping("/achievements")
+    @Operation(summary = "Get volunteer achievements", description = "Get achievements for the authenticated volunteer")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    public ResponseEntity<ApiResponse<List<VolunteerAchievementResponse>>> getVolunteerAchievements(
+            @RequestHeader("X-User-ID") String volunteerId) {
+        List<VolunteerAchievement> achievements = achievementService.getVolunteerAchievements(volunteerId);
+        List<VolunteerAchievementResponse> response = achievements.stream()
+            .map(achievement -> VolunteerAchievementResponse.builder()
+                .id(achievement.getId())
+                .volunteerId(achievement.getVolunteerId())
+                .achievementId(achievement.getAchievementId())
+                .progress(achievement.getProgress())
+                .earnedAt(achievement.getEarnedAt())
+                .isDisplayed(achievement.isDisplayed())
+                .build())
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(response, "Volunteer achievements retrieved successfully"));
+    }
+
+    @GetMapping("/badges")
+    @Operation(summary = "Get volunteer badges", description = "Get badges for the authenticated volunteer")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    public ResponseEntity<ApiResponse<List<String>>> getVolunteerBadges(
+            @RequestHeader("X-User-ID") String volunteerId) {
+        VolunteerProfile profile = volunteerProfileService.getVolunteerProfile(volunteerId);
+        return ResponseEntity.ok(ApiResponse.success(profile.getBadges(), "Volunteer badges retrieved successfully"));
     }
 } 

@@ -1,18 +1,15 @@
-import { VolunteerHours } from '../../core/services/volunteer.service';
-import { DetailedVolunteerStats, StatisticsResponse } from '../../core/models/statistics.model';
+import { VolunteerProfile, VolunteerStatistics } from '../../core/services/volunteer.service';
 
 export interface VolunteerState {
-  statistics: StatisticsResponse | null;
-  detailedStats: DetailedVolunteerStats | null;
-  hours: VolunteerHours[];
+  profile: VolunteerProfile | null;
+  statistics: VolunteerStatistics | null;
   loading: boolean;
   error: string | null;
 }
 
-export const initialVolunteerState: VolunteerState = {
+export const initialState: VolunteerState = {
+  profile: null,
   statistics: null,
-  detailedStats: null,
-  hours: [],
   loading: false,
   error: null
 }; 

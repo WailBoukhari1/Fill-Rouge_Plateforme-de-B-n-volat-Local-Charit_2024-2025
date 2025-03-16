@@ -1,124 +1,229 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { VolunteerService, VolunteerProfile, VolunteerStatistics } from '../../../../core/services/volunteer.service';
+import { CloseAccountDialogComponent } from './close-account-dialog.component';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-volunteer-profile',
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatChipsModule
+    MatChipsModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
+    MatToolbarModule,
+    MatDividerModule,
+    MatDialogModule,
+    MatTooltipModule,
   ],
   template: `
-    <div class="container mx-auto px-4 py-8">
-      <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h1>
-          <p class="text-gray-600">Manage your volunteer profile and preferences</p>
+    <div class="profile-container">
+      <!-- Top Toolbar -->
+      <mat-toolbar color="primary" class="profile-toolbar">
+        <button mat-icon-button (click)="goBack()" matTooltip="Back">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <span>My Profile</span>
+        <span class="toolbar-spacer"></span>
+        <button mat-icon-button (click)="editProfile()" matTooltip="Edit Profile">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button (click)="closeProfile()" matTooltip="Close Account">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-toolbar>
+
+      <div class="content-container">
+        <div *ngIf="error" class="error-message">
+          <mat-icon>error_outline</mat-icon>
+          {{ error }}
         </div>
 
-        <!-- Profile Form -->
-        <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="space-y-6">
-          <!-- Basic Information -->
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title class="text-xl font-bold">Basic Information</mat-card-title>
-            </mat-card-header>
-            <mat-card-content class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>First Name</mat-label>
-                  <input matInput formControlName="firstName">
-                  <mat-error *ngIf="profileForm.get('firstName')?.hasError('required')">
-                    First name is required
-                  </mat-error>
-                </mat-form-field>
+        <div *ngIf="loading" class="loading-container">
+          <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+        </div>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Last Name</mat-label>
-                  <input matInput formControlName="lastName">
-                  <mat-error *ngIf="profileForm.get('lastName')?.hasError('required')">
-                    Last name is required
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Email</mat-label>
-                  <input matInput formControlName="email" type="email">
-                  <mat-error *ngIf="profileForm.get('email')?.hasError('required')">
-                    Email is required
-                  </mat-error>
-                  <mat-error *ngIf="profileForm.get('email')?.hasError('email')">
-                    Please enter a valid email
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Phone</mat-label>
-                  <input matInput formControlName="phone">
-                </mat-form-field>
+        <div *ngIf="!loading && profile" class="profile-content">
+          <!-- Profile Header -->
+          <mat-card class="profile-header">
+            <mat-card-content>
+              <div class="profile-picture-container">
+                <div class="profile-picture-wrapper">
+                  <div class="profile-picture" [class.no-image]="!profilePictureUrl">
+                    <img *ngIf="profilePictureUrl" [src]="profilePictureUrl" alt="Profile Picture">
+                    <mat-icon *ngIf="!profilePictureUrl">account_circle</mat-icon>
+                    <div class="profile-picture-overlay">
+                      <input
+                        type="file"
+                        #fileInput
+                        accept="image/*"
+                        (change)="onFileSelected($event)"
+                        style="display: none"
+                      >
+                      <button mat-icon-button (click)="fileInput.click()" matTooltip="Change Profile Picture">
+                        <mat-icon>camera_alt</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="profile-info">
+                  <h1>{{ profile.firstName }} {{ profile.lastName }}</h1>
+                  <p class="email">{{ profile.email }}</p>
+                  <p class="phone" *ngIf="profile.phoneNumber">{{ profile.phoneNumber }}</p>
+                  <div class="status-badge" [class.active]="profile.isActive">
+                    {{ profile.isActive ? 'Active' : 'Inactive' }}
+                  </div>
+                </div>
               </div>
             </mat-card-content>
           </mat-card>
 
-          <!-- Additional Information -->
+          <!-- Statistics -->
+          <mat-card class="stats-card">
+            <mat-card-content>
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <mat-icon class="stat-icon">event</mat-icon>
+                  <div class="stat-info">
+                    <span class="stat-value">{{ stats?.totalEventsAttended || 0 }}</span>
+                    <span class="stat-label">Events Attended</span>
+                  </div>
+                </div>
+                <div class="stat-item">
+                  <mat-icon class="stat-icon">schedule</mat-icon>
+                  <div class="stat-info">
+                    <span class="stat-value">{{ stats?.totalHoursVolunteered || 0 }}</span>
+                    <span class="stat-label">Hours Volunteered</span>
+                  </div>
+                </div>
+                <div class="stat-item">
+                  <mat-icon class="stat-icon">star</mat-icon>
+                  <div class="stat-info">
+                    <span class="stat-value">{{ stats?.averageRating || 0 | number:'1.1-1' }}</span>
+                    <span class="stat-label">Average Rating</span>
+                  </div>
+                </div>
+                <div class="stat-item">
+                  <mat-icon class="stat-icon">trending_up</mat-icon>
+                  <div class="stat-info">
+                    <span class="stat-value">{{ stats?.reliabilityScore || 0 }}%</span>
+                    <span class="stat-label">Reliability Score</span>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Personal Information -->
           <mat-card>
             <mat-card-header>
-              <mat-card-title class="text-xl font-bold">Additional Information</mat-card-title>
+              <mat-card-title>Personal Information</mat-card-title>
+              <mat-icon>person</mat-icon>
             </mat-card-header>
-            <mat-card-content class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Location</mat-label>
-                  <input matInput formControlName="location">
-                </mat-form-field>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Phone</label>
+                  <span>{{ profile.phoneNumber || 'Not provided' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Address</label>
+                  <span>{{ profile.address || 'Not provided' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>City</label>
+                  <span>{{ profile.city || 'Not provided' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Country</label>
+                  <span>{{ profile.country || 'Not provided' }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Availability</mat-label>
-                  <mat-select formControlName="availability" multiple>
-                    <mat-option value="weekday_morning">Weekday Mornings</mat-option>
-                    <mat-option value="weekday_afternoon">Weekday Afternoons</mat-option>
-                    <mat-option value="weekday_evening">Weekday Evenings</mat-option>
-                    <mat-option value="weekend_morning">Weekend Mornings</mat-option>
-                    <mat-option value="weekend_afternoon">Weekend Afternoons</mat-option>
-                    <mat-option value="weekend_evening">Weekend Evenings</mat-option>
-                  </mat-select>
-                </mat-form-field>
+          <!-- Emergency Contact -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Emergency Contact</mat-card-title>
+              <mat-icon>emergency</mat-icon>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Name</label>
+                  <span>{{ profile.emergencyContact || 'Not provided' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Phone</label>
+                  <span>{{ profile.emergencyPhone || 'Not provided' }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
 
-                <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                  <mat-label>Bio</mat-label>
-                  <textarea matInput formControlName="bio" rows="4"></textarea>
-                </mat-form-field>
+          <!-- Skills & Interests -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Skills & Interests</mat-card-title>
+              <mat-icon>psychology</mat-icon>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="skills-section">
+                <h3>Skills</h3>
+                <div class="chips-container">
+                  <mat-chip *ngFor="let skill of profile.skills" color="primary" selected>
+                    {{ skill }}
+                  </mat-chip>
+                  <span *ngIf="!profile.skills?.length" class="no-data">No skills listed</span>
+                </div>
+              </div>
+              <div class="skills-section">
+                <h3>Interests</h3>
+                <div class="chips-container">
+                  <mat-chip *ngFor="let interest of profile.interests" color="accent" selected>
+                    {{ interest }}
+                  </mat-chip>
+                  <span *ngIf="!profile.interests?.length" class="no-data">No interests listed</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
 
-                <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                  <mat-label>Skills & Interests</mat-label>
-                  <mat-select formControlName="skills" multiple>
-                    <mat-option value="teaching">Teaching</mat-option>
-                    <mat-option value="mentoring">Mentoring</mat-option>
-                    <mat-option value="organizing">Event Organization</mat-option>
-                    <mat-option value="environmental">Environmental Work</mat-option>
-                    <mat-option value="social">Social Services</mat-option>
-                    <mat-option value="healthcare">Healthcare</mat-option>
-                    <mat-option value="technology">Technology</mat-option>
-                    <mat-option value="arts">Arts & Culture</mat-option>
-                  </mat-select>
-                </mat-form-field>
+          <!-- Availability -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Availability</mat-card-title>
+              <mat-icon>schedule</mat-icon>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="availability-grid">
+                <div *ngFor="let day of weekDays" class="day-row">
+                  <div class="day-name">{{ day }}</div>
+                  <div class="day-availability">
+                    <span *ngIf="profile.availableDays.includes(day.toUpperCase())" class="time-slot">
+                      Available
+                    </span>
+                    <span *ngIf="!profile.availableDays.includes(day.toUpperCase())" class="unavailable">
+                      Not Available
+                    </span>
+                  </div>
+                </div>
               </div>
             </mat-card-content>
           </mat-card>
@@ -126,101 +231,581 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           <!-- Preferences -->
           <mat-card>
             <mat-card-header>
-              <mat-card-title class="text-xl font-bold">Preferences</mat-card-title>
+              <mat-card-title>Preferences</mat-card-title>
+              <mat-icon>settings</mat-icon>
             </mat-card-header>
-            <mat-card-content class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Preferred Causes</mat-label>
-                  <mat-select formControlName="preferredCauses" multiple>
-                    <mat-option value="education">Education</mat-option>
-                    <mat-option value="environment">Environment</mat-option>
-                    <mat-option value="health">Healthcare</mat-option>
-                    <mat-option value="poverty">Poverty Alleviation</mat-option>
-                    <mat-option value="animals">Animal Welfare</mat-option>
-                    <mat-option value="community">Community Development</mat-option>
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Maximum Travel Distance (miles)</mat-label>
-                  <input matInput type="number" formControlName="maxTravelDistance">
-                </mat-form-field>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Max Hours per Week</label>
+                  <span>{{ profile.maxHoursPerWeek || 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Preferred Radius</label>
+                  <span>{{ profile.preferredRadius ? profile.preferredRadius + ' km' : 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Preferred Time of Day</label>
+                  <span>{{ profile.preferredTimeOfDay || 'Not specified' }}</span>
+                </div>
+              </div>
+              <div class="preferences-section">
+                <h3>Preferred Categories</h3>
+                <div class="chips-container">
+                  <mat-chip *ngFor="let category of profile.preferredCategories" color="primary" selected>
+                    {{ category }}
+                  </mat-chip>
+                  <span *ngIf="!profile.preferredCategories?.length" class="no-data">No categories selected</span>
+                </div>
               </div>
             </mat-card-content>
           </mat-card>
 
-          <!-- Submit Button -->
-          <div class="flex justify-end">
-            <button mat-raised-button color="primary" type="submit" 
-                    [disabled]="profileForm.invalid || isSubmitting">
-              <mat-icon class="mr-2">save</mat-icon>
-              Save Changes
-            </button>
-          </div>
-        </form>
+          <!-- Notification Preferences -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Notification Preferences</mat-card-title>
+              <mat-icon>notifications</mat-icon>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="notification-preferences">
+                <div class="preference-item">
+                  <label>Notifications Enabled</label>
+                  <span>{{ profile.receiveNotifications ? 'Yes' : 'No' }}</span>
+                </div>
+                <div *ngIf="profile.receiveNotifications" class="preference-options">
+                  <div class="preference-item">
+                    <label>Email Notifications</label>
+                    <span>{{ profile.notificationPreferences.includes('EMAIL') ? 'Yes' : 'No' }}</span>
+                  </div>
+                  <div class="preference-item">
+                    <label>SMS Notifications</label>
+                    <span>{{ profile.notificationPreferences.includes('SMS') ? 'Yes' : 'No' }}</span>
+                  </div>
+                  <div class="preference-item">
+                    <label>Push Notifications</label>
+                    <span>{{ profile.notificationPreferences.includes('PUSH') ? 'Yes' : 'No' }}</span>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Bio -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>Bio</mat-card-title>
+              <mat-icon>description</mat-icon>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="bio-content">
+                {{ profile.bio || 'No bio provided' }}
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .profile-container {
+      min-height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    .profile-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+    }
+
+    .toolbar-spacer {
+      flex: 1 1 auto;
+    }
+
+    .content-container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .error-message {
+      color: #d32f2f;
+      padding: 16px;
+      margin-bottom: 24px;
+      background-color: #ffebee;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+    }
+
+    .profile-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .profile-header {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-picture-container {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .profile-picture-wrapper {
+      position: relative;
+    }
+
+    .profile-picture {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+      background-color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .profile-picture img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-picture mat-icon {
+      width: 100%;
+      height: 100%;
+      font-size: 150px;
+      color: #757575;
+    }
+
+    .profile-picture-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .profile-picture:hover .profile-picture-overlay {
+      opacity: 1;
+    }
+
+    .profile-picture-overlay button {
+      color: white;
+    }
+
+    .profile-info {
+      flex: 1;
+    }
+
+    .profile-info h1 {
+      margin: 0;
+      font-size: 2rem;
+      color: #333;
+    }
+
+    .profile-info .email, .profile-info .phone {
+      margin: 8px 0 0;
+      color: #666;
+      font-size: 1.1rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 16px;
+      background-color: #e0e0e0;
+      color: #666;
+      font-size: 0.875rem;
+      margin-top: 8px;
+    }
+
+    .status-badge.active {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .stats-card {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      transition: transform 0.2s ease;
+    }
+
+    .stat-item:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      color: #1976d2;
+    }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: #666;
+    }
+
+    mat-card {
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    mat-card-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    mat-card-content {
+      padding: 24px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-item label {
+      font-weight: 500;
+      color: #666;
+    }
+
+    .info-item span {
+      color: #333;
+    }
+
+    .skills-section {
+      margin-bottom: 24px;
+    }
+
+    .skills-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .skills-section h3 {
+      margin: 0 0 16px;
+      color: #333;
+    }
+
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .availability-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .day-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 8px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .day-name {
+      min-width: 100px;
+      font-weight: 500;
+    }
+
+    .day-availability {
+      flex: 1;
+    }
+
+    .time-slot {
+      color: #2e7d32;
+    }
+
+    .unavailable {
+      color: #666;
+      font-style: italic;
+    }
+
+    .preferences-section {
+      margin-top: 24px;
+    }
+
+    .preferences-section h3 {
+      margin: 0 0 16px;
+      color: #333;
+    }
+
+    .notification-preferences {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .preference-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .preference-options {
+      margin-left: 16px;
+    }
+
+    .bio-content {
+      white-space: pre-wrap;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .no-data {
+      color: #666;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      .profile-picture-container {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .profile-info {
+        text-align: center;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .day-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .day-name {
+        min-width: auto;
+      }
+    }
+  `]
 })
 export class VolunteerProfileComponent implements OnInit {
-  profileForm: FormGroup;
-  isSubmitting = false;
+  profile: VolunteerProfile | null = null;
+  stats: VolunteerStatistics | null = null;
+  loading = true;
+  error: string | null = null;
+  weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  profilePictureUrl: SafeUrl | null = null;
 
   constructor(
-    private fb: FormBuilder,
-    private snackBar: MatSnackBar
-  ) {
-    this.profileForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      phone: [''],
-      location: [''],
-      availability: [[]],
-      bio: [''],
-      skills: [[]],
-      preferredCauses: [[]],
-      maxTravelDistance: [25]
+    private volunteerService: VolunteerService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+    private router: Router,
+    private sanitizer: DomSanitizer
+  ) {}
+
+  ngOnInit(): void {
+    this.loadProfile();
+    this.loadStatistics();
+  }
+
+  private loadProfile(): void {
+    this.loading = true;
+    this.error = null;
+    
+    this.volunteerService.getProfile().subscribe({
+      next: (profile) => {
+        console.log('Profile loaded:', profile);
+        this.profile = profile;
+        if (profile.profilePicture) {
+          const pictureUrl = this.volunteerService.getProfilePictureUrl(profile.profilePicture);
+          console.log('Profile picture URL:', pictureUrl);
+          this.profilePictureUrl = this.sanitizer.bypassSecurityTrustUrl(pictureUrl);
+          console.log('Sanitized URL:', this.profilePictureUrl);
+        } else {
+          console.log('No profile picture found in profile data');
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading profile:', error);
+        this.error = 'Error loading profile: ' + error.message;
+        this.loading = false;
+        this.snackBar.open(this.error, 'Close', {
+          duration: 5000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+      },
     });
   }
 
-  ngOnInit() {
-    // TODO: Load volunteer profile data from service
-    this.loadProfile();
+  private loadStatistics(): void {
+    this.volunteerService.getStatistics().subscribe({
+      next: (stats: VolunteerStatistics) => {
+        this.stats = stats;
+      },
+      error: (error: Error) => {
+        console.error('Error loading statistics:', error);
+      },
+    });
   }
 
-  loadProfile() {
-    // TODO: Implement profile loading
-    const mockProfile = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      phone: '(555) 123-4567',
-      location: 'Miami, FL',
-      availability: ['weekday_evening', 'weekend_morning'],
-      bio: 'Passionate about making a difference in my community.',
-      skills: ['organizing', 'environmental', 'technology'],
-      preferredCauses: ['environment', 'education'],
-      maxTravelDistance: 25
-    };
-
-    this.profileForm.patchValue(mockProfile);
+  editProfile(): void {
+    this.router.navigate(['/volunteer/profile/edit']);
   }
 
-  onSubmit() {
-    if (this.profileForm.valid) {
-      this.isSubmitting = true;
-      // TODO: Implement profile update
-      console.log('Profile data:', this.profileForm.value);
+  closeProfile(): void {
+    const dialogRef = this.dialog.open(CloseAccountDialogComponent, {
+      width: '400px',
+      disableClose: true,
+    });
 
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        this.snackBar.open('Profile updated successfully!', 'Close', {
-          duration: 3000
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.volunteerService.closeAccount().subscribe({
+          next: () => {
+            this.snackBar.open('Account closed successfully', 'Close', {
+              duration: 5000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
+            });
+            this.router.navigate(['/auth/login']);
+          },
+          error: (error: Error) => {
+            this.error = 'Error closing account: ' + error.message;
+            this.snackBar.open(this.error, 'Close', {
+              duration: 5000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
+            });
+          },
         });
-      }, 1000);
+      }
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/volunteer/dashboard']);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.snackBar.open('Please select an image file', 'Close', {
+          duration: 5000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        this.snackBar.open('File size must be less than 5MB', 'Close', {
+          duration: 5000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+        return;
+      }
+
+      this.loading = true;
+      this.volunteerService.uploadProfilePicture(file).subscribe({
+        next: (updatedProfile) => {
+          this.profile = updatedProfile;
+          if (updatedProfile.profilePicture) {
+            const pictureUrl = this.volunteerService.getProfilePictureUrl(updatedProfile.profilePicture);
+            this.profilePictureUrl = this.sanitizer.bypassSecurityTrustUrl(pictureUrl);
+          }
+          this.snackBar.open('Profile picture updated successfully', 'Close', {
+            duration: 5000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+          });
+          this.loading = false;
+        },
+        error: (error) => {
+          this.error = 'Error uploading profile picture: ' + error.message;
+          this.snackBar.open(this.error, 'Close', {
+            duration: 5000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+          });
+          this.loading = false;
+        },
+      });
     }
   }
 } 

@@ -2,7 +2,9 @@ package com.fill_rouge.backend.service.auth;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fill_rouge.backend.config.security.JwtService;
 import com.fill_rouge.backend.constant.Role;
 import com.fill_rouge.backend.domain.Organization;
+import com.fill_rouge.backend.domain.SocialMediaLinks;
 import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.domain.VolunteerProfile;
+import com.fill_rouge.backend.domain.Skill;
 import com.fill_rouge.backend.dto.request.LoginRequest;
 import com.fill_rouge.backend.dto.request.QuestionnaireRequest;
 import com.fill_rouge.backend.dto.request.RegisterRequest;
@@ -62,6 +66,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new RuntimeException("Email already exists");
             }
 
+            // Validate password match
+            if (!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())) {
+                throw new RuntimeException("Passwords do not match");
+            }
+
             // Validate password
             validatePassword(registerRequest.getPassword());
 
@@ -71,7 +80,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setLastName(registerRequest.getLastName());
             user.setEmail(registerRequest.getEmail());
             user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            user.setRole(registerRequest.getRole() != null ? registerRequest.getRole() : Role.VOLUNTEER);
+            // Set initial role as UNASSIGNED
+            user.setRole(Role.UNASSIGNED);
             user.setVerificationCode(generateVerificationCode());
             user.setVerificationCodeExpiry(LocalDateTime.now().plusHours(24));
             user.setEnabled(false);
@@ -80,13 +90,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setPreviousPasswords(new ArrayList<>());
             
             user = userRepository.save(user);
-
-            // Create profile based on role
-            if (user.getRole() == Role.VOLUNTEER) {
-                createVolunteerProfile(user);
-            } else if (user.getRole() == Role.ORGANIZATION) {
-                createOrganizationProfile(user, registerRequest);
-            }
 
             // Generate tokens
             String jwt = jwtService.generateToken(user);
@@ -103,53 +106,99 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public AuthResponse login(LoginRequest loginRequest) {
+    public AuthResponse login(LoginRequest request) {
+        logger.debug("Attempting login for email: {}", request.getEmail());
+        
         try {
-            User user = userRepository.findByEmail(loginRequest.getEmail())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            // First check if user exists
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
             // Check if account is locked
-            if (user.getAccountLockedUntil() != null && LocalDateTime.now().isBefore(user.getAccountLockedUntil())) {
-                throw new RuntimeException("Account is locked. Try again later");
+            if (!user.isAccountNonLocked()) {
+                logger.warn("Account is locked for user: {}", request.getEmail());
+                throw new DisabledException("Account is locked. Please contact support.");
+            }
+
+            // Check if email is verified
+            if (!user.isEmailVerified()) {
+                logger.warn("Email not verified for user: {}", request.getEmail());
+                throw new DisabledException("Please verify your email before logging in.");
             }
 
             try {
+                // Attempt authentication using Spring Security
                 Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                    )
                 );
 
-                // Reset failed attempts on successful login
+                // If authentication successful, reset failed attempts
                 user.setFailedLoginAttempts(0);
-                user.setLastLoginDate(LocalDateTime.now());
-                user.setLastLoginIp(request.getRemoteAddr());
-                userRepository.save(user);
+                user.setLastLoginAttempt(null);
+                user.setAccountLockedUntil(null);
 
-                String jwt = jwtService.generateToken(user);
+                // Ensure user has a role
+                if (user.getRole() == null) {
+                    logger.warn("User {} has no role assigned, setting default UNASSIGNED role", user.getEmail());
+                    user.setRole(Role.UNASSIGNED);
+                }
+
+                // Generate tokens
+                String token = jwtService.generateToken(user);
                 String refreshToken = jwtService.generateRefreshToken(user);
 
-                return createAuthResponse(user, jwt, refreshToken);
+                // Update last login info
+                user.setLastLoginDate(LocalDateTime.now());
+                user.setLastLoginIp(request.getIpAddress());
+                userRepository.save(user);
+
+                // Build response
+                return AuthResponse.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .roles(Set.of(user.getRole().name()))
+                        .emailVerified(user.isEmailVerified())
+                        .twoFactorEnabled(user.isTwoFactorEnabled())
+                        .accountLocked(!user.isAccountNonLocked())
+                        .accountExpired(!user.isAccountNonExpired())
+                        .credentialsExpired(!user.isCredentialsNonExpired())
+                        .token(token)
+                        .refreshToken(refreshToken)
+                        .lastLoginIp(user.getLastLoginIp())
+                        .lastLoginAt(user.getLastLoginDate())
+                        .questionnaireCompleted(user.isQuestionnaireCompleted())
+                        .build();
+
             } catch (BadCredentialsException e) {
-                // Increment failed attempts
+                // Handle failed login attempt
                 user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
                 user.setLastLoginAttempt(LocalDateTime.now());
 
+                // Check if account should be locked
                 if (user.getFailedLoginAttempts() >= MAX_LOGIN_ATTEMPTS) {
                     user.setAccountNonLocked(false);
                     user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(LOCK_TIME_MINUTES));
+                    logger.warn("Account locked for user {} due to too many failed attempts", user.getEmail());
                 }
 
                 userRepository.save(user);
-                throw new RuntimeException("Invalid credentials");
+                throw new BadCredentialsException("Invalid email or password");
             }
+
         } catch (DisabledException e) {
-            logger.error("Login failed: Account is disabled", e);
-            throw new RuntimeException("Account is disabled");
-        } catch (AuthenticationException e) {
-            logger.error("Login failed: Authentication error", e);
-            throw new RuntimeException("Authentication failed: " + e.getMessage());
+            logger.error("Login failed - Account disabled: {}", e.getMessage());
+            throw e;
+        } catch (BadCredentialsException e) {
+            logger.error("Login failed - Bad credentials for email: {}", request.getEmail());
+            throw e;
         } catch (Exception e) {
-            logger.error("Login failed: Unexpected error", e);
-            throw new RuntimeException("Login failed: " + e.getMessage());
+            logger.error("Login failed - Unexpected error: {}", e.getMessage());
+            throw new RuntimeException("An unexpected error occurred during login");
         }
     }
 
@@ -280,8 +329,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional
     public AuthResponse completeQuestionnaire(String email, QuestionnaireRequest request) {
-        User user = userRepository.findByEmail(email)
+        final User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Validate that the user has an UNASSIGNED role
+        if (!Role.UNASSIGNED.equals(user.getRole())) {
+            throw new RuntimeException("User role has already been assigned");
+        }
         
         // Update user information based on questionnaire
         user.setQuestionnaireCompleted(true);
@@ -289,51 +343,139 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         // Handle role-specific information
         if (Role.VOLUNTEER.equals(request.getRole())) {
             user.setRole(Role.VOLUNTEER);
-            // Update volunteer profile
-            VolunteerProfile profile = volunteerProfileRepository.findByUserEmail(email)
-                .orElseThrow(() -> new RuntimeException("Volunteer profile not found"));
+            // Create or update volunteer profile
+            final String finalEmail = email;
+            final User finalUser = user;
+            VolunteerProfile profile = volunteerProfileRepository.findByUserEmail(finalEmail)
+                .orElseGet(() -> {
+                    VolunteerProfile newProfile = new VolunteerProfile();
+                    newProfile.setUser(finalUser);
+                    newProfile.setFirstName(finalUser.getFirstName());
+                    newProfile.setLastName(finalUser.getLastName());
+                    newProfile.setEmail(finalUser.getEmail());
+                    newProfile.setCreatedAt(LocalDateTime.now());
+                    newProfile.setStatus("ACTIVE");
+                    newProfile.setActive(true);
+                    newProfile.setProfileVisible(true);
+                    return newProfile;
+                });
             
             // Update profile with questionnaire data
             profile.setBio(request.getBio());
             profile.setPhoneNumber(request.getPhoneNumber());
             profile.setAddress(request.getAddress());
             profile.setCity(request.getCity());
+            profile.setCountry(request.getCountry());
             
-            // Convert List to Set for skills and interests
+            // Update volunteer-specific fields
             if (request.getSkills() != null) {
-                profile.setSkills(new HashSet<>(request.getSkills()));
+                List<Skill> skillsList = new ArrayList<>();
+                for (String skillName : request.getSkills()) {
+                    Skill skill = new Skill();
+                    skill.setName(skillName);
+                    skillsList.add(skill);
+                }
+                profile.setSkills(skillsList);
             }
             if (request.getInterests() != null) {
-                profile.setInterests(new HashSet<>(request.getInterests()));
+                profile.setInterests(request.getInterests());
+            }
+            if (request.getAvailableDays() != null) {
+                profile.setAvailableDays(request.getAvailableDays());
+            }
+            if (request.getLanguages() != null) {
+                profile.setLanguages(request.getLanguages());
+            }
+            if (request.getCertifications() != null) {
+                profile.setCertifications(request.getCertifications());
+            }
+            
+            profile.setPreferredTimeOfDay(request.getPreferredTimeOfDay());
+            profile.setAvailableForEmergency(request.isAvailableForEmergency());
+            
+            // Set emergency contact if provided
+            if (request.getEmergencyContact() != null) {
+                profile.setEmergencyContact(request.getEmergencyContact().getName());
+                profile.setEmergencyPhone(request.getEmergencyContact().getPhone());
             }
             
             profile.setUpdatedAt(LocalDateTime.now());
             volunteerProfileRepository.save(profile);
+        } else if (Role.ORGANIZATION.equals(request.getRole())) {
+            user.setRole(Role.ORGANIZATION);
+            // Create or update organization profile
+            final User finalUser = user;
+            Organization org = organizationRepository.findByUserEmail(email)
+                .orElseGet(() -> {
+                    Organization newOrg = new Organization();
+                    newOrg.setUser(finalUser);
+                    newOrg.setCreatedAt(LocalDateTime.now());
+                    newOrg.setVerified(false);
+                    newOrg.setAcceptingVolunteers(true);
+                    return newOrg;
+                });
+            
+            // Update organization with questionnaire data
+            org.setName(request.getName());
+            org.setDescription(request.getDescription());
+            org.setMission(request.getMissionStatement());
+            org.setVision(request.getVision());
+            org.setWebsite(request.getWebsite());
+            org.setPhoneNumber(request.getPhoneNumber());
+            org.setAddress(request.getAddress());
+            org.setCity(request.getCity());
+            org.setCountry(request.getCountry());
+            
+            // Update organization-specific fields
+            if (request.getFocusAreas() != null) {
+                org.setFocusAreas(request.getFocusAreas());
+            }
+            if (request.getRegistrationNumber() != null) {
+                org.setRegistrationNumber(request.getRegistrationNumber());
+            }
+            if (request.getTaxId() != null) {
+                org.setTaxId(request.getTaxId());
+            }
+            
+            // Update social media links if provided
+            if (request.getSocialMediaLinks() != null) {
+                SocialMediaLinks socialMediaLinks = new SocialMediaLinks();
+                socialMediaLinks.setFacebook(request.getSocialMediaLinks().getFacebook());
+                socialMediaLinks.setTwitter(request.getSocialMediaLinks().getTwitter());
+                socialMediaLinks.setInstagram(request.getSocialMediaLinks().getInstagram());
+                socialMediaLinks.setLinkedin(request.getSocialMediaLinks().getLinkedin());
+                org.setSocialMediaLinks(socialMediaLinks);
+            }
+            
+            org.setUpdatedAt(LocalDateTime.now());
+            organizationRepository.save(org);
+        } else {
+            throw new RuntimeException("Invalid role selected");
         }
         
         // Save updated user
-        user = userRepository.save(user);
+        User savedUser = userRepository.save(user);
         
-        // Generate new tokens
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
+        // Generate new tokens with updated role
+        String jwtToken = jwtService.generateToken(savedUser);
+        String refreshToken = jwtService.generateRefreshToken(savedUser);
         
         return AuthResponse.builder()
                 .token(jwtToken)
                 .refreshToken(refreshToken)
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .userId(user.getId())
-                .roles(user.getAuthorities().stream().map(Object::toString).collect(java.util.stream.Collectors.toSet()))
-                .emailVerified(user.isEmailVerified())
-                .twoFactorEnabled(user.isTwoFactorEnabled())
-                .lastLoginIp(user.getLastLoginIp())
-                .lastLoginAt(user.getLastLoginDate())
-                .accountLocked(!user.isAccountNonLocked())
-                .accountExpired(!user.isAccountNonExpired())
-                .credentialsExpired(!user.isCredentialsNonExpired())
-                .questionnaireCompleted(user.isQuestionnaireCompleted())
+                .email(savedUser.getEmail())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .userId(savedUser.getId())
+                .roles(Set.of(savedUser.getRole().name()))
+                .emailVerified(savedUser.isEmailVerified())
+                .twoFactorEnabled(savedUser.isTwoFactorEnabled())
+                .lastLoginIp(savedUser.getLastLoginIp())
+                .lastLoginAt(savedUser.getLastLoginDate())
+                .accountLocked(!savedUser.isAccountNonLocked())
+                .accountExpired(!savedUser.isAccountNonExpired())
+                .credentialsExpired(!savedUser.isCredentialsNonExpired())
+                .questionnaireCompleted(savedUser.isQuestionnaireCompleted())
                 .build();
     }
 
@@ -362,7 +504,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .userId(user.getId())
-                .roles(user.getAuthorities().stream().map(Object::toString).collect(java.util.stream.Collectors.toSet()))
+                .roles(Set.of(user.getRole().name()))
                 .emailVerified(user.isEmailVerified())
                 .twoFactorEnabled(user.isTwoFactorEnabled())
                 .lastLoginIp(user.getLastLoginIp())
@@ -371,6 +513,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .accountExpired(!user.isAccountNonExpired())
                 .credentialsExpired(!user.isCredentialsNonExpired())
                 .questionnaireCompleted(user.isQuestionnaireCompleted())
+                .success(true)
                 .build();
     }
 
@@ -476,17 +619,5 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         profile.setActive(true);
         profile.setProfileVisible(true);
         volunteerProfileRepository.save(profile);
-    }
-
-    private Organization createOrganizationProfile(User user, RegisterRequest request) {
-        Organization organization = Organization.builder()
-                .user(user)
-                .name(request.getOrganizationName())
-                .description(request.getOrganizationDescription())
-                .mission("Organization mission statement")
-                .verified(false)
-                .acceptingVolunteers(true)
-                .build();
-        return organizationRepository.save(organization);
     }
 } 

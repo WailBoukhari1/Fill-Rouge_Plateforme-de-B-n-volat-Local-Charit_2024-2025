@@ -1,10 +1,25 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
 import { Store } from '@ngrx/store';
 import { selectUser } from '../store/auth/auth.selectors';
 import { UserRole } from '../core/models/auth.models';
 
 @Component({
   selector: 'app-dashboard-layout',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatSidenavModule,
+    MatListModule,
+    MatIconModule,
+    MatDividerModule,
+  ],
   template: `
     <div class="dashboard-container">
       <mat-sidenav-container>
@@ -42,16 +57,22 @@ import { UserRole } from '../core/models/auth.models';
     .sidenav {
       width: 280px;
       background: #f5f5f5;
+      border-right: 1px solid rgba(0, 0, 0, 0.12);
     }
     .sidenav-content {
       padding: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
     .logo-container {
       text-align: center;
       padding: 16px 0;
+      margin-bottom: 16px;
     }
     .logo {
       max-width: 150px;
+      height: auto;
     }
     .nav-section {
       margin-bottom: 16px;
@@ -62,12 +83,29 @@ import { UserRole } from '../core/models/auth.models';
       color: #666;
       font-size: 14px;
       font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .active-link {
       background: rgba(0, 0, 0, 0.04);
+      color: #1976d2;
     }
     mat-icon {
       margin-right: 8px;
+      color: #666;
+    }
+    .active-link mat-icon {
+      color: #1976d2;
+    }
+    mat-sidenav-content {
+      background-color: #ffffff;
+      padding: 24px;
+    }
+    @media (max-width: 600px) {
+      .sidenav {
+        width: 100%;
+        max-width: 280px;
+      }
     }
   `]
 })
@@ -80,31 +118,30 @@ export class DashboardLayoutComponent implements OnInit {
       name: 'Admin Dashboard',
       roles: [UserRole.ADMIN],
       items: [
-        { label: 'Skills Management', icon: 'psychology', route: '/dashboard/skills' },
-        { label: 'Organizations', icon: 'business', route: '/dashboard/organizations' },
-        { label: 'Reports', icon: 'assessment', route: '/dashboard/reports' }
+        { label: 'Users', icon: 'people', route: '/users' },
+        { label: 'Organizations', icon: 'business', route: '/organizations' },
+        { label: 'Events', icon: 'event', route: '/events' },
+        { label: 'Reports', icon: 'assessment', route: '/reports' }
       ]
     },
     {
       name: 'Organization Dashboard',
       roles: [UserRole.ORGANIZATION],
       items: [
-        { label: 'Events', icon: 'event', route: '/dashboard/events' },
-        { label: 'Resources', icon: 'folder', route: '/dashboard/resources' },
-        { label: 'Reports', icon: 'assessment', route: '/dashboard/reports' },
-        { label: 'Messages', icon: 'message', route: '/dashboard/messages' },
-        { label: 'Notifications', icon: 'notifications', route: '/dashboard/notifications' }
+        { label: 'Profile', icon: 'business', route: '/profile/organization' },
+        { label: 'Events', icon: 'event', route: '/events' },
+        { label: 'Reports', icon: 'assessment', route: '/reports' }
       ]
     },
     {
       name: 'Volunteer Dashboard',
       roles: [UserRole.VOLUNTEER],
       items: [
-        { label: 'Profile', icon: 'person', route: '/dashboard/profile' },
-        { label: 'Events', icon: 'event', route: '/dashboard/events' },
-        { label: 'Achievements', icon: 'emoji_events', route: '/dashboard/achievements' },
-        { label: 'Messages', icon: 'message', route: '/dashboard/messages' },
-        { label: 'Notifications', icon: 'notifications', route: '/dashboard/notifications' }
+        { label: 'Profile', icon: 'person', route: '/volunteer/profile' },
+        { label: 'Events', icon: 'event', route: '/volunteer/events' },
+        { label: 'Hours', icon: 'schedule', route: '/volunteer/hours' },
+        { label: 'Achievements', icon: 'emoji_events', route: '/volunteer/achievements' },
+        { label: 'Waitlist', icon: 'hourglass_empty', route: '/volunteer/waitlist' }
       ]
     }
   ];

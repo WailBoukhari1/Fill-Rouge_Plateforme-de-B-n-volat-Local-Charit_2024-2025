@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, AsyncPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { MatCardModule } from '@angular/material/card';
@@ -10,11 +10,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import * as AuthActions from '../../../store/auth/auth.actions';
 import { selectAuthError, selectAuthLoading, selectUser, selectRequiresTwoFactor } from '../../../store/auth/auth.selectors';
-import { filter, take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
@@ -30,7 +32,9 @@ import { filter, take } from 'rxjs/operators';
     MatCheckboxModule,
     MatStepperModule,
     MatDividerModule,
-    RouterLink
+    MatSnackBarModule,
+    RouterLink,
+    AsyncPipe
   ],
   template: `
     <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -53,40 +57,58 @@ import { filter, take } from 'rxjs/operators';
                 <div class="space-y-4">
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Email address</mat-label>
-                    <input matInput formControlName="email" type="email" required>
+                    <input matInput formControlName="email" type="email" required 
+                           [class.border-red-500]="isFieldInvalid('email')"
+                           (blur)="validateField('email')">
                     <mat-icon matPrefix class="mr-2 text-gray-500">email</mat-icon>
-                    <mat-error *ngIf="loginForm.get('email')?.hasError('required')">
-                      Email is required
-                    </mat-error>
-                    <mat-error *ngIf="loginForm.get('email')?.hasError('email') || loginForm.get('email')?.hasError('pattern')">
-                      Please enter a valid email address (e.g., example&#64;domain.com)
+                    <mat-error *ngIf="getErrorMessage('email')" class="text-sm">
+                      {{ getErrorMessage('email') }}
                     </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Password</mat-label>
-                    <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" required>
+                    <input matInput [type]="hidePassword ? 'password' : 'text'" 
+                           formControlName="password" required
+                           [class.border-red-500]="isFieldInvalid('password')"
+                           (blur)="validateField('password')">
                     <mat-icon matPrefix class="mr-2 text-gray-500">lock</mat-icon>
-                    <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+                    <button mat-icon-button matSuffix (click)="togglePasswordVisibility($event)" type="button">
                       <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
                     </button>
-                    <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
-                      Password is required
-                    </mat-error>
-                    <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
-                      Password must be at least 8 characters long
-                    </mat-error>
-                    <mat-error *ngIf="loginForm.get('password')?.hasError('pattern')">
-                      Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character
+                    <mat-error *ngIf="getErrorMessage('password')" class="text-sm">
+                      {{ getErrorMessage('password') }}
                     </mat-error>
                   </mat-form-field>
                 </div>
 
-                <div *ngIf="error$ | async as error" class="text-red-500 text-sm text-center bg-red-50 p-4 rounded border border-red-200 mb-4">
-                  <div class="flex items-center justify-center">
+                <div *ngIf="error$ | async as error" 
+                     class="text-red-500 text-sm text-center bg-red-50 p-4 rounded border border-red-200 mb-4 animate-fade-in">
+                  <div class="flex items-center justify-center mb-2">
                     <mat-icon class="text-red-500 mr-2">error_outline</mat-icon>
-                    <span>{{ error }}</span>
+                    <span class="font-medium">{{ error }}</span>
                   </div>
+                  
+                  <ng-container *ngIf="shouldShowRegisterLink(error)">
+                    <div class="mt-3 p-3 bg-white rounded border border-indigo-200">
+                      <p class="text-gray-700 mb-2">New to our platform?</p>
+                      <a routerLink="/auth/register" 
+                         class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+                        <mat-icon class="mr-1 text-sm">person_add</mat-icon>
+                        Create an account
+                      </a>
+                    </div>
+                  </ng-container>
+
+                  <ng-container *ngIf="shouldShowForgotPasswordLink(error)">
+                    <div class="mt-3">
+                      <a routerLink="/auth/forgot-password" 
+                         class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center justify-center">
+                        <mat-icon class="mr-1 text-sm">lock_reset</mat-icon>
+                        Reset your password
+                      </a>
+                    </div>
+                  </ng-container>
                 </div>
 
                 <div class="flex items-center justify-between">
@@ -108,7 +130,7 @@ import { filter, take } from 'rxjs/operators';
                           [disabled]="loginForm.invalid || (loading$ | async)">
                     <div class="flex items-center justify-center">
                       <mat-spinner diameter="20" *ngIf="loading$ | async" class="mr-2"></mat-spinner>
-                      <span>Sign in</span>
+                      <span>{{ (loading$ | async) ? 'Signing in...' : 'Sign in' }}</span>
                     </div>
                   </button>
                 </div>
@@ -195,21 +217,37 @@ import { filter, take } from 'rxjs/operators';
     .mat-mdc-card {
       border-radius: 8px;
     }
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .border-red-500 {
+      border-color: #ef4444;
+    }
   `]
 })
-export class LoginComponent implements OnInit {
-  loginForm: FormGroup;
-  twoFactorForm: FormGroup;
+export class LoginComponent implements OnInit, OnDestroy {
+  loginForm!: FormGroup;
+  twoFactorForm!: FormGroup;
   hidePassword = true;
   showTwoFactorForm = false;
   error$ = this.store.select(selectAuthError);
   loading$ = this.store.select(selectAuthLoading);
   requiresTwoFactor$ = this.store.select(selectRequiresTwoFactor);
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
-    private store: Store
+    private store: Store,
+    private snackBar: MatSnackBar
   ) {
+    this.initializeForms();
+  }
+
+  private initializeForms(): void {
     this.loginForm = this.fb.group({
       email: ['', [
         Validators.required,
@@ -235,64 +273,142 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Clear any existing auth errors when component initializes
     this.store.dispatch(AuthActions.loginFailure({ error: '' }));
+    this.setupSubscriptions();
+  }
 
-    // Subscribe to user state to handle email verification and 2FA
-    this.store.select(selectUser).pipe(
-      filter(user => !!user),
-      take(1)
-    ).subscribe(user => {
-      if (user && !user.emailVerified) {
-        // User exists but email is not verified
-        this.error$ = this.store.select(selectAuthError);
-      }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
-      if (user && user.twoFactorEnabled) {
-        // User has 2FA enabled, show the 2FA form
-        this.showTwoFactorForm = true;
-      }
-    });
-
-    // Subscribe to requiresTwoFactor state
-    this.requiresTwoFactor$.subscribe(requiresTwoFactor => {
-      if (requiresTwoFactor) {
-        this.showTwoFactorForm = true;
-        // Store the email and password for later use with the 2FA code
-        localStorage.setItem('temp_email', this.loginForm.get('email')?.value);
-        localStorage.setItem('temp_password', this.loginForm.get('password')?.value);
+  private setupSubscriptions(): void {
+    this.error$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(error => {
+      if (error) {
+        this.showErrorSnackbar(error);
       }
     });
   }
 
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.loginForm.get(fieldName);
+    return field ? (field.invalid && (field.dirty || field.touched)) : false;
+  }
+
+  validateField(fieldName: string): void {
+    const field = this.loginForm.get(fieldName);
+    if (field) {
+      field.markAsTouched();
+      if (field.invalid) {
+        this.showErrorSnackbar(this.getErrorMessage(fieldName));
+      }
+    }
+  }
+
+  getErrorMessage(fieldName: string): string {
+    const field = this.loginForm.get(fieldName);
+    if (!field) return '';
+
+    if (field.hasError('required')) {
+      return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
+    }
+
+    if (fieldName === 'email') {
+      if (field.hasError('email') || field.hasError('pattern')) {
+        return 'Please enter a valid email address';
+      }
+    }
+
+    if (fieldName === 'password') {
+      if (field.hasError('minlength')) {
+        return 'Password must be at least 8 characters long';
+      }
+      if (field.hasError('pattern')) {
+        return 'Password must include uppercase, lowercase, number, and special character';
+      }
+    }
+
+    return '';
+  }
+
+  togglePasswordVisibility(event: Event): void {
+    event.preventDefault();
+    this.hidePassword = !this.hidePassword;
+  }
+
+  shouldShowRegisterLink(error: string): boolean {
+    return error.toLowerCase().includes('account not found') || 
+           error.toLowerCase().includes('user not found') ||
+           error.toLowerCase().includes('register');
+  }
+
+  shouldShowForgotPasswordLink(error: string): boolean {
+    return error.toLowerCase().includes('invalid') || 
+           error.toLowerCase().includes('incorrect password') ||
+           error.toLowerCase().includes('password');
+  }
+
   onSubmit(): void {
     if (this.loginForm.valid) {
+      // Clear any existing errors
+      this.store.dispatch(AuthActions.loginFailure({ error: '' }));
+      
+      // Log form values for debugging
+      console.log('Form values:', this.loginForm.value);
+      
       const { email, password } = this.loginForm.value;
-      this.store.dispatch(AuthActions.login({ email, password }));
-
-      // Subscribe to errors to provide more user-friendly messages
+      
+      // Trim whitespace from email and password
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+      
+      // Basic validation before dispatch
+      if (!trimmedEmail || !trimmedPassword) {
+        this.showErrorSnackbar('Please fill in all required fields');
+        return;
+      }
+      
+      // Dispatch login action
+      this.store.dispatch(AuthActions.login({ 
+        email: trimmedEmail, 
+        password: trimmedPassword 
+      }));
+      
+      // Subscribe to error state for additional handling
       this.error$.pipe(
-        filter(error => !!error),
-        take(1)
+        takeUntil(this.destroy$)
       ).subscribe(error => {
         if (error) {
-          let userFriendlyError = error;
-
-          // Transform backend errors into user-friendly messages
-          if (error.includes('Bad credentials')) {
-            userFriendlyError = 'Invalid email or password. Please try again.';
-          } else if (error.includes('locked')) {
-            userFriendlyError = 'Your account is locked. Please contact support.';
-          } else if (error.includes('disabled')) {
-            userFriendlyError = 'Your account is disabled. Please verify your email.';
-          } else if (error.includes('server')) {
-            userFriendlyError = 'Server error. Please try again later.';
+          // Show error in snackbar
+          this.showErrorSnackbar(error);
+          
+          // Log for debugging
+          console.error('Login error occurred:', error);
+          
+          // Reset form if it's an authentication error
+          if (error.toLowerCase().includes('invalid') || 
+              error.toLowerCase().includes('incorrect')) {
+            this.loginForm.get('password')?.reset();
+            this.loginForm.get('password')?.markAsUntouched();
           }
-
-          // Update the error message
-          this.store.dispatch(AuthActions.loginFailure({ error: userFriendlyError }));
         }
       });
+    } else {
+      // Mark all fields as touched to trigger validation messages
+      Object.keys(this.loginForm.controls).forEach(key => {
+        const control = this.loginForm.get(key);
+        if (control) {
+          control.markAsTouched();
+          if (control.errors) {
+            console.log(`Validation errors for ${key}:`, control.errors);
+          }
+        }
+      });
+      
+      // Show general error message
+      this.showErrorSnackbar('Please fix the validation errors before submitting');
     }
   }
 
@@ -315,5 +431,19 @@ export class LoginComponent implements OnInit {
       localStorage.removeItem('temp_email');
       localStorage.removeItem('temp_password');
     }
+  }
+
+  private showErrorSnackbar(message: string): void {
+    // Dismiss any existing snackbar
+    this.snackBar.dismiss();
+    
+    // Show new error message
+    this.snackBar.open(message, 'Close', {
+      duration: 8000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom',
+      panelClass: ['error-snackbar'],
+      data: { error: true }
+    });
   }
 }

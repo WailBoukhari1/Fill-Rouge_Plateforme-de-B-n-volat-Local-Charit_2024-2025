@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from '../../core/services/auth.service';
+import { UserRole } from '../../core/models/auth.models';
 
 @Component({
   selector: 'app-dashboard-layout',
@@ -20,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
     MatButtonModule,
     MatIconModule,
     MatListModule,
-    MatMenuModule
+    MatMenuModule,
   ],
   template: `
     <mat-sidenav-container class="h-screen">
@@ -38,17 +39,17 @@ import { AuthService } from '../../core/services/auth.service';
             <span matListItemTitle>Dashboard</span>
           </a>
 
-          @if (userRole === 'ADMIN') {
+          @if (userRole === UserRole.ADMIN) {
             <a mat-list-item routerLink="/dashboard/users" routerLinkActive="active">
-              <mat-icon matListItemIcon>people</mat-icon>
+              <mat-icon matListItemIcon>manage_accounts</mat-icon>
               <span matListItemTitle>Users</span>
             </a>
             <a mat-list-item routerLink="/dashboard/organizations" routerLinkActive="active">
-              <mat-icon matListItemIcon>business</mat-icon>
+              <mat-icon matListItemIcon>business_center</mat-icon>
               <span matListItemTitle>Organizations</span>
             </a>
             <a mat-list-item routerLink="/dashboard/events" routerLinkActive="active">
-              <mat-icon matListItemIcon>event</mat-icon>
+              <mat-icon matListItemIcon>event_available</mat-icon>
               <span matListItemTitle>Events</span>
             </a>
             <a mat-list-item routerLink="/dashboard/reports" routerLinkActive="active">
@@ -57,7 +58,12 @@ import { AuthService } from '../../core/services/auth.service';
             </a>
           }
 
-          @if (userRole === 'VOLUNTEER') {
+          <!-- Volunteer Menu Items -->
+          <ng-container *ngIf="userRole === UserRole.VOLUNTEER">
+            <a mat-list-item routerLink="/dashboard/volunteer/profile" routerLinkActive="active">
+              <mat-icon matListItemIcon>person</mat-icon>
+              <span matListItemTitle>My Profile</span>
+            </a>
             <a mat-list-item routerLink="/dashboard/volunteer/events" routerLinkActive="active">
               <mat-icon matListItemIcon>event</mat-icon>
               <span matListItemTitle>My Events</span>
@@ -71,26 +77,29 @@ import { AuthService } from '../../core/services/auth.service';
               <span matListItemTitle>Achievements</span>
             </a>
             <a mat-list-item routerLink="/dashboard/volunteer/waitlist" routerLinkActive="active">
-              <mat-icon matListItemIcon>pending</mat-icon>
+              <mat-icon matListItemIcon>hourglass_empty</mat-icon>
               <span matListItemTitle>Waitlist</span>
             </a>
-          }
+          </ng-container>
 
-          @if (userRole === 'ORGANIZATION') {
+          @if (userRole === UserRole.ORGANIZATION) {
+            <a mat-list-item routerLink="/dashboard/profile/organization" routerLinkActive="active">
+              <mat-icon matListItemIcon>business</mat-icon>
+              <span matListItemTitle>Profile</span>
+            </a>
             <a mat-list-item routerLink="/dashboard/events" routerLinkActive="active">
-              <mat-icon matListItemIcon>event</mat-icon>
-              <span matListItemTitle>Events</span>
+              <mat-icon matListItemIcon>event_note</mat-icon>
+              <span matListItemTitle>Event Management</span>
+            </a>
+            <a mat-list-item routerLink="/dashboard/volunteers" routerLinkActive="active">
+              <mat-icon matListItemIcon>people</mat-icon>
+              <span matListItemTitle>Volunteers</span>
             </a>
             <a mat-list-item routerLink="/dashboard/reports" routerLinkActive="active">
               <mat-icon matListItemIcon>assessment</mat-icon>
               <span matListItemTitle>Reports</span>
             </a>
           }
-
-          <a mat-list-item routerLink="/dashboard/profile" routerLinkActive="active">
-            <mat-icon matListItemIcon>person</mat-icon>
-            <span matListItemTitle>Profile</span>
-          </a>
         </mat-nav-list>
       </mat-sidenav>
 
@@ -105,17 +114,28 @@ import { AuthService } from '../../core/services/auth.service';
 
             <!-- User Menu -->
             <div>
-              <button mat-button [matMenuTriggerFor]="userMenu" class="flex items-center">
+              <button
+                mat-button
+                [matMenuTriggerFor]="userMenu"
+                class="flex items-center"
+              >
                 <mat-icon class="mr-2">account_circle</mat-icon>
-                <span>{{userName}}</span>
+                <span>{{ userName }}</span>
                 <mat-icon>arrow_drop_down</mat-icon>
               </button>
 
               <mat-menu #userMenu="matMenu">
-                <a mat-menu-item [routerLink]="userRole === 'VOLUNTEER' ? '/dashboard/volunteer/profile' : '/dashboard/profile'">
-                  <mat-icon>person</mat-icon>
-                  <span>Profile</span>
-                </a>
+                @if (userRole === UserRole.VOLUNTEER) {
+                  <a mat-menu-item routerLink="/dashboard/volunteer/profile">
+                    <mat-icon>person</mat-icon>
+                    <span>Profile</span>
+                  </a>
+                } @else if (userRole === UserRole.ORGANIZATION) {
+                  <a mat-menu-item routerLink="/dashboard/profile/organization">
+                    <mat-icon>business</mat-icon>
+                    <span>Profile</span>
+                  </a>
+                }
                 <button mat-menu-item (click)="onLogout()">
                   <mat-icon>exit_to_app</mat-icon>
                   <span>Logout</span>
@@ -132,33 +152,47 @@ import { AuthService } from '../../core/services/auth.service';
       </mat-sidenav-content>
     </mat-sidenav-container>
   `,
-  styles: [`
-    :host {
-      display: block;
-      height: 100vh;
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        height: 100vh;
+      }
 
-    .mat-sidenav-container {
-      height: 100%;
-    }
+      .mat-sidenav-container {
+        height: 100%;
+      }
 
-    .active {
-      background-color: rgba(var(--primary-color), 0.1);
-      color: rgb(var(--primary-color));
-    }
-  `]
+      .active {
+        background-color: rgba(var(--primary-color), 0.1);
+        color: rgb(var(--primary-color));
+      }
+
+      mat-sidenav {
+        background-color: #f8f9fa;
+        border-right: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      mat-toolbar {
+        background-color: #ffffff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      .text-primary-600 {
+        color: rgb(var(--primary-color));
+      }
+    `,
+  ],
 })
 export class DashboardLayoutComponent implements OnInit {
-  userRole: string = '';
+  userRole: UserRole | null = null;
   userName: string = '';
+  protected readonly UserRole = UserRole;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
-    this.userRole = this.authService.getUserRole();
+    this.userRole = this.authService.getUserRole() as UserRole;
     this.userName = this.authService.getUserName();
   }
 
@@ -171,7 +205,7 @@ export class DashboardLayoutComponent implements OnInit {
         console.error('Logout failed:', error);
         // Still navigate to login page even if logout fails
         this.router.navigate(['/auth/login']);
-      }
+      },
     });
   }
-} 
+}

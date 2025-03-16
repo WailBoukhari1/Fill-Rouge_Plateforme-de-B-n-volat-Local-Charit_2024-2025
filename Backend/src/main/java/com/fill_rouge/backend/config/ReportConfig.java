@@ -20,11 +20,15 @@ public class ReportConfig {
     @Bean
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager(
+            "volunteerProfiles",
             "volunteerReports",
             "organizationReports",
             "impactReports",
             "dashboardReports",
-            "customReports"
+            "customReports",
+            "skillsReports",
+            "engagementReports",
+            "trendReports"
         );
     }
     

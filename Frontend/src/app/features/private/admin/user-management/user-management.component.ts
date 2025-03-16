@@ -171,9 +171,10 @@ export class UserManagementComponent implements OnInit {
 
   getRoleColor(role: UserRole): string {
     const colors: { [key in UserRole]: string } = {
-      [UserRole.ADMIN]: 'primary',
-      [UserRole.ORGANIZATION]: 'accent',
-      [UserRole.VOLUNTEER]: 'warn'
+      [UserRole.ADMIN]: 'bg-purple-100 text-purple-800',
+      [UserRole.VOLUNTEER]: 'bg-green-100 text-green-800',
+      [UserRole.ORGANIZATION]: 'bg-blue-100 text-blue-800',
+      [UserRole.UNASSIGNED]: 'bg-gray-100 text-gray-800'
     };
     return colors[role] || '';
   }

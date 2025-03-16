@@ -55,15 +55,16 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/files/**", "/files/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/public/**",
                                 "/v3/api-docs/**", "/swagger-ui/**",
                                 "/swagger-ui.html", "/auth/**",
                                 "/api/events/upcoming", "/api/events/registered", "/api/events/waitlist")
                         .permitAll()
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated())
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -83,7 +84,7 @@ public class SecurityConfig {
                 "Access-Control-Request-Headers",
                 "X-User-ID"
         ));
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID", "Content-Disposition"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -98,8 +99,15 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:3000"));
-        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-User-ID"));
-        config.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID"));
+        config.setAllowedHeaders(Arrays.asList(
+                "Origin",
+                "Content-Type",
+                "Accept",
+                "Authorization",
+                "X-Requested-With",
+                "X-User-ID"
+        ));
+        config.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID", "Content-Disposition"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH"));
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);

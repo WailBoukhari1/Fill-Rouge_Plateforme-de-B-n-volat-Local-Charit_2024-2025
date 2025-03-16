@@ -8,24 +8,35 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("")
+@RequestMapping("/stats")
 @RequiredArgsConstructor
 @Tag(name = "Statistics", description = "Statistics management APIs")
 public class StatisticsController {
     private final StatisticsService statisticsService;
 
-    @GetMapping("/stats/volunteer")
+    @GetMapping("/volunteer/{userId}")
     @Operation(summary = "Get volunteer statistics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<StatisticsResponse.VolunteerStats> getVolunteerStats(
-            @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(statisticsService.getVolunteerStats(user.getId()));
+            @PathVariable String userId) {
+        return ResponseEntity.ok(statisticsService.getVolunteerStats(userId));
+    }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get user statistics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER', 'ORGANIZATION')")
+    public ResponseEntity<StatisticsResponse> getUserStats(
+            @PathVariable String userId) {
+        return ResponseEntity.ok(statisticsService.getStatisticsByRole(userId, null));
     }
 
     @GetMapping("/organizations/statistics")
     @Operation(summary = "Get organization statistics")
+    @PreAuthorize("hasRole('ORGANIZATION')")
     public ResponseEntity<StatisticsResponse.OrganizationStats> getOrganizationStats(
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(statisticsService.getOrganizationStats(user.getId()));
@@ -33,6 +44,7 @@ public class StatisticsController {
 
     @GetMapping("/admin/statistics")
     @Operation(summary = "Get admin statistics")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<StatisticsResponse.AdminStats> getAdminStats() {
         return ResponseEntity.ok(statisticsService.getAdminStats());
     }

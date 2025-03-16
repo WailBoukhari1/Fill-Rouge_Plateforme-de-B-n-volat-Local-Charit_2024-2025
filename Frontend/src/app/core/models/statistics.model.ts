@@ -33,30 +33,35 @@ export interface OrganizationStats {
 }
 
 export interface AdminStats {
-  // Platform overview
+  // Platform Overview
   totalUsers: number;
   activeUsers: number;
+  totalVolunteers: number;
+  totalOrganizations: number;
+  totalEvents: number;
   platformEngagementRate: number;
   
-  // Organization metrics
-  totalOrganizations: number;
+  // Organization Metrics
   verifiedOrganizations: number;
   pendingVerifications: number;
   
-  // Event metrics
-  totalEvents: number;
+  // Activity Metrics
   activeEvents: number;
   completedEvents: number;
   canceledEvents: number;
-  
-  // Resource metrics
+  totalVolunteerHours: number;
   totalResources: number;
-  resourcesByCategory: { [key: string]: number };
+  averageVolunteerHoursPerEvent: number;
   
-  // Growth metrics
-  userGrowthRate: number;
-  eventGrowthRate: number;
-  monthlyActiveUsers: number[];
+  // Growth Metrics
+  userGrowth: TimeSeriesData[];
+  eventGrowth: TimeSeriesData[];
+  eventsByCategory: { [key: string]: number };
+  
+  // Engagement Metrics
+  averageVolunteersPerEvent: number;
+  volunteerRetentionRate: number;
+  volunteersByLocation: { [key: string]: number };
 }
 
 export interface DetailedVolunteerStats {
@@ -76,7 +81,15 @@ export interface DetailedVolunteerStats {
 }
 
 export interface StatisticsResponse {
-  volunteerStats?: VolunteerStats;
-  organizationStats?: OrganizationStats;
+  userId: string;
+  userRole: string;
   adminStats?: AdminStats;
+  organizationStats?: OrganizationStats;
+  volunteerStats?: VolunteerStats;
+}
+
+export interface TimeSeriesData {
+  date: string;
+  value: number;
+  category?: string;
 } 

@@ -20,6 +20,7 @@ import com.fill_rouge.backend.dto.response.AuthResponse;
 import com.fill_rouge.backend.service.auth.AuthenticationService;
 import com.fill_rouge.backend.config.security.JwtService;
 import com.fill_rouge.backend.domain.User;
+import com.fill_rouge.backend.constant.Role;
 import com.fill_rouge.backend.repository.UserRepository;
 
 import jakarta.validation.Valid;
@@ -55,7 +56,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request,
+                                                         jakarta.servlet.http.HttpServletRequest servletRequest) {
+        // Set the client's IP address
+        request.setIpAddress(servletRequest.getRemoteAddr());
         AuthResponse response = authenticationService.login(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
     }
@@ -127,6 +131,15 @@ public class AuthController {
             // Get user email from token
             String email = jwtService.extractUsername(jwt);
             
+            // Get user and validate role
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            if (!Role.UNASSIGNED.equals(user.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("Questionnaire is only available for users with unassigned role", HttpStatus.FORBIDDEN));
+            }
+            
             // Complete questionnaire
             AuthResponse response = authenticationService.completeQuestionnaire(email, request);
             
@@ -154,9 +167,13 @@ public class AuthController {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
-            // Return questionnaire status
+            // Return questionnaire status with role information
             return ResponseEntity.ok(ApiResponse.success(
-                Map.of("completed", user.isQuestionnaireCompleted()),
+                Map.of(
+                    "completed", user.isQuestionnaireCompleted(),
+                    "canAccess", Role.UNASSIGNED.equals(user.getRole()),
+                    "currentRole", user.getRole().name()
+                ),
                 "Questionnaire status retrieved successfully"
             ));
         } catch (Exception e) {

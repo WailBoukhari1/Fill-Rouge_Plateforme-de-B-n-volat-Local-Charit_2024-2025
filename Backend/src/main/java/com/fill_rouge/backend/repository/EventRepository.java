@@ -2,6 +2,7 @@ package com.fill_rouge.backend.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -17,7 +18,7 @@ import com.fill_rouge.backend.domain.User;
 
 @Repository
 public interface EventRepository extends MongoRepository<Event, String> {
-    Page<Event> findByOrganizationId(String organizationId, Pageable pageable);
+    List<Event> findByOrganizationId(String organizationId, Pageable pageable);
     
     Page<Event> findByStatusAndStartDateAfter(EventStatus status, LocalDateTime date, Pageable pageable);
     
@@ -55,4 +56,32 @@ public interface EventRepository extends MongoRepository<Event, String> {
     List<Event> findEventsByParticipantAndDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate);
 
     Page<Event> findByStartDateAfterAndStatusOrderByStartDateAsc(LocalDateTime now, EventStatus status, Pageable pageable);
+
+    long countByOrganizationId(String organizationId);
+    
+    @Query(value = "{'organizationId': ?0, 'status': ?1, 'endDate': {$gt: ?2}}")
+    long countByOrganizationIdAndStatusAndEndDateAfter(String organizationId, String status, LocalDateTime date);
+    
+    @Query("{'organizationId': ?0, 'status': ?1, 'endDate': {$lt: ?2}}")
+    long countByOrganizationIdAndStatusAndEndDateBefore(String organizationId, String status, LocalDateTime date);
+    
+    @Query("{'organizationId': ?0, 'status': ?1, 'startDate': {$gt: ?2}}")
+    long countByOrganizationIdAndStatusAndStartDateAfter(String organizationId, String status, LocalDateTime date);
+    
+    @Query("{'status': ?0, 'endDate': {$gt: ?1}}")
+    long countByStatusAndEndDateAfter(String status, LocalDateTime date);
+    
+    @Query("{'status': ?0, 'endDate': {$lt: ?1}}")
+    long countByStatusAndEndDateBefore(String status, LocalDateTime date);
+    
+    @Query(value = "{}", fields = "{'category': 1}")
+    Map<String, Long> countByCategory();
+    
+    @Query(value = "{'createdAt': {$gte: ?0, $lte: ?1}}", fields = "{'createdAt': 1}")
+    List<Object[]> getEventGrowthByDay(LocalDateTime start, LocalDateTime end);
+
+    List<Event> findAllByOrganizationId(String organizationId);
+    
+    @Query(value = "{}", fields = "{ 'category': 1 }")
+    List<Event> findAllCategories();
 }

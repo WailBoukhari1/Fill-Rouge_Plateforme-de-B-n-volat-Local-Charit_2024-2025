@@ -4,6 +4,7 @@ import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.domain.VolunteerProfile;
+import com.fill_rouge.backend.domain.Skill;
 import com.fill_rouge.backend.dto.request.CustomReportRequest;
 import com.fill_rouge.backend.dto.response.*;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
@@ -59,7 +60,7 @@ public class ReportServiceImpl implements ReportService {
                 .totalEventsAttended((Integer) basicStats.get("participantCount"))
                 .totalHoursContributed((Integer) basicStats.get("totalHours"))
                 .averageRating((Double) basicStats.get("averageRating"))
-                .topSkills(new ArrayList<>(profile.getSkills()))
+                .topSkills(profile.getSkills().stream().map(Skill::getName).collect(Collectors.toList()))
                 .eventsByCategory(getEventsByCategory(volunteerId, startDate, endDate))
                 .achievements(profile.getBadges())
                 .reportGeneratedAt(LocalDateTime.now())
@@ -263,8 +264,9 @@ public class ReportServiceImpl implements ReportService {
     private Map<String, Integer> calculateSkillSupply() {
         return volunteerProfileRepository.findAll().stream()
                 .flatMap(volunteer -> volunteer.getSkills().stream())
+                .map(Skill::getName)
                 .collect(Collectors.groupingBy(
-                    skill -> skill,
+                    skillName -> skillName,
                     Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
                 ));
     }
@@ -505,8 +507,8 @@ public class ReportServiceImpl implements ReportService {
         long completedEvents = events.stream()
                 .filter(event -> event.getStatus() == EventStatus.COMPLETED)
                 .count();
-        return events.getTotalElements() > 0 ? 
-               (double) completedEvents / events.getTotalElements() * 100 : 0.0;
+        return events.size() > 0 ? 
+               (double) completedEvents / events.size() * 100 : 0.0;
     }
 
     private long calculateTotalParticipants() {

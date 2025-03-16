@@ -3,22 +3,22 @@ import { VolunteerState } from './volunteer.state';
 
 export const selectVolunteerState = createFeatureSelector<VolunteerState>('volunteer');
 
-export const selectVolunteerStatistics = createSelector(
+export const selectProfile = createSelector(
+  selectVolunteerState,
+  (state) => state.profile
+);
+
+export const selectStatistics = createSelector(
   selectVolunteerState,
   (state) => state.statistics
 );
 
-export const selectVolunteerHours = createSelector(
-  selectVolunteerState,
-  (state) => state.hours
-);
-
-export const selectVolunteerLoading = createSelector(
+export const selectLoading = createSelector(
   selectVolunteerState,
   (state) => state.loading
 );
 
-export const selectVolunteerError = createSelector(
+export const selectError = createSelector(
   selectVolunteerState,
   (state) => state.error
 ); 

@@ -3,15 +3,23 @@
   <div class="max-w-4xl mx-auto">
     <!-- Header -->
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
-      <p class="text-lg text-gray-600">Help us understand you better to match you with the perfect opportunities</p>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">
+        Complete Your Profile
+      </h1>
+      <p class="text-lg text-gray-600">
+        Help us understand you better to match you with the perfect
+        opportunities
+      </p>
     </div>
 
     <!-- Progress Bar -->
     <div class="mb-8">
-      <mat-progress-bar mode="determinate" [value]="getProgressValue()"></mat-progress-bar>
+      <mat-progress-bar
+        mode="determinate"
+        [value]="getProgressValue()"
+      ></mat-progress-bar>
       <div class="text-center mt-2 text-sm text-gray-600">
-        Step {{currentStep}} of {{totalSteps}}
+        Step {{ currentStep }} of {{ totalSteps }}
       </div>
     </div>
 
@@ -21,35 +29,66 @@
         <form [formGroup]="questionnaireForm">
           <mat-stepper [linear]="true" #stepper>
             <!-- Step 1: Role Selection -->
-            <mat-step [stepControl]="roleFormGroup" errorMessage="Please select a role" [completed]="isRoleFormValid()">
+            <mat-step
+              [stepControl]="roleFormGroup"
+              errorMessage="Please select a role"
+              [completed]="isRoleFormValid()"
+            >
               <ng-template matStepLabel>Select Your Role</ng-template>
               <div [formGroup]="roleFormGroup" class="role-selection space-y-6">
                 <div class="text-center">
-                  <h2 class="text-2xl font-semibold text-gray-900 mb-2">How would you like to participate?</h2>
+                  <h2 class="text-2xl font-semibold text-gray-900 mb-2">
+                    How would you like to participate?
+                  </h2>
                   <p class="text-gray-600">Choose your role in our community</p>
                 </div>
 
-                <mat-radio-group formControlName="type" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <mat-radio-group
+                  formControlName="type"
+                  class="grid grid-cols-1 md:grid-cols-2 gap-6"
+                >
                   <!-- Volunteer Option -->
-                  <div class="role-card cursor-pointer" [class.selected]="roleFormGroup.get('type')?.value === 'VOLUNTEER'">
+                  <div
+                    class="role-card cursor-pointer"
+                    [class.selected]="
+                      roleFormGroup.get('type')?.value === 'VOLUNTEER'
+                    "
+                  >
                     <mat-radio-button value="VOLUNTEER" class="w-full">
                       <div class="p-6 text-center">
-                        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <mat-icon class="text-3xl text-indigo-600">volunteer_activism</mat-icon>
+                        <div
+                          class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center"
+                        >
+                          <mat-icon class="text-3xl text-indigo-600"
+                            >volunteer_activism</mat-icon
+                          >
                         </div>
-                        <h3 class="text-xl font-medium text-gray-900 mb-2">Volunteer</h3>
-                        <p class="text-gray-600">Join our community of passionate volunteers making a difference</p>
-                        <ul class="mt-4 text-left text-sm text-gray-600 space-y-2">
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">
+                          Volunteer
+                        </h3>
+                        <p class="text-gray-600">
+                          Join our community of passionate volunteers making a
+                          difference
+                        </p>
+                        <ul
+                          class="mt-4 text-left text-sm text-gray-600 space-y-2"
+                        >
                           <li class="flex items-center">
-                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            <mat-icon class="text-green-500 mr-2 text-sm"
+                              >check_circle</mat-icon
+                            >
                             Find opportunities that match your skills
                           </li>
                           <li class="flex items-center">
-                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            <mat-icon class="text-green-500 mr-2 text-sm"
+                              >check_circle</mat-icon
+                            >
                             Flexible scheduling options
                           </li>
                           <li class="flex items-center">
-                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            <mat-icon class="text-green-500 mr-2 text-sm"
+                              >check_circle</mat-icon
+                            >
                             Make a real impact in your community
                           </li>
                         </ul>
@@ -58,25 +97,46 @@
                   </div>
 
                   <!-- Organization Option -->
-                  <div class="role-card cursor-pointer" [class.selected]="roleFormGroup.get('type')?.value === 'ORGANIZATION'">
+                  <div
+                    class="role-card cursor-pointer"
+                    [class.selected]="
+                      roleFormGroup.get('type')?.value === 'ORGANIZATION'
+                    "
+                  >
                     <mat-radio-button value="ORGANIZATION" class="w-full">
                       <div class="p-6 text-center">
-                        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <mat-icon class="text-3xl text-indigo-600">business</mat-icon>
+                        <div
+                          class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center"
+                        >
+                          <mat-icon class="text-3xl text-indigo-600"
+                            >business</mat-icon
+                          >
                         </div>
-                        <h3 class="text-xl font-medium text-gray-900 mb-2">Organization</h3>
-                        <p class="text-gray-600">Connect with volunteers and expand your impact</p>
-                        <ul class="mt-4 text-left text-sm text-gray-600 space-y-2">
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">
+                          Organization
+                        </h3>
+                        <p class="text-gray-600">
+                          Connect with volunteers and expand your impact
+                        </p>
+                        <ul
+                          class="mt-4 text-left text-sm text-gray-600 space-y-2"
+                        >
                           <li class="flex items-center">
-                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            <mat-icon class="text-green-500 mr-2 text-sm"
+                              >check_circle</mat-icon
+                            >
                             Post volunteer opportunities
                           </li>
                           <li class="flex items-center">
-                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            <mat-icon class="text-green-500 mr-2 text-sm"
+                              >check_circle</mat-icon
+                            >
                             Manage volunteers efficiently
                           </li>
                           <li class="flex items-center">
-                            <mat-icon class="text-green-500 mr-2 text-sm">check_circle</mat-icon>
+                            <mat-icon class="text-green-500 mr-2 text-sm"
+                              >check_circle</mat-icon
+                            >
                             Track impact and engagement
                           </li>
                         </ul>
@@ -86,7 +146,12 @@
                 </mat-radio-group>
 
                 <div class="flex justify-end mt-6">
-                  <button mat-raised-button color="primary" (click)="goToNextStep()" [disabled]="!isRoleFormValid()">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="goToNextStep()"
+                    [disabled]="!isRoleFormValid()"
+                  >
                     Next <mat-icon>arrow_forward</mat-icon>
                   </button>
                 </div>
@@ -94,58 +159,137 @@
             </mat-step>
 
             <!-- Step 2: Contact Information -->
-            <mat-step [stepControl]="contactFormGroup" errorMessage="Please complete contact information" [completed]="isContactFormValid()">
+            <mat-step
+              [stepControl]="contactFormGroup"
+              errorMessage="Please complete contact information"
+              [completed]="isContactFormValid()"
+            >
               <ng-template matStepLabel>Contact Information</ng-template>
               <div [formGroup]="contactFormGroup" class="space-y-6">
                 <div class="text-center">
-                  <h2 class="text-2xl font-semibold text-gray-900 mb-2">Contact Information</h2>
+                  <h2 class="text-2xl font-semibold text-gray-900 mb-2">
+                    Contact Information
+                  </h2>
                   <p class="text-gray-600">How can we reach you?</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Phone Number <span class="required-field">*</span></mat-label>
-                    <input matInput formControlName="phoneNumber" placeholder="Example: 0612345678">
-                    <mat-icon matPrefix class="mr-2 text-gray-500">phone</mat-icon>
-                    <mat-error *ngIf="contactFormGroup.get('phoneNumber')?.hasError('required')">
+                    <mat-label
+                      >Phone Number
+                      <span class="required-field">*</span></mat-label
+                    >
+                    <input
+                      matInput
+                      formControlName="phoneNumber"
+                      placeholder="Example: 0612345678"
+                    />
+                    <mat-icon matPrefix class="mr-2 text-gray-500"
+                      >phone</mat-icon
+                    >
+                    <mat-error
+                      *ngIf="
+                        contactFormGroup
+                          .get('phoneNumber')
+                          ?.hasError('required')
+                      "
+                    >
                       Phone number is required
                     </mat-error>
-                    <mat-error *ngIf="contactFormGroup.get('phoneNumber')?.hasError('pattern')">
+                    <mat-error
+                      *ngIf="
+                        contactFormGroup.get('phoneNumber')?.hasError('pattern')
+                      "
+                    >
                       Please enter a valid Moroccan phone number
                     </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Address <span class="required-field">*</span></mat-label>
-                    <input matInput formControlName="address" placeholder="Your street address">
-                    <mat-icon matPrefix class="mr-2 text-gray-500">location_on</mat-icon>
-                    <mat-error *ngIf="contactFormGroup.get('address')?.hasError('required')">
+                    <mat-label
+                      >Address <span class="required-field">*</span></mat-label
+                    >
+                    <input
+                      matInput
+                      formControlName="address"
+                      placeholder="Your street address"
+                    />
+                    <mat-icon matPrefix class="mr-2 text-gray-500"
+                      >location_on</mat-icon
+                    >
+                    <mat-error
+                      *ngIf="
+                        contactFormGroup.get('address')?.hasError('required')
+                      "
+                    >
                       Address is required
                     </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Province <span class="required-field">*</span></mat-label>
-                    <mat-select formControlName="province" (selectionChange)="onProvinceChange()">
-                      <mat-option *ngFor="let province of moroccanProvinces" [value]="province">
-                        {{province}}
+                    <mat-label
+                      >Province <span class="required-field">*</span></mat-label
+                    >
+                    <mat-select
+                      formControlName="province"
+                      (selectionChange)="onProvinceChange()"
+                    >
+                      <mat-option
+                        *ngFor="let province of moroccanProvinces"
+                        [value]="province"
+                      >
+                        {{ province }}
                       </mat-option>
                     </mat-select>
-                    <mat-icon matPrefix class="mr-2 text-gray-500">public</mat-icon>
-                    <mat-error *ngIf="contactFormGroup.get('province')?.hasError('required')">
+                    <mat-icon matPrefix class="mr-2 text-gray-500"
+                      >public</mat-icon
+                    >
+                    <mat-error
+                      *ngIf="
+                        contactFormGroup.get('province')?.hasError('required')
+                      "
+                    >
                       Province is required
                     </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>City <span class="required-field">*</span></mat-label>
-                    <mat-select formControlName="city">
-                      <mat-option *ngFor="let city of citiesInProvince" [value]="city">
-                        {{city}}
+                    <mat-label
+                      >City <span class="required-field">*</span></mat-label
+                    >
+                    <mat-select
+                      formControlName="city"
+                      [disabled]="
+                        isLoadingCities ||
+                        !contactFormGroup.get('province')?.value
+                      "
+                    >
+                      <mat-option *ngIf="isLoadingCities">
+                        <mat-spinner diameter="20"></mat-spinner>
+                        Loading cities...
+                      </mat-option>
+                      <mat-option
+                        *ngIf="
+                          !isLoadingCities &&
+                          citiesInProvince.length === 0 &&
+                          contactFormGroup.get('province')?.value
+                        "
+                      >
+                        No cities available for this province
+                      </mat-option>
+                      <mat-option
+                        *ngFor="let city of citiesInProvince"
+                        [value]="city"
+                      >
+                        {{ city }}
                       </mat-option>
                     </mat-select>
-                    <mat-icon matPrefix class="mr-2 text-gray-500">location_city</mat-icon>
-                    <mat-error *ngIf="contactFormGroup.get('city')?.hasError('required')">
+                    <mat-icon matPrefix class="mr-2 text-gray-500"
+                      >location_city</mat-icon
+                    >
+                    <mat-error
+                      *ngIf="contactFormGroup.get('city')?.hasError('required')"
+                    >
                       City is required
                     </mat-error>
                   </mat-form-field>
@@ -155,7 +299,12 @@
                   <button mat-button matStepperPrevious>
                     <mat-icon>arrow_back</mat-icon> Back
                   </button>
-                  <button mat-raised-button color="primary" (click)="goToNextStep()" [disabled]="!isContactFormValid()">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="goToNextStep()"
+                    [disabled]="!isContactFormValid()"
+                  >
                     Next <mat-icon>arrow_forward</mat-icon>
                   </button>
                 </div>
@@ -163,91 +312,364 @@
             </mat-step>
 
             <!-- Step 3: Role-specific Information -->
-            <mat-step [stepControl]="roleSpecificFormGroup" errorMessage="Please complete all required fields" [completed]="isRoleSpecificFormValid()">
+            <mat-step
+              [stepControl]="roleSpecificFormGroup"
+              errorMessage="Please complete all required fields"
+              [completed]="isRoleSpecificFormValid()"
+            >
               <ng-template matStepLabel>Additional Information</ng-template>
               <div [formGroup]="roleSpecificFormGroup">
                 <!-- Organization Form -->
-                <div *ngIf="isOrganization()" formGroupName="organization" class="space-y-6">
+                <div
+                  *ngIf="isOrganization()"
+                  formGroupName="organization"
+                  class="space-y-6"
+                >
                   <div class="text-center">
-                    <h2 class="text-2xl font-semibold text-gray-900 mb-2">Organization Details</h2>
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-2">
+                      Organization Details
+                    </h2>
                     <p class="text-gray-600">Tell us about your organization</p>
                   </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Organization Type <span class="required-field">*</span></mat-label>
-                      <mat-select formControlName="type">
-                        <mat-option *ngFor="let type of organizationTypes" [value]="type">
-                          {{type}}
-                        </mat-option>
+                      <mat-label>Organization Type</mat-label>
+                      <mat-select formControlName="type" required>
+                        <mat-option value="NGO"
+                          >Non-Governmental Organization (NGO)</mat-option
+                        >
+                        <mat-option value="NONPROFIT"
+                          >Non-Profit Organization</mat-option
+                        >
+                        <mat-option value="CHARITY"
+                          >Charitable Organization</mat-option
+                        >
+                        <mat-option value="FOUNDATION">Foundation</mat-option>
+                        <mat-option value="OTHER">Other</mat-option>
                       </mat-select>
-                      <mat-icon matPrefix class="mr-2 text-gray-500">category</mat-icon>
-                      <mat-error *ngIf="roleSpecificFormGroup.get('organization.type')?.hasError('required')">
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.type')
+                            ?.hasError('required')
+                        "
+                      >
                         Organization type is required
                       </mat-error>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Founded Year</mat-label>
-                      <input matInput type="number" formControlName="foundedYear" [min]="1800" [max]="currentYear">
-                      <mat-icon matPrefix class="mr-2 text-gray-500">calendar_today</mat-icon>
+                      <mat-label>Organization Name</mat-label>
+                      <input matInput formControlName="name" required />
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.name')
+                            ?.hasError('required')
+                        "
+                      >
+                        Organization name is required
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.name')
+                            ?.hasError('minlength')
+                        "
+                      >
+                        Name must be at least 2 characters long
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.name')
+                            ?.hasError('maxlength')
+                        "
+                      >
+                        Name cannot exceed 100 characters
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.name')
+                            ?.hasError('pattern')
+                        "
+                      >
+                        Name can only contain letters, numbers, spaces, and
+                        basic punctuation
+                      </mat-error>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Website</mat-label>
-                      <input matInput formControlName="website" placeholder="https://example.com">
-                      <mat-icon matPrefix class="mr-2 text-gray-500">language</mat-icon>
-                      <mat-error *ngIf="roleSpecificFormGroup.get('organization.website')?.hasError('pattern')">
+                      <mat-label>Description</mat-label>
+                      <textarea
+                        matInput
+                        formControlName="description"
+                        rows="4"
+                        required
+                      ></textarea>
+                      <mat-hint align="end"
+                        >{{
+                          roleSpecificFormGroup.get("organization.description")
+                            ?.value?.length || 0
+                        }}/2000</mat-hint
+                      >
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.description')
+                            ?.hasError('required')
+                        "
+                      >
+                        Description is required
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.description')
+                            ?.hasError('minlength')
+                        "
+                      >
+                        Description must be at least 20 characters long
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.description')
+                            ?.hasError('maxlength')
+                        "
+                      >
+                        Description cannot exceed 2000 characters
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Mission Statement</mat-label>
+                      <textarea
+                        matInput
+                        formControlName="missionStatement"
+                        rows="3"
+                        required
+                      ></textarea>
+                      <mat-hint align="end"
+                        >{{
+                          roleSpecificFormGroup.get(
+                            "organization.missionStatement"
+                          )?.value?.length || 0
+                        }}/1000</mat-hint
+                      >
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.missionStatement')
+                            ?.hasError('required')
+                        "
+                      >
+                        Mission statement is required
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.missionStatement')
+                            ?.hasError('minlength')
+                        "
+                      >
+                        Mission statement must be at least 20 characters long
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.missionStatement')
+                            ?.hasError('maxlength')
+                        "
+                      >
+                        Mission statement cannot exceed 1000 characters
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Vision (Optional)</mat-label>
+                      <textarea
+                        matInput
+                        formControlName="vision"
+                        rows="3"
+                      ></textarea>
+                      <mat-hint align="end"
+                        >{{
+                          roleSpecificFormGroup.get("organization.vision")
+                            ?.value?.length || 0
+                        }}/1000</mat-hint
+                      >
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.vision')
+                            ?.hasError('maxlength')
+                        "
+                      >
+                        Vision cannot exceed 1000 characters
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Website (Optional)</mat-label>
+                      <input matInput formControlName="website" type="url" />
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.website')
+                            ?.hasError('pattern')
+                        "
+                      >
                         Please enter a valid website URL
                       </mat-error>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Mission Statement <span class="required-field">*</span></mat-label>
-                      <textarea matInput formControlName="missionStatement" rows="3" placeholder="What is your organization's mission?"></textarea>
-                      <mat-icon matPrefix class="mr-2 text-gray-500">assignment</mat-icon>
-                      <mat-error *ngIf="roleSpecificFormGroup.get('organization.missionStatement')?.hasError('required')">
-                        Mission statement is required
+                      <mat-label>Registration Number (Optional)</mat-label>
+                      <input matInput formControlName="registrationNumber" />
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.registrationNumber')
+                            ?.hasError('pattern')
+                        "
+                      >
+                        Please enter a valid registration number (letters,
+                        numbers, hyphens, and slashes only)
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Tax ID (Optional)</mat-label>
+                      <input matInput formControlName="taxId" />
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.taxId')
+                            ?.hasError('pattern')
+                        "
+                      >
+                        Please enter a valid tax ID (letters, numbers, hyphens,
+                        and slashes only)
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Focus Areas</mat-label>
+                      <mat-select
+                        formControlName="focusAreas"
+                        multiple
+                        required
+                      >
+                        <mat-option
+                          *ngFor="let area of focusAreaOptions"
+                          [value]="area.value"
+                        >
+                          {{ area.label }}
+                        </mat-option>
+                      </mat-select>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.focusAreas')
+                            ?.hasError('required')
+                        "
+                      >
+                        Please select at least one focus area
+                      </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="w-full">
+                      <mat-label>Founded Year (Optional)</mat-label>
+                      <input
+                        matInput
+                        formControlName="foundedYear"
+                        type="number"
+                      />
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.foundedYear')
+                            ?.hasError('min')
+                        "
+                      >
+                        Year must be 1800 or later
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('organization.foundedYear')
+                            ?.hasError('max')
+                        "
+                      >
+                        Year cannot be in the future
                       </mat-error>
                     </mat-form-field>
                   </div>
 
                   <!-- Social Media Section -->
                   <div class="mt-8">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media Presence</h3>
-                    <div formGroupName="socialMedia" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                      Social Media Presence
+                    </h3>
+                    <div
+                      formGroupName="socialMedia"
+                      class="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    >
                       <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Facebook</mat-label>
-                        <input matInput formControlName="facebook" placeholder="Facebook profile URL">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">facebook</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.facebook')?.hasError('pattern')">
+                        <input matInput formControlName="facebook" />
+                        <mat-error
+                          *ngIf="
+                            roleSpecificFormGroup
+                              .get('organization.socialMedia.facebook')
+                              ?.hasError('pattern')
+                          "
+                        >
                           Please enter a valid Facebook URL
                         </mat-error>
                       </mat-form-field>
 
                       <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Twitter</mat-label>
-                        <input matInput formControlName="twitter" placeholder="Twitter profile URL">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">twitter</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.twitter')?.hasError('pattern')">
+                        <input matInput formControlName="twitter" />
+                        <mat-error
+                          *ngIf="
+                            roleSpecificFormGroup
+                              .get('organization.socialMedia.twitter')
+                              ?.hasError('pattern')
+                          "
+                        >
                           Please enter a valid Twitter URL
                         </mat-error>
                       </mat-form-field>
 
                       <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Instagram</mat-label>
-                        <input matInput formControlName="instagram" placeholder="Instagram profile URL">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">photo_camera</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.instagram')?.hasError('pattern')">
+                        <input matInput formControlName="instagram" />
+                        <mat-error
+                          *ngIf="
+                            roleSpecificFormGroup
+                              .get('organization.socialMedia.instagram')
+                              ?.hasError('pattern')
+                          "
+                        >
                           Please enter a valid Instagram URL
                         </mat-error>
                       </mat-form-field>
 
                       <mat-form-field appearance="outline" class="w-full">
                         <mat-label>LinkedIn</mat-label>
-                        <input matInput formControlName="linkedin" placeholder="LinkedIn profile URL">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">linkedin</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('organization.socialMedia.linkedin')?.hasError('pattern')">
+                        <input matInput formControlName="linkedin" />
+                        <mat-error
+                          *ngIf="
+                            roleSpecificFormGroup
+                              .get('organization.socialMedia.linkedin')
+                              ?.hasError('pattern')
+                          "
+                        >
                           Please enter a valid LinkedIn URL
                         </mat-error>
                       </mat-form-field>
@@ -256,129 +678,241 @@
                 </div>
 
                 <!-- Volunteer Form -->
-                <div *ngIf="isVolunteer()" formGroupName="volunteer" class="space-y-6">
+                <div
+                  *ngIf="isVolunteer()"
+                  formGroupName="volunteer"
+                  class="space-y-6"
+                >
                   <div class="text-center">
-                    <h2 class="text-2xl font-semibold text-gray-900 mb-2">Volunteer Details</h2>
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-2">
+                      Volunteer Details
+                    </h2>
                     <p class="text-gray-600">Tell us about yourself</p>
                   </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <mat-form-field appearance="outline" class="w-full">
-                      <mat-label>Bio <span class="required-field">*</span></mat-label>
-                      <textarea matInput formControlName="bio" rows="3" placeholder="Tell us about yourself"></textarea>
-                      <mat-icon matPrefix class="mr-2 text-gray-500">person</mat-icon>
-                      <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.bio')?.hasError('required')">
+                      <mat-label
+                        >Bio <span class="required-field">*</span></mat-label
+                      >
+                      <textarea
+                        matInput
+                        formControlName="bio"
+                        rows="3"
+                        placeholder="Tell us about yourself"
+                      ></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500"
+                        >person</mat-icon
+                      >
+                      <mat-error
+                        *ngIf="
+                          roleSpecificFormGroup
+                            .get('volunteer.bio')
+                            ?.hasError('required')
+                        "
+                      >
                         Bio is required
                       </mat-error>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-label>Education</mat-label>
-                      <textarea matInput formControlName="education" rows="3" placeholder="Your educational background"></textarea>
-                      <mat-icon matPrefix class="mr-2 text-gray-500">school</mat-icon>
+                      <textarea
+                        matInput
+                        formControlName="education"
+                        rows="3"
+                        placeholder="Your educational background"
+                      ></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500"
+                        >school</mat-icon
+                      >
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-label>Experience</mat-label>
-                      <textarea matInput formControlName="experience" rows="3" placeholder="Your relevant experience"></textarea>
-                      <mat-icon matPrefix class="mr-2 text-gray-500">work</mat-icon>
+                      <textarea
+                        matInput
+                        formControlName="experience"
+                        rows="3"
+                        placeholder="Your relevant experience"
+                      ></textarea>
+                      <mat-icon matPrefix class="mr-2 text-gray-500"
+                        >work</mat-icon
+                      >
                     </mat-form-field>
 
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-label>Special Needs</mat-label>
-                      <input matInput formControlName="specialNeeds" placeholder="Any special requirements or accommodations">
-                      <mat-icon matPrefix class="mr-2 text-gray-500">accessibility</mat-icon>
+                      <input
+                        matInput
+                        formControlName="specialNeeds"
+                        placeholder="Any special requirements or accommodations"
+                      />
+                      <mat-icon matPrefix class="mr-2 text-gray-500"
+                        >accessibility</mat-icon
+                      >
                     </mat-form-field>
                   </div>
 
                   <!-- Skills Section -->
                   <div class="mt-8">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Skills & Interests</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                      Skills & Interests
+                    </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Skills</mat-label>
                         <mat-chip-grid #chipGrid>
-                          <mat-chip-row *ngFor="let skill of skills" (removed)="removeSkill(skill)">
-                            {{skill}}
+                          <mat-chip-row
+                            *ngFor="let skill of skills"
+                            (removed)="removeSkill(skill)"
+                          >
+                            {{ skill }}
                             <button matChipRemove>
                               <mat-icon>cancel</mat-icon>
                             </button>
                           </mat-chip-row>
                         </mat-chip-grid>
-                        <input placeholder="New skill..."
-                               [matChipInputFor]="chipGrid"
-                               [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                               (matChipInputTokenEnd)="addSkill($event)">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">psychology</mat-icon>
+                        <input
+                          placeholder="New skill..."
+                          [matChipInputFor]="chipGrid"
+                          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                          (matChipInputTokenEnd)="addSkill($event)"
+                        />
+                        <mat-icon matPrefix class="mr-2 text-gray-500"
+                          >psychology</mat-icon
+                        >
                       </mat-form-field>
 
                       <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Interests</mat-label>
                         <mat-chip-grid #chipGrid2>
-                          <mat-chip-row *ngFor="let interest of interests" (removed)="removeInterest(interest)">
-                            {{interest}}
+                          <mat-chip-row
+                            *ngFor="let interest of interests"
+                            (removed)="removeInterest(interest)"
+                          >
+                            {{ interest }}
                             <button matChipRemove>
                               <mat-icon>cancel</mat-icon>
                             </button>
                           </mat-chip-row>
                         </mat-chip-grid>
-                        <input placeholder="New interest..."
-                               [matChipInputFor]="chipGrid2"
-                               [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                               (matChipInputTokenEnd)="addInterest($event)">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">favorite</mat-icon>
+                        <input
+                          placeholder="New interest..."
+                          [matChipInputFor]="chipGrid2"
+                          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                          (matChipInputTokenEnd)="addInterest($event)"
+                        />
+                        <mat-icon matPrefix class="mr-2 text-gray-500"
+                          >favorite</mat-icon
+                        >
                       </mat-form-field>
                     </div>
                   </div>
 
                   <!-- Languages Section -->
                   <div class="mt-8">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Languages</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                      Languages
+                    </h3>
                     <mat-form-field appearance="outline" class="w-full">
                       <mat-label>Languages</mat-label>
                       <mat-chip-grid #chipGrid3>
-                        <mat-chip-row *ngFor="let language of languages" (removed)="removeLanguage(language)">
-                          {{language}}
+                        <mat-chip-row
+                          *ngFor="let language of languages"
+                          (removed)="removeLanguage(language)"
+                        >
+                          {{ language }}
                           <button matChipRemove>
                             <mat-icon>cancel</mat-icon>
                           </button>
                         </mat-chip-row>
                       </mat-chip-grid>
-                      <input placeholder="New language..."
-                             [matChipInputFor]="chipGrid3"
-                             [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                             (matChipInputTokenEnd)="addLanguage($event)">
-                      <mat-icon matPrefix class="mr-2 text-gray-500">translate</mat-icon>
+                      <input
+                        placeholder="New language..."
+                        [matChipInputFor]="chipGrid3"
+                        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                        (matChipInputTokenEnd)="addLanguage($event)"
+                      />
+                      <mat-icon matPrefix class="mr-2 text-gray-500"
+                        >translate</mat-icon
+                      >
                     </mat-form-field>
                   </div>
 
                   <!-- Emergency Contact Section -->
                   <div class="mt-8">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Emergency Contact</h3>
-                    <div formGroupName="emergencyContact" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                      Emergency Contact
+                    </h3>
+                    <div
+                      formGroupName="emergencyContact"
+                      class="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    >
                       <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>Name <span class="required-field">*</span></mat-label>
-                        <input matInput formControlName="name" placeholder="Emergency contact name">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">person</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.name')?.hasError('required')">
+                        <mat-label
+                          >Name <span class="required-field">*</span></mat-label
+                        >
+                        <input
+                          matInput
+                          formControlName="name"
+                          placeholder="Emergency contact name"
+                        />
+                        <mat-icon matPrefix class="mr-2 text-gray-500"
+                          >person</mat-icon
+                        >
+                        <mat-error
+                          *ngIf="
+                            roleSpecificFormGroup
+                              .get('volunteer.emergencyContact.name')
+                              ?.hasError('required')
+                          "
+                        >
                           Emergency contact name is required
                         </mat-error>
                       </mat-form-field>
 
                       <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Relationship</mat-label>
-                        <input matInput formControlName="relationship" placeholder="Relationship to you">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">people</mat-icon>
+                        <input
+                          matInput
+                          formControlName="relationship"
+                          placeholder="Relationship to you"
+                        />
+                        <mat-icon matPrefix class="mr-2 text-gray-500"
+                          >people</mat-icon
+                        >
                       </mat-form-field>
 
                       <mat-form-field appearance="outline" class="w-full">
-                        <mat-label>Phone <span class="required-field">*</span></mat-label>
-                        <input matInput formControlName="phone" placeholder="Emergency contact phone">
-                        <mat-icon matPrefix class="mr-2 text-gray-500">phone</mat-icon>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.phone')?.hasError('required')">
+                        <mat-label
+                          >Phone
+                          <span class="required-field">*</span></mat-label
+                        >
+                        <input
+                          matInput
+                          formControlName="phone"
+                          placeholder="Emergency contact phone"
+                        />
+                        <mat-icon matPrefix class="mr-2 text-gray-500"
+                          >phone</mat-icon
+                        >
+                        <mat-error
+                          *ngIf="
+                            roleSpecificFormGroup
+                              .get('volunteer.emergencyContact.phone')
+                              ?.hasError('required')
+                          "
+                        >
                           Emergency contact phone is required
                         </mat-error>
-                        <mat-error *ngIf="roleSpecificFormGroup.get('volunteer.emergencyContact.phone')?.hasError('pattern')">
+                        <mat-error
+                          *ngIf="
+                            roleSpecificFormGroup
+                              .get('volunteer.emergencyContact.phone')
+                              ?.hasError('pattern')
+                          "
+                        >
                           Please enter a valid phone number
                         </mat-error>
                       </mat-form-field>
@@ -391,7 +925,12 @@
                 <button mat-button matStepperPrevious>
                   <mat-icon>arrow_back</mat-icon> Back
                 </button>
-                <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isRoleSpecificFormValid()">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="onSubmit()"
+                  [disabled]="!isRoleSpecificFormValid()"
+                >
                   Submit <mat-icon>check</mat-icon>
                 </button>
               </div>

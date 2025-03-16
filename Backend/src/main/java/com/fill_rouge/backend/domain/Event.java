@@ -128,4 +128,28 @@ public class Event {
             .filter(p -> p.getStatus() == EventParticipationStatus.ATTENDED)
             .count());
     }
+
+    public int getParticipantCount() {
+        return registeredParticipants.size();
+    }
+
+    public Double getRating() {
+        return averageRating;
+    }
+
+    public EventCategory getCategory() {
+        return category;
+    }
+
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
+    }
+
+    public EventStatus getStatus() {
+        return status;
+    }
 } 

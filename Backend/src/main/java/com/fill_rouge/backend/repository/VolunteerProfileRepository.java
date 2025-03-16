@@ -1,6 +1,7 @@
 package com.fill_rouge.backend.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -44,4 +45,7 @@ public interface VolunteerProfileRepository extends MongoRepository<VolunteerPro
     Optional<VolunteerProfile> findByUserEmail(String email);
 
     Optional<VolunteerProfile> findByUserId(String userId);
+
+    @Query(value = "{}", fields = "{'location': 1}")
+    Map<String, Long> countByLocation();
 } 

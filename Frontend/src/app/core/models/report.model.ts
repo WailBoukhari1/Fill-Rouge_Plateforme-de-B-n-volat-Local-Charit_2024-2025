@@ -1,8 +1,12 @@
-export enum ReportType {
-  USER = 'USER',
-  EVENT = 'EVENT',
-  ORGANIZATION = 'ORGANIZATION',
-  VOLUNTEER = 'VOLUNTEER'
+export interface Report {
+  id: string;
+  type: string;
+  format: string;
+  generatedAt: Date;
+  downloadUrl?: string;
+  body?: any;
+  url?: string;
+  toJSON(): any;
 }
 
 export interface OverviewStatistics {
@@ -29,6 +33,8 @@ export interface EventStatistics {
   averageRating: number;
 }
 
+export type ReportType = 'USER' | 'EVENT' | 'ORGANIZATION' | 'VOLUNTEER';
+
 export interface ReportRequest {
   type: ReportType;
   startDate?: Date;
@@ -39,18 +45,6 @@ export interface ReportResponse {
   fileUrl: string;
   fileName: string;
   generatedAt: Date;
-}
-
-export interface Report {
-  id: string;
-  title: string;
-  type: ReportType;
-  data: any;
-  createdAt: Date;
-  createdBy: string;
-  status: ReportStatus;
-  filters?: ReportFilter[];
-  downloadUrl?: string;
 }
 
 export enum ReportStatus {

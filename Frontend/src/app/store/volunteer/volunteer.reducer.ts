@@ -1,32 +1,25 @@
 import { createReducer, on } from '@ngrx/store';
 import * as VolunteerActions from './volunteer.actions';
-import { VolunteerState } from './volunteer.state';
-
-export const initialState: VolunteerState = {
-  statistics: null,
-  detailedStats: null,
-  hours: [],
-  loading: false,
-  error: null
-};
+import { initialState } from './volunteer.state';
+import { VolunteerProfile, VolunteerStatistics } from '../../core/services/volunteer.service';
 
 export const volunteerReducer = createReducer(
   initialState,
-
-  // Statistics
+  
+  // Load Statistics
   on(VolunteerActions.loadStatistics, state => ({
     ...state,
     loading: true,
     error: null
   })),
-
+  
   on(VolunteerActions.loadStatisticsSuccess, (state, { statistics }) => ({
     ...state,
     statistics,
     loading: false,
     error: null
   })),
-
+  
   on(VolunteerActions.loadStatisticsFailure, (state, { error }) => ({
     ...state,
     loading: false,
@@ -54,22 +47,41 @@ export const volunteerReducer = createReducer(
   })),
 
   // Hours
-  on(VolunteerActions.loadHours, state => ({
+  on(VolunteerActions.loadVolunteerHours, state => ({
     ...state,
     loading: true,
     error: null
   })),
 
-  on(VolunteerActions.loadHoursSuccess, (state, { hours }) => ({
+  on(VolunteerActions.loadVolunteerHoursSuccess, (state, { hours }) => ({
     ...state,
     hours,
     loading: false,
     error: null
   })),
 
-  on(VolunteerActions.loadHoursFailure, (state, { error }) => ({
+  on(VolunteerActions.loadVolunteerHoursFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
+  })),
+
+  // Profile
+  on(VolunteerActions.loadProfile, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(VolunteerActions.loadProfileSuccess, (state, { profile }) => ({
+    ...state,
+    profile,
+    loading: false
+  })),
+
+  on(VolunteerActions.loadProfileFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false
   }))
 ); 
