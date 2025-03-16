@@ -22,6 +22,7 @@ import { UserRole } from '../../core/models/auth.models';
     MatIconModule,
     MatListModule,
     MatMenuModule,
+    MatMenuModule,
   ],
   template: `
     <mat-sidenav-container class="h-screen">
@@ -34,7 +35,7 @@ import { UserRole } from '../../core/models/auth.models';
 
         <!-- Navigation Menu -->
         <mat-nav-list>
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+          <a mat-list-item routerLink="/" routerLinkActive="active">
             <mat-icon matListItemIcon>dashboard</mat-icon>
             <span matListItemTitle>Dashboard</span>
           </a>
@@ -52,7 +53,7 @@ import { UserRole } from '../../core/models/auth.models';
               <mat-icon matListItemIcon>event_available</mat-icon>
               <span matListItemTitle>Events</span>
             </a>
-            <a mat-list-item routerLink="/dashboard/reports" routerLinkActive="active">
+            <a mat-list-item routerLink="/reports" routerLinkActive="active">
               <mat-icon matListItemIcon>assessment</mat-icon>
               <span matListItemTitle>Reports</span>
             </a>
@@ -68,11 +69,11 @@ import { UserRole } from '../../core/models/auth.models';
               <mat-icon matListItemIcon>event</mat-icon>
               <span matListItemTitle>My Events</span>
             </a>
-            <a mat-list-item routerLink="/dashboard/volunteer/hours" routerLinkActive="active">
+            <a mat-list-item routerLink="/volunteer/hours" routerLinkActive="active">
               <mat-icon matListItemIcon>schedule</mat-icon>
               <span matListItemTitle>My Hours</span>
             </a>
-            <a mat-list-item routerLink="/dashboard/volunteer/achievements" routerLinkActive="active">
+            <a mat-list-item routerLink="/volunteer/achievements" routerLinkActive="active">
               <mat-icon matListItemIcon>emoji_events</mat-icon>
               <span matListItemTitle>Achievements</span>
             </a>

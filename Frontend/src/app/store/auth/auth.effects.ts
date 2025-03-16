@@ -265,6 +265,10 @@ export class AuthEffects {
               console.log('Navigating to questionnaire for unassigned role');
               this.router.navigate(['/auth/questionnaire']);
               break;
+            case UserRole.UNASSIGNED:
+              console.log('Navigating to questionnaire for unassigned role');
+              this.router.navigate(['/auth/questionnaire']);
+              break;
             default:
               console.error('Unknown role:', user.role);
               this.router.navigate(['/dashboard']);
