@@ -6,12 +6,12 @@ export enum UserRole {
 }
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: UserRole;
-  roles?: string[];
+  roles: string[];
   phoneNumber?: string;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
@@ -21,7 +21,7 @@ export interface User {
   profilePicture?: string;
   lastLoginIp?: string;
   lastLoginAt?: string;
-  questionnaireCompleted: boolean;
+  questionnaireCompleted?: boolean;
 }
 
 export interface AuthState {

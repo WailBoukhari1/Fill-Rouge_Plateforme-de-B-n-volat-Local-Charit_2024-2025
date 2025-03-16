@@ -4,55 +4,16 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api.response.model';
-import { StatisticsResponse, AdminStats, OrganizationStats, VolunteerStats, TimeSeriesData } from '../models/statistics.model';
+import { 
+  StatisticsResponse, 
+  TimeSeriesData,
+  VolunteerStatistics,
+  OrganizationStatistics,
+  AdminStatistics
+} from '../models/statistics.model';
 
-export interface VolunteerStatistics {
-  totalEventsParticipated: number;
-  activeEvents: number;
-  completedEvents: number;
-  totalVolunteerHours: number;
-  reliabilityScore: number;
-  averageEventRating: number;
-  skillsEndorsements: number;
-  peopleImpacted: number;
-  organizationsSupported: number;
-  hoursContributed: { date: string; hours: number }[];
-  eventsByCategory: { [key: string]: number };
-  skillsDistribution: { [key: string]: number };
-  monthlyParticipation: { month: string; events: number }[];
-}
-
-export interface OrganizationStatistics {
-  totalEvents: number;
-  activeEvents: number;
-  completedEvents: number;
-  totalVolunteers: number;
-  totalVolunteerHours: number;
-  averageEventRating: number;
-  peopleImpacted: number;
-  eventCategories: number;
-  activeVolunteers: number;
-  volunteerEngagement: { month: string; volunteers: number }[];
-  eventDistribution: { [key: string]: number };
-  volunteerRetention: { month: string; retention: number }[];
-  eventSuccessRate: { month: string; rate: number }[];
-}
-
-export interface AdminStatistics {
-  totalUsers: number;
-  totalVolunteers: number;
-  totalOrganizations: number;
-  totalEvents: number;
-  totalVolunteerHours: number;
-  activeUsers: number;
-  totalPeopleImpacted: number;
-  totalEventCategories: number;
-  activeOrganizations: number;
-  userGrowth: { month: string; users: number }[];
-  eventDistribution: { [key: string]: number };
-  platformGrowth: { month: string; growth: number }[];
-  userEngagement: { month: string; engagement: number }[];
-}
+// Re-export the interfaces so they can be imported from this service
+export { VolunteerStatistics, OrganizationStatistics, AdminStatistics } from '../models/statistics.model';
 
 @Injectable({
   providedIn: 'root'
@@ -68,7 +29,9 @@ export class StatisticsService {
   }
 
   getVolunteerStatistics(userId: string): Observable<VolunteerStatistics> {
-    return this.http.get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/volunteer/${userId}`).pipe(
+    // Ensure we're using the MongoDB ObjectId format
+    const mongoId = userId.includes('_') ? userId.split('_')[1] : userId;
+    return this.http.get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/volunteer/${mongoId}`).pipe(
       map(response => response.data)
     );
   }

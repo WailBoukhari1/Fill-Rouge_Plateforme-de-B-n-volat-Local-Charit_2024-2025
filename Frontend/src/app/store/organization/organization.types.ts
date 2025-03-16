@@ -39,4 +39,10 @@ export interface OrganizationStats {
   averageRating: number;
   impactScore: number;
   totalEventsHosted: number;
+  recentActivity?: Array<{
+    id: string;
+    icon: string;
+    description: string;
+    timestamp: Date;
+  }>;
 }

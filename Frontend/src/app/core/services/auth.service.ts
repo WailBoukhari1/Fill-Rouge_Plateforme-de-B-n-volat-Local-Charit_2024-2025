@@ -217,7 +217,7 @@ export class AuthService {
 
         // Update the stored user data
         const userData: User = {
-          id: response.data.userId ? parseInt(response.data.userId) : 0,
+          id: response.data.userId || '',
           email: response.data.email,
           firstName: response.data.firstName,
           lastName: response.data.lastName,
@@ -305,7 +305,7 @@ export class AuthService {
         console.warn('No tokens in response, handling as unverified user');
         // Create minimal user data for unverified users
         const userData: User = {
-          id: response.userId ? parseInt(response.userId) : 0,
+          id: response.userId?.toString() || '',  // Ensure ID is always a string
           email: response.email,
           firstName: response.firstName,
           lastName: response.lastName,
@@ -376,7 +376,7 @@ export class AuthService {
 
       // Create user data object
       const userData: User = {
-        id: response.userId ? parseInt(response.userId) : 0,
+        id: response.userId || '',
         email: response.email,
         firstName: response.firstName,
         lastName: response.lastName,

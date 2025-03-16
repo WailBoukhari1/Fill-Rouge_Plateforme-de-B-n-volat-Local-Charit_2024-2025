@@ -12,7 +12,7 @@ import com.fill_rouge.backend.domain.VolunteerProfile;
 
 @Repository
 public interface VolunteerProfileRepository extends MongoRepository<VolunteerProfile, String> {
-    @Query("{'user.id': ?0}")
+    @Query("{'user._id': ?0}")
     Optional<VolunteerProfile> findByVolunteerId(String volunteerId);
     
     @Query("{'skills': {$in: ?0}}")
@@ -44,6 +44,7 @@ public interface VolunteerProfileRepository extends MongoRepository<VolunteerPro
     @Query("{'email': ?0}")
     Optional<VolunteerProfile> findByUserEmail(String email);
 
+    @Query("{'user._id': ?0}")
     Optional<VolunteerProfile> findByUserId(String userId);
 
     @Query(value = "{}", fields = "{'location': 1}")

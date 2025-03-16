@@ -3,7 +3,7 @@ import { AuthGuard } from '../../../core/guards/auth.guard';
 
 export const VOLUNTEER_ROUTES: Routes = [
   {
-    path: 'volunteer',
+    path: '',
     children: [
       {
         path: 'profile',

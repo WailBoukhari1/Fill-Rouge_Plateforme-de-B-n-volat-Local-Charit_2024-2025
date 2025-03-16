@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { User } from '../models/auth.models';
+import { ApiResponse } from '../models/api.response.model';
 
 @Injectable({
   providedIn: 'root'
@@ -27,12 +28,12 @@ export class UserService {
     return this.http.get<any>(`${this.apiUrl}/stats`);
   }
 
-  lockUserAccount(id: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${id}/lock`, {});
+  lockUserAccount(userId: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/users/${userId}/lock`, {});
   }
 
-  unlockUserAccount(id: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${id}/unlock`, {});
+  unlockUserAccount(userId: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/users/${userId}/unlock`, {});
   }
 
   resendVerificationEmail(email: string): Observable<void> {

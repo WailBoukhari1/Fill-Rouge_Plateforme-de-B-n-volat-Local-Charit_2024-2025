@@ -6,6 +6,7 @@ import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.constant.EventParticipationStatus;
 import com.fill_rouge.backend.repository.*;
 import com.fill_rouge.backend.domain.*;
+import com.fill_rouge.backend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,7 +63,11 @@ public class StatisticsServiceImpl implements StatisticsService {
     public StatisticsResponse.VolunteerStats getVolunteerStats(String volunteerId) {
         LocalDateTime now = LocalDateTime.now();
         
-        // Get all participations for the volunteer
+        // Verify the volunteer exists
+        volunteerProfileRepository.findByVolunteerId(volunteerId)
+            .orElseThrow(() -> new ResourceNotFoundException("Volunteer profile not found for ID: " + volunteerId));
+        
+        // Get all participations for the volunteer using the full ObjectId
         List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
         
         // Calculate basic metrics

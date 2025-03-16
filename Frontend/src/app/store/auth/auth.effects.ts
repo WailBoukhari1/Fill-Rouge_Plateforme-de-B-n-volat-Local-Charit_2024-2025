@@ -64,11 +64,12 @@ export class AuthEffects {
             const role = decodedToken.role?.replace('ROLE_', '') as UserRole || UserRole.UNASSIGNED;
 
             const userData: User = {
-              id: parseInt(response.data.userId) || 0,
+              id: response.data.userId || '',
               email: response.data.email,
               firstName: response.data.firstName,
               lastName: response.data.lastName,
               role: role,
+              roles: [role],
               emailVerified: response.data.emailVerified || false,
               twoFactorEnabled: response.data.twoFactorEnabled || false,
               accountLocked: response.data.accountLocked || false,
@@ -139,11 +140,12 @@ export class AuthEffects {
             }
 
             const userData: User = {
-              id: parseInt(response.data.userId) || 0,
+              id: response.data.userId || '',
               email: response.data.email,
               firstName: response.data.firstName,
               lastName: response.data.lastName,
               role: UserRole.UNASSIGNED,
+              roles: [UserRole.UNASSIGNED],
               emailVerified: response.data.emailVerified || false,
               twoFactorEnabled: response.data.twoFactorEnabled || false,
               accountLocked: response.data.accountLocked || false,
@@ -308,11 +310,12 @@ export class AuthEffects {
               throw new Error('No data in response');
             }
             const userData: User = {
-              id: parseInt(response.data.userId) || 0,
+              id: response.data.userId || '',
               email: response.data.email,
               firstName: response.data.firstName,
               lastName: response.data.lastName,
               role: response.data.role as UserRole,
+              roles: [response.data.role as UserRole],
               emailVerified: response.data.emailVerified || false,
               twoFactorEnabled: response.data.twoFactorEnabled || false,
               accountLocked: response.data.accountLocked || false,
@@ -400,7 +403,8 @@ export class AuthEffects {
             return AuthActions.submitQuestionnaireSuccess({
               user: {
                 ...response.data,
-                id: parseInt(response.data.userId) || 0,
+                id: response.data.userId || '',
+                roles: [response.data.role as UserRole],
                 emailVerified: response.data.emailVerified || false,
                 twoFactorEnabled: response.data.twoFactorEnabled || false,
                 accountLocked: response.data.accountLocked || false,

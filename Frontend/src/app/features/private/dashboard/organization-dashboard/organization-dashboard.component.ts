@@ -1,101 +1,130 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { RouterModule } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { StatisticsService, OrganizationStatistics } from '../../../../core/services/statistics.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import * as echarts from 'echarts';
-import { switchMap } from 'rxjs/operators';
-import { map } from 'rxjs/operators';
-import { filter } from 'rxjs/operators';
+import { OrganizationService } from '../../../../core/services/organization.service';
+import { OrganizationStats } from '../../../../store/organization/organization.types';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-organization-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatIconModule,
+    MatButtonModule,
+    RouterModule,
+    MatProgressSpinnerModule
+  ],
   template: `
     <div class="container mx-auto p-4">
+      <h1 class="text-2xl font-bold mb-6">Organization Dashboard</h1>
+
       @if (loading) {
         <div class="flex justify-center items-center h-64">
           <mat-spinner diameter="40"></mat-spinner>
         </div>
       } @else {
-        <!-- Organization Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <mat-card>
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <!-- Active Events -->
+          <mat-card class="stats-card">
             <mat-card-content>
-              <div class="text-lg font-semibold">Total Events</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.totalEvents || 0}}</div>
-              <div class="text-sm text-gray-500">
-                Active: {{stats?.activeEvents || 0}} | Completed: {{stats?.completedEvents || 0}}
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600 text-sm">Active Events</p>
+                  <h3 class="text-2xl font-bold">{{stats?.activeEvents || 0}}</h3>
+                </div>
+                <mat-icon class="text-primary-600">event_available</mat-icon>
               </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
+          <!-- Active Volunteers -->
+          <mat-card class="stats-card">
             <mat-card-content>
-              <div class="text-lg font-semibold">Total Volunteers</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.totalVolunteers || 0}}</div>
-              <div class="text-sm text-gray-500">Active: {{stats?.activeVolunteers || 0}}</div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600 text-sm">Active Volunteers</p>
+                  <h3 class="text-2xl font-bold">{{stats?.activeVolunteers || 0}}</h3>
+                </div>
+                <mat-icon class="text-primary-600">people</mat-icon>
+              </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
+          <!-- Total Hours -->
+          <mat-card class="stats-card">
             <mat-card-content>
-              <div class="text-lg font-semibold">Volunteer Hours</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.totalVolunteerHours || 0}}</div>
-              <div class="text-sm text-gray-500">Total Hours</div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600 text-sm">Total Volunteer Hours</p>
+                  <h3 class="text-2xl font-bold">{{stats?.totalHours || 0}}</h3>
+                </div>
+                <mat-icon class="text-primary-600">schedule</mat-icon>
+              </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
+          <!-- Impact Score -->
+          <mat-card class="stats-card">
             <mat-card-content>
-              <div class="text-lg font-semibold">Average Rating</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.averageEventRating || 0 | number:'1.1-1'}}</div>
-              <div class="text-sm text-gray-500">From Volunteers</div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>Volunteer Engagement</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <div #engagementChart class="chart-container"></div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>Event Distribution</mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <div #distributionChart class="chart-container"></div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-600 text-sm">Impact Score</p>
+                  <h3 class="text-2xl font-bold">{{stats?.impactScore?.toFixed(1) || '0.0'}}</h3>
+                </div>
+                <mat-icon class="text-primary-600">trending_up</mat-icon>
+              </div>
             </mat-card-content>
           </mat-card>
         </div>
 
-        <!-- Additional Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <mat-card>
-            <mat-card-header>
-              <mat-card-title>Volunteer Retention</mat-card-title>
-            </mat-card-header>
             <mat-card-content>
-              <div #retentionChart class="chart-container"></div>
+              <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+              <div class="space-y-4">
+                <a mat-button color="primary" routerLink="/organization/events/create" class="w-full">
+                  <mat-icon class="mr-2">add_circle</mat-icon>
+                  Create New Event
+                </a>
+                <a mat-button color="primary" routerLink="/organization/profile" class="w-full">
+                  <mat-icon class="mr-2">edit</mat-icon>
+                  Update Profile
+                </a>
+                <a mat-button color="primary" routerLink="/organization/volunteers" class="w-full">
+                  <mat-icon class="mr-2">people</mat-icon>
+                  Manage Volunteers
+                </a>
+              </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>Event Success Rate</mat-card-title>
-            </mat-card-header>
+          <!-- Recent Activity -->
+          <mat-card class="md:col-span-2">
             <mat-card-content>
-              <div #successChart class="chart-container"></div>
+              <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+              @if (stats?.recentActivity?.length) {
+                <div class="space-y-4">
+                  @for (activity of stats!.recentActivity; track activity.id) {
+                    <div class="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded">
+                      <mat-icon [class]="activity.icon">{{activity.icon}}</mat-icon>
+                      <div class="flex-1">
+                        <p class="font-medium">{{activity.description}}</p>
+                        <p class="text-sm text-gray-600">{{activity.timestamp | date:'medium'}}</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="text-gray-600">No recent activity</p>
+              }
             </mat-card-content>
           </mat-card>
         </div>
@@ -103,237 +132,39 @@ import { filter } from 'rxjs/operators';
     </div>
   `,
   styles: [`
-    .chart-container {
-      height: 300px;
-      width: 100%;
+    .stats-card {
+      transition: transform 0.2s;
+    }
+    .stats-card:hover {
+      transform: translateY(-2px);
     }
   `]
 })
-export class OrganizationDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('engagementChart') engagementChart!: ElementRef;
-  @ViewChild('distributionChart') distributionChart!: ElementRef;
-  @ViewChild('retentionChart') retentionChart!: ElementRef;
-  @ViewChild('successChart') successChart!: ElementRef;
+export class OrganizationDashboardComponent implements OnInit {
+  loading = false;
+  stats: OrganizationStats | null = null;
 
-  stats: OrganizationStatistics | null = null;
-  loading = true;
-  private engagementChartInstance: echarts.ECharts | null = null;
-  private distributionChartInstance: echarts.ECharts | null = null;
-  private retentionChartInstance: echarts.ECharts | null = null;
-  private successChartInstance: echarts.ECharts | null = null;
+  constructor(
+    private organizationService: OrganizationService,
+    private authService: AuthService
+  ) {}
 
-  private statisticsService = inject(StatisticsService);
-  private authService = inject(AuthService);
-
-  constructor() {}
-
-  ngOnInit(): void {
-    this.loadStatistics();
+  ngOnInit() {
+    this.loadStats();
   }
 
-  private loadStatistics(): void {
-    this.authService.currentUser$.pipe(
-      filter(user => user !== null),
-      map(user => user.id),
-      switchMap(orgId => this.statisticsService.getOrganizationStatistics(orgId))
-    ).subscribe({
-      next: (data: OrganizationStatistics) => {
-        this.stats = data;
+  private loadStats() {
+    this.loading = true;
+    const organizationId = this.authService.getCurrentUserId();
+    this.organizationService.getOrganizationStats(organizationId).subscribe({
+      next: (stats) => {
+        this.stats = stats;
         this.loading = false;
-        this.initializeCharts();
       },
-      error: (error: Error) => {
-        console.error('Error loading organization statistics:', error);
+      error: (error) => {
+        console.error('Error loading organization stats:', error);
         this.loading = false;
       }
     });
-  }
-
-  ngAfterViewInit(): void {
-    // Charts will be initialized after data is loaded
-  }
-
-  private initializeCharts(): void {
-    if (!this.stats) return;
-
-    // Engagement Chart
-    if (this.engagementChart?.nativeElement) {
-      this.engagementChartInstance = echarts.init(this.engagementChart.nativeElement);
-      this.engagementChartInstance.setOption({
-        title: { 
-          text: 'Volunteer Engagement',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'axis',
-          formatter: '{b}: {c} volunteers'
-        },
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis: { 
-          type: 'category',
-          data: this.stats.volunteerEngagement.map(e => e.month),
-          axisLabel: { rotate: 45 }
-        },
-        yAxis: { 
-          type: 'value',
-          name: 'Volunteers'
-        },
-        series: [{
-          name: 'Volunteers',
-          type: 'line',
-          smooth: true,
-          data: this.stats.volunteerEngagement.map(e => e.volunteers),
-          itemStyle: { color: '#3B82F6' },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-              { offset: 1, color: 'rgba(59, 130, 246, 0.1)' }
-            ])
-          }
-        }]
-      });
-    }
-
-    // Distribution Chart
-    if (this.distributionChart?.nativeElement) {
-      this.distributionChartInstance = echarts.init(this.distributionChart.nativeElement);
-      this.distributionChartInstance.setOption({
-        title: { 
-          text: 'Event Distribution',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'item',
-          formatter: '{b}: {c} events ({d}%)'
-        },
-        legend: {
-          orient: 'vertical',
-          left: 'left',
-          top: 'middle'
-        },
-        series: [{
-          name: 'Events',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 10,
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
-            label: {
-              show: true,
-              fontSize: 20,
-              fontWeight: 'bold'
-            }
-          },
-          labelLine: {
-            show: false
-          },
-          data: Object.entries(this.stats.eventDistribution).map(([name, value]) => ({
-            name,
-            value
-          }))
-        }]
-      });
-    }
-
-    // Retention Chart
-    if (this.retentionChart?.nativeElement) {
-      this.retentionChartInstance = echarts.init(this.retentionChart.nativeElement);
-      this.retentionChartInstance.setOption({
-        title: { 
-          text: 'Volunteer Retention',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'axis',
-          formatter: '{b}: {c}%'
-        },
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis: { 
-          type: 'category',
-          data: this.stats.volunteerRetention.map(r => r.month),
-          axisLabel: { rotate: 45 }
-        },
-        yAxis: { 
-          type: 'value',
-          name: 'Retention Rate (%)'
-        },
-        series: [{
-          name: 'Retention',
-          type: 'line',
-          smooth: true,
-          data: this.stats.volunteerRetention.map(r => r.retention),
-          itemStyle: { color: '#10B981' }
-        }]
-      });
-    }
-
-    // Success Rate Chart
-    if (this.successChart?.nativeElement) {
-      this.successChartInstance = echarts.init(this.successChart.nativeElement);
-      this.successChartInstance.setOption({
-        title: { 
-          text: 'Event Success Rate',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'axis',
-          formatter: '{b}: {c}%'
-        },
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis: { 
-          type: 'category',
-          data: this.stats.eventSuccessRate.map(s => s.month),
-          axisLabel: { rotate: 45 }
-        },
-        yAxis: { 
-          type: 'value',
-          name: 'Success Rate (%)'
-        },
-        series: [{
-          name: 'Success Rate',
-          type: 'bar',
-          data: this.stats.eventSuccessRate.map(s => s.rate),
-          itemStyle: { color: '#8B5CF6' }
-        }]
-      });
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.engagementChartInstance) {
-      this.engagementChartInstance.dispose();
-    }
-    if (this.distributionChartInstance) {
-      this.distributionChartInstance.dispose();
-    }
-    if (this.retentionChartInstance) {
-      this.retentionChartInstance.dispose();
-    }
-    if (this.successChartInstance) {
-      this.successChartInstance.dispose();
-    }
   }
 } 
