@@ -10,6 +10,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { RouterModule } from '@angular/router';
 import { Organization } from '../../../../core/models/organization.model';
 import { OrganizationService } from '../../../../core/services/organization.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-organization-management',
@@ -142,20 +143,27 @@ export class OrganizationManagementComponent implements OnInit {
   totalItems = 0;
   pageSize = 10;
   currentPage = 0;
+  loading = false;
 
-  constructor(private organizationService: OrganizationService) {}
+  constructor(private organizationService: OrganizationService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadOrganizations();
   }
 
   loadOrganizations(): void {
-    this.organizationService.getOrganizations(this.currentPage, this.pageSize).subscribe({
+    this.loading = true;
+    this.organizationService.getOrganizationsDetailed(this.currentPage, this.pageSize).subscribe({
       next: (response) => {
         this.organizations = response.content;
         this.totalItems = response.totalElements;
+        this.loading = false;
       },
-      error: (error) => console.error('Error loading organizations:', error)
+      error: (error) => {
+        console.error('Error loading organizations:', error);
+        this.snackBar.open('Error loading organizations', 'Close', { duration: 3000 });
+        this.loading = false;
+      }
     });
   }
 

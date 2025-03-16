@@ -6,11 +6,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -35,9 +35,9 @@ import { MatTreeModule } from '@angular/material/tree';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { OrganizationService, OrganizationProfile } from '../../../../core/services/organization.service';
+import { OrganizationService } from '../../../../core/services/organization.service';
+import { OrganizationProfile } from '../../../../core/models/organization.model';
 import { OrganizationCardComponent } from '../organization-card/organization-card.component';
 
 @Component({
@@ -101,6 +101,26 @@ import { OrganizationCardComponent } from '../organization-card/organization-car
               <app-organization-card [organization]="organization"></app-organization-card>
             }
           </div>
+
+          <!-- Pagination -->
+          @if (organizations.length > 0) {
+            <mat-paginator
+              [length]="totalItems"
+              [pageSize]="pageSize"
+              [pageIndex]="currentPage"
+              [pageSizeOptions]="[12, 24, 36, 48]"
+              (page)="onPageChange($event)"
+              aria-label="Select page">
+            </mat-paginator>
+          }
+
+          <!-- No Results -->
+          @if (!loading && organizations.length === 0) {
+            <div class="flex flex-col items-center justify-center p-8">
+              <mat-icon class="text-4xl text-gray-400">search_off</mat-icon>
+              <p class="mt-2 text-gray-600">No organizations found</p>
+            </div>
+          }
         }
       </div>
     </div>
@@ -119,12 +139,16 @@ import { OrganizationCardComponent } from '../organization-card/organization-car
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 24px;
+      margin-bottom: 24px;
     }
   `]
 })
 export class OrganizationSearchComponent implements OnInit {
   loading = false;
   organizations: OrganizationProfile[] = [];
+  currentPage = 0;
+  pageSize = 12;
+  totalItems = 0;
 
   constructor(
     private organizationService: OrganizationService,
@@ -138,9 +162,10 @@ export class OrganizationSearchComponent implements OnInit {
 
   private loadOrganizations(): void {
     this.loading = true;
-    this.organizationService.getOrganizations().subscribe({
-      next: (orgs) => {
-        this.organizations = orgs;
+    this.organizationService.getOrganizations(this.currentPage, this.pageSize).subscribe({
+      next: (response) => {
+        this.organizations = response.content;
+        this.totalItems = response.totalElements;
         this.loading = false;
       },
       error: (error) => {
@@ -149,5 +174,11 @@ export class OrganizationSearchComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadOrganizations();
   }
 } 

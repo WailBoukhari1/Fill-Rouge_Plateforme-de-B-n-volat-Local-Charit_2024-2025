@@ -18,7 +18,7 @@ export interface QuestionnaireRequest {
   website?: string;
   registrationNumber?: string;
   taxId?: string;
-  focusAreas?: Set<string>;
+  focusAreas?: string[];
   foundedYear?: number | null;
   socialMediaLinks?: SocialMediaLinksDTO;
   
@@ -27,9 +27,9 @@ export interface QuestionnaireRequest {
   education?: string;
   experience?: string;
   specialNeeds?: string;
-  skills?: Set<string>;
-  interests?: Set<string>;
-  availableDays?: Set<string>;
+  skills?: string[];
+  interests?: string[];
+  availableDays?: string[];
   preferredTimeOfDay?: string;
   languages?: string[];
   certifications?: string[];
@@ -72,8 +72,13 @@ export enum FocusArea {
   POVERTY = 'POVERTY',
   HUMAN_RIGHTS = 'HUMAN_RIGHTS',
   ANIMAL_WELFARE = 'ANIMAL_WELFARE',
+  ANIMAL_WELFARE = 'ANIMAL_WELFARE',
   ARTS_CULTURE = 'ARTS_CULTURE',
   COMMUNITY_DEVELOPMENT = 'COMMUNITY_DEVELOPMENT',
+  DISASTER_RELIEF = 'DISASTER_RELIEF',
+  YOUTH_DEVELOPMENT = 'YOUTH_DEVELOPMENT',
+  ELDERLY_CARE = 'ELDERLY_CARE',
+  DISABILITY_SUPPORT = 'DISABILITY_SUPPORT',
   DISASTER_RELIEF = 'DISASTER_RELIEF',
   YOUTH_DEVELOPMENT = 'YOUTH_DEVELOPMENT',
   ELDERLY_CARE = 'ELDERLY_CARE',
@@ -91,6 +96,7 @@ export enum Language {
   SPANISH = 'SPANISH',
   GERMAN = 'GERMAN',
   CHINESE = 'CHINESE',
+  JAPANESE = 'JAPANESE',
   JAPANESE = 'JAPANESE',
   OTHER = 'OTHER'
 }

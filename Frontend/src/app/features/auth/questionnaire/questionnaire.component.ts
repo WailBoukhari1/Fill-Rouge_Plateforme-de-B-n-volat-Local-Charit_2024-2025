@@ -769,7 +769,7 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
         website: orgData.website || '',
         registrationNumber: orgData.registrationNumber || '',
         taxId: orgData.taxId || '',
-        focusAreas: new Set(orgData.focusAreas || []),
+        focusAreas: Array.isArray(orgData.focusAreas) ? orgData.focusAreas : [],
         foundedYear: orgData.foundedYear || null,
         socialMediaLinks: {
           facebook: orgData.socialMedia?.facebook || '',
