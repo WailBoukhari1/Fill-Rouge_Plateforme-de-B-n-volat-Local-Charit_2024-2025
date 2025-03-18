@@ -18,6 +18,7 @@ import {
   OrganizationRequest,
   OrganizationResponse,
   SocialMediaLinks,
+  ApiResponse,
 } from '../models/organization.model';
 
 export interface PaginatedResponse<T> {
@@ -67,16 +68,20 @@ export class OrganizationService {
   }
 
   // Get organization profile information
-  getOrganization(id: string): Observable<OrganizationProfile> {
-    return this.http.get<OrganizationProfile>(`${this.apiUrl}/${id}`);
+  getOrganization(id: string): Observable<ApiResponse<OrganizationProfile>> {
+    return this.http.get<ApiResponse<OrganizationProfile>>(`${this.apiUrl}/${id}`);
+  }
+
+  getOrganizationByUserId(userId: string): Observable<OrganizationProfile> {
+    return this.http.get<OrganizationProfile>(`${this.apiUrl}/user/${userId}`);
   }
 
   createOrganization(request: OrganizationRequest): Observable<OrganizationProfile> {
     return this.http.post<OrganizationResponse>(this.apiUrl, request);
   }
 
-  updateOrganization(id: string, request: OrganizationRequest): Observable<OrganizationProfile> {
-    return this.http.put<OrganizationResponse>(`${this.apiUrl}/${id}`, request);
+  updateOrganization(id: string, data: OrganizationRequest): Observable<{ data: OrganizationProfile }> {
+    return this.http.put<{ data: OrganizationProfile }>(`${this.apiUrl}/${id}`, data);
   }
 
   deleteOrganization(id: string): Observable<void> {
@@ -185,32 +190,24 @@ export class OrganizationService {
   }
 
   // Upload organization logo
-  uploadLogo(id: string, file: File): Observable<Organization> {
+  uploadLogo(id: string, file: File): Observable<{ data: OrganizationProfile }> {
     const formData = new FormData();
     formData.append('logo', file);
-    return this.http.post<Organization>(`${this.apiUrl}/${id}/logo`, formData);
+    return this.http.post<{ data: OrganizationProfile }>(`${this.apiUrl}/${id}/logo`, formData);
+  }
+
+  uploadProfilePicture(id: string, file: File): Observable<OrganizationProfile> {
+    const formData = new FormData();
+    formData.append('profilePicture', file);
+    return this.http.post<OrganizationProfile>(`${this.apiUrl}/${id}/profile-picture`, formData);
   }
 
   // Document management
-  uploadDocument(
-    organizationId: string,
-    file: File,
-    type: DocumentType
-  ): Observable<HttpEvent<OrganizationDocument>> {
+  uploadDocument(id: string, file: File, type: DocumentType): Observable<{ data: OrganizationDocument }> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('document', file);
     formData.append('type', type);
-
-    const req = new HttpRequest(
-      'POST',
-      `${this.apiUrl}/${organizationId}/documents`,
-      formData,
-      {
-        reportProgress: true,
-      }
-    );
-
-    return this.http.request(req);
+    return this.http.post<{ data: OrganizationDocument }>(`${this.apiUrl}/${id}/documents`, formData);
   }
 
   getDocuments(organizationId: string): Observable<OrganizationDocument[]> {
@@ -219,10 +216,8 @@ export class OrganizationService {
     );
   }
 
-  deleteDocument(organizationId: string, documentId: string): Observable<void> {
-    return this.http.delete<void>(
-      `${this.apiUrl}/${organizationId}/documents/${documentId}`
-    );
+  deleteDocument(id: string, documentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}/documents/${documentId}`);
   }
 
   // Impact metrics

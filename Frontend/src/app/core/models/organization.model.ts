@@ -45,24 +45,27 @@ export interface Address {
 }
 
 export enum OrganizationType {
-  NONPROFIT = 'NONPROFIT',
-  GOVERNMENT = 'GOVERNMENT',
+  NON_PROFIT = 'NON_PROFIT',
+  CHARITY = 'CHARITY',
+  FOUNDATION = 'FOUNDATION',
+  COMMUNITY_GROUP = 'COMMUNITY_GROUP',
   EDUCATIONAL = 'EDUCATIONAL',
   RELIGIOUS = 'RELIGIOUS',
-  COMMUNITY = 'COMMUNITY',
   OTHER = 'OTHER'
 }
 
 export enum OrganizationCategory {
-  EDUCATION = 'EDUCATION',
-  HEALTH = 'HEALTH',
-  ENVIRONMENT = 'ENVIRONMENT',
-  ARTS = 'ARTS',
-  SOCIAL_SERVICES = 'SOCIAL_SERVICES',
-  YOUTH = 'YOUTH',
-  ELDERLY = 'ELDERLY',
   ANIMAL_WELFARE = 'ANIMAL_WELFARE',
-  DISASTER_RELIEF = 'DISASTER_RELIEF',
+  ARTS_CULTURE = 'ARTS_CULTURE',
+  CHILDREN_YOUTH = 'CHILDREN_YOUTH',
+  COMMUNITY_DEVELOPMENT = 'COMMUNITY_DEVELOPMENT',
+  EDUCATION = 'EDUCATION',
+  ENVIRONMENT = 'ENVIRONMENT',
+  HEALTH = 'HEALTH',
+  HUMAN_RIGHTS = 'HUMAN_RIGHTS',
+  POVERTY = 'POVERTY',
+  SOCIAL_SERVICES = 'SOCIAL_SERVICES',
+  SPORTS_RECREATION = 'SPORTS_RECREATION',
   OTHER = 'OTHER'
 }
 
@@ -79,36 +82,26 @@ export enum VerificationStatus {
 }
 
 export enum OrganizationSize {
-  SMALL = 'SMALL', // < 10 employees
-  MEDIUM = 'MEDIUM', // 10-50 employees
-  LARGE = 'LARGE', // 50-200 employees
-  ENTERPRISE = 'ENTERPRISE' // > 200 employees
+  SMALL = 'SMALL',
+  MEDIUM = 'MEDIUM',
+  LARGE = 'LARGE',
+  VERY_LARGE = 'VERY_LARGE'
 }
 
 export interface OrganizationDocument {
   id: string;
-  type: DocumentType;
   name: string;
+  type: DocumentType;
   url: string;
-  fileSize: number;
-  mimeType: string;
   uploadedAt: Date;
-  verifiedAt?: Date;
-  status: DocumentStatus;
 }
 
 export enum DocumentType {
   REGISTRATION = 'REGISTRATION',
-  TAX = 'TAX',
-  FINANCIAL = 'FINANCIAL',
+  TAX_EXEMPTION = 'TAX_EXEMPTION',
   ANNUAL_REPORT = 'ANNUAL_REPORT',
+  FINANCIAL_STATEMENT = 'FINANCIAL_STATEMENT',
   OTHER = 'OTHER'
-}
-
-export enum DocumentStatus {
-  PENDING = 'PENDING',
-  VERIFIED = 'VERIFIED',
-  REJECTED = 'REJECTED'
 }
 
 export interface OrganizationStats {
@@ -128,9 +121,37 @@ export interface OrganizationStats {
 export interface SocialMediaLinks {
   facebook?: string;
   twitter?: string;
-  linkedin?: string;
   instagram?: string;
+  linkedin?: string;
+  youtube?: string;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  status: number;
+}
+
+export interface OrganizationProfileDTO {
+  name: string;
+  description: string;
+  mission: string;
+  vision: string;
   website?: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  registrationNumber: string;
+  type: OrganizationType;
+  category: OrganizationCategory;
+  size: OrganizationSize;
+  foundedYear?: number;
+  socialMediaLinks?: SocialMediaLinks;
+  focusAreas: string[];
+  profilePicture?: string;
 }
 
 export interface OrganizationProfile {
@@ -139,21 +160,25 @@ export interface OrganizationProfile {
   name: string;
   description: string;
   mission: string;
-  vision?: string;
-  logo?: string;
+  vision: string;
   website?: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   address: string;
   city: string;
+  province: string;
   country: string;
-  coordinates?: [number, number];
-  focusAreas: Set<string>;
-  socialMediaLinks?: SocialMediaLinks;
+  postalCode: string;
+  coordinates: [number, number];
+  focusAreas: string[];
+  socialMediaLinks: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
   verified: boolean;
-  verificationDate?: Date;
-  registrationNumber: string;
-  taxId?: string;
-  documents?: string[];
+  registrationNumber?: string;
+  documents: string[];
   rating: number;
   numberOfRatings: number;
   totalEventsHosted: number;
@@ -161,28 +186,38 @@ export interface OrganizationProfile {
   totalVolunteerHours: number;
   impactScore: number;
   acceptingVolunteers: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+  type?: OrganizationType;
+  category?: OrganizationCategory;
+  size?: OrganizationSize;
+  foundedYear?: number;
+  logo?: string;
+  profilePicture?: string;
 }
 
 export interface OrganizationRequest {
   name: string;
   description: string;
   mission: string;
-  vision?: string;
-  logo?: string;
+  vision: string;
   website?: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   address: string;
   city: string;
+  province: string;
   country: string;
-  coordinates?: [number, number];
-  focusAreas: Set<string>;
+  postalCode: string;
+  registrationNumber?: string;
+  type: OrganizationType;
+  category: OrganizationCategory;
+  size: OrganizationSize;
+  foundedYear?: number;
+  coordinates: [number, number];
+  logo?: string;
+  profilePicture?: string;
+  focusAreas: string[];
   socialMediaLinks?: SocialMediaLinks;
-  registrationNumber: string;
-  taxId?: string;
-  documents?: string[];
-  acceptingVolunteers?: boolean;
 }
 
 export interface OrganizationResponse extends OrganizationProfile {} 

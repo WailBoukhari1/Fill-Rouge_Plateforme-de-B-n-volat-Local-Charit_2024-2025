@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-16T22:43:15+0000",
+    date = "2025-03-18T00:13:51+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -31,6 +31,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
 
         organization.acceptingVolunteers( request.isAcceptingVolunteers() );
         organization.address( request.getAddress() );
+        organization.category( request.getCategory() );
         organization.city( request.getCity() );
         double[] coordinates = request.getCoordinates();
         if ( coordinates != null ) {
@@ -38,21 +39,18 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         }
         organization.country( request.getCountry() );
         organization.description( request.getDescription() );
-        List<String> list = request.getDocuments();
-        if ( list != null ) {
-            organization.documents( new ArrayList<String>( list ) );
-        }
-        Set<String> set = request.getFocusAreas();
-        if ( set != null ) {
-            organization.focusAreas( new LinkedHashSet<String>( set ) );
-        }
+        organization.foundedYear( request.getFoundedYear() );
         organization.logo( request.getLogo() );
         organization.mission( request.getMission() );
         organization.name( request.getName() );
         organization.phoneNumber( request.getPhoneNumber() );
+        organization.postalCode( request.getPostalCode() );
+        organization.profilePicture( request.getProfilePicture() );
+        organization.province( request.getProvince() );
         organization.registrationNumber( request.getRegistrationNumber() );
+        organization.size( request.getSize() );
         organization.socialMediaLinks( request.getSocialMediaLinks() );
-        organization.taxId( request.getTaxId() );
+        organization.type( request.getType() );
         organization.vision( request.getVision() );
         organization.website( request.getWebsite() );
 
@@ -63,6 +61,8 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organization.activeVolunteers( 0 );
         organization.totalVolunteerHours( 0 );
         organization.impactScore( 0.0 );
+        organization.documents( new ArrayList<>() );
+        organization.focusAreas( new HashSet<>(request.getFocusAreas()) );
 
         return organization.build();
     }
@@ -79,6 +79,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organizationResponse.acceptingVolunteers( organization.isAcceptingVolunteers() );
         organizationResponse.activeVolunteers( organization.getActiveVolunteers() );
         organizationResponse.address( organization.getAddress() );
+        organizationResponse.category( organization.getCategory() );
         organizationResponse.city( organization.getCity() );
         double[] coordinates = organization.getCoordinates();
         if ( coordinates != null ) {
@@ -87,6 +88,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organizationResponse.country( organization.getCountry() );
         organizationResponse.createdAt( organization.getCreatedAt() );
         organizationResponse.description( organization.getDescription() );
+        organizationResponse.foundedYear( organization.getFoundedYear() );
         organizationResponse.id( organization.getId() );
         organizationResponse.impactScore( organization.getImpactScore() );
         organizationResponse.logo( organization.getLogo() );
@@ -94,11 +96,16 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organizationResponse.name( organization.getName() );
         organizationResponse.numberOfRatings( organization.getNumberOfRatings() );
         organizationResponse.phoneNumber( organization.getPhoneNumber() );
+        organizationResponse.postalCode( organization.getPostalCode() );
+        organizationResponse.profilePicture( organization.getProfilePicture() );
+        organizationResponse.province( organization.getProvince() );
         organizationResponse.rating( organization.getRating() );
         organizationResponse.registrationNumber( organization.getRegistrationNumber() );
-        organizationResponse.taxId( organization.getTaxId() );
+        organizationResponse.size( organization.getSize() );
+        organizationResponse.socialMediaLinks( organization.getSocialMediaLinks() );
         organizationResponse.totalEventsHosted( organization.getTotalEventsHosted() );
         organizationResponse.totalVolunteerHours( organization.getTotalVolunteerHours() );
+        organizationResponse.type( organization.getType() );
         organizationResponse.updatedAt( organization.getUpdatedAt() );
         organizationResponse.verificationDate( organization.getVerificationDate() );
         organizationResponse.verified( organization.isVerified() );
@@ -106,7 +113,6 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organizationResponse.website( organization.getWebsite() );
 
         organizationResponse.focusAreas( new HashSet<>(organization.getFocusAreas()) );
-        organizationResponse.socialMediaLinks( new ArrayList<>(organization.getSocialMediaLinks()) );
         organizationResponse.documents( new ArrayList<>(organization.getDocuments()) );
 
         return organizationResponse.build();
@@ -122,6 +128,9 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         if ( request.getAddress() != null ) {
             organization.setAddress( request.getAddress() );
         }
+        if ( request.getCategory() != null ) {
+            organization.setCategory( request.getCategory() );
+        }
         if ( request.getCity() != null ) {
             organization.setCity( request.getCity() );
         }
@@ -135,31 +144,8 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         if ( request.getDescription() != null ) {
             organization.setDescription( request.getDescription() );
         }
-        if ( organization.getDocuments() != null ) {
-            List<String> list = request.getDocuments();
-            if ( list != null ) {
-                organization.getDocuments().clear();
-                organization.getDocuments().addAll( list );
-            }
-        }
-        else {
-            List<String> list = request.getDocuments();
-            if ( list != null ) {
-                organization.setDocuments( new ArrayList<String>( list ) );
-            }
-        }
-        if ( organization.getFocusAreas() != null ) {
-            Set<String> set = request.getFocusAreas();
-            if ( set != null ) {
-                organization.getFocusAreas().clear();
-                organization.getFocusAreas().addAll( set );
-            }
-        }
-        else {
-            Set<String> set = request.getFocusAreas();
-            if ( set != null ) {
-                organization.setFocusAreas( new LinkedHashSet<String>( set ) );
-            }
+        if ( request.getFoundedYear() != null ) {
+            organization.setFoundedYear( request.getFoundedYear() );
         }
         if ( request.getLogo() != null ) {
             organization.setLogo( request.getLogo() );
@@ -173,14 +159,26 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         if ( request.getPhoneNumber() != null ) {
             organization.setPhoneNumber( request.getPhoneNumber() );
         }
+        if ( request.getPostalCode() != null ) {
+            organization.setPostalCode( request.getPostalCode() );
+        }
+        if ( request.getProfilePicture() != null ) {
+            organization.setProfilePicture( request.getProfilePicture() );
+        }
+        if ( request.getProvince() != null ) {
+            organization.setProvince( request.getProvince() );
+        }
         if ( request.getRegistrationNumber() != null ) {
             organization.setRegistrationNumber( request.getRegistrationNumber() );
+        }
+        if ( request.getSize() != null ) {
+            organization.setSize( request.getSize() );
         }
         if ( request.getSocialMediaLinks() != null ) {
             organization.setSocialMediaLinks( request.getSocialMediaLinks() );
         }
-        if ( request.getTaxId() != null ) {
-            organization.setTaxId( request.getTaxId() );
+        if ( request.getType() != null ) {
+            organization.setType( request.getType() );
         }
         if ( request.getVision() != null ) {
             organization.setVision( request.getVision() );
@@ -188,6 +186,9 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         if ( request.getWebsite() != null ) {
             organization.setWebsite( request.getWebsite() );
         }
+
+        organization.setDocuments( new ArrayList<>(request.getDocuments()) );
+        organization.setFocusAreas( new HashSet<>(request.getFocusAreas()) );
     }
 
     @Override

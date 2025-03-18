@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 export interface UploadEvent {
   file: File;
@@ -56,10 +58,10 @@ export interface UploadEvent {
           </div>
           <mat-progress-bar 
             mode="determinate"
-            [value]="uploadProgress">
+            [value]="currentProgress">
           </mat-progress-bar>
           <div class="progress-text">
-            {{ uploadProgress }}% uploaded
+            {{ currentProgress }}% uploaded
           </div>
         </div>
       </ng-template>
@@ -150,22 +152,26 @@ export interface UploadEvent {
   `]
 })
 export class FileUploadComponent {
-  @Input() accept = '*/*';
+  @Input() accept = 'image/*';
   @Input() multiple = false;
-  @Input() maxSize = 5 * 1024 * 1024; // 5MB
-  @Input() dragDropText = 'Drag and drop files here';
-  @Input() helpText?: string;
+  @Input() maxSize = 2 * 1024 * 1024; // 2MB for profile images
+  @Input() dragDropText = 'Drag and drop image here';
+  @Input() helpText = 'Supported formats: JPG, PNG. Max size: 2MB';
+  @Input() uploadUrl = `${environment.apiUrl}/upload/profile-image`;
 
   @Output() fileSelected = new EventEmitter<File>();
   @Output() uploadStarted = new EventEmitter<void>();
   @Output() uploadProgress = new EventEmitter<number>();
-  @Output() uploadCompleted = new EventEmitter<File>();
+  @Output() uploadCompleted = new EventEmitter<{ url: string }>();
   @Output() uploadCancelled = new EventEmitter<void>();
   @Output() uploadError = new EventEmitter<string>();
 
   isDragOver = false;
   currentFile: File | null = null;
-  uploadProgress = 0;
+  currentProgress = 0;
+  private uploadSubscription: any;
+
+  constructor(private http: HttpClient) {}
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -206,46 +212,52 @@ export class FileUploadComponent {
     }
 
     if (!this.isFileTypeAllowed(file)) {
-      this.uploadError.emit('File type not allowed');
+      this.uploadError.emit('File type not allowed. Please upload a valid image file.');
       return;
     }
 
     this.currentFile = file;
     this.fileSelected.emit(file);
     this.uploadStarted.emit();
-    
-    // Simulate upload progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      this.uploadProgress = progress;
-      this.uploadProgress.emit(progress);
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        this.uploadCompleted.emit(file);
-      }
-    }, 500);
+    this.uploadFile(file);
   }
 
-  private isFileTypeAllowed(file: File): boolean {
-    if (this.accept === '*/*') return true;
-    
-    const allowedTypes = this.accept.split(',').map(type => type.trim());
-    const fileType = file.type;
-    
-    return allowedTypes.some(type => {
-      if (type.endsWith('/*')) {
-        const baseType = type.replace('/*', '');
-        return fileType.startsWith(baseType);
+  private uploadFile(file: File): void {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.uploadSubscription = this.http.post(this.uploadUrl, formData, {
+      reportProgress: true,
+      observe: 'events'
+    }).subscribe({
+      next: (event: any) => {
+        if (event.type === 1) { // Upload progress
+          const progress = Math.round(100 * event.loaded / event.total);
+          this.currentProgress = progress;
+          this.uploadProgress.emit(progress);
+        } else if (event.type === 4) { // Upload complete
+          this.uploadCompleted.emit(event.body);
+        }
+      },
+      error: (error) => {
+        this.uploadError.emit(error.message || 'Upload failed');
+        this.currentFile = null;
+        this.currentProgress = 0;
       }
-      return type === fileType;
     });
   }
 
+  private isFileTypeAllowed(file: File): boolean {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    return allowedTypes.includes(file.type);
+  }
+
   cancelUpload(): void {
+    if (this.uploadSubscription) {
+      this.uploadSubscription.unsubscribe();
+    }
     this.currentFile = null;
-    this.uploadProgress = 0;
+    this.currentProgress = 0;
     this.uploadCancelled.emit();
   }
 } 

@@ -18,6 +18,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -47,11 +48,15 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setCreatedAt(LocalDateTime.now());
         organization.setUpdatedAt(LocalDateTime.now());
         organization.setVerified(false);
+        organization.setVerificationDate(null);
         organization.setActiveVolunteers(0);
         organization.setTotalEventsHosted(0);
         organization.setImpactScore(0.0);
         organization.setRating(0.0);
         organization.setTotalVolunteerHours(0);
+        organization.setNumberOfRatings(0);
+        organization.setDocuments(new ArrayList<>());
+        organization.setFocusAreas(new HashSet<>(request.getFocusAreas()));
 
         return OrganizationResponse.fromOrganization(organizationRepository.save(organization));
     }
@@ -68,13 +73,24 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         updateOrganizationFromRequest(organization, request);
         organization.setUpdatedAt(LocalDateTime.now());
+        organization.setFocusAreas(new HashSet<>(request.getFocusAreas()));
+        organization.setDocuments(new ArrayList<>(request.getDocuments()));
 
         return OrganizationResponse.fromOrganization(organizationRepository.save(organization));
     }
 
     @Override
     public OrganizationResponse getOrganization(String organizationId) {
-        return OrganizationResponse.fromOrganization(getOrganizationEntity(organizationId));
+        Organization organization = organizationRepository.findById(organizationId)
+            .orElseThrow(() -> new ResourceNotFoundException("Organization", organizationId));
+        return OrganizationResponse.fromOrganization(organization);
+    }
+
+    @Override
+    public OrganizationResponse getOrganizationByUserId(String userId) {
+        Organization organization = organizationRepository.findByUserId(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Organization", "User ID: " + userId));
+        return OrganizationResponse.fromOrganization(organization);
     }
 
     @Override
@@ -319,18 +335,22 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setDescription(request.getDescription());
         organization.setMission(request.getMission());
         organization.setVision(request.getVision());
-        organization.setLogo(request.getLogo());
         organization.setWebsite(request.getWebsite());
         organization.setPhoneNumber(request.getPhoneNumber());
         organization.setAddress(request.getAddress());
         organization.setCity(request.getCity());
         organization.setCountry(request.getCountry());
+        organization.setProvince(request.getProvince());
+        organization.setPostalCode(request.getPostalCode());
         organization.setCoordinates(request.getCoordinates());
-        organization.setFocusAreas(request.getFocusAreas());
         organization.setSocialMediaLinks(request.getSocialMediaLinks());
         organization.setRegistrationNumber(request.getRegistrationNumber());
-        organization.setTaxId(request.getTaxId());
-        organization.setDocuments(request.getDocuments());
+        organization.setType(request.getType());
+        organization.setCategory(request.getCategory());
+        organization.setSize(request.getSize());
+        organization.setFoundedYear(request.getFoundedYear());
+        organization.setLogo(request.getLogo());
+        organization.setProfilePicture(request.getProfilePicture());
         organization.setAcceptingVolunteers(request.isAcceptingVolunteers());
     }
 

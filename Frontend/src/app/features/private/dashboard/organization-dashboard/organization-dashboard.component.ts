@@ -173,7 +173,7 @@ export class OrganizationDashboardComponent implements OnInit {
           if (user.id) {
             const parsedUserId = user.id.toString();
             console.log('Got user ID from localStorage:', parsedUserId);
-            this.fetchStatistics(parsedUserId);
+            this.loadOrganizationAndStats(parsedUserId);
             return;
           }
         } catch (error) {
@@ -186,18 +186,31 @@ export class OrganizationDashboardComponent implements OnInit {
       return;
     }
 
-    this.fetchStatistics(userId);
+    this.loadOrganizationAndStats(userId);
   }
 
-  private fetchStatistics(userId: string): void {
-    if (!userId) {
-      console.error('Attempted to fetch statistics with no user ID');
+  private loadOrganizationAndStats(userId: string): void {
+    this.organizationService.getOrganizationByUserId(userId).subscribe({
+      next: (organization) => {
+        console.log('Got organization:', organization);
+        this.fetchStatistics(organization.id);
+      },
+      error: (error) => {
+        console.error('Error loading organization:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  private fetchStatistics(organizationId: string): void {
+    if (!organizationId) {
+      console.error('Attempted to fetch statistics with no organization ID');
       this.loading = false;
       return;
     }
 
-    console.log('Fetching statistics for organization:', userId);
-    this.statisticsService.getOrganizationStatistics(userId).subscribe({
+    console.log('Fetching statistics for organization:', organizationId);
+    this.statisticsService.getOrganizationStatistics(organizationId).subscribe({
       next: (response) => {
         if (!response.data) {
           console.error('No data in response');

@@ -9,6 +9,7 @@ public interface OrganizationService {
     OrganizationResponse createOrganization(String userId, OrganizationRequest request);
     OrganizationResponse updateOrganization(String organizationId, OrganizationRequest request);
     OrganizationResponse getOrganization(String organizationId);
+    OrganizationResponse getOrganizationByUserId(String userId);
     void deleteOrganization(String organizationId);
     
     // Search and filtering

@@ -1,18 +1,16 @@
 package com.fill_rouge.backend.mapper;
 
+import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.dto.request.EventRequest;
+import com.fill_rouge.backend.dto.response.EventResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
-
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-
-import com.fill_rouge.backend.domain.Event;
-import com.fill_rouge.backend.dto.request.EventRequest;
-import com.fill_rouge.backend.dto.response.EventResponse;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, imports = LocalDateTime.class)
 public interface EventMapper {

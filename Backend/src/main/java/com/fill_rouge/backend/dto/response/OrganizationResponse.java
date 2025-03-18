@@ -40,9 +40,6 @@ public class OrganizationResponse {
     @Schema(description = "Organization vision statement", example = "A world where every community thrives")
     private String vision;
     
-    @Schema(description = "Organization logo URL", example = "https://example.com/logo.png")
-    private String logo;
-    
     @Schema(description = "Organization website", example = "https://www.globalhelp.org")
     private String website;
     
@@ -58,29 +55,32 @@ public class OrganizationResponse {
     @Schema(description = "Country location", example = "United States")
     private String country;
     
-    @Schema(description = "Geographic coordinates [latitude, longitude]", example = "[40.7128, -74.0060]")
+    @Schema(description = "Province/State", example = "New York")
+    private String province;
+    
+    @Schema(description = "Postal code", example = "10001")
+    private String postalCode;
+    
+    @Schema(description = "Geographic coordinates [longitude, latitude]", example = "[-74.0060, 40.7128]")
     private double[] coordinates;
     
     @Schema(description = "Areas of focus", example = "[\"Education\", \"Healthcare\", \"Environment\"]")
     @Builder.Default
     private Set<String> focusAreas = new HashSet<>();
     
-    @Schema(description = "Social media presence", example = "[\"https://twitter.com/globalhelp\", \"https://facebook.com/globalhelp\"]")
+    @Schema(description = "Social media links")
     @Builder.Default
-    private List<String> socialMediaLinks = new ArrayList<>();
+    private SocialMediaLinks socialMediaLinks = new SocialMediaLinks();
     
     @Schema(description = "Verification status")
     @Builder.Default
     private boolean verified = false;
     
-    @Schema(description = "Date of verification", example = "2024-03-15T10:30:00")
+    @Schema(description = "Verification date")
     private LocalDateTime verificationDate;
     
     @Schema(description = "Official registration number", example = "REG123456")
     private String registrationNumber;
-    
-    @Schema(description = "Tax identification number", example = "TAX987654")
-    private String taxId;
     
     @Schema(description = "Uploaded document URLs")
     @Builder.Default
@@ -120,51 +120,61 @@ public class OrganizationResponse {
     @Schema(description = "Last update date", example = "2024-03-15T15:45:00")
     private LocalDateTime updatedAt;
 
+    @Schema(description = "Organization type", example = "Non-Profit")
+    private String type;
+
+    @Schema(description = "Organization category", example = "Education")
+    private String category;
+
+    @Schema(description = "Organization size", example = "Large")
+    private String size;
+
+    @Schema(description = "Year of establishment", example = "2010")
+    private Integer foundedYear;
+
+    @Schema(description = "Organization logo URL", example = "https://www.globalhelp.org/logo.png")
+    private String logo;
+
+    @Schema(description = "Organization profile picture URL", example = "https://www.globalhelp.org/profile.png")
+    private String profilePicture;
+
     public static OrganizationResponse fromOrganization(Organization organization) {
-        if (organization == null) {
-            return null;
-        }
-
-        List<String> socialLinks = new ArrayList<>();
-        if (organization.getSocialMediaLinks() != null) {
-            SocialMediaLinks links = organization.getSocialMediaLinks();
-            if (links.getFacebook() != null) socialLinks.add(links.getFacebook());
-            if (links.getTwitter() != null) socialLinks.add(links.getTwitter());
-            if (links.getInstagram() != null) socialLinks.add(links.getInstagram());
-            if (links.getLinkedin() != null) socialLinks.add(links.getLinkedin());
-            if (links.getWebsite() != null) socialLinks.add(links.getWebsite());
-        }
-
         return OrganizationResponse.builder()
-                .id(organization.getId())
-                .userId(organization.getUser().getId())
-                .name(organization.getName())
-                .description(organization.getDescription())
-                .mission(organization.getMission())
-                .vision(organization.getVision())
-                .logo(organization.getLogo())
-                .website(organization.getWebsite())
-                .phoneNumber(organization.getPhoneNumber())
-                .address(organization.getAddress())
-                .city(organization.getCity())
-                .country(organization.getCountry())
-                .coordinates(organization.getCoordinates())
-                .focusAreas(organization.getFocusAreas())
-                .socialMediaLinks(socialLinks)
-                .verified(organization.isVerified())
-                .verificationDate(organization.getVerificationDate())
-                .registrationNumber(organization.getRegistrationNumber())
-                .taxId(organization.getTaxId())
-                .documents(organization.getDocuments())
-                .rating(organization.getRating())
-                .numberOfRatings(organization.getNumberOfRatings())
-                .totalEventsHosted(organization.getTotalEventsHosted())
-                .activeVolunteers(organization.getActiveVolunteers())
-                .totalVolunteerHours(organization.getTotalVolunteerHours())
-                .impactScore(organization.getImpactScore())
-                .acceptingVolunteers(organization.isAcceptingVolunteers())
-                .createdAt(organization.getCreatedAt())
-                .updatedAt(organization.getUpdatedAt())
-                .build();
+            .id(organization.getId())
+            .userId(organization.getUser().getId())
+            .name(organization.getName())
+            .description(organization.getDescription())
+            .mission(organization.getMission())
+            .vision(organization.getVision())
+            .website(organization.getWebsite())
+            .phoneNumber(organization.getPhoneNumber())
+            .address(organization.getAddress())
+            .city(organization.getCity())
+            .country(organization.getCountry())
+            .province(organization.getProvince())
+            .postalCode(organization.getPostalCode())
+            .coordinates(organization.getCoordinates())
+            .focusAreas(organization.getFocusAreas())
+            .socialMediaLinks(organization.getSocialMediaLinks())
+            .verified(organization.isVerified())
+            .verificationDate(organization.getVerificationDate())
+            .registrationNumber(organization.getRegistrationNumber())
+            .documents(organization.getDocuments())
+            .rating(organization.getRating())
+            .numberOfRatings(organization.getNumberOfRatings())
+            .totalEventsHosted(organization.getTotalEventsHosted())
+            .activeVolunteers(organization.getActiveVolunteers())
+            .totalVolunteerHours(organization.getTotalVolunteerHours())
+            .impactScore(organization.getImpactScore())
+            .acceptingVolunteers(organization.isAcceptingVolunteers())
+            .createdAt(organization.getCreatedAt())
+            .updatedAt(organization.getUpdatedAt())
+            .type(organization.getType())
+            .category(organization.getCategory())
+            .size(organization.getSize())
+            .foundedYear(organization.getFoundedYear())
+            .logo(organization.getLogo())
+            .profilePicture(organization.getProfilePicture())
+            .build();
     }
 }

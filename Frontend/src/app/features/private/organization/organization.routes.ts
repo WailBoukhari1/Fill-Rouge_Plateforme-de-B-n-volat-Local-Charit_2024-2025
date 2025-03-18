@@ -6,7 +6,16 @@ export const ORGANIZATION_ROUTES: Routes = [
     children: [
       {
         path: 'profile',
-        loadComponent: () => import('./organization-profile/organization-profile.component').then(m => m.OrganizationProfileComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./organization-profile/organization-profile.component').then(m => m.OrganizationProfileComponent)
+          },
+          {
+            path: 'edit',
+            loadComponent: () => import('./organization-profile/organization-profile-edit/organization-profile-edit.component').then(m => m.OrganizationProfileEditComponent)
+          }
+        ]
       },
       {
         path: 'events',

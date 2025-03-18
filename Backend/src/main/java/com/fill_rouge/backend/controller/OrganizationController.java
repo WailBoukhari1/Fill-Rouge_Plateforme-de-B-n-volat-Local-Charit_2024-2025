@@ -60,6 +60,14 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.getOrganization(organizationId));
     }
 
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get organization by user ID", description = "Retrieve organization details by user ID")
+    @ApiResponse(responseCode = "200", description = "Organization retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Organization not found")
+    public ResponseEntity<OrganizationResponse> getOrganizationByUserId(@PathVariable String userId) {
+        return ResponseEntity.ok(organizationService.getOrganizationByUserId(userId));
+    }
+
     @DeleteMapping("/{organizationId}")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Delete organization", description = "Delete an organization profile")

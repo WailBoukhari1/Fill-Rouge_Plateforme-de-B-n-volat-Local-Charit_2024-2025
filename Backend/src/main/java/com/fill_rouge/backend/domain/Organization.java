@@ -1,25 +1,25 @@
 package com.fill_rouge.backend.domain;
 
 import jakarta.validation.constraints.*;
-import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Field;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import com.fill_rouge.backend.domain.SocialMediaLinks;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@Data
 @Document(collection = "organizations")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -49,6 +49,8 @@ public class Organization {
     
     private String logo;
     
+    private String profilePicture;
+    
     @Pattern(regexp = "^(https?:\\/\\/)?([\\w\\-])+\\.{1}([a-zA-Z]{2,63})([\\/\\w-]*)*\\/?$", 
             message = "Invalid website URL format")
     private String website;
@@ -66,7 +68,11 @@ public class Organization {
     @NotBlank(message = "Country is required")
     private String country;
     
-    @Size(min = 2, max = 2, message = "Coordinates must contain exactly 2 values [latitude, longitude]")
+    private String province;
+    
+    private String postalCode;
+    
+    @Size(min = 2, max = 2, message = "Coordinates must contain exactly 2 values [longitude, latitude]")
     private double[] coordinates;
     
     @NotEmpty(message = "At least one focus area is required")
@@ -76,17 +82,13 @@ public class Organization {
     @Field("social_media_links")
     private SocialMediaLinks socialMediaLinks;
     
-    @Builder.Default
-    private boolean verified = false;
-    
-    private LocalDateTime verificationDate;
-    
     @Pattern(regexp = "^[A-Z0-9-]{5,20}$", message = "Invalid registration number format")
     private String registrationNumber;
     
     @Pattern(regexp = "^[A-Z0-9-]{5,20}$", message = "Invalid tax ID format")
     private String taxId;
     
+    @Builder.Default
     private List<String> documents = new ArrayList<>();
     
     @DecimalMin(value = "0.0", message = "Rating cannot be negative")
@@ -101,10 +103,6 @@ public class Organization {
     @PositiveOrZero(message = "Total events hosted cannot be negative")
     @Builder.Default
     private int totalEventsHosted = 0;
-    
-    @PositiveOrZero(message = "Total volunteers cannot be negative")
-    @Builder.Default
-    private int totalVolunteers = 0;
     
     @PositiveOrZero(message = "Active volunteers cannot be negative")
     @Builder.Default
@@ -121,11 +119,27 @@ public class Organization {
     @Builder.Default
     private boolean acceptingVolunteers = true;
     
-    @NotNull(message = "Created date is required")
+    @Builder.Default
+    private boolean verified = false;
+    
+    private LocalDateTime verificationDate;
+    
+    @NotBlank(message = "Organization type is required")
+    private String type;
+    
+    @NotBlank(message = "Organization category is required")
+    private String category;
+    
+    @NotBlank(message = "Organization size is required")
+    private String size;
+    
+    private Integer foundedYear;
+    
+    @CreatedDate
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     
-    @NotNull(message = "Updated date is required")
+    @LastModifiedDate
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
     

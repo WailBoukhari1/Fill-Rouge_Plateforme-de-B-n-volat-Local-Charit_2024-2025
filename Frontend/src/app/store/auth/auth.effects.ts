@@ -253,19 +253,15 @@ export class AuthEffects {
           switch (user.role) {
             case UserRole.ADMIN:
               console.log('Navigating to admin dashboard');
-              this.router.navigate(['/admin/dashboard']);
+              this.router.navigate(['/dashboard']);
               break;
             case UserRole.VOLUNTEER:
               console.log('Navigating to volunteer profile');
-              this.router.navigate(['/volunteer/profile']);
+              this.router.navigate(['/dashboard']);
               break;
             case UserRole.ORGANIZATION:
               console.log('Navigating to organization dashboard');
-              this.router.navigate(['/organization/dashboard']);
-              break;
-            case UserRole.UNASSIGNED:
-              console.log('Navigating to questionnaire for unassigned role');
-              this.router.navigate(['/auth/questionnaire']);
+              this.router.navigate(['/dashboard']);
               break;
             case UserRole.UNASSIGNED:
               console.log('Navigating to questionnaire for unassigned role');
