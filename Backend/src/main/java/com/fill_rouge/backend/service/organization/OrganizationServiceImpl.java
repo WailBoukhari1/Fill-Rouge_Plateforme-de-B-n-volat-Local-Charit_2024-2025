@@ -10,12 +10,15 @@ import com.fill_rouge.backend.repository.OrganizationRepository;
 import com.fill_rouge.backend.repository.UserRepository;
 import com.fill_rouge.backend.repository.EventRepository;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
+import com.fill_rouge.backend.service.storage.GridFsService;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,6 +34,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final GridFsService gridFsService;
     @Override
     public OrganizationResponse createOrganization(String userId, OrganizationRequest request) {
         validateOrganizationRequest(request);
@@ -57,6 +61,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setNumberOfRatings(0);
         organization.setDocuments(new ArrayList<>());
         organization.setFocusAreas(new HashSet<>(request.getFocusAreas()));
+        organization.setProfilePicture(request.getProfilePicture());
 
         return OrganizationResponse.fromOrganization(organizationRepository.save(organization));
     }
@@ -73,8 +78,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         updateOrganizationFromRequest(organization, request);
         organization.setUpdatedAt(LocalDateTime.now());
-        organization.setFocusAreas(new HashSet<>(request.getFocusAreas()));
-        organization.setDocuments(new ArrayList<>(request.getDocuments()));
 
         return OrganizationResponse.fromOrganization(organizationRepository.save(organization));
     }
@@ -324,6 +327,23 @@ public class OrganizationServiceImpl implements OrganizationService {
         organizationRepository.save(organization);
     }
 
+    @Override
+    public OrganizationResponse uploadProfilePicture(String organizationId, MultipartFile file) throws IOException {
+        // Get the organization
+        Organization organization = getOrganizationEntity(organizationId);
+
+        // Store the file using GridFS
+        String fileId = gridFsService.store(file);
+
+        // Update organization with the new profile picture URL
+        organization.setProfilePicture(fileId);
+        organization.setUpdatedAt(LocalDateTime.now());
+        organizationRepository.save(organization);
+
+        // Return the updated organization response
+        return OrganizationResponse.fromOrganization(organization);
+    }
+
     // Helper methods
     private Organization getOrganizationEntity(String organizationId) {
         return organizationRepository.findById(organizationId)
@@ -349,9 +369,10 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setCategory(request.getCategory());
         organization.setSize(request.getSize());
         organization.setFoundedYear(request.getFoundedYear());
+        organization.setAcceptingVolunteers(request.isAcceptingVolunteers());
         organization.setLogo(request.getLogo());
         organization.setProfilePicture(request.getProfilePicture());
-        organization.setAcceptingVolunteers(request.isAcceptingVolunteers());
+        organization.setFocusAreas(new HashSet<>(request.getFocusAreas()));
     }
 
     private void validateOrganizationRequest(OrganizationRequest request) {
@@ -363,9 +384,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
         if (!StringUtils.hasText(request.getRegistrationNumber())) {
             throw new IllegalArgumentException("Registration number is required");
-        }
-        if (request.getFocusAreas() == null || request.getFocusAreas().isEmpty()) {
-            throw new IllegalArgumentException("At least one focus area is required");
         }
     }
 

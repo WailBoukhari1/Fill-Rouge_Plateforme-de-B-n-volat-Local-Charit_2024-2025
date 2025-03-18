@@ -49,7 +49,13 @@ public class Organization {
     
     private String logo;
     
+    /**
+     * Stores the GridFS file ID for the organization's profile picture.
+     * The frontend will construct the full URL using this ID.
+     */
+    @Field("profile_picture")
     private String profilePicture;
+
     
     @Pattern(regexp = "^(https?:\\/\\/)?([\\w\\-])+\\.{1}([a-zA-Z]{2,63})([\\/\\w-]*)*\\/?$", 
             message = "Invalid website URL format")

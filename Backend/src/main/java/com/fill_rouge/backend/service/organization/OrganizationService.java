@@ -2,7 +2,9 @@ package com.fill_rouge.backend.service.organization;
 
 import com.fill_rouge.backend.dto.request.OrganizationRequest;
 import com.fill_rouge.backend.dto.response.OrganizationResponse;
+import java.io.IOException;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface OrganizationService {
     // Core operations
@@ -28,6 +30,9 @@ public interface OrganizationService {
     // Document management
     void addDocument(String organizationId, String documentUrl);
     void removeDocument(String organizationId, String documentUrl);
+    
+    // Profile picture management
+    OrganizationResponse uploadProfilePicture(String organizationId, MultipartFile file) throws IOException;
     
     // Statistics
     void updateStatistics(String organizationId);

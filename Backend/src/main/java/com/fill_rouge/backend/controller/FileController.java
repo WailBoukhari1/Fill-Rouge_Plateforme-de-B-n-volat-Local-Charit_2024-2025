@@ -3,94 +3,76 @@ package com.fill_rouge.backend.controller;
 import com.fill_rouge.backend.service.storage.GridFsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.CacheControl;
-import org.bson.Document;
-import com.mongodb.client.gridfs.model.GridFSFile;
+import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.mongodb.gridfs.GridFsResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
-
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Map;
-import java.util.Arrays;
 
 @RestController
-@RequestMapping({"/api/files", "/files"})
+@RequestMapping("/files")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:4200", "http://localhost:3000"}, allowedHeaders = "*", exposedHeaders = "Content-Disposition", allowCredentials = "true")
+@Tag(name = "File Management", description = "Endpoints for managing file uploads and retrievals")
 public class FileController {
-    private static final Logger logger = LoggerFactory.getLogger(FileController.class);
+
     private final GridFsService gridFsService;
 
+    @PostMapping("/upload")
+    @Operation(summary = "Upload file", description = "Upload a file to GridFS")
+    @ApiResponse(responseCode = "200", description = "File uploaded successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid file type or size")
+    public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
+        String fileId = gridFsService.store(file);
+        return ResponseEntity.ok(Map.of("fileId", fileId));
+    }
+
     @GetMapping("/{fileId}")
-    public ResponseEntity<?> getFile(@PathVariable String fileId) {
-        logger.debug("Fetching file with ID: {}", fileId);
-        try {
-            if (fileId == null || fileId.trim().isEmpty()) {
-                logger.warn("Invalid file ID: null or empty");
-                return ResponseEntity.badRequest().body("Invalid file ID");
-            }
+    @Operation(summary = "Get file", description = "Retrieve a file from GridFS by ID")
+    @ApiResponse(responseCode = "200", description = "File retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "File not found")
+    public ResponseEntity<InputStreamResource> getFile(@PathVariable String fileId) throws IOException {
+        GridFsResource resource = gridFsService.getAsResource(fileId);
+        if (resource == null) {
+            return ResponseEntity.notFound().build();
+        }
 
-            GridFsResource resource = gridFsService.getAsResource(fileId);
-            if (resource == null) {
-                logger.warn("File not found with ID: {}", fileId);
-                return ResponseEntity.notFound().build();
-            }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(resource.getContentType()));
+        headers.setContentLength(resource.contentLength());
+        headers.setContentDispositionFormData("attachment", resource.getFilename());
 
-            HttpHeaders headers = new HttpHeaders();
-            
-            // Set content type from the file's metadata
-            String contentType = resource.getContentType();
-            if (contentType == null || contentType.isEmpty()) {
-                contentType = "application/octet-stream";
-            }
-            headers.setContentType(MediaType.parseMediaType(contentType));
-            logger.debug("Content type for file {}: {}", fileId, contentType);
-            
-            // Set content disposition to inline for browser display
-            headers.setContentDisposition(org.springframework.http.ContentDisposition
-                .inline()
-                .filename(resource.getFilename())
-                .build());
-            
-            // Set caching headers
-            headers.setCacheControl(CacheControl.maxAge(Duration.ofHours(1))
-                .cachePublic()
-                .mustRevalidate());
-
-            // Add CORS headers with specific origins
-            String origin = headers.getOrigin();
-            if (origin != null && (origin.startsWith("http://localhost:4200") || origin.startsWith("http://localhost:3000"))) {
-                headers.setAccessControlAllowOrigin(origin);
-            }
-            headers.setAccessControlAllowMethods(Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
-            headers.setAccessControlAllowHeaders(Arrays.asList("*"));
-            headers.setAccessControlExposeHeaders(Arrays.asList("Content-Disposition"));
-            headers.setAccessControlAllowCredentials(true);
-
-            // Stream the file content
-            return ResponseEntity.ok()
+        return ResponseEntity.ok()
                 .headers(headers)
                 .body(new InputStreamResource(resource.getInputStream()));
-                
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid file ID: {}", fileId, e);
-            return ResponseEntity.badRequest().body("Invalid file ID format");
-        } catch (IOException e) {
-            logger.error("Error retrieving file: {}", fileId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error retrieving file: " + e.getMessage());
-        } catch (Exception e) {
-            logger.error("Unexpected error while retrieving file: {}", fileId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("An unexpected error occurred");
+    }
+
+    @GetMapping("/{fileId}/metadata")
+    @Operation(summary = "Get file metadata", description = "Retrieve metadata for a file from GridFS")
+    @ApiResponse(responseCode = "200", description = "Metadata retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "File not found")
+    public ResponseEntity<Map<String, Object>> getFileMetadata(@PathVariable String fileId) {
+        Map<String, Object> metadata = gridFsService.getFileMetadata(fileId);
+        if (metadata == null) {
+            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(metadata);
+    }
+
+    @DeleteMapping("/{fileId}")
+    @Operation(summary = "Delete file", description = "Delete a file from GridFS")
+    @ApiResponse(responseCode = "204", description = "File deleted successfully")
+    @ApiResponse(responseCode = "404", description = "File not found")
+    public ResponseEntity<Void> deleteFile(@PathVariable String fileId) {
+        if (!gridFsService.exists(fileId)) {
+            return ResponseEntity.notFound().build();
+        }
+        gridFsService.delete(fileId);
+        return ResponseEntity.noContent().build();
     }
 } 

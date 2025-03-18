@@ -194,6 +194,7 @@ export interface OrganizationProfile {
   foundedYear?: number;
   logo?: string;
   profilePicture?: string;
+  imageId?: string;
 }
 
 export interface OrganizationRequest {
@@ -213,11 +214,16 @@ export interface OrganizationRequest {
   category: OrganizationCategory;
   size: OrganizationSize;
   foundedYear?: number;
-  coordinates: [number, number];
-  logo?: string;
-  profilePicture?: string;
+  coordinates: number[];
+  socialMediaLinks?: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
   focusAreas: string[];
-  socialMediaLinks?: SocialMediaLinks;
+  profilePicture?: string;
+  logo?: string;
 }
 
 export interface OrganizationResponse extends OrganizationProfile {} 

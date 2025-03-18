@@ -21,6 +21,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/organizations")
@@ -247,5 +249,28 @@ public class OrganizationController {
     public ResponseEntity<Boolean> isTaxIdValid(
             @RequestParam @Pattern(regexp = "^[A-Z0-9-]{5,20}$") String taxId) {
         return ResponseEntity.ok(organizationService.isTaxIdValid(taxId));
+    }
+
+    @PostMapping("/{organizationId}/profile-picture")
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @Operation(summary = "Upload profile picture", description = "Upload a profile picture for the organization")
+    @ApiResponse(responseCode = "200", description = "Profile picture uploaded successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid file type or size")
+    @ApiResponse(responseCode = "404", description = "Organization not found")
+    public ResponseEntity<OrganizationResponse> uploadProfilePicture(
+            @PathVariable String organizationId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Invalid file type. Only image files are allowed.");
+        }
+
+        // Validate file size (5MB limit)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds 5MB limit.");
+        }
+
+        return ResponseEntity.ok(organizationService.uploadProfilePicture(organizationId, file));
     }
 }
