@@ -1,0 +1,133 @@
+<div class="edit-event-container">
+  <div class="header">
+    <h1>Edit Event</h1>
+    <button mat-button color="primary" routerLink="../../">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Events
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="loading">
+      <mat-spinner></mat-spinner>
+    </div>
+  } @else if (event) {
+    <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="event-form">
+      <div class="form-grid">
+        <!-- Basic Information -->
+        <div class="form-section">
+          <h2>Basic Information</h2>
+          
+          <mat-form-field appearance="outline">
+            <mat-label>Event Title</mat-label>
+            <input matInput formControlName="title" placeholder="Enter event title">
+            <mat-error *ngIf="eventForm.get('title')?.hasError('required')">
+              Title is required
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category">
+              <mat-option *ngFor="let category of categories" [value]="category">
+                {{category}}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="eventForm.get('category')?.hasError('required')">
+              Category is required
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="4" 
+              placeholder="Enter event description"></textarea>
+            <mat-error *ngIf="eventForm.get('description')?.hasError('required')">
+              Description is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Date and Time -->
+        <div class="form-section">
+          <h3>Date and Time</h3>
+          <div class="form-grid">
+            <mat-form-field>
+              <mat-label>Start Date</mat-label>
+              <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
+              <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+              <mat-error *ngIf="eventForm.get('startDate')?.hasError('required')">
+                Start date is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>End Date</mat-label>
+              <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
+              <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+              <mat-error *ngIf="eventForm.get('endDate')?.hasError('required')">
+                End date is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+          <div class="date-error" *ngIf="eventForm.errors?.['invalidDateRange']">
+            <mat-error>End date must be after start date</mat-error>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="form-section">
+          <h2>Location</h2>
+          
+          <mat-form-field appearance="outline">
+            <mat-label>Location</mat-label>
+            <input matInput formControlName="location" placeholder="Enter event location">
+            <mat-error *ngIf="eventForm.get('location')?.hasError('required')">
+              Location is required
+            </mat-error>
+          </mat-form-field>
+
+          <app-map 
+            [coordinates]="getMapCoordinates()"
+            [selectable]="true"
+            (locationSelected)="onCoordinatesSelected($event)">
+          </app-map>
+        </div>
+
+        <!-- Participants -->
+        <div class="form-section">
+          <h2>Participants</h2>
+          
+          <mat-form-field appearance="outline">
+            <mat-label>Maximum Participants</mat-label>
+            <input matInput type="number" formControlName="maxParticipants" min="1">
+            <mat-error *ngIf="eventForm.get('maxParticipants')?.hasError('required')">
+              Maximum participants is required
+            </mat-error>
+            <mat-error *ngIf="eventForm.get('maxParticipants')?.hasError('min')">
+              Must be at least 1
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button type="button" routerLink="../../">Cancel</button>
+        <button mat-raised-button color="primary" type="submit" 
+          [disabled]="eventForm.invalid || submitting">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  } @else {
+    <div class="error">
+      <mat-icon>error_outline</mat-icon>
+      <p>Event not found</p>
+      <button mat-raised-button color="primary" routerLink="../../">
+        Back to Events
+      </button>
+    </div>
+  }
+</div> 

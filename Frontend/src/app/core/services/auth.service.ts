@@ -22,6 +22,7 @@ import { environment } from '../../../environments/environment';
 import { selectIsAuthenticated, selectUser } from '../../store/auth/auth.selectors';
 import * as AuthActions from '../../store/auth/auth.actions';
 import { log } from 'console';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface DecodedToken {
   sub: string;
@@ -44,7 +45,8 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private store: Store,
-    private router: Router
+    private router: Router,
+    private snackBar: MatSnackBar
   ) {}
 
   login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {
@@ -294,125 +296,82 @@ export class AuthService {
   }
 
   private handleAuthResponse(response: AuthResponse): void {
-    if (!response) {
-      console.error('Invalid auth response:', response);
-      throw new Error('Invalid response format');
+    if (!response.token) {
+      throw new Error('No token in response');
     }
 
-    try {
-      // Check if we have tokens
-      if (!response.token || !response.refreshToken) {
-        console.warn('No tokens in response, handling as unverified user');
-        // Create minimal user data for unverified users
-        const userData: User = {
-          id: response.userId?.toString() || '',  // Ensure ID is always a string
-          email: response.email,
-          firstName: response.firstName,
-          lastName: response.lastName,
-          role: response.roles?.[0]?.replace('ROLE_', '') as UserRole || UserRole.UNASSIGNED,
-          roles: response.roles?.map(r => r.replace('ROLE_', '')) || [UserRole.UNASSIGNED],
-          emailVerified: false,
-          twoFactorEnabled: false,
-          accountLocked: false,
-          accountExpired: false,
-          credentialsExpired: false,
-          questionnaireCompleted: false
-        };
+    const decodedToken = this.decodeToken(response.token);
+    const userRole = this.extractRoleFromToken(decodedToken);
 
-        // Store user data without tokens
-        localStorage.setItem(this.userKey, JSON.stringify(userData));
-        
-        // Dispatch action with user data but no tokens
-        this.store.dispatch(AuthActions.loginSuccess({
-          user: userData,
-          token: '',
-          refreshToken: '',
-          redirect: true
-        }));
-        return;
-      }
+    if (!userRole) {
+      throw new Error('No role found in token');
+    }
 
-      // Decode and validate token
-      const decodedToken = this.decodeToken(response.token);
-      console.log('Decoded token:', decodedToken);
-      
-      if (this.isTokenExpired(decodedToken)) {
-        throw new Error('Token is expired');
-      }
-
-      // Extract role from response or token
-      let userRole: string | undefined;
-
-      // First try to get role from response roles
-      if (response.roles && response.roles.length > 0) {
-        userRole = response.roles[0].replace('ROLE_', '');
-        console.log('Using role from response roles:', userRole);
-      }
-      // If no role from response, try token role
-      else if (decodedToken.role) {
-        userRole = decodedToken.role.replace('ROLE_', '');
-        console.log('Using role from token:', userRole);
-      }
-      // If still no role, try token authorities
-      else if (decodedToken.authorities && Array.isArray(decodedToken.authorities)) {
-        const roleAuthority = decodedToken.authorities.find(auth => auth.startsWith('ROLE_'));
-        if (roleAuthority) {
-          userRole = roleAuthority.replace('ROLE_', '');
-          console.log('Using role from token authorities:', userRole);
-        }
-      }
-
-      // Default to UNASSIGNED if no role found
-      if (!userRole) {
-        console.warn('No role found, defaulting to UNASSIGNED');
-        userRole = UserRole.UNASSIGNED;
-      }
-
-      // Validate role is a valid UserRole enum value
-      if (!Object.values(UserRole).includes(userRole as UserRole)) {
-        console.error('Invalid role:', userRole);
-        throw new Error(`Invalid role in authentication data: ${userRole}`);
-      }
-
-      // Create user data object
-      const userData: User = {
-        id: response.userId || '',
-        email: response.email,
-        firstName: response.firstName,
-        lastName: response.lastName,
-        role: userRole as UserRole,
-        roles: [userRole],
-        emailVerified: response.emailVerified || false,
-        twoFactorEnabled: response.twoFactorEnabled || false,
-        accountLocked: response.accountLocked || false,
-        accountExpired: response.accountExpired || false,
-        credentialsExpired: response.credentialsExpired || false,
-        profilePicture: response.profilePicture,
-        lastLoginIp: response.lastLoginIp,
-        lastLoginAt: response.lastLoginAt,
-        questionnaireCompleted: response.questionnaireCompleted || false
-      };
-
-      console.log('Created user data:', userData);
-
-      // Store auth data in localStorage
-      localStorage.setItem(this.userKey, JSON.stringify(userData));
-      localStorage.setItem(this.tokenKey, response.token);
+    // Store tokens
+    localStorage.setItem(this.tokenKey, response.token);
+    if (response.refreshToken) {
       localStorage.setItem('refreshToken', response.refreshToken);
-      localStorage.setItem('userId', response.userId || '');
-
-      // Update store with user data
-      this.store.dispatch(AuthActions.loginSuccess({
-        user: userData,
-        token: response.token,
-        refreshToken: response.refreshToken,
-        redirect: true
-      }));
-    } catch (error) {
-      console.error('Error handling auth response:', error);
-      this.clearStorage();
-      throw error;
     }
+
+    // Store user ID
+    if (response.userId) {
+      localStorage.setItem('userId', response.userId);
+    }
+
+    // If user is an organization, fetch and store the organization ID
+    if (userRole === 'ORGANIZATION' && response.userId) {
+      console.log('Fetching organization ID for user:', response.userId);
+      this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/user/${response.userId}`)
+        .subscribe({
+          next: (orgResponse) => {
+            if (orgResponse.data?.id) {
+              console.log('Storing organization ID:', orgResponse.data.id);
+              localStorage.setItem('organizationId', orgResponse.data.id);
+            } else if (orgResponse.data?._id) {
+              // Handle MongoDB style _id
+              console.log('Storing organization _id:', orgResponse.data._id);
+              localStorage.setItem('organizationId', orgResponse.data._id);
+            } else {
+              console.error('No organization ID in response:', orgResponse);
+              this.snackBar.open('Error: Organization ID not found', 'Close', { duration: 5000 });
+            }
+          },
+          error: (error) => {
+            console.error('Error fetching organization ID:', error);
+            this.snackBar.open('Error fetching organization details', 'Close', { duration: 5000 });
+          }
+        });
+    }
+
+    // Create user object
+    const user: User = {
+      id: response.userId || '',
+      email: response.email,
+      firstName: response.firstName,
+      lastName: response.lastName,
+      role: userRole as UserRole,
+      roles: [userRole],
+      emailVerified: response.emailVerified || false,
+      twoFactorEnabled: response.twoFactorEnabled || false,
+      accountLocked: response.accountLocked || false,
+      accountExpired: response.accountExpired || false,
+      credentialsExpired: response.credentialsExpired || false,
+      profilePicture: response.profilePicture,
+      lastLoginIp: response.lastLoginIp,
+      lastLoginAt: response.lastLoginAt,
+      questionnaireCompleted: response.questionnaireCompleted || false
+    };
+
+    // Store user data
+    localStorage.setItem(this.userKey, JSON.stringify(user));
+
+    // Update auth state
+    this.store.dispatch(AuthActions.loginSuccess({
+      user,
+      token: response.token,
+      refreshToken: response.refreshToken || '',
+      redirect: true
+    }));
   }
 
   private isTokenExpired(decodedToken: DecodedToken): boolean {

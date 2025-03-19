@@ -62,6 +62,7 @@ export interface AuthResponse {
   lastLoginIp?: string;
   lastLoginAt?: string;
   questionnaireCompleted?: boolean;
+  organizationId?: string;
 }
 
 export interface AuthError {

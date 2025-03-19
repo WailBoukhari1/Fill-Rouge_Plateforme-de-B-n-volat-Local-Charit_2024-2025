@@ -1,12 +1,11 @@
 import {
   IEvent,
-  EventStatus,
-  EventCategory,
   IEventRegistration,
   RegistrationStatus,
   IEventFeedback,
   IEventStats,
-  IEventFilters
+  EventStatus,
+  EventCategory
 } from './event.types';
 
 export type Event = IEvent;
@@ -15,7 +14,7 @@ export type EventFeedback = IEventFeedback;
 export type EventStats = IEventStats;
 export type EventFilters = IEventFilters;
 
-export { EventStatus, EventCategory, RegistrationStatus };
+export { RegistrationStatus, EventStatus, EventCategory };
 
 export interface EventLocation {
   address: string;
@@ -61,4 +60,51 @@ export enum EventType {
   IN_PERSON = 'IN_PERSON',
   VIRTUAL = 'VIRTUAL',
   HYBRID = 'HYBRID'
+}
+
+export interface EventRequest {
+  title: string;
+  description: string;
+  location: string;
+  coordinates: [number, number];
+  startDate: string;
+  endDate: string;
+  maxParticipants: number;
+  category: EventCategory;
+  contactPerson: string;
+  contactEmail: string;
+  contactPhone: string;
+}
+
+export interface EventResponse {
+  id: string;
+  title: string;
+  description: string;
+  organizationId: string;
+  location: string;
+  coordinates: [number, number];
+  startDate: string;
+  endDate: string;
+  maxParticipants: number;
+  currentParticipants: number;
+  category: EventCategory;
+  status: EventStatus;
+  averageRating: number;
+  numberOfRatings: number;
+  contactPerson: string;
+  contactEmail: string;
+  contactPhone: string;
+  isRegistered: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IEventFilters {
+  organizationId?: string;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+  category?: EventCategory;
+  status?: EventStatus;
+  startDate?: Date;
+  endDate?: Date;
 }

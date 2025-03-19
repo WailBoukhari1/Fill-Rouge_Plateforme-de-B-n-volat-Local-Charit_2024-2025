@@ -1,19 +1,21 @@
 import { createAction, props } from '@ngrx/store';
 import { IEvent, IEventFeedback, IEventFilters, IEventRegistration, EventStatus, IEventStats } from '../../core/models/event.types';
+import { Event } from '../../core/models/event.model';
+import { Page } from '../../core/models/page.model';
 
 export const loadEvents = createAction(
   '[Event] Load Events',
-  props<{ filters: IEventFilters; page: number; size: number }>()
+  props<{ filters: any; page: number; size: number; }>()
 );
 
 export const loadEventsSuccess = createAction(
   '[Event] Load Events Success',
-  props<{ events: IEvent[]; totalElements: number }>()
+  props<{ events: Page<Event>; }>()
 );
 
 export const loadEventsFailure = createAction(
   '[Event] Load Events Failure',
-  props<{ error: any }>()
+  props<{ error: string; }>()
 );
 
 export const loadEventById = createAction(
@@ -68,7 +70,7 @@ export const updateEventStatus = createAction(
 
 export const updateEventStatusSuccess = createAction(
   '[Event] Update Event Status Success',
-  props<{ event: IEvent }>()
+  props<{ event: Event }>()
 );
 
 export const updateEventStatusFailure = createAction(
@@ -112,15 +114,15 @@ export const loadWaitlistedEventsFailure = createAction(
   props<{ error: any }>()
 );
 
-// Create Event Actions
+// Create Event
 export const createEvent = createAction(
   '[Event] Create Event',
-  props<{ event: Partial<IEvent> }>()
+  props<{ event: Partial<Event> }>()
 );
 
 export const createEventSuccess = createAction(
   '[Event] Create Event Success',
-  props<{ event: IEvent }>()
+  props<{ event: Event }>()
 );
 
 export const createEventFailure = createAction(
@@ -128,15 +130,15 @@ export const createEventFailure = createAction(
   props<{ error: any }>()
 );
 
-// Update Event Actions
+// Update Event
 export const updateEvent = createAction(
   '[Event] Update Event',
-  props<{ id: string; event: Partial<IEvent> }>()
+  props<{ id: string; event: Partial<Event> }>()
 );
 
 export const updateEventSuccess = createAction(
   '[Event] Update Event Success',
-  props<{ event: IEvent }>()
+  props<{ event: Event }>()
 );
 
 export const updateEventFailure = createAction(
@@ -144,7 +146,7 @@ export const updateEventFailure = createAction(
   props<{ error: any }>()
 );
 
-// Delete Event Actions
+// Delete Event
 export const deleteEvent = createAction(
   '[Event] Delete Event',
   props<{ id: string }>()
@@ -160,7 +162,7 @@ export const deleteEventFailure = createAction(
   props<{ error: any }>()
 );
 
-// Cancel Registration Actions
+// Cancel Registration
 export const cancelRegistration = createAction(
   '[Event] Cancel Registration',
   props<{ eventId: string }>()
@@ -175,7 +177,7 @@ export const cancelRegistrationFailure = createAction(
   props<{ error: any }>()
 );
 
-// Waitlist Actions
+// Waitlist
 export const joinWaitlist = createAction(
   '[Event] Join Waitlist',
   props<{ eventId: string }>()
@@ -204,7 +206,7 @@ export const leaveWaitlistFailure = createAction(
   props<{ error: any }>()
 );
 
-// Cancel Event Actions
+// Cancel Event
 export const cancelEvent = createAction(
   '[Event] Cancel Event',
   props<{ id: string; reason: string }>()
@@ -212,7 +214,7 @@ export const cancelEvent = createAction(
 
 export const cancelEventSuccess = createAction(
   '[Event] Cancel Event Success',
-  props<{ event: IEvent }>()
+  props<{ event: Event }>()
 );
 
 export const cancelEventFailure = createAction(
@@ -220,7 +222,7 @@ export const cancelEventFailure = createAction(
   props<{ error: any }>()
 );
 
-// Event Stats Actions
+// Event Stats
 export const loadEventStats = createAction(
   '[Event] Load Event Stats',
   props<{ eventId: string }>()
@@ -236,13 +238,13 @@ export const loadEventStatsFailure = createAction(
   props<{ error: any }>()
 );
 
-// Filter Actions
+// Filter
 export const updateFilters = createAction(
   '[Event] Update Filters',
   props<{ filters: IEventFilters }>()
 );
 
-// Unregister Event Actions
+// Unregister Event
 export const unregisterFromEvent = createAction(
   '[Event] Unregister From Event',
   props<{ eventId: string }>()
@@ -254,5 +256,36 @@ export const unregisterFromEventSuccess = createAction(
 
 export const unregisterFromEventFailure = createAction(
   '[Event] Unregister From Event Failure',
+  props<{ error: any }>()
+);
+
+export const setLoading = createAction(
+  '[Event] Set Loading State',
+  props<{ loading: boolean }>()
+);
+
+// Select Event
+export const selectEvent = createAction(
+  '[Event] Select Event',
+  props<{ event: Event | null }>()
+);
+
+export const clearSelectedEvent = createAction(
+  '[Event] Clear Selected Event'
+);
+
+// Load single event
+export const loadEvent = createAction(
+  '[Event] Load Event',
+  props<{ id: string }>()
+);
+
+export const loadEventSuccess = createAction(
+  '[Event] Load Event Success',
+  props<{ event: Event }>()
+);
+
+export const loadEventFailure = createAction(
+  '[Event] Load Event Failure',
   props<{ error: any }>()
 ); 

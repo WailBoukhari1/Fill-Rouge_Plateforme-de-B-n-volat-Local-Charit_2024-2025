@@ -10,6 +10,7 @@ import { routes } from './app.routes';
 import { AuthEffects } from './store/auth/auth.effects';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { eventReducer } from './store/event/event.reducer';
 import { EventEffects } from './store/event/event.effects';
 import { AuthService } from './core/services/auth.service';
 import { reducers } from './store';
@@ -27,7 +28,10 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([authInterceptor, errorInterceptor])
     ),
-    provideStore(reducers),
+    provideStore({
+      ...reducers,
+      event: eventReducer
+    }),
     provideEffects([
       AuthEffects,
       EventEffects,

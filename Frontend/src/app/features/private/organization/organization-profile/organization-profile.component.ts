@@ -72,16 +72,16 @@ import { environment } from '../../../../../environments/environment';
             <div class="hero-info">
               <div class="profile-header">
                 <div class="profile-image-wrapper">
-                  @if (organization.profilePicture) {
+                @if (organization.profilePicture) {
                     <img [src]="getProfilePictureUrl(organization.profilePicture)" 
-                         alt="Organization profile" 
+                       alt="Organization profile" 
                          class="profile-image"
-                         (error)="onImageError($event)">
-                  } @else {
+                       (error)="onImageError($event)">
+                } @else {
                     <div class="profile-image-placeholder">
                       <mat-icon>business</mat-icon>
-                    </div>
-                  }
+                  </div>
+                }
                   <button mat-fab color="primary" class="upload-button" (click)="fileInput.click()">
                     <mat-icon>camera_alt</mat-icon>
                   </button>
@@ -89,25 +89,29 @@ import { environment } from '../../../../../environments/environment';
                 </div>
                 <div class="profile-title">
                   <h1>{{organization.name}}</h1>
-                  @if (organization.verified) {
+                    @if (organization.verified) {
                     <div class="verified-badge">
                       <mat-icon>verified</mat-icon>
                       <span>Verified Organization</span>
-                    </div>
-                  }
+                      </div>
+                    }
+                  </div>
                 </div>
-              </div>
               <div class="profile-actions">
                 <button mat-raised-button color="primary" routerLink="edit">
                   <mat-icon>edit</mat-icon>
                   Edit Profile
+                </button>
+                <button mat-raised-button color="primary" routerLink="../events">
+                  <mat-icon>event</mat-icon>
+                  Manage Events
                 </button>
                 <button mat-raised-button color="warn" (click)="confirmDelete()">
                   <mat-icon>delete</mat-icon>
                   Delete Account
                 </button>
               </div>
-            </div>
+              </div>
             <div class="organization-stats">
               <div class="stat-card">
                 <mat-icon>event</mat-icon>
@@ -115,14 +119,14 @@ import { environment } from '../../../../../environments/environment';
                   <span class="stat-value">{{organization.totalEventsHosted}}</span>
                   <span class="stat-label">Events</span>
                 </div>
-              </div>
+                </div>
               <div class="stat-card">
                 <mat-icon>people</mat-icon>
                 <div class="stat-info">
                   <span class="stat-value">{{organization.activeVolunteers}}</span>
                   <span class="stat-label">Volunteers</span>
+                  </div>
                 </div>
-              </div>
               <div class="stat-card">
                 <mat-icon>star</mat-icon>
                 <div class="stat-info">
@@ -144,40 +148,40 @@ import { environment } from '../../../../../environments/environment';
         <!-- Main Content -->
         <div class="main-content">
           <div class="content-grid">
-            <!-- About Section -->
+          <!-- About Section -->
             <mat-card class="content-card about-card">
               <mat-card-header>
                 <mat-card-title>
                   <mat-icon>info</mat-icon>
                   About Us
                 </mat-card-title>
-              </mat-card-header>
+            </mat-card-header>
               <mat-card-content>
                 <div class="about-content">
                   <div class="about-section">
                     <h3>Description</h3>
                     <p>{{organization.description}}</p>
-                  </div>
+                </div>
                   <div class="about-section">
                     <h3>Mission</h3>
                     <p>{{organization.mission}}</p>
-                  </div>
+                </div>
                   <div class="about-section">
                     <h3>Vision</h3>
                     <p>{{organization.vision}}</p>
-                  </div>
                 </div>
-              </mat-card-content>
-            </mat-card>
+              </div>
+            </mat-card-content>
+          </mat-card>
 
-            <!-- Contact Information -->
+          <!-- Contact Information -->
             <mat-card class="content-card contact-card">
               <mat-card-header>
                 <mat-card-title>
                   <mat-icon>contact_mail</mat-icon>
                   Contact Information
                 </mat-card-title>
-              </mat-card-header>
+            </mat-card-header>
               <mat-card-content>
                 <div class="contact-list">
                   <div class="contact-item">
@@ -185,137 +189,137 @@ import { environment } from '../../../../../environments/environment';
                     <div class="contact-info">
                       <span class="contact-label">Phone</span>
                       <span class="contact-value">{{organization.phoneNumber}}</span>
-                    </div>
                   </div>
+                </div>
                   <div class="contact-item">
                     <mat-icon>language</mat-icon>
                     <div class="contact-info">
                       <span class="contact-label">Website</span>
                       <a [href]="organization.website" target="_blank" class="contact-value">{{organization.website}}</a>
-                    </div>
                   </div>
+                </div>
                   <div class="contact-item">
                     <mat-icon>location_on</mat-icon>
                     <div class="contact-info">
                       <span class="contact-label">Address</span>
                       <span class="contact-value">{{organization.address}}</span>
                       <span class="contact-value">{{organization.city}}, {{organization.province}} {{organization.postalCode}}</span>
-                    </div>
                   </div>
-                  @if (organization.registrationNumber) {
+                </div>
+                @if (organization.registrationNumber) {
                     <div class="contact-item">
                       <mat-icon>badge</mat-icon>
                       <div class="contact-info">
                         <span class="contact-label">Registration Number</span>
                         <span class="contact-value">{{organization.registrationNumber}}</span>
-                      </div>
                     </div>
-                  }
-                </div>
-              </mat-card-content>
-            </mat-card>
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
 
-            <!-- Focus Areas -->
+          <!-- Focus Areas -->
             <mat-card class="content-card focus-card">
               <mat-card-header>
                 <mat-card-title>
                   <mat-icon>category</mat-icon>
                   Focus Areas
                 </mat-card-title>
-              </mat-card-header>
+            </mat-card-header>
               <mat-card-content>
                 <div class="focus-areas">
-                  @for (area of organization.focusAreas; track area) {
+                @for (area of organization.focusAreas; track area) {
                     <mat-chip color="primary" selected>{{area}}</mat-chip>
-                  }
-                </div>
-              </mat-card-content>
-            </mat-card>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
 
-            <!-- Location Map -->
+          <!-- Location Map -->
             <mat-card class="content-card map-card">
               <mat-card-header>
                 <mat-card-title>
                   <mat-icon>map</mat-icon>
                   Location
                 </mat-card-title>
-              </mat-card-header>
+            </mat-card-header>
               <mat-card-content>
                 @if (organization.coordinates) {
-                  <app-map [coordinates]="organization.coordinates"></app-map>
+                  <app-map [coordinates]="{ lat: organization.coordinates[0], lng: organization.coordinates[1] }"></app-map>
                 } @else {
                   <div class="no-map">
                     <mat-icon>location_off</mat-icon>
                     <p>No location coordinates available</p>
                   </div>
                 }
-              </mat-card-content>
-            </mat-card>
+            </mat-card-content>
+          </mat-card>
 
             <!-- Social Media -->
-            @if (organization.socialMediaLinks) {
+          @if (organization.socialMediaLinks) {
               <mat-card class="content-card social-card">
                 <mat-card-header>
                   <mat-card-title>
                     <mat-icon>share</mat-icon>
                     Social Media
                   </mat-card-title>
-                </mat-card-header>
+              </mat-card-header>
                 <mat-card-content>
                   <div class="social-links">
-                    @if (organization.socialMediaLinks.facebook) {
+                  @if (organization.socialMediaLinks.facebook) {
                       <a [href]="organization.socialMediaLinks.facebook" target="_blank" class="social-link facebook">
                         <mat-icon>facebook</mat-icon>
                         <span>Facebook</span>
-                      </a>
-                    }
-                    @if (organization.socialMediaLinks.twitter) {
+                    </a>
+                  }
+                  @if (organization.socialMediaLinks.twitter) {
                       <a [href]="organization.socialMediaLinks.twitter" target="_blank" class="social-link twitter">
                         <mat-icon>twitter</mat-icon>
                         <span>Twitter</span>
-                      </a>
-                    }
-                    @if (organization.socialMediaLinks.instagram) {
+                    </a>
+                  }
+                  @if (organization.socialMediaLinks.instagram) {
                       <a [href]="organization.socialMediaLinks.instagram" target="_blank" class="social-link instagram">
                         <mat-icon>photo_camera</mat-icon>
                         <span>Instagram</span>
-                      </a>
-                    }
-                    @if (organization.socialMediaLinks.linkedin) {
+                    </a>
+                  }
+                  @if (organization.socialMediaLinks.linkedin) {
                       <a [href]="organization.socialMediaLinks.linkedin" target="_blank" class="social-link linkedin">
                         <mat-icon>linkedin</mat-icon>
                         <span>LinkedIn</span>
-                      </a>
-                    }
-                  </div>
-                </mat-card-content>
-              </mat-card>
-            }
+                    </a>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
 
-            <!-- Documents -->
-            @if (organization.documents && organization.documents.length > 0) {
+          <!-- Documents -->
+          @if (organization.documents && organization.documents.length > 0) {
               <mat-card class="content-card documents-card">
                 <mat-card-header>
                   <mat-card-title>
                     <mat-icon>folder</mat-icon>
                     Documents
                   </mat-card-title>
-                </mat-card-header>
+              </mat-card-header>
                 <mat-card-content>
                   <div class="documents-list">
-                    @for (doc of organization.documents; track doc) {
+                  @for (doc of organization.documents; track doc) {
                       <div class="document-item">
                         <mat-icon>description</mat-icon>
                         <span class="document-name">{{doc}}</span>
-                        <button mat-icon-button color="primary" (click)="downloadDocument(doc)">
-                          <mat-icon>download</mat-icon>
-                        </button>
-                      </div>
-                    }
-                  </div>
-                </mat-card-content>
-              </mat-card>
-            }
+                      <button mat-icon-button color="primary" (click)="downloadDocument(doc)">
+                        <mat-icon>download</mat-icon>
+                      </button>
+                    </div>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
           </div>
         </div>
       } @else {
@@ -820,7 +824,7 @@ export class OrganizationProfileComponent implements OnInit {
       // Ensure focusAreas is an array
       const focusAreas = Array.isArray(this.focusAreas) ? this.focusAreas : [];
 
-      const request: OrganizationRequest = {
+    const request: OrganizationRequest = {
         ...formData,
         logo: this.organization?.logo,
         focusAreas: focusAreas
@@ -832,7 +836,7 @@ export class OrganizationProfileComponent implements OnInit {
         next: (response) => {
           if (response.data) {
             this.organization = response.data;
-            this.snackBar.open('Profile updated successfully', 'Close', { duration: 3000 });
+          this.snackBar.open('Profile updated successfully', 'Close', { duration: 3000 });
           }
           this.loading = false;
         },
@@ -980,23 +984,23 @@ export class OrganizationProfileComponent implements OnInit {
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      this.snackBar.open('File size must be less than 5MB', 'Close', {
-        duration: 5000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-      });
-      return;
-    }
+        this.snackBar.open('File size must be less than 5MB', 'Close', {
+          duration: 5000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+        return;
+      }
 
     // Validate file type
-    if (!file.type.match(/image\/(jpeg|png)/)) {
-      this.snackBar.open('Only JPG and PNG files are allowed', 'Close', {
-        duration: 5000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-      });
-      return;
-    }
+      if (!file.type.match(/image\/(jpeg|png)/)) {
+        this.snackBar.open('Only JPG and PNG files are allowed', 'Close', {
+          duration: 5000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+        return;
+      }
 
     // Create FormData and append the file
     const formData = new FormData();

@@ -56,7 +56,7 @@ export const selectAvailableEvents = createSelector(
 
 export const selectEventById = (eventId: string) => createSelector(
   selectEvents,
-  (events: IEvent[]) => events.find(event => event.id === eventId)
+  (events) => events.find(event => event.id === eventId)
 );
 
 export const selectIsEventFull = (eventId: string) => createSelector(

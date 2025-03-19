@@ -32,7 +32,7 @@ export const PRIVATE_ROUTES: Routes = [
         data: { roles: ['ORGANIZATION'] },
         loadChildren: () =>
           import('./organization/organization.routes').then(
-            (m) => m.ORGANIZATION_ROUTES
+            (m) => m.organizationRoutes
           ),
       },
       // Volunteer Routes

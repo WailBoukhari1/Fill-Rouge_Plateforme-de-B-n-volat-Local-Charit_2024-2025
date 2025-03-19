@@ -1,23 +1,23 @@
-import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, MatSort, Sort } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-
-import { Event, EventStatus } from '../../../../core/models/event.model';
-import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import * as EventActions from '../../../../store/event/event.actions';
-import { selectEvents, selectEventLoading, selectTotalElements } from '../../../../store/event/event.selectors';
+import { Observable } from 'rxjs';
+import { Event, EventStatus } from '../../../../../core/models/event.model';
+import { EventService } from '../../../../../core/services/event.service';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import * as EventActions from '../../../../../store/event/event.actions';
+import { selectEvents, selectEventLoading, selectEventError } from '../../../../../store/event/event.selectors';
 
 @Component({
   selector: 'app-organization-events',
@@ -49,10 +49,23 @@ import { selectEvents, selectEventLoading, selectTotalElements } from '../../../
         <div class="loading-wrapper">
           <mat-spinner diameter="40"></mat-spinner>
         </div>
+      } @else if (error$ | async) {
+        <mat-card>
+          <mat-card-content>
+            <div class="error-message">
+              <mat-icon color="warn">error_outline</mat-icon>
+              <p>{{ error$ | async }}</p>
+              <button mat-raised-button color="primary" (click)="loadEvents()">
+                <mat-icon>refresh</mat-icon>
+                Retry
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
       } @else {
         <mat-card>
           <mat-card-content>
-            <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSort($event)">
+            <table mat-table [dataSource]="(events$ | async) || []" matSort (matSortChange)="onSort($event)">
               <!-- Title Column -->
               <ng-container matColumnDef="title">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
@@ -93,7 +106,7 @@ import { selectEvents, selectEventLoading, selectTotalElements } from '../../../
               <ng-container matColumnDef="participants">
                 <th mat-header-cell *matHeaderCellDef>Participants</th>
                 <td mat-cell *matCellDef="let event">
-                  {{event.registeredParticipants?.size || 0}} / {{event.maxParticipants}}
+                  {{event.currentParticipants}} / {{event.maxParticipants}}
                 </td>
               </ng-container>
 
@@ -101,19 +114,16 @@ import { selectEvents, selectEventLoading, selectTotalElements } from '../../../
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>Actions</th>
                 <td mat-cell *matCellDef="let event">
-                  <button mat-icon-button color="primary" [routerLink]="['edit', event.id]" 
-                    matTooltip="Edit event">
+                  <button mat-icon-button color="primary" [routerLink]="['edit', event.id]" matTooltip="Edit event">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  @if (canUpdateStatus(event)) {
-                    <button mat-icon-button color="accent" (click)="updateStatus(event)" 
-                      matTooltip="Update status">
+                  @if (event.status !== 'COMPLETED' && event.status !== 'CANCELLED') {
+                    <button mat-icon-button color="accent" (click)="updateStatus(event)" matTooltip="Update status">
                       <mat-icon>update</mat-icon>
                     </button>
                   }
-                  @if (canDelete(event)) {
-                    <button mat-icon-button color="warn" (click)="confirmDelete(event)" 
-                      matTooltip="Delete event">
+                  @if (event.status === 'PENDING' || event.status === 'SCHEDULED') {
+                    <button mat-icon-button color="warn" (click)="confirmDelete(event)" matTooltip="Delete event">
                       <mat-icon>delete</mat-icon>
                     </button>
                   }
@@ -125,7 +135,7 @@ import { selectEvents, selectEventLoading, selectTotalElements } from '../../../
             </table>
 
             <mat-paginator 
-              [length]="totalElements$ | async"
+              [length]="totalElements"
               [pageSize]="pageSize"
               [pageSizeOptions]="[5, 10, 25, 100]"
               [showFirstLastButtons]="true"
@@ -222,57 +232,64 @@ import { selectEvents, selectEventLoading, selectTotalElements } from '../../../
       width: 100px;
       text-align: center;
     }
+
+    .error-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .error-message mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+    }
+
+    .error-message p {
+      color: #f44336;
+      font-size: 1.2rem;
+      margin: 0;
+    }
   `]
 })
-export class OrganizationEventsComponent implements OnInit, OnDestroy {
+export class OrganizationEventsComponent implements OnInit {
   events$: Observable<Event[]>;
   loading$: Observable<boolean>;
-  totalElements$: Observable<number>;
+  error$: Observable<string | null>;
   displayedColumns: string[] = ['title', 'category', 'date', 'location', 'status', 'participants', 'actions'];
-  dataSource: MatTableDataSource<Event>;
   
+  // Pagination
   pageSize = 10;
   pageIndex = 0;
-  private destroy$ = new Subject<void>();
+  totalElements = 0;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
     private store: Store,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private eventService: EventService,
+    private authService: AuthService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {
     this.events$ = this.store.select(selectEvents);
     this.loading$ = this.store.select(selectEventLoading);
-    this.totalElements$ = this.store.select(selectTotalElements);
-    this.dataSource = new MatTableDataSource<Event>();
+    this.error$ = this.store.select(selectEventError);
   }
 
   ngOnInit(): void {
     this.loadEvents();
-    
-    // Subscribe to events updates
-    this.events$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(events => {
-      this.dataSource.data = events;
-      if (this.sort) {
-        this.dataSource.sort = this.sort;
-      }
-    });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  private loadEvents(): void {
-    this.store.dispatch(EventActions.loadEvents({
-      filters: {},
-      page: this.pageIndex,
-      size: this.pageSize
+  loadEvents(): void {
+    this.store.dispatch(EventActions.loadEvents({ 
+      filters: {}, 
+      page: this.pageIndex, 
+      size: this.pageSize 
     }));
   }
 
@@ -300,21 +317,12 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
   formatCategory(category: string): string {
     return category.toLowerCase()
       .split('_')
-      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-  }
-
-  canUpdateStatus(event: Event): boolean {
-    return ![EventStatus.COMPLETED, EventStatus.CANCELLED].includes(event.status);
-  }
-
-  canDelete(event: Event): boolean {
-    return [EventStatus.DRAFT, EventStatus.PENDING].includes(event.status);
   }
 
   updateStatus(event: Event): void {
     let newStatus: EventStatus;
-    
     switch (event.status) {
       case EventStatus.DRAFT:
         newStatus = EventStatus.PENDING;
@@ -326,7 +334,11 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
         newStatus = EventStatus.ACTIVE;
         break;
       case EventStatus.ACTIVE:
-        newStatus = EventStatus.ONGOING;
+        if (event.registeredParticipants.size >= event.maxParticipants) {
+          newStatus = EventStatus.ONGOING;
+        } else {
+          newStatus = EventStatus.ONGOING;
+        }
         break;
       case EventStatus.UPCOMING:
         newStatus = EventStatus.ACTIVE;
@@ -337,15 +349,20 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
       case EventStatus.PUBLISHED:
         newStatus = EventStatus.ACTIVE;
         break;
+      case EventStatus.COMPLETED:
+      case EventStatus.CANCELLED:
+        return; // Terminal states, no further transitions
       default:
         this.snackBar.open('Invalid status transition', 'Close', { duration: 3000 });
         return;
     }
 
+    const confirmMessage = `Are you sure you want to change the event status from ${this.formatStatus(event.status)} to ${this.formatStatus(newStatus)}?`;
+    
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Update Event Status',
-        message: `Are you sure you want to change the event status from ${this.formatStatus(event.status)} to ${this.formatStatus(newStatus)}?`,
+        message: confirmMessage,
         confirmText: 'Update',
         cancelText: 'Cancel'
       }
@@ -353,9 +370,9 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.store.dispatch(EventActions.updateEventStatus({
-          eventId: event.id,
-          status: newStatus
+        this.store.dispatch(EventActions.updateEventStatus({ 
+          eventId: event.id, 
+          status: newStatus 
         }));
       }
     });

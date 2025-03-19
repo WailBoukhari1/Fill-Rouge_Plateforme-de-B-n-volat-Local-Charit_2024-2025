@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { environment } from '../../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
 
 // Initialize Mapbox with access token
 mapboxgl.accessToken = environment.mapboxToken;
@@ -13,6 +14,16 @@ interface LocationDetails {
   country: string;
   city?: string;
   region?: string;
+}
+
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface LocationData {
+  coordinates: [number, number];
+  address: string;
 }
 
 @Component({
@@ -109,15 +120,21 @@ interface LocationDetails {
 export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('mapElement') mapElement!: ElementRef<HTMLDivElement>;
   @ViewChild('tooltip') tooltipElement!: ElementRef<HTMLDivElement>;
-  @Input() coordinates: [number, number] = [31.6295, -7.9811]; // Morocco's center coordinates
+  @Input() coordinates?: Coordinates;
+  @Input() selectable = false;
   @Input() zoom: number = 6; // Adjusted zoom level for Morocco
-  @Output() locationSelected = new EventEmitter<LocationDetails>();
+  @Output() locationSelected = new EventEmitter<LocationData>();
 
   private map: mapboxgl.Map | null = null;
   tooltipVisible = false;
   tooltipContent = '';
   selectedCoordinates: [number, number] | null = null;
   error: string | null = null;
+  private marker: mapboxgl.Marker | null = null;
+
+  constructor(private http: HttpClient) {
+    mapboxgl.accessToken = environment.mapboxToken;
+  }
 
   ngOnInit(): void {
     // Don't initialize map here, wait for AfterViewInit
@@ -292,15 +309,13 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
           const locationDetails = await this.getAddressFromCoordinates(coords);
           
           // Emit location details
-          this.locationSelected.emit(locationDetails);
+          this.locationSelected.emit({
+            coordinates: coords,
+            address: locationDetails.address
+          });
 
           // Add marker
-          new mapboxgl.Marker({
-            color: '#FF0000',
-            scale: 0.8
-          })
-            .setLngLat(coords)
-            .addTo(this.map);
+          this.addMarker(coords);
         });
 
         // Add pointer move handler for tooltip with better styling
@@ -349,5 +364,51 @@ export class MapComponent implements OnInit, OnDestroy, AfterViewInit {
       });
       this.selectedCoordinates = coordinates;
     }
+  }
+
+  onMapClick(event: { lat: number, lng: number }): void {
+    if (this.selectable) {
+      this.locationSelected.emit({
+        coordinates: [event.lat, event.lng],
+        address: 'Location selected'
+      });
+    }
+  }
+
+  private addMarker(coordinates: [number, number]): void {
+    if (this.marker) {
+      this.marker.remove();
+    }
+    this.marker = new mapboxgl.Marker({
+      color: '#FF0000',
+      scale: 0.8
+    })
+      .setLngLat(coordinates)
+      .addTo(this.map!);
+  }
+
+  private reverseGeocode(coordinates: [number, number]): void {
+    const [lat, lng] = coordinates;
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxgl.accessToken}`;
+
+    this.http.get<any>(url).subscribe({
+      next: (response) => {
+        if (response.features && response.features.length > 0) {
+          const address = response.features[0].place_name;
+          this.locationSelected.emit({
+            coordinates,
+            address
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error reverse geocoding:', error);
+        // Fallback to coordinates if geocoding fails
+        this.locationSelected.emit({
+          coordinates,
+          address: `${lat}, ${lng}`
+        });
+      }
+    });
   }
 } 

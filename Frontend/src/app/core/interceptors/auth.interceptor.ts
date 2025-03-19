@@ -1,74 +1,59 @@
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import {
-  HttpRequest,
-  HttpHandlerFn,
-  HttpEvent,
-  HttpErrorResponse,
-  HttpInterceptorFn,
-} from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, switchMap, take } from 'rxjs/operators';
-import { Store } from '@ngrx/store';
-import { selectAccessToken } from '../../store/auth/auth.selectors';
-import * as AuthActions from '../../store/auth/auth.actions';
+import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
-export const authInterceptor: HttpInterceptorFn = (
-  request: HttpRequest<unknown>,
-  next: HttpHandlerFn
-): Observable<HttpEvent<unknown>> => {
-  const store = inject(Store);
+export const authInterceptor: HttpInterceptorFn = (request: HttpRequest<unknown>, next: HttpHandlerFn) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const snackBar = inject(MatSnackBar);
 
-  return store.select(selectAccessToken).pipe(
-    take(1),
-    switchMap((token) => {
-      if (token) {
-        request = addToken(request, token);
-      }
-      return next(request).pipe(
-        catchError((error: HttpErrorResponse) => {
-          if (error.status === 401) {
-            return handle401Error(request, next, store);
-          }
-          return throwError(() => error);
-        })
-      );
-    })
-  );
-};
-
-const addToken = (
-  request: HttpRequest<unknown>,
-  token: string
-): HttpRequest<unknown> => {
-  const userId = localStorage.getItem('userId');
-  const headers: { [key: string]: string } = {
-    Authorization: `Bearer ${token}`,
-  };
-
-  if (userId) {
-    headers['X-User-ID'] = userId;
+  // Skip auth headers for public endpoints
+  if (request.url.includes('/auth/login') || request.url.includes('/auth/register') || request.url.includes('/public/')) {
+    return next(request);
   }
 
-  return request.clone({
-    setHeaders: headers,
+  const token = authService.getToken();
+  const userId = authService.getCurrentUserId();
+  const userRole = authService.getUserRole();
+
+  if (!token || !userId || !userRole) {
+    if (!request.url.includes('/auth/')) {
+      router.navigate(['/auth/login']);
+      snackBar.open('Please log in to continue', 'Close', { duration: 5000 });
+    }
+    return throwError(() => new Error('Authentication required'));
+  }
+
+  const headers: { [key: string]: string } = {
+    'Authorization': `Bearer ${token}`,
+    'X-User-ID': userId
+  };
+
+  if (userRole.includes('ORGANIZATION')) {
+    const orgId = localStorage.getItem('organizationId');
+    if (orgId) headers['X-Organization-ID'] = orgId;
+  } else if (userRole.includes('VOLUNTEER')) {
+    const volunteerId = localStorage.getItem('volunteerId');
+    if (volunteerId) headers['X-Volunteer-ID'] = volunteerId;
+  }
+
+  const modifiedRequest = request.clone({
+    setHeaders: headers
   });
-};
 
-const handle401Error = (
-  request: HttpRequest<unknown>,
-  next: HttpHandlerFn,
-  store: Store
-): Observable<HttpEvent<unknown>> => {
-  store.dispatch(AuthActions.refreshToken());
-
-  return store.select(selectAccessToken).pipe(
-    take(1),
-    switchMap((newToken) => {
-      if (newToken) {
-        return next(addToken(request, newToken));
+  return next(modifiedRequest).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401) {
+        authService.logout();
+        router.navigate(['/auth/login']);
+      } else if (error.status === 403) {
+        snackBar.open('Access denied', 'Close', { duration: 5000 });
       }
-      store.dispatch(AuthActions.logout());
-      return throwError(() => new Error('Session expired'));
+      return throwError(() => error);
     })
   );
 };

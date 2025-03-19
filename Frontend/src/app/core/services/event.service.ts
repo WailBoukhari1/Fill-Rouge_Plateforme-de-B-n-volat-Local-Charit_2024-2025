@@ -1,291 +1,336 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map, catchError, of } from 'rxjs';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { Observable, map, catchError, throwError, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
-  IEvent, 
-  IEventStats, 
-  IEventFeedback, 
-  IEventRegistration,
-  IEventFilters,
-  EventStatus
-} from '../models/event.types';
-
-interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  status?: string;
-}
+  EventResponse, 
+  EventRequest, 
+  EventCategory, 
+  EventStatus, 
+  Event, 
+  EventStats,
+  EventRegistration,
+  EventFeedback
+} from '../models/event.model';
+import { ApiResponse } from '../models/api-response.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+import { Page } from '../models/page.model';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EventService {
-  private apiUrl = `${environment.apiUrl}/events`;
+  private readonly apiUrl = `${environment.apiUrl}/events`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private snackBar: MatSnackBar,
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
-  // Public Event Endpoints
-  getEvents(filters: IEventFilters, page: number = 0, size: number = 10): Observable<{ content: IEvent[]; totalElements: number }> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+  private validateOrganizationId(): string {
+    const organizationId = localStorage.getItem('organizationId');
+    console.log('Retrieved organization ID from localStorage:', organizationId);
+    
+    if (!organizationId) {
+      console.error('Organization ID not found in localStorage');
+      this.snackBar.open('Please log in as an organization first', 'Close', { duration: 5000 });
+      this.router.navigate(['/auth/login']);
+      throw new Error('Organization ID not found');
+    }
 
-    if (filters.search) params = params.set('search', filters.search);
-    if (filters.category) params = params.set('category', filters.category);
-    if (filters.startDate) params = params.set('startDate', filters.startDate.toISOString());
-    if (filters.endDate) params = params.set('endDate', filters.endDate.toISOString());
-    if (filters.location) params = params.set('location', filters.location);
-    if (filters.radius) params = params.set('radius', filters.radius.toString());
-    if (filters.skills?.length) params = params.set('skills', filters.skills.join(','));
-    if (filters.status) params = params.set('status', filters.status);
-    if (filters.organizationId) params = params.set('organizationId', filters.organizationId);
-    if (filters.tags?.length) params = params.set('tags', filters.tags.join(','));
-    if (filters.requiresBackground !== undefined) params = params.set('requiresBackground', filters.requiresBackground.toString());
-    if (filters.isRecurring !== undefined) params = params.set('isRecurring', filters.isRecurring.toString());
-    if (filters.minimumAge !== undefined) params = params.set('minimumAge', filters.minimumAge.toString());
+    // Validate that it's a valid MongoDB ObjectId (24 characters, hexadecimal)
+    if (!/^[0-9a-fA-F]{24}$/.test(organizationId)) {
+      console.error('Invalid organization ID format:', organizationId);
+      this.snackBar.open('Invalid organization ID format', 'Close', { duration: 5000 });
+      this.router.navigate(['/auth/login']);
+      throw new Error('Invalid organization ID format');
+    }
 
-    return this.http.get<{ content: IEvent[]; totalElements: number }>(this.apiUrl, { params }).pipe(
-      map(response => ({
-        content: this.mapEvents(response.content),
-        totalElements: response.totalElements
-      }))
-    );
+    return organizationId;
   }
 
-  getEventById(id: string): Observable<IEvent> {
-    return this.http.get<IEvent>(`${this.apiUrl}/${id}`).pipe(
-      map(event => ({
-        ...event,
-        registeredParticipants: new Set(event.registeredParticipants),
-        waitlistedParticipants: new Set(event.waitlistedParticipants),
-        approvedParticipants: new Set(event.approvedParticipants),
-        rejectedParticipants: new Set(event.rejectedParticipants),
-        pendingParticipants: new Set(event.pendingParticipants),
-        tags: new Set(event.tags),
-        resources: new Set(event.resources),
-        sponsors: new Set(event.sponsors)
-      }))
-    );
+  private formatDateForBackend(date: Date | string): string {
+    return date instanceof Date ? date.toISOString() : date;
   }
 
-  getUpcomingEvents(): Observable<IEvent[]> {
-    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/upcoming`).pipe(
-      map(response => this.mapEvents(response.data || [])),
+  private validateEventData(eventData: Partial<Event>): boolean {
+    if (!eventData.startDate || !eventData.endDate) {
+      this.snackBar.open('Invalid date range', 'Close', { duration: 3000 });
+      return false;
+    }
+    
+    if (new Date(eventData.endDate) <= new Date(eventData.startDate)) {
+      this.snackBar.open('End date must be after start date', 'Close', { duration: 3000 });
+      return false;
+    }
+    
+    return true;
+  }
+
+  getEvents(filters: any = {}, page: number = 0, size: number = 10): Observable<Page<Event>> {
+    const organizationId = localStorage.getItem('organizationId');
+    if (!organizationId) {
+      return throwError(() => new Error('Organization ID not found'));
+    }
+
+    return this.http.get<ApiResponse<Page<Event>>>(`${this.apiUrl}/organization/${organizationId}`, {
+      params: {
+        page: page.toString(),
+        size: size.toString(),
+        ...filters
+      }
+    }).pipe(
+      map(response => {
+        if (!response.data) {
+          throw new Error('No data in response');
+        }
+        return {
+          ...response.data,
+          content: response.data.content.map(event => ({
+            ...event,
+            id: event.id || '',
+            startDate: new Date(event.startDate),
+            endDate: new Date(event.endDate),
+            currentParticipants: event.registeredParticipants?.size || 0
+          }))
+        };
+      }),
       catchError(error => {
-        console.error('Error loading upcoming events:', error);
-        return of([]);
+        this.snackBar.open('Error fetching events', 'Close', { duration: 3000 });
+        return throwError(() => error);
       })
     );
   }
 
-  // Event Registration
-  registerForEvent(eventId: string): Observable<IEventRegistration> {
-    return this.http.post<IEventRegistration>(`${this.apiUrl}/${eventId}/register`, {});
+  getEventById(id: string): Observable<Event> {
+    return this.http.get<Event>(`${this.apiUrl}/${id}`);
   }
 
-  cancelRegistration(eventId: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${eventId}/register`);
+  createEvent(event: Partial<Event>): Observable<Event> {
+    // Validate event data
+    if (!this.validateEventData(event)) {
+      return throwError(() => new Error('Invalid event data'));
+    }
+
+    // Convert the event data to the correct format
+    const eventData = this.toEventRequest(event);
+
+    return this.http.post<ApiResponse<Event>>(`${this.apiUrl}`, eventData)
+      .pipe(
+        map(response => {
+          console.log('Created event:', response);
+          return response.data;
+        }),
+        catchError(error => {
+          console.error('Error creating event:', error);
+          let message = 'Error creating event. Please try again.';
+          if (error.status === 400) {
+            message = 'Invalid event data. Please check all required fields.';
+          }
+          this.snackBar.open(message, 'Close', { duration: 5000 });
+          return throwError(() => error);
+        })
+      );
   }
 
-  // Event Waitlist
-  joinWaitlist(eventId: string): Observable<IEventRegistration> {
-    return this.http.post<IEventRegistration>(`${this.apiUrl}/${eventId}/waitlist`, {});
-  }
-
-  leaveWaitlist(eventId: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${eventId}/waitlist`);
-  }
-
-  getEventWaitlist(eventId: string): Observable<IEventRegistration[]> {
-    return this.http.get<IEventRegistration[]>(`${this.apiUrl}/${eventId}/waitlist`);
-  }
-
-  // Event Feedback
-  submitEventFeedback(eventId: string, feedback: Partial<IEventFeedback>): Observable<IEventFeedback> {
-    return this.http.post<IEventFeedback>(`${this.apiUrl}/${eventId}/feedback`, feedback);
-  }
-
-  // Event Statistics
-  getEventStatistics(eventId: string): Observable<IEventStats> {
-    return this.http.get<IEventStats>(`${this.apiUrl}/${eventId}/statistics`);
-  }
-
-  getEventParticipants(eventId: string, page: number = 0, size: number = 10): Observable<{ content: IEventRegistration[]; totalElements: number }> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<{ content: IEventRegistration[]; totalElements: number }>(`${this.apiUrl}/${eventId}/participants`, { params });
-  }
-
-  // Organization Event Management
-  createEvent(event: Partial<IEvent>): Observable<IEvent> {
-    return this.http.post<IEvent>(this.apiUrl, event).pipe(
-      map(event => ({
-        ...event,
-        registeredParticipants: new Set(event.registeredParticipants),
-        waitlistedParticipants: new Set(event.waitlistedParticipants),
-        approvedParticipants: new Set(event.approvedParticipants),
-        rejectedParticipants: new Set(event.rejectedParticipants),
-        pendingParticipants: new Set(event.pendingParticipants),
-        tags: new Set(event.tags),
-        resources: new Set(event.resources),
-        sponsors: new Set(event.sponsors)
-      }))
-    );
-  }
-
-  updateEvent(id: string, event: Partial<IEvent>): Observable<IEvent> {
-    return this.http.put<IEvent>(`${this.apiUrl}/${id}`, event).pipe(
-      map(event => ({
-        ...event,
-        registeredParticipants: new Set(event.registeredParticipants),
-        waitlistedParticipants: new Set(event.waitlistedParticipants),
-        approvedParticipants: new Set(event.approvedParticipants),
-        rejectedParticipants: new Set(event.rejectedParticipants),
-        pendingParticipants: new Set(event.pendingParticipants),
-        tags: new Set(event.tags),
-        resources: new Set(event.resources),
-        sponsors: new Set(event.sponsors)
-      }))
-    );
+  updateEvent(id: string, event: Partial<Event>): Observable<Event> {
+    return this.http.put<Event>(`${this.apiUrl}/${id}`, event);
   }
 
   deleteEvent(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  // Event Status Management
-  updateEventStatus(id: string, status: EventStatus): Observable<IEvent> {
-    return this.http.patch<IEvent>(`${this.apiUrl}/${id}/status`, { status });
+  updateEventStatus(eventId: string, status: EventStatus): Observable<Event> {
+    return this.http.patch<Event>(`${this.apiUrl}/${eventId}/status`, { status });
   }
 
-  cancelEvent(id: string, reason: string): Observable<IEvent> {
-    return this.http.patch<IEvent>(`${this.apiUrl}/${id}/cancel`, { reason });
+  registerForEvent(eventId: string): Observable<EventRegistration> {
+    return this.http.post<EventRegistration>(`${this.apiUrl}/${eventId}/register`, {});
   }
 
-  // Participant Management
-  approveParticipant(eventId: string, userId: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${eventId}/participants/${userId}/approve`, {});
+  unregisterFromEvent(eventId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${eventId}/register`);
   }
 
-  rejectParticipant(eventId: string, userId: string, reason: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${eventId}/participants/${userId}/reject`, { reason });
+  cancelEvent(id: string, reason: string): Observable<Event> {
+    return this.http.patch<Event>(`${this.apiUrl}/${id}/cancel`, { reason });
   }
 
-  // Check-in Management
-  checkInParticipant(eventId: string, userId: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${eventId}/participants/${userId}/check-in`, {});
+  getEventParticipants(eventId: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/${eventId}/participants`);
   }
 
-  checkOutParticipant(eventId: string, userId: string, hoursContributed: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${eventId}/participants/${userId}/check-out`, { hoursContributed });
+  // Get events by organization
+  getEventsByOrganization(organizationId: string, page = 0, size = 10): Observable<Page<Event>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    return this.http.get<ApiResponse<Page<Event>>>(`${this.apiUrl}/organization/${organizationId}`, { params })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching organization events:', error);
+          this.snackBar.open('Error fetching organization events', 'Close', { duration: 3000 });
+          return throwError(() => error);
+        })
+      );
   }
 
-  // Statistics and Metrics
-  getEventStats(eventId: string): Observable<IEventStats> {
-    return this.http.get<IEventStats>(`${this.apiUrl}/${eventId}/stats`);
+  // Get upcoming events
+  getUpcomingEvents(page = 0, size = 10): Observable<Event[]> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/upcoming`, { params })
+      .pipe(map(response => this.mapToEvents(response.data)));
   }
 
-  getOrganizationEventStats(organizationId: string): Observable<IEventStats> {
-    return this.http.get<IEventStats>(`${this.apiUrl}/organization/${organizationId}/stats`);
+  // Search events
+  searchEvents(query: string, page = 0, size = 10): Observable<Event[]> {
+    const params = new HttpParams()
+      .set('query', query)
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/search`, { params })
+      .pipe(map(response => this.mapToEvents(response.data)));
   }
 
-  // Recurring Events
-  createRecurringEvent(event: Partial<IEvent>, pattern: string, endDate: Date): Observable<IEvent[]> {
-    return this.http.post<IEvent[]>(`${this.apiUrl}/recurring`, { event, pattern, endDate });
+  // Get events by category
+  getEventsByCategory(category: EventCategory, page = 0, size = 10): Observable<Event[]> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/category/${category}`, { params })
+      .pipe(map(response => this.mapToEvents(response.data)));
   }
 
-  updateRecurringSeries(seriesId: string, event: Partial<IEvent>): Observable<IEvent[]> {
-    return this.http.put<IEvent[]>(`${this.apiUrl}/recurring/${seriesId}`, event);
+  // Cancel registration
+  cancelRegistration(eventId: string): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${eventId}/register`)
+      .pipe(map(response => void 0));
   }
 
-  cancelRecurringSeries(seriesId: string, reason: string): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/recurring/${seriesId}/cancel`, { reason });
+  // Join waitlist
+  joinWaitlist(eventId: string): Observable<EventRegistration> {
+    return this.http.post<ApiResponse<EventRegistration>>(`${this.apiUrl}/${eventId}/waitlist`, {})
+      .pipe(map(response => response.data));
   }
 
-  // Utility Methods
-  isEventFull(event: IEvent): boolean {
-    return event.registeredParticipants.size >= event.maxParticipants;
+  // Leave waitlist
+  leaveWaitlist(eventId: string): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${eventId}/waitlist`)
+      .pipe(map(response => void 0));
   }
 
-  canRegister(event: IEvent): boolean {
-    return !this.isEventFull(event) && 
-           event.status === EventStatus.APPROVED && 
-           !event.isCancelled &&
-           new Date() < new Date(event.startDate);
+  // Submit event feedback
+  submitEventFeedback(eventId: string, feedback: Partial<EventFeedback>): Observable<EventFeedback> {
+    return this.http.post<ApiResponse<EventFeedback>>(`${this.apiUrl}/${eventId}/feedback`, feedback)
+      .pipe(map(response => response.data));
   }
 
-  getStatusColor(status: EventStatus): string {
-    const statusColors: Record<EventStatus, string> = {
-      [EventStatus.PENDING]: 'basic',
-      [EventStatus.APPROVED]: 'accent',
-      [EventStatus.CANCELLED]: 'warn',
-      [EventStatus.COMPLETED]: 'primary',
-      [EventStatus.DRAFT]: 'basic',
-      [EventStatus.UPCOMING]: 'accent',
-      [EventStatus.ONGOING]: 'primary',
-      [EventStatus.PUBLISHED]: 'primary',
-      [EventStatus.ACTIVE]: 'primary'
-    };
-    return statusColors[status] || 'basic';
+  // Get event feedback
+  getEventFeedback(eventId: string, page = 0, size = 10): Observable<EventFeedback[]> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<ApiResponse<EventFeedback[]>>(`${this.apiUrl}/${eventId}/feedback`, { params })
+      .pipe(map(response => response.data));
   }
 
-  calculateProgress(event: IEvent): number {
-    return (event.registeredParticipants.size / event.maxParticipants) * 100;
+  // Get nearby events
+  getNearbyEvents(coordinates: [number, number], maxDistance: number, page = 0, size = 10): Observable<Event[]> {
+    const params = new HttpParams()
+      .set('lat', coordinates[0].toString())
+      .set('lng', coordinates[1].toString())
+      .set('distance', maxDistance.toString())
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/nearby`, { params })
+      .pipe(map(response => this.mapToEvents(response.data)));
   }
 
-  isParticipant(event: IEvent, userId: string): boolean {
-    return event.registeredParticipants.has(userId);
+  // Get registered events
+  getRegisteredEvents(): Observable<Event[]> {
+    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/registered`)
+      .pipe(map(response => this.mapToEvents(response.data)));
   }
 
-  isWaitlisted(event: IEvent, userId: string): boolean {
-    return event.waitlistedParticipants.has(userId);
+  // Get waitlisted events
+  getWaitlistedEvents(): Observable<Event[]> {
+    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/waitlist`)
+      .pipe(map(response => this.mapToEvents(response.data)));
   }
 
-  isPending(event: IEvent, userId: string): boolean {
-    return event.pendingParticipants.has(userId);
+  // Get event statistics
+  getEventStats(eventId: string): Observable<EventStats> {
+    return this.http.get<ApiResponse<EventStats>>(`${this.apiUrl}/${eventId}/stats`)
+      .pipe(map(response => response.data));
   }
 
-  isApproved(event: IEvent, userId: string): boolean {
-    return event.approvedParticipants.has(userId);
-  }
-
-  isRejected(event: IEvent, userId: string): boolean {
-    return event.rejectedParticipants.has(userId);
-  }
-
-  getRegisteredEvents(): Observable<IEvent[]> {
-    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/registered`).pipe(
-      map(response => this.mapEvents(response.data || [])),
-      catchError(error => {
-        console.error('Error fetching registered events:', error);
-        return of([]);
-      })
-    );
-  }
-
-  getWaitlistedEvents(): Observable<IEvent[]> {
-    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/waitlist`).pipe(
-      map(response => this.mapEvents(response.data || [])),
-      catchError(error => {
-        console.error('Error fetching waitlisted events:', error);
-        return of([]);
-      })
-    );
-  }
-
-  private mapEvents(events: IEvent[]): IEvent[] {
-    return events.map(event => ({
+  // Helper method to map a single EventResponse to Event
+  private mapToEvent(event: EventResponse | null): Event {
+    if (!event) throw new Error('Event not found');
+    return {
       ...event,
-      registeredParticipants: new Set(event.registeredParticipants),
-      waitlistedParticipants: new Set(event.waitlistedParticipants),
-      approvedParticipants: new Set(event.approvedParticipants),
-      rejectedParticipants: new Set(event.rejectedParticipants),
-      pendingParticipants: new Set(event.pendingParticipants),
-      tags: new Set(event.tags),
-      resources: new Set(event.resources),
-      sponsors: new Set(event.sponsors)
-    }));
+      startDate: new Date(event.startDate),
+      endDate: new Date(event.endDate),
+      createdAt: new Date(event.createdAt),
+      updatedAt: new Date(event.updatedAt),
+      registeredParticipants: new Set<string>(),
+      waitlistedParticipants: new Set<string>(),
+      approvedParticipants: new Set<string>(),
+      rejectedParticipants: new Set<string>(),
+      pendingParticipants: new Set<string>(),
+      tags: new Set<string>(),
+      resources: new Set<string>(),
+      sponsors: new Set<string>(),
+      requiredSkills: [],
+      waitlistEnabled: false,
+      maxWaitlistSize: 0,
+      totalVolunteerHours: 0,
+      isCancelled: false,
+      isRecurring: false,
+      requiresApproval: false,
+      minimumAge: 0,
+      requiresBackground: false,
+      isVirtual: false,
+      difficulty: 'BEGINNER',
+      durationHours: 0,
+      isSpecialEvent: false,
+      pointsAwarded: 0,
+      isPublished: true
+    } as Event;
+  }
+
+  // Helper method to map EventResponse[] to Event[]
+  private mapToEvents(events: EventResponse[] | null): Event[] {
+    if (!events) return [];
+    return events.map(event => this.mapToEvent(event));
+  }
+
+  // Helper method to convert Partial<IEvent> to EventRequest
+  private toEventRequest(event: Partial<Event>): EventRequest {
+    const request = {
+      title: event.title || '',
+      description: event.description || '',
+      location: event.location || '',
+      coordinates: event.coordinates || [0, 0],
+      startDate: (event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate) || new Date().toISOString(),
+      endDate: (event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate) || new Date().toISOString(),
+      maxParticipants: event.maxParticipants || 0,
+      category: event.category || EventCategory.OTHER,
+      contactPerson: event.contactPerson || '',
+      contactEmail: event.contactEmail || '',
+      contactPhone: event.contactPhone || ''
+    };
+    
+    console.log('Converted event request:', request);
+    return request;
   }
 } 
