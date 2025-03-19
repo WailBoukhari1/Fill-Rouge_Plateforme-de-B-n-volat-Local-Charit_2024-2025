@@ -17,7 +17,8 @@ import { EventService } from '../../../../../core/services/event.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import * as EventActions from '../../../../../store/event/event.actions';
-import { selectEvents, selectEventLoading, selectEventError } from '../../../../../store/event/event.selectors';
+import { selectEventContent, selectEventLoading, selectEventError, selectEvents } from '../../../../../store/event/event.selectors';
+import { Page } from '../../../../../core/models/page.model';
 
 @Component({
   selector: 'app-organization-events',
@@ -69,35 +70,35 @@ import { selectEvents, selectEventLoading, selectEventError } from '../../../../
               <!-- Title Column -->
               <ng-container matColumnDef="title">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
-                <td mat-cell *matCellDef="let event">{{event.title}}</td>
+                <td mat-cell *matCellDef="let event">{{event?.title || 'N/A'}}</td>
               </ng-container>
 
               <!-- Category Column -->
               <ng-container matColumnDef="category">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Category</th>
-                <td mat-cell *matCellDef="let event">{{formatCategory(event.category)}}</td>
+                <td mat-cell *matCellDef="let event">{{formatCategory(event?.category) || 'N/A'}}</td>
               </ng-container>
 
               <!-- Date Column -->
               <ng-container matColumnDef="date">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
                 <td mat-cell *matCellDef="let event">
-                  {{event.startDate | date:'mediumDate'}} - {{event.endDate | date:'mediumDate'}}
+                  {{event?.startDate | date:'mediumDate'}} - {{event?.endDate | date:'mediumDate'}}
                 </td>
               </ng-container>
 
               <!-- Location Column -->
               <ng-container matColumnDef="location">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
-                <td mat-cell *matCellDef="let event">{{event.location}}</td>
+                <td mat-cell *matCellDef="let event">{{event?.location || 'N/A'}}</td>
               </ng-container>
 
               <!-- Status Column -->
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
                 <td mat-cell *matCellDef="let event">
-                  <span class="status-badge" [class]="event.status.toLowerCase()">
-                    {{formatStatus(event.status)}}
+                  <span class="status-badge" [class]="event?.status?.toLowerCase()">
+                    {{formatStatus(event?.status) || 'N/A'}}
                   </span>
                 </td>
               </ng-container>
@@ -106,7 +107,7 @@ import { selectEvents, selectEventLoading, selectEventError } from '../../../../
               <ng-container matColumnDef="participants">
                 <th mat-header-cell *matHeaderCellDef>Participants</th>
                 <td mat-cell *matCellDef="let event">
-                  {{event.currentParticipants}} / {{event.maxParticipants}}
+                  {{event?.currentParticipants || 0}} / {{event?.maxParticipants || 0}}
                 </td>
               </ng-container>
 
@@ -114,15 +115,15 @@ import { selectEvents, selectEventLoading, selectEventError } from '../../../../
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>Actions</th>
                 <td mat-cell *matCellDef="let event">
-                  <button mat-icon-button color="primary" [routerLink]="['edit', event.id]" matTooltip="Edit event">
+                  <button mat-icon-button color="primary" [routerLink]="['edit', event?.id]" matTooltip="Edit event">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  @if (event.status !== 'COMPLETED' && event.status !== 'CANCELLED') {
+                  @if (event?.status !== 'COMPLETED' && event?.status !== 'CANCELLED') {
                     <button mat-icon-button color="accent" (click)="updateStatus(event)" matTooltip="Update status">
                       <mat-icon>update</mat-icon>
                     </button>
                   }
-                  @if (event.status === 'PENDING' || event.status === 'SCHEDULED') {
+                  @if (event?.status === 'PENDING' || event?.status === 'SCHEDULED') {
                     <button mat-icon-button color="warn" (click)="confirmDelete(event)" matTooltip="Delete event">
                       <mat-icon>delete</mat-icon>
                     </button>
@@ -135,7 +136,7 @@ import { selectEvents, selectEventLoading, selectEventError } from '../../../../
             </table>
 
             <mat-paginator 
-              [length]="totalElements"
+              [length]="(eventsPage$ | async)?.totalElements || 0"
               [pageSize]="pageSize"
               [pageSizeOptions]="[5, 10, 25, 100]"
               [showFirstLastButtons]="true"
@@ -257,14 +258,13 @@ import { selectEvents, selectEventLoading, selectEventError } from '../../../../
 })
 export class OrganizationEventsComponent implements OnInit {
   events$: Observable<Event[]>;
+  eventsPage$: Observable<Page<Event>>;
   loading$: Observable<boolean>;
   error$: Observable<string | null>;
   displayedColumns: string[] = ['title', 'category', 'date', 'location', 'status', 'participants', 'actions'];
   
-  // Pagination
   pageSize = 10;
   pageIndex = 0;
-  totalElements = 0;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -276,7 +276,8 @@ export class OrganizationEventsComponent implements OnInit {
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {
-    this.events$ = this.store.select(selectEvents);
+    this.events$ = this.store.select(selectEventContent);
+    this.eventsPage$ = this.store.select(selectEvents);
     this.loading$ = this.store.select(selectEventLoading);
     this.error$ = this.store.select(selectEventError);
   }

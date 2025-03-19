@@ -1,12 +1,18 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { EventState } from './event.reducer';
 import { IEvent, EventStatus } from '../../core/models/event.types';
+import { Page } from '../../core/models/page.model';
 
 export const selectEventState = createFeatureSelector<EventState>('event');
 
 export const selectEvents = createSelector(
   selectEventState,
   (state: EventState) => state.events
+);
+
+export const selectEventContent = createSelector(
+  selectEvents,
+  (events: Page<IEvent>) => events.content
 );
 
 export const selectSelectedEvent = createSelector(
@@ -40,12 +46,12 @@ export const selectEventError = createSelector(
 );
 
 export const selectTotalElements = createSelector(
-  selectEventState,
-  (state: EventState) => state.totalElements
+  selectEvents,
+  (events: Page<IEvent>) => events.totalElements
 );
 
 export const selectAvailableEvents = createSelector(
-  selectEvents,
+  selectEventContent,
   (events: IEvent[]) => events.filter(event => 
     event.status === EventStatus.APPROVED &&
     !event.isCancelled &&
@@ -55,8 +61,8 @@ export const selectAvailableEvents = createSelector(
 );
 
 export const selectEventById = (eventId: string) => createSelector(
-  selectEvents,
-  (events) => events.find(event => event.id === eventId)
+  selectEventContent,
+  (events: IEvent[]) => events.find((event: IEvent) => event.id === eventId)
 );
 
 export const selectIsEventFull = (eventId: string) => createSelector(
@@ -76,5 +82,5 @@ export const selectCanRegister = (eventId: string) => createSelector(
 
 export const selectEventFilters = createSelector(
   selectEventState,
-  (state) => state.filters
+  (state: EventState) => state.filters
 ); 

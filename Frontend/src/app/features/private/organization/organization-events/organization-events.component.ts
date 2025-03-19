@@ -17,7 +17,9 @@ import { takeUntil } from 'rxjs/operators';
 import { Event, EventStatus } from '../../../../core/models/event.model';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import * as EventActions from '../../../../store/event/event.actions';
-import { selectEvents, selectEventLoading, selectTotalElements } from '../../../../store/event/event.selectors';
+import { selectEvents, selectEventLoading, selectTotalElements, selectEventContent } from '../../../../store/event/event.selectors';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-organization-events',
@@ -234,6 +236,7 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
   pageSize = 10;
   pageIndex = 0;
   private destroy$ = new Subject<void>();
+  private organizationId: string | null = null;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -241,22 +244,31 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
   constructor(
     private store: Store,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private authService: AuthService,
+    private router: Router
   ) {
-    this.events$ = this.store.select(selectEvents);
+    this.events$ = this.store.select(selectEventContent);
     this.loading$ = this.store.select(selectEventLoading);
     this.totalElements$ = this.store.select(selectTotalElements);
     this.dataSource = new MatTableDataSource<Event>();
   }
 
   ngOnInit(): void {
+    this.organizationId = localStorage.getItem('organizationId');
+    if (!this.organizationId) {
+      this.snackBar.open('Please log in as an organization first', 'Close', { duration: 5000 });
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+    
     this.loadEvents();
     
     // Subscribe to events updates
     this.events$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(events => {
-      this.dataSource.data = events;
+      this.dataSource.data = events || [];
       if (this.sort) {
         this.dataSource.sort = this.sort;
       }
@@ -269,6 +281,10 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
   }
 
   private loadEvents(): void {
+    if (!this.organizationId) {
+      return;
+    }
+
     this.store.dispatch(EventActions.loadEvents({
       filters: {},
       page: this.pageIndex,
