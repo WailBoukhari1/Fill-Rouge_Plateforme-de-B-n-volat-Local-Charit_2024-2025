@@ -7,7 +7,7 @@ import { RouterModule } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OrganizationService } from '../../../../core/services/organization.service';
 import { OrganizationStats } from '../../../../store/organization/organization.types';
-import { AuthService } from '../../../../core/auth/auth.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { StatisticsService } from '../../../../core/services/statistics.service';
 import { take } from 'rxjs/operators';
 import { User } from '../../../../core/models/auth.models';
@@ -160,46 +160,17 @@ export class OrganizationDashboardComponent implements OnInit {
   private loadStats() {
     this.loading = true;
     
-    // Try to get user ID from auth service
-    const userId = this.authService.getCurrentUserId();
-    console.log('Attempting to load statistics for user ID:', userId);
+    // Get organization ID from auth service
+    const organizationId = this.authService.getCurrentOrganizationId();
+    console.log('Attempting to load statistics for organization ID:', organizationId);
 
-    if (!userId) {
-      // Try to get user ID from localStorage as fallback
-      const userData = localStorage.getItem('user_data');
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          if (user.id) {
-            const parsedUserId = user.id.toString();
-            console.log('Got user ID from localStorage:', parsedUserId);
-            this.loadOrganizationAndStats(parsedUserId);
-            return;
-          }
-        } catch (error) {
-          console.error('Error parsing user data:', error);
-        }
-      }
-
-      console.error('No user ID available');
+    if (!organizationId) {
+      console.error('No organization ID available');
       this.loading = false;
       return;
     }
 
-    this.loadOrganizationAndStats(userId);
-  }
-
-  private loadOrganizationAndStats(userId: string): void {
-    this.organizationService.getOrganizationByUserId(userId).subscribe({
-      next: (organization) => {
-        console.log('Got organization:', organization);
-        this.fetchStatistics(organization.id);
-      },
-      error: (error) => {
-        console.error('Error loading organization:', error);
-        this.loading = false;
-      }
-    });
+    this.fetchStatistics(organizationId);
   }
 
   private fetchStatistics(organizationId: string): void {

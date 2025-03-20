@@ -1,76 +1,102 @@
 import { createAction, props } from '@ngrx/store';
 import { IEvent, IEventFeedback, IEventFilters, IEventRegistration, EventStatus, IEventStats } from '../../core/models/event.types';
-import { Event } from '../../core/models/event.model';
 import { Page } from '../../core/models/page.model';
+import { createEffect } from '@ngrx/effects';
+import { ofType } from '@ngrx/effects';
+import { switchMap, map, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { EventService } from '../../core/services/event.service';
+import { Injectable } from '@angular/core';
+import { Actions } from '@ngrx/effects';
+
+@Injectable()
+export class EventEffects {
+  constructor(
+    private actions$: Actions,
+    private eventService: EventService
+  ) {}
+
+  updateEvent$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(updateEvent),
+      switchMap(({ id, event }) =>
+        this.eventService.updateEvent(id, event).pipe(
+          map(updatedEvent => updateEventSuccess({ event: updatedEvent })),
+          catchError(error => of(updateEventFailure({ error })))
+        )
+      )
+    )
+  );
+}
 
 export const loadEvents = createAction(
   '[Event] Load Events',
-  props<{ filters: any; page: number; size: number; }>()
+  props<{ filters?: any; page?: number; size?: number }>()
 );
 
 export const loadEventsSuccess = createAction(
   '[Event] Load Events Success',
-  props<{ events: Page<Event>; }>()
+  props<{ events: Page<IEvent> }>()
 );
 
 export const loadEventsFailure = createAction(
   '[Event] Load Events Failure',
-  props<{ error: string; }>()
+  props<{ error: any }>()
 );
 
-export const loadEventById = createAction(
-  '[Event] Load Event By Id',
+export const loadEventDetails = createAction(
+  '[Event] Load Event Details',
   props<{ id: string }>()
 );
 
-export const loadEventByIdSuccess = createAction(
-  '[Event] Load Event By Id Success',
+export const loadEventDetailsSuccess = createAction(
+  '[Event] Load Event Details Success',
   props<{ event: IEvent }>()
 );
 
-export const loadEventByIdFailure = createAction(
-  '[Event] Load Event By Id Failure',
+export const loadEventDetailsFailure = createAction(
+  '[Event] Load Event Details Failure',
   props<{ error: any }>()
 );
 
 export const registerForEvent = createAction(
-  '[Event] Register For Event',
+  '[Event] Register for Event',
   props<{ eventId: string }>()
 );
 
 export const registerForEventSuccess = createAction(
-  '[Event] Register For Event Success',
-  props<{ registration: IEventRegistration }>()
+  '[Event] Register for Event Success',
+  props<{ event: IEvent }>()
 );
 
 export const registerForEventFailure = createAction(
-  '[Event] Register For Event Failure',
+  '[Event] Register for Event Failure',
   props<{ error: any }>()
 );
 
-export const submitFeedback = createAction(
-  '[Event] Submit Feedback',
-  props<{ eventId: string; feedback: Partial<IEventFeedback> }>()
+export const submitEventFeedback = createAction(
+  '[Event] Submit Event Feedback',
+  props<{ eventId: string; rating: number; feedback: string }>()
 );
 
-export const submitFeedbackSuccess = createAction(
-  '[Event] Submit Feedback Success',
-  props<{ feedback: IEventFeedback }>()
+export const submitEventFeedbackSuccess = createAction(
+  '[Event] Submit Event Feedback Success',
+  props<{ event: IEvent }>()
 );
 
-export const submitFeedbackFailure = createAction(
-  '[Event] Submit Feedback Failure',
+export const submitEventFeedbackFailure = createAction(
+  '[Event] Submit Event Feedback Failure',
   props<{ error: any }>()
 );
 
 export const updateEventStatus = createAction(
   '[Event] Update Event Status',
-  props<{ eventId: string; status: EventStatus }>()
+  props<{ id: string; status: EventStatus }>()
 );
 
 export const updateEventStatusSuccess = createAction(
   '[Event] Update Event Status Success',
-  props<{ event: Event }>()
+  props<{ event: IEvent }>()
 );
 
 export const updateEventStatusFailure = createAction(
@@ -114,15 +140,14 @@ export const loadWaitlistedEventsFailure = createAction(
   props<{ error: any }>()
 );
 
-// Create Event
 export const createEvent = createAction(
   '[Event] Create Event',
-  props<{ event: Partial<Event> }>()
+  props<{ event: Partial<IEvent> }>()
 );
 
 export const createEventSuccess = createAction(
   '[Event] Create Event Success',
-  props<{ event: Event }>()
+  props<{ event: IEvent }>()
 );
 
 export const createEventFailure = createAction(
@@ -130,15 +155,14 @@ export const createEventFailure = createAction(
   props<{ error: any }>()
 );
 
-// Update Event
 export const updateEvent = createAction(
   '[Event] Update Event',
-  props<{ id: string; event: Partial<Event> }>()
+  props<{ id: string; event: Partial<IEvent> }>()
 );
 
 export const updateEventSuccess = createAction(
   '[Event] Update Event Success',
-  props<{ event: Event }>()
+  props<{ event: IEvent }>()
 );
 
 export const updateEventFailure = createAction(
@@ -146,7 +170,6 @@ export const updateEventFailure = createAction(
   props<{ error: any }>()
 );
 
-// Delete Event
 export const deleteEvent = createAction(
   '[Event] Delete Event',
   props<{ id: string }>()
@@ -162,67 +185,21 @@ export const deleteEventFailure = createAction(
   props<{ error: any }>()
 );
 
-// Cancel Registration
-export const cancelRegistration = createAction(
-  '[Event] Cancel Registration',
+export const cancelEventRegistration = createAction(
+  '[Event] Cancel Event Registration',
   props<{ eventId: string }>()
 );
 
-export const cancelRegistrationSuccess = createAction(
-  '[Event] Cancel Registration Success'
+export const cancelEventRegistrationSuccess = createAction(
+  '[Event] Cancel Event Registration Success',
+  props<{ event: IEvent }>()
 );
 
-export const cancelRegistrationFailure = createAction(
-  '[Event] Cancel Registration Failure',
+export const cancelEventRegistrationFailure = createAction(
+  '[Event] Cancel Event Registration Failure',
   props<{ error: any }>()
 );
 
-// Waitlist
-export const joinWaitlist = createAction(
-  '[Event] Join Waitlist',
-  props<{ eventId: string }>()
-);
-
-export const joinWaitlistSuccess = createAction(
-  '[Event] Join Waitlist Success'
-);
-
-export const joinWaitlistFailure = createAction(
-  '[Event] Join Waitlist Failure',
-  props<{ error: any }>()
-);
-
-export const leaveWaitlist = createAction(
-  '[Event] Leave Waitlist',
-  props<{ eventId: string }>()
-);
-
-export const leaveWaitlistSuccess = createAction(
-  '[Event] Leave Waitlist Success'
-);
-
-export const leaveWaitlistFailure = createAction(
-  '[Event] Leave Waitlist Failure',
-  props<{ error: any }>()
-);
-
-// Cancel Event
-export const cancelEvent = createAction(
-  '[Event] Cancel Event',
-  props<{ id: string; reason: string }>()
-);
-
-export const cancelEventSuccess = createAction(
-  '[Event] Cancel Event Success',
-  props<{ event: Event }>()
-);
-
-export const cancelEventFailure = createAction(
-  '[Event] Cancel Event Failure',
-  props<{ error: any }>()
-);
-
-// Event Stats
 export const loadEventStats = createAction(
   '[Event] Load Event Stats',
   props<{ eventId: string }>()
@@ -238,13 +215,11 @@ export const loadEventStatsFailure = createAction(
   props<{ error: any }>()
 );
 
-// Filter
 export const updateFilters = createAction(
   '[Event] Update Filters',
   props<{ filters: IEventFilters }>()
 );
 
-// Unregister Event
 export const unregisterFromEvent = createAction(
   '[Event] Unregister From Event',
   props<{ eventId: string }>()
@@ -264,17 +239,15 @@ export const setLoading = createAction(
   props<{ loading: boolean }>()
 );
 
-// Select Event
 export const selectEvent = createAction(
   '[Event] Select Event',
-  props<{ event: Event | null }>()
+  props<{ event: IEvent | null }>()
 );
 
 export const clearSelectedEvent = createAction(
   '[Event] Clear Selected Event'
 );
 
-// Load single event
 export const loadEvent = createAction(
   '[Event] Load Event',
   props<{ id: string }>()
@@ -282,10 +255,25 @@ export const loadEvent = createAction(
 
 export const loadEventSuccess = createAction(
   '[Event] Load Event Success',
-  props<{ event: Event }>()
+  props<{ event: IEvent }>()
 );
 
 export const loadEventFailure = createAction(
   '[Event] Load Event Failure',
+  props<{ error: any }>()
+);
+
+export const updateEventBanner = createAction(
+  '[Event] Update Event Banner',
+  props<{ id: string; bannerImage: string }>()
+);
+
+export const updateEventBannerSuccess = createAction(
+  '[Event] Update Event Banner Success',
+  props<{ event: IEvent }>()
+);
+
+export const updateEventBannerFailure = createAction(
+  '[Event] Update Event Banner Failure',
   props<{ error: any }>()
 ); 

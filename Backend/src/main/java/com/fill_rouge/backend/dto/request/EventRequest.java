@@ -1,6 +1,8 @@
 package com.fill_rouge.backend.dto.request;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 
 import com.fill_rouge.backend.constant.EventCategory;
 
@@ -34,6 +36,8 @@ public class EventRequest {
     @NotBlank(message = "Event location is required")
     private String location;
 
+    private double[] coordinates;
+
     @NotNull(message = "Start date is required")
     @Future(message = "Start date must be in the future")
     private LocalDateTime startDate;
@@ -55,8 +59,24 @@ public class EventRequest {
     @Email(message = "Invalid contact email format")
     private String contactEmail;
 
-    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Invalid contact phone format")
+    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Invalid phone number format")
     private String contactPhone;
+
+    // Additional fields
+    private boolean waitlistEnabled;
+    private int maxWaitlistSize;
+    private List<String> requiredSkills;
+    private boolean virtual;
+    private boolean requiresApproval;
+    private String difficulty;
+    private Set<String> tags;
+    private boolean recurring;
+    private int minimumAge;
+    private boolean requiresBackground;
+    private boolean specialEvent;
+    private int pointsAwarded;
+    private int durationHours;
+    private String bannerImage;
 
     @AssertTrue(message = "End date must be after start date")
     private boolean isValidDateRange() {

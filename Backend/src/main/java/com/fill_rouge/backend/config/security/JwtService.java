@@ -1,33 +1,38 @@
 package com.fill_rouge.backend.config.security;
 
-import com.fill_rouge.backend.config.security.JwtConfig;
-import com.fill_rouge.backend.domain.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
-
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+
+import com.fill_rouge.backend.domain.Organization;
+import com.fill_rouge.backend.domain.User;
+import com.fill_rouge.backend.repository.OrganizationRepository;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+
 @Service
 public class JwtService {
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
     private final JwtConfig jwtConfig;
     private final Key signingKey;
+    private final OrganizationRepository organizationRepository;
 
-    public JwtService(JwtConfig jwtConfig) {
+    public JwtService(JwtConfig jwtConfig, OrganizationRepository organizationRepository) {
         this.jwtConfig = jwtConfig;
         this.signingKey = Keys.hmacShaKeyFor(jwtConfig.getSecretKey().getBytes());
+        this.organizationRepository = organizationRepository;
     }
 
     public String generateToken(UserDetails userDetails) {
@@ -62,6 +67,15 @@ public class JwtService {
             claims.put("user_id", user.getId());
             claims.put("first_name", user.getFirstName());
             claims.put("last_name", user.getLastName());
+            
+            // Add organization ID to claims if user is an organization
+            if (user.getRole() == com.fill_rouge.backend.constant.Role.ORGANIZATION) {
+                organizationRepository.findByUserId(user.getId())
+                    .ifPresent(organization -> {
+                        claims.put("organization_id", organization.getId());
+                        logger.debug("Added organization ID to token: {}", organization.getId());
+                    });
+            }
             
             logger.debug("Token claims: {}", claims);
         } else {
@@ -164,5 +178,17 @@ public class JwtService {
 
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    public String getOrganizationIdFromToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return null;
+        }
+        
+        User user = (User) authentication.getPrincipal();
+        return organizationRepository.findByUserId(user.getId())
+            .map(Organization::getId)
+            .orElse(null);
     }
 } 

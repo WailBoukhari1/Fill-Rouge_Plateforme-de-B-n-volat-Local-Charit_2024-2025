@@ -1,15 +1,16 @@
 package com.fill_rouge.backend.service.event;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 public interface EventService {
     // Core Event Operations
@@ -18,6 +19,7 @@ public interface EventService {
     void deleteEvent(String eventId);
     Event getEventById(String eventId);
     Event updateEventStatus(String eventId, EventStatus status);
+    Page<Event> getAllEvents(Pageable pageable);
     
     // Event Search & Filtering
     Page<Event> getEventsByOrganization(String organizationId, Pageable pageable);

@@ -30,6 +30,11 @@ interface DecodedToken {
   authorities?: string[];
   role?: string;
   user_id?: string;
+  organization_id?: string;
+  email_verified?: boolean;
+  questionnaire_completed?: boolean;
+  first_name?: string;
+  last_name?: string;
 }
 
 @Injectable({
@@ -241,6 +246,49 @@ export class AuthService {
         localStorage.setItem('refreshToken', response.data.refreshToken);
         localStorage.setItem(this.userKey, JSON.stringify(userData));
 
+        // Store organization ID if user is an organization
+        if (userRole === 'ORGANIZATION' && response.data.userId) {
+          console.log('Fetching organization ID for user:', response.data.userId);
+          this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/user/${response.data.userId}`)
+            .subscribe({
+              next: (orgResponse) => {
+                if (orgResponse.data?.id) {
+                  console.log('Storing organization ID:', orgResponse.data.id);
+                  localStorage.setItem('organizationId', orgResponse.data.id);
+                } else if (orgResponse.data?._id) {
+                  // Handle MongoDB style _id
+                  console.log('Storing organization _id:', orgResponse.data._id);
+                  localStorage.setItem('organizationId', orgResponse.data._id);
+                } else {
+                  // If no direct ID found, try to find the organization by userId
+                  this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/search?userId=${response.data.userId}`)
+                    .subscribe({
+                      next: (searchResponse) => {
+                        if (searchResponse.data?.id) {
+                          console.log('Found organization ID through search:', searchResponse.data.id);
+                          localStorage.setItem('organizationId', searchResponse.data.id);
+                        } else if (searchResponse.data?._id) {
+                          console.log('Found organization _id through search:', searchResponse.data._id);
+                          localStorage.setItem('organizationId', searchResponse.data._id);
+                        } else {
+                          console.error('No organization found for user:', response.data.userId);
+                          this.snackBar.open('Error: Organization not found for user', 'Close', { duration: 5000 });
+                        }
+                      },
+                      error: (searchError) => {
+                        console.error('Error searching for organization:', searchError);
+                        this.snackBar.open('Error finding organization details', 'Close', { duration: 5000 });
+                      }
+                    });
+                }
+              },
+              error: (error) => {
+                console.error('Error fetching organization ID:', error);
+                this.snackBar.open('Error fetching organization details', 'Close', { duration: 5000 });
+              }
+            });
+        }
+
         // Update the auth state with new tokens
         this.store.dispatch(AuthActions.loginSuccess({
           user: userData,
@@ -318,8 +366,12 @@ export class AuthService {
       localStorage.setItem('userId', response.userId);
     }
 
-    // If user is an organization, fetch and store the organization ID
-    if (userRole === 'ORGANIZATION' && response.userId) {
+    // Store organization ID if available in token
+    if (decodedToken.organization_id) {
+      console.log('Storing organization ID from token:', decodedToken.organization_id);
+      localStorage.setItem('organizationId', decodedToken.organization_id);
+    } else if (userRole === 'ORGANIZATION' && response.userId) {
+      // Fallback to fetching organization ID if not in token
       console.log('Fetching organization ID for user:', response.userId);
       this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/user/${response.userId}`)
         .subscribe({
@@ -328,12 +380,29 @@ export class AuthService {
               console.log('Storing organization ID:', orgResponse.data.id);
               localStorage.setItem('organizationId', orgResponse.data.id);
             } else if (orgResponse.data?._id) {
-              // Handle MongoDB style _id
               console.log('Storing organization _id:', orgResponse.data._id);
               localStorage.setItem('organizationId', orgResponse.data._id);
             } else {
-              console.error('No organization ID in response:', orgResponse);
-              this.snackBar.open('Error: Organization ID not found', 'Close', { duration: 5000 });
+              // If no direct ID found, try to find the organization by userId
+              this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/search?userId=${response.userId}`)
+                .subscribe({
+                  next: (searchResponse) => {
+                    if (searchResponse.data?.id) {
+                      console.log('Found organization ID through search:', searchResponse.data.id);
+                      localStorage.setItem('organizationId', searchResponse.data.id);
+                    } else if (searchResponse.data?._id) {
+                      console.log('Found organization _id through search:', searchResponse.data._id);
+                      localStorage.setItem('organizationId', searchResponse.data._id);
+                    } else {
+                      console.error('No organization found for user:', response.userId);
+                      this.snackBar.open('Error: Organization not found for user', 'Close', { duration: 5000 });
+                    }
+                  },
+                  error: (searchError) => {
+                    console.error('Error searching for organization:', searchError);
+                    this.snackBar.open('Error finding organization details', 'Close', { duration: 5000 });
+                  }
+                });
             }
           },
           error: (error) => {
@@ -522,5 +591,32 @@ export class AuthService {
       console.error('Error getting user ID:', error);
       return '';
     }
+  }
+
+  getCurrentOrganizationId(): string {
+    // First try to get from token
+    const token = this.getToken();
+    if (token) {
+      try {
+        const decoded = this.decodeToken(token);
+        if (decoded.organization_id) {
+          console.log('Found organization ID in token:', decoded.organization_id);
+          localStorage.setItem('organizationId', decoded.organization_id);
+          return decoded.organization_id;
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+
+    // If not in token, try to get from localStorage
+    const orgId = localStorage.getItem('organizationId');
+    if (orgId) {
+      console.log('Found organization ID in localStorage:', orgId);
+      return orgId;
+    }
+
+    console.warn('No organization ID found');
+    return '';
   }
 }

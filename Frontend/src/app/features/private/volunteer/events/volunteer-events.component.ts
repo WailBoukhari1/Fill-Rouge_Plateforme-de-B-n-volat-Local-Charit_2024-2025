@@ -33,7 +33,7 @@ import { Subscription } from 'rxjs';
       <mat-tab-group>
         <mat-tab label="Upcoming Events">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            @for (event of upcomingEvents; track event.id) {
+            @for (event of upcomingEvents; track event._id) {
               <mat-card>
                 <mat-card-header>
                   <mat-card-title>{{ event.title }}</mat-card-title>
@@ -51,7 +51,7 @@ import { Subscription } from 'rxjs';
                   </div>
                   <div class="flex items-center mb-2">
                     <mat-icon class="text-gray-500 mr-2">group</mat-icon>
-                    <span>{{ event.registeredParticipants.size }}/{{ event.maxParticipants }} participants</span>
+                    <span>{{ event.registeredParticipants.length }}/{{ event.maxParticipants }} participants</span>
                   </div>
                   <div class="mt-2">
                     <mat-chip-listbox>
@@ -64,18 +64,18 @@ import { Subscription } from 'rxjs';
                 <mat-card-actions class="p-4">
                   @if (!isRegistered(event) && !isWaitlisted(event)) {
                     <button mat-raised-button color="primary" 
-                            [disabled]="event.registeredParticipants.size >= event.maxParticipants"
-                            (click)="registerForEvent(event.id)">
-                      {{ event.registeredParticipants.size >= event.maxParticipants ? 'Join Waitlist' : 'Register' }}
+                            [disabled]="event.registeredParticipants.length >= event.maxParticipants"
+                            (click)="event._id && registerForEvent(event._id)">
+                      {{ event.registeredParticipants.length >= event.maxParticipants ? 'Join Waitlist' : 'Register' }}
                     </button>
                   } @else if (isRegistered(event)) {
                     <button mat-raised-button color="warn" 
-                            (click)="cancelRegistration(event.id)">
+                            (click)="event._id && cancelRegistration(event._id)">
                       Cancel Registration
                     </button>
                   } @else if (isWaitlisted(event)) {
                     <button mat-raised-button color="accent" 
-                            (click)="leaveWaitlist(event.id)">
+                            (click)="event._id && leaveWaitlist(event._id)">
                       Leave Waitlist
                     </button>
                   }
@@ -87,7 +87,7 @@ import { Subscription } from 'rxjs';
 
         <mat-tab label="My Events">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            @for (event of registeredEvents; track event.id) {
+            @for (event of registeredEvents; track event._id) {
               <mat-card>
                 <mat-card-header>
                   <mat-card-title>{{ event.title }}</mat-card-title>
@@ -114,13 +114,13 @@ import { Subscription } from 'rxjs';
                 <mat-card-actions class="p-4">
                   @if (isEventInProgress(event)) {
                     <button mat-raised-button color="warn" 
-                            (click)="cancelRegistration(event.id)">
+                            (click)="event._id && cancelRegistration(event._id)">
                       Cancel Registration
                     </button>
                   }
                   @if (isEventCompleted(event)) {
                     <button mat-raised-button color="primary" 
-                            [routerLink]="['/dashboard/feedback', event.id]">
+                            [routerLink]="['/dashboard/feedback', event._id]">
                       Provide Feedback
                     </button>
                   }
@@ -132,7 +132,7 @@ import { Subscription } from 'rxjs';
 
         <mat-tab label="Waitlisted">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            @for (event of waitlistedEvents; track event.id) {
+            @for (event of waitlistedEvents; track event._id) {
               <mat-card>
                 <mat-card-header>
                   <mat-card-title>{{ event.title }}</mat-card-title>
@@ -155,7 +155,7 @@ import { Subscription } from 'rxjs';
                 </mat-card-content>
                 <mat-card-actions class="p-4">
                   <button mat-raised-button color="warn" 
-                          (click)="leaveWaitlist(event.id)">
+                          (click)="event._id && leaveWaitlist(event._id)">
                     Leave Waitlist
                   </button>
                 </mat-card-actions>
@@ -243,29 +243,29 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
   }
 
   leaveWaitlist(eventId: string): void {
-    this.store.dispatch(EventActions.leaveWaitlist({ eventId }));
+    this.store.dispatch(EventActions.unregisterFromEvent({ eventId }));
   }
 
   isRegistered(event: IEvent): boolean {
     const userId = this.getCurrentUserId();
-    return event.registeredParticipants.has(userId);
+    return event.registeredParticipants.includes(userId);
   }
 
   isWaitlisted(event: IEvent): boolean {
     const userId = this.getCurrentUserId();
-    return event.waitlistedParticipants.has(userId);
+    return event.waitlistedParticipants.includes(userId);
   }
 
   isEventInProgress(event: IEvent): boolean {
     const now = new Date();
-    return !event.isCancelled &&
+    return event.status !== EventStatus.CANCELLED &&
            event.status === EventStatus.ACTIVE &&
            now >= new Date(event.startDate) &&
            now <= new Date(event.endDate);
   }
 
   isEventCompleted(event: IEvent): boolean {
-    return !event.isCancelled &&
+    return event.status !== EventStatus.CANCELLED &&
            event.status === EventStatus.COMPLETED &&
            new Date() > new Date(event.endDate);
   }

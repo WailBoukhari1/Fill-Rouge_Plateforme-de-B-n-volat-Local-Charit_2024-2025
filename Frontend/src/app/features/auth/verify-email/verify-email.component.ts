@@ -55,7 +55,7 @@ import { take } from 'rxjs/operators';
 
             <form [formGroup]="verificationForm" (ngSubmit)="onSubmit()" class="space-y-6">
               <div>
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>Verification Code</mat-label>
                   <input matInput formControlName="code" required maxlength="6">
                   <mat-icon matPrefix class="mr-2 text-gray-500">vpn_key</mat-icon>

@@ -220,7 +220,7 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
             <mat-card>
               <mat-card-header>
                 <mat-card-title>User Activity Log</mat-card-title>
-                <mat-form-field appearance="outline" class="ml-auto">
+                <mat-form-field class="ml-auto">
                   <mat-label>Filter by Action</mat-label>
                   <mat-select [(value)]="selectedAction">
                     <mat-option value="">All Actions</mat-option>
@@ -273,7 +273,7 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
             <mat-card>
               <mat-card-header>
                 <mat-card-title>Event Performance</mat-card-title>
-                <mat-form-field appearance="outline" class="ml-auto">
+                <mat-form-field class="ml-auto">
                   <mat-label>Sort By</mat-label>
                   <mat-select [(value)]="sortBy">
                     <mat-option value="participants">Participants</mat-option>
@@ -336,7 +336,7 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
               <mat-card-content class="p-4">
                 <form [formGroup]="reportForm" (ngSubmit)="generateReport()">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Report Type</mat-label>
                       <mat-select formControlName="reportType">
                         <mat-option value="USER">User Report</mat-option>
@@ -346,7 +346,7 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
                       </mat-select>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Format</mat-label>
                       <mat-select formControlName="format">
                         <mat-option value="PDF">PDF</mat-option>
@@ -354,7 +354,7 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
                       </mat-select>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Date Range</mat-label>
                       <mat-date-range-input [rangePicker]="picker">
                         <input matStartDate formControlName="startDate" placeholder="Start date">
@@ -364,7 +364,7 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
                       <mat-date-range-picker #picker></mat-date-range-picker>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Include Charts</mat-label>
                       <mat-select formControlName="includeCharts">
                         <mat-option [value]="true">Yes</mat-option>

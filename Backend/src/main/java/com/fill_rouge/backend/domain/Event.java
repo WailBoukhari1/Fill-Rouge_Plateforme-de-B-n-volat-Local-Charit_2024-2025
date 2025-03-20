@@ -1,20 +1,22 @@
 package com.fill_rouge.backend.domain;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.time.Duration;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.fill_rouge.backend.constant.EventCategory;
-import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.constant.EventParticipationStatus;
+import com.fill_rouge.backend.constant.EventStatus;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Max;
@@ -22,10 +24,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -54,6 +56,8 @@ public class Event {
     @NotBlank(message = "Event location is required")
     private String location;
     
+    private double[] coordinates;
+    
     @NotNull(message = "Start date is required")
     @Future(message = "Start date must be in the future")
     private LocalDateTime startDate;
@@ -66,7 +70,9 @@ public class Event {
     @Max(value = 100, message = "Maximum participants cannot exceed 100")
     private int maxParticipants;
     
+    @Builder.Default
     private Set<String> registeredParticipants = new HashSet<>();
+    @Builder.Default
     private Set<String> waitlistedParticipants = new HashSet<>();
     
     @NotNull(message = "Event category is required")
@@ -90,6 +96,24 @@ public class Event {
     
     @DBRef
     private List<EventParticipation> participations = new ArrayList<>();
+    
+    // Additional fields
+    private boolean waitlistEnabled = false;
+    private int maxWaitlistSize = 0;
+    private int currentWaitlistSize = 0;
+    private Map<String, LocalDateTime> waitlistJoinTimes = new HashMap<>();
+    private List<String> requiredSkills = new ArrayList<>();
+    private boolean virtual = false;
+    private boolean requiresApproval = false;
+    private String difficulty = "BEGINNER";
+    private Set<String> tags = new HashSet<>();
+    private boolean recurring = false;
+    private int minimumAge = 0;
+    private boolean requiresBackground = false;
+    private boolean specialEvent = false;
+    private int pointsAwarded = 0;
+    private int durationHours = 0;
+    private String bannerImage;
     
     // Utility methods
     public boolean isRegistrationOpen() {
@@ -151,5 +175,9 @@ public class Event {
 
     public EventStatus getStatus() {
         return status;
+    }
+
+    public int getDurationHours() {
+        return (int) java.time.Duration.between(startDate, endDate).toHours();
     }
 } 

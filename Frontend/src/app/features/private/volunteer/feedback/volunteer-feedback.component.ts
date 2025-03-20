@@ -150,9 +150,9 @@ export class VolunteerFeedbackComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.feedbackForm.valid && this.eventDetails) {
+    if (this.feedbackForm.valid && this.eventDetails?._id) {
       this.loading = true;
-      this.eventService.submitEventFeedback(this.eventDetails.id, this.feedbackForm.value).subscribe({
+      this.eventService.submitEventFeedback(this.eventDetails._id, this.feedbackForm.value).subscribe({
         next: () => {
           this.loading = false;
           this.router.navigate(['/dashboard/events']);

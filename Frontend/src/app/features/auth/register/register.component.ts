@@ -46,7 +46,7 @@ import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.sel
           <mat-card-content class="p-6">
             <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>First Name</mat-label>
                   <input matInput formControlName="firstName" required>
                   <mat-icon matPrefix class="mr-2 text-gray-500">person</mat-icon>
@@ -58,7 +58,7 @@ import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.sel
                   </mat-error>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>Last Name</mat-label>
                   <input matInput formControlName="lastName" required>
                   <mat-icon matPrefix class="mr-2 text-gray-500">person</mat-icon>
@@ -71,7 +71,7 @@ import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.sel
                 </mat-form-field>
               </div>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Email address</mat-label>
                 <input matInput formControlName="email" type="email" required>
                 <mat-icon matPrefix class="mr-2 text-gray-500">email</mat-icon>
@@ -83,7 +83,7 @@ import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.sel
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Password</mat-label>
                 <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" required>
                 <mat-icon matPrefix class="mr-2 text-gray-500">lock</mat-icon>
@@ -101,7 +101,7 @@ import { selectAuthError, selectAuthLoading } from '../../../store/auth/auth.sel
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Confirm Password</mat-label>
                 <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" required>
                 <mat-icon matPrefix class="mr-2 text-gray-500">lock</mat-icon>

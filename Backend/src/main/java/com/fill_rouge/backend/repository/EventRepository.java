@@ -14,7 +14,6 @@ import org.springframework.stereotype.Repository;
 import com.fill_rouge.backend.constant.EventCategory;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
-import com.fill_rouge.backend.domain.User;
 
 @Repository
 public interface EventRepository extends MongoRepository<Event, String> {

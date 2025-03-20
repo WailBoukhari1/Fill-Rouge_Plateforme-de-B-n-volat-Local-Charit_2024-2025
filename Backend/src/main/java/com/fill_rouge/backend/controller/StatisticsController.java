@@ -28,7 +28,7 @@ public class StatisticsController {
 
     @GetMapping("/organization/{organizationId}")
     @Operation(summary = "Get organization statistics by ID")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('ORGANIZATION') and #organizationId == authentication.principal.id)")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('ORGANIZATION') and @jwtService.getOrganizationIdFromToken() == #organizationId)")
     public ResponseEntity<StatisticsResponse.OrganizationStats> getOrganizationStats(
             @PathVariable String organizationId) {
         return ResponseEntity.ok(statisticsService.getOrganizationStats(organizationId));

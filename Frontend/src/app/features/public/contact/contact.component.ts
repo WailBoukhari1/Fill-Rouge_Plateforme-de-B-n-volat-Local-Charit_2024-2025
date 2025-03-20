@@ -70,7 +70,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
             <div>
               <h2 class="text-2xl font-bold mb-6">Send us a Message</h2>
               <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="space-y-4">
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>Name</mat-label>
                   <input matInput formControlName="name" placeholder="Your name">
                   <mat-error *ngIf="contactForm.get('name')?.hasError('required')">
@@ -78,7 +78,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                   </mat-error>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>Email</mat-label>
                   <input matInput formControlName="email" placeholder="Your email">
                   <mat-error *ngIf="contactForm.get('email')?.hasError('required')">
@@ -89,7 +89,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                   </mat-error>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>Subject</mat-label>
                   <input matInput formControlName="subject" placeholder="Message subject">
                   <mat-error *ngIf="contactForm.get('subject')?.hasError('required')">
@@ -97,7 +97,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                   </mat-error>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>Message</mat-label>
                   <textarea matInput formControlName="message" rows="4" 
                             placeholder="Your message"></textarea>

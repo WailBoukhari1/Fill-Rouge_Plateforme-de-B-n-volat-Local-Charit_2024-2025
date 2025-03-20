@@ -210,27 +210,33 @@ export class EventManagementComponent implements OnInit {
   }
 
   cancelEvent(event: IEvent): void {
-    this.eventService.cancelEvent(event.id, 'Cancelled by admin').subscribe({
-      next: () => this.loadEvents(),
-      error: (error) => console.error('Error cancelling event:', error)
-    });
+    if (event._id) {
+      this.eventService.cancelEvent(event._id, 'Cancelled by admin').subscribe({
+        next: () => this.loadEvents(),
+        error: (error) => console.error('Error cancelling event:', error)
+      });
+    }
   }
 
   deleteEvent(event: IEvent): void {
-    this.eventService.deleteEvent(event.id).subscribe({
-      next: () => this.loadEvents(),
-      error: (error) => console.error('Error deleting event:', error)
-    });
+    if (event._id) {
+      this.eventService.deleteEvent(event._id).subscribe({
+        next: () => this.loadEvents(),
+        error: (error) => console.error('Error deleting event:', error)
+      });
+    }
   }
 
   updateEventStatus(event: IEvent, newStatus: EventStatus): void {
-    this.eventService.updateEventStatus(event.id, newStatus).subscribe({
-      next: () => {
-        event.status = newStatus;
-      },
-      error: (error) => {
-        console.error('Error updating event status:', error);
-      }
-    });
+    if (event._id) {
+      this.eventService.updateEventStatus(event._id, newStatus).subscribe({
+        next: () => {
+          event.status = newStatus;
+        },
+        error: (error) => {
+          console.error('Error updating event status:', error);
+        }
+      });
+    }
   }
 }

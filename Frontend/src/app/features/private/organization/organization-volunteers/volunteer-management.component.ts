@@ -50,7 +50,7 @@ interface VolunteerData {
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Volunteer Management</h1>
         <div class="flex items-center space-x-4">
-          <mat-form-field appearance="outline" class="w-64">
+          <mat-form-field class="w-64">
             <mat-label>Search Volunteers</mat-label>
             <input matInput (keyup)="applyFilter($event)" placeholder="Search by name or email" #input>
             <mat-icon matSuffix>search</mat-icon>

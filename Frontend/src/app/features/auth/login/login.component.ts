@@ -55,7 +55,7 @@ import { selectAuthError, selectAuthLoading, selectUser, selectRequiresTwoFactor
             <div *ngIf="!showTwoFactorForm">
               <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
                 <div class="space-y-4">
-                  <mat-form-field appearance="outline" class="w-full">
+                  <mat-form-field class="w-full">
                     <mat-label>Email address</mat-label>
                     <input matInput formControlName="email" type="email" required 
                            [class.border-red-500]="isFieldInvalid('email')"
@@ -66,7 +66,7 @@ import { selectAuthError, selectAuthLoading, selectUser, selectRequiresTwoFactor
                     </mat-error>
                   </mat-form-field>
 
-                  <mat-form-field appearance="outline" class="w-full">
+                  <mat-form-field class="w-full">
                     <mat-label>Password</mat-label>
                     <input matInput [type]="hidePassword ? 'password' : 'text'" 
                            formControlName="password" required
@@ -149,7 +149,7 @@ import { selectAuthError, selectAuthLoading, selectUser, selectRequiresTwoFactor
                 </div>
 
                 <div class="space-y-4">
-                  <mat-form-field appearance="outline" class="w-full">
+                  <mat-form-field class="w-full">
                     <mat-label>Verification Code</mat-label>
                     <input matInput formControlName="code" type="text" required maxlength="6" autocomplete="off">
                     <mat-icon matPrefix class="mr-2 text-gray-500">dialpad</mat-icon>

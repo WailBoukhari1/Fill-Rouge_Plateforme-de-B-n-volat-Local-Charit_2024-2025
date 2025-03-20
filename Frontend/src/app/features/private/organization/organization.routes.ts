@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { OrganizationProfileComponent } from './organization-profile/organization-profile.component';
+import { EventResolver } from './organization-events/resolvers/event.resolver';
 
 export const organizationRoutes: Routes = [
   {
@@ -22,7 +23,10 @@ export const organizationRoutes: Routes = [
       {
         path: 'edit/:id',
         loadComponent: () => import('./organization-events/edit-event/edit-event.component')
-          .then(m => m.EditEventComponent)
+          .then(m => m.EditEventComponent),
+        resolve: {
+          event: EventResolver
+        }
       }
     ]
   },

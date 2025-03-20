@@ -53,7 +53,7 @@ import { MatStepperModule } from '@angular/material/stepper';
           <ng-template matStepLabel>Basic Information</ng-template>
           <form [formGroup]="basicInfoForm" class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Event Title</mat-label>
                 <input matInput formControlName="title" placeholder="Enter event title">
                 <mat-error *ngIf="basicInfoForm.get('title')?.hasError('required')">
@@ -61,7 +61,7 @@ import { MatStepperModule } from '@angular/material/stepper';
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Category</mat-label>
                 <mat-select formControlName="category">
                   <mat-option value="ENVIRONMENT">Environment</mat-option>
@@ -74,7 +74,7 @@ import { MatStepperModule } from '@angular/material/stepper';
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+              <mat-form-field class="w-full md:col-span-2">
                 <mat-label>Description</mat-label>
                 <textarea matInput formControlName="description" rows="4"
                           placeholder="Describe your event"></textarea>
@@ -83,7 +83,7 @@ import { MatStepperModule } from '@angular/material/stepper';
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Start Date & Time</mat-label>
                 <input matInput formControlName="startDate" [matDatepicker]="startPicker">
                 <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
@@ -93,7 +93,7 @@ import { MatStepperModule } from '@angular/material/stepper';
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>End Date & Time</mat-label>
                 <input matInput formControlName="endDate" [matDatepicker]="endPicker">
                 <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
@@ -118,7 +118,7 @@ import { MatStepperModule } from '@angular/material/stepper';
           <ng-template matStepLabel>Location & Capacity</ng-template>
           <form [formGroup]="locationForm" class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+              <mat-form-field class="w-full md:col-span-2">
                 <mat-label>Location</mat-label>
                 <input matInput formControlName="location" placeholder="Event location">
                 <mat-error *ngIf="locationForm.get('location')?.hasError('required')">
@@ -126,7 +126,7 @@ import { MatStepperModule } from '@angular/material/stepper';
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Maximum Participants</mat-label>
                 <input matInput type="number" formControlName="maxParticipants">
                 <mat-error *ngIf="locationForm.get('maxParticipants')?.hasError('required')">
@@ -134,7 +134,7 @@ import { MatStepperModule } from '@angular/material/stepper';
                 </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Minimum Age</mat-label>
                 <input matInput type="number" formControlName="minimumAge">
               </mat-form-field>
@@ -146,7 +146,7 @@ import { MatStepperModule } from '@angular/material/stepper';
               </div>
 
               @if (locationForm.get('waitlistEnabled')?.value) {
-                <mat-form-field appearance="outline" class="w-full">
+                <mat-form-field class="w-full">
                   <mat-label>Maximum Waitlist Size</mat-label>
                   <input matInput type="number" formControlName="maxWaitlistSize">
                 </mat-form-field>
@@ -171,7 +171,7 @@ import { MatStepperModule } from '@angular/material/stepper';
           <ng-template matStepLabel>Requirements & Impact</ng-template>
           <form [formGroup]="requirementsForm" class="p-6">
             <div class="grid grid-cols-1 gap-6">
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Required Skills</mat-label>
                 <mat-chip-grid #chipGrid aria-label="Required skills">
                   @for (skill of skills; track skill) {
@@ -188,7 +188,7 @@ import { MatStepperModule } from '@angular/material/stepper';
                        (matChipInputTokenEnd)="addSkill($event)">
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Impact Summary</mat-label>
                 <textarea matInput formControlName="impactSummary" rows="4"
                           placeholder="Describe the impact of this event"></textarea>

@@ -346,6 +346,14 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping
+    @Operation(summary = "Get all events", description = "Get a paginated list of all events")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvents(
+            @RequestHeader(value = "X-User-ID", required = false) String userId,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return createPagedResponse(eventService.getAllEvents(pageable), userId);
+    }
+
     // Helper method to create paged response
     private ResponseEntity<ApiResponse<List<EventResponse>>> createPagedResponse(
             Page<Event> eventPage,

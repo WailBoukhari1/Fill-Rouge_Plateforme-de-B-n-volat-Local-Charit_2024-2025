@@ -1,17 +1,22 @@
 package com.fill_rouge.backend.repository;
 
-import com.fill_rouge.backend.domain.EventParticipation;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDateTime;
-import java.util.List;
+
+import com.fill_rouge.backend.constant.EventParticipationStatus;
+import com.fill_rouge.backend.domain.EventParticipation;
 
 @Repository
 public interface EventParticipationRepository extends MongoRepository<EventParticipation, String> {
     List<EventParticipation> findByVolunteerId(String volunteerId);
     
-    List<EventParticipation> findByOrganizationId(String organizationId);
+    @Query("{ 'eventId': { $in: ?0 } }")
+    List<EventParticipation> findByEventIds(List<String> eventIds);
     
     @Query(value = "{ 'volunteerId': ?0 }", count = true)
     long countByVolunteerId(String volunteerId);
@@ -35,4 +40,17 @@ public interface EventParticipationRepository extends MongoRepository<EventParti
 
     @Query(value = "{ 'volunteerId': ?0, 'status': ?1, 'event.endDate': { $lt: ?2 } }", count = true)
     long countByVolunteerIdAndEventStatusAndEndDateBefore(String volunteerId, String status, LocalDateTime date);
+
+    List<EventParticipation> findByEventId(String eventId);
+    Optional<EventParticipation> findByVolunteerIdAndEventId(String volunteerId, String eventId);
+    List<EventParticipation> findByEventIdAndStatus(String eventId, EventParticipationStatus status);
+    boolean existsByVolunteerIdAndEventId(String volunteerId, String eventId);
+    long countByEventIdAndStatus(String eventId, EventParticipationStatus status);
+    List<EventParticipation> findByVolunteerIdAndStatus(String volunteerId, EventParticipationStatus status);
+    
+    @Query("{ 'event.organizationId': ?0, 'status': ?1 }")
+    List<EventParticipation> findByOrganizationIdAndStatus(String organizationId, EventParticipationStatus status);
+
+    @Query(value = "{ 'status': 'COMPLETED' }", fields = "{ 'hours': 1 }")
+    long sumTotalHoursCompleted();
 } 

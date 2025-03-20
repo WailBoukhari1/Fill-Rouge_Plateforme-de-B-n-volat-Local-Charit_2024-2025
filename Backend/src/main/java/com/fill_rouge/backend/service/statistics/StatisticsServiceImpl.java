@@ -127,7 +127,10 @@ public class StatisticsServiceImpl implements StatisticsService {
         
         // Get all events for the organization
         List<Event> events = eventRepository.findAllByOrganizationId(organizationId);
-        List<EventParticipation> participations = participationRepository.findByOrganizationId(organizationId);
+        List<String> eventIds = events.stream()
+            .map(Event::getId)
+            .collect(Collectors.toList());
+        List<EventParticipation> participations = participationRepository.findByEventIds(eventIds);
         
         // Calculate event metrics
         long totalEvents = events.size();
@@ -355,8 +358,8 @@ public class StatisticsServiceImpl implements StatisticsService {
         Map<String, Long> hoursByMonth = participations.stream()
             .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
             .collect(Collectors.groupingBy(
-                p -> p.getCompletedDate().format(DateTimeFormatter.ofPattern("yyyy-MM")),
-                Collectors.summingLong(EventParticipation::getHours)
+                p -> p.getCheckOutTime().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                Collectors.summingLong(p -> p.getHours() != null ? p.getHours() : 0L)
             ));
 
         return hoursByMonth.entrySet().stream()

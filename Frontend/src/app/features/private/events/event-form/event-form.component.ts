@@ -40,12 +40,12 @@ import { EventCategory } from '../../../../core/models/event.model';
           <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-xl font-semibold mb-4">Basic Information</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Event Title</mat-label>
                 <input matInput formControlName="title" placeholder="Enter event title">
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Category</mat-label>
                 <mat-select formControlName="category">
                   @for(category of categories; track category) {
@@ -54,7 +54,7 @@ import { EventCategory } from '../../../../core/models/event.model';
                 </mat-select>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+              <mat-form-field class="w-full md:col-span-2">
                 <mat-label>Description</mat-label>
                 <textarea matInput formControlName="description" rows="4"></textarea>
               </mat-form-field>
@@ -65,21 +65,21 @@ import { EventCategory } from '../../../../core/models/event.model';
           <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-xl font-semibold mb-4">Date and Time</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Start Date</mat-label>
                 <input matInput [matDatepicker]="startPicker" formControlName="startDate">
                 <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
                 <mat-datepicker #startPicker></mat-datepicker>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>End Date</mat-label>
                 <input matInput [matDatepicker]="endPicker" formControlName="endDate">
                 <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
                 <mat-datepicker #endPicker></mat-datepicker>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Registration Deadline</mat-label>
                 <input matInput [matDatepicker]="deadlinePicker" formControlName="registrationDeadline">
                 <mat-datepicker-toggle matSuffix [for]="deadlinePicker"></mat-datepicker-toggle>
@@ -92,17 +92,17 @@ import { EventCategory } from '../../../../core/models/event.model';
           <div class="bg-white rounded-lg shadow-sm p-6">
             <h2 class="text-xl font-semibold mb-4">Location and Capacity</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+              <mat-form-field class="w-full md:col-span-2">
                 <mat-label>Location</mat-label>
                 <input matInput formControlName="location" placeholder="Event location">
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Maximum Participants</mat-label>
                 <input matInput type="number" formControlName="maxParticipants">
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field class="w-full">
                 <mat-label>Minimum Age</mat-label>
                 <input matInput type="number" formControlName="minimumAge">
               </mat-form-field>

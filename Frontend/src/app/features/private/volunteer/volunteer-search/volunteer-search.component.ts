@@ -101,21 +101,21 @@ import { VolunteerProfileCardComponent } from '../volunteer-profile-card/volunte
             <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
               <div class="search-grid">
                 <!-- Basic Search -->
-                <mat-form-field appearance="outline" class="search-field">
+                <mat-form-field class="search-field">
                   <mat-label>Search</mat-label>
                   <input matInput formControlName="query" placeholder="Search by name, skills, or interests">
                   <mat-icon matSuffix>search</mat-icon>
                 </mat-form-field>
 
                 <!-- Location -->
-                <mat-form-field appearance="outline" class="search-field">
+                <mat-form-field class="search-field">
                   <mat-label>Location</mat-label>
                   <input matInput formControlName="location" placeholder="City or region">
                   <mat-icon matSuffix>location_on</mat-icon>
                 </mat-form-field>
 
                 <!-- Skills -->
-                <mat-form-field appearance="outline" class="search-field">
+                <mat-form-field class="search-field">
                   <mat-label>Skills</mat-label>
                   <mat-chip-grid #chipGrid>
                     <mat-chip-row *ngFor="let skill of selectedSkills" (removed)="removeSkill(skill)">
@@ -131,7 +131,7 @@ import { VolunteerProfileCardComponent } from '../volunteer-profile-card/volunte
                 </mat-form-field>
 
                 <!-- Availability -->
-                <mat-form-field appearance="outline" class="search-field">
+                <mat-form-field class="search-field">
                   <mat-label>Availability</mat-label>
                   <mat-select formControlName="availability" multiple>
                     <mat-option value="MORNING">Morning</mat-option>
@@ -154,7 +154,7 @@ import { VolunteerProfileCardComponent } from '../volunteer-profile-card/volunte
                 <mat-divider></mat-divider>
                 <div class="advanced-grid">
                   <!-- Experience Level -->
-                  <mat-form-field appearance="outline">
+                  <mat-form-field>
                     <mat-label>Experience Level</mat-label>
                     <mat-select formControlName="experienceLevel">
                       <mat-option value="BEGINNER">Beginner</mat-option>
@@ -164,7 +164,7 @@ import { VolunteerProfileCardComponent } from '../volunteer-profile-card/volunte
                   </mat-form-field>
 
                   <!-- Languages -->
-                  <mat-form-field appearance="outline">
+                  <mat-form-field>
                     <mat-label>Languages</mat-label>
                     <mat-select formControlName="languages" multiple>
                       <mat-option value="ENGLISH">English</mat-option>
@@ -175,7 +175,7 @@ import { VolunteerProfileCardComponent } from '../volunteer-profile-card/volunte
                   </mat-form-field>
 
                   <!-- Certifications -->
-                  <mat-form-field appearance="outline">
+                  <mat-form-field>
                     <mat-label>Certifications</mat-label>
                     <mat-select formControlName="certifications" multiple>
                       <mat-option value="FIRST_AID">First Aid</mat-option>

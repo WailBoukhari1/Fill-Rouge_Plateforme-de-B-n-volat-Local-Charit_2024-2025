@@ -69,7 +69,7 @@ interface Region {
                   <mat-card class="shadow-md">
                     <mat-card-content class="p-4 sm:p-6">
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Organization Name</mat-label>
                           <input matInput formControlName="name" required>
                           <mat-error *ngIf="profileForm.get('name')?.hasError('required')">
@@ -77,7 +77,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Type</mat-label>
                           <mat-select formControlName="type" required>
                             @for (type of organizationTypes; track type) {
@@ -89,7 +89,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Category</mat-label>
                           <mat-select formControlName="category" required>
                             @for (category of organizationCategories; track category) {
@@ -101,7 +101,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Size</mat-label>
                           <mat-select formControlName="size" required>
                             @for (size of organizationSizes; track size) {
@@ -113,7 +113,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="sm:col-span-2">
+                        <mat-form-field class="sm:col-span-2">
                           <mat-label>Description</mat-label>
                           <textarea matInput formControlName="description" rows="3" required></textarea>
                           <mat-error *ngIf="profileForm.get('description')?.hasError('required')">
@@ -136,7 +136,7 @@ interface Region {
                   <mat-card class="shadow-md">
                     <mat-card-content class="p-4 sm:p-6">
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Address</mat-label>
                           <input matInput formControlName="address" required>
                           <mat-error *ngIf="profileForm.get('address')?.hasError('required')">
@@ -144,12 +144,12 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Country</mat-label>
                           <input matInput [value]="'Morocco'" readonly>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Province</mat-label>
                           <mat-select formControlName="province" required (selectionChange)="onProvinceChange()">
                             <mat-option value="">Select Province</mat-option>
@@ -162,7 +162,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>City</mat-label>
                           <mat-select formControlName="city" required [disabled]="!profileForm.get('province')?.value">
                             <mat-option value="">Select City</mat-option>
@@ -175,7 +175,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Postal Code</mat-label>
                           <input matInput formControlName="postalCode" required>
                           <mat-error *ngIf="profileForm.get('postalCode')?.hasError('required')">
@@ -210,7 +210,7 @@ interface Region {
                   <mat-card class="shadow-md">
                     <mat-card-content class="p-4 sm:p-6">
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Phone Number</mat-label>
                           <input matInput formControlName="phoneNumber" required>
                           <mat-error *ngIf="profileForm.get('phoneNumber')?.hasError('required')">
@@ -221,7 +221,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Website</mat-label>
                           <input matInput formControlName="website">
                           <mat-error *ngIf="profileForm.get('website')?.hasError('pattern')">
@@ -229,7 +229,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Registration Number</mat-label>
                           <input matInput formControlName="registrationNumber">
                           <mat-error *ngIf="profileForm.get('registrationNumber')?.hasError('pattern')">
@@ -253,7 +253,7 @@ interface Region {
                   <mat-card class="shadow-md">
                     <mat-card-content class="p-4 sm:p-6">
                       <div class="space-y-4 sm:space-y-6">
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Mission</mat-label>
                           <textarea matInput formControlName="mission" rows="3" required></textarea>
                           <mat-error *ngIf="profileForm.get('mission')?.hasError('required')">
@@ -261,7 +261,7 @@ interface Region {
                           </mat-error>
                         </mat-form-field>
 
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Vision</mat-label>
                           <textarea matInput formControlName="vision" rows="3" required></textarea>
                           <mat-error *ngIf="profileForm.get('vision')?.hasError('required')">
@@ -295,7 +295,7 @@ interface Region {
                         }
                       </div>
                       <div class="flex flex-col sm:flex-row gap-2">
-                        <mat-form-field appearance="outline" class="w-full">
+                        <mat-form-field class="w-full">
                           <mat-label>Select Focus Areas</mat-label>
                           <mat-select [formControl]="newFocusAreaControl" (selectionChange)="addFocusArea()">
                             <mat-option value="">Select a focus area</mat-option>

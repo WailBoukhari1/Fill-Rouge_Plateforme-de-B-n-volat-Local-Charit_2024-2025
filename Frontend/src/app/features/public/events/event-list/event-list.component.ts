@@ -164,11 +164,11 @@ export class EventListComponent implements OnInit {
   }
 
   getAvailableSpots(event: IEvent): number {
-    return event.maxParticipants - (event.registeredParticipants?.size || 0);
+    return event.maxParticipants - (event.registeredParticipants?.length || 0);
   }
 
   isEventFull(event: IEvent): boolean {
-    return (event.registeredParticipants?.size || 0) >= event.maxParticipants;
+    return (event.registeredParticipants?.length || 0) >= event.maxParticipants;
   }
 
   onPageChange(event: PageEvent): void {

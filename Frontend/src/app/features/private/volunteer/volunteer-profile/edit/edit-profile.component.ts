@@ -105,7 +105,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                 </mat-card-header>
                 <mat-card-content>
                   <div class="form-grid">
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>First Name</mat-label>
                       <input matInput formControlName="firstName" required>
                       <mat-error *ngIf="profileForm.get('firstName')?.hasError('required')">
@@ -113,7 +113,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                       </mat-error>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Last Name</mat-label>
                       <input matInput formControlName="lastName" required>
                       <mat-error *ngIf="profileForm.get('lastName')?.hasError('required')">
@@ -121,7 +121,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                       </mat-error>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Email</mat-label>
                       <input matInput formControlName="email" type="email" required>
                       <mat-error *ngIf="profileForm.get('email')?.hasError('required')">
@@ -132,7 +132,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                       </mat-error>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Phone</mat-label>
                       <input matInput formControlName="phoneNumber" required>
                       <mat-error *ngIf="profileForm.get('phoneNumber')?.hasError('required')">
@@ -140,17 +140,17 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                       </mat-error>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Address</mat-label>
                       <input matInput formControlName="address">
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>City</mat-label>
                       <input matInput formControlName="city">
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Country</mat-label>
                       <input matInput formControlName="country">
                     </mat-form-field>
@@ -166,7 +166,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                 </mat-card-header>
                 <mat-card-content>
                   <div class="form-grid">
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Emergency Contact Name</mat-label>
                       <input matInput formControlName="emergencyContact" required>
                       <mat-error *ngIf="profileForm.get('emergencyContact')?.hasError('required')">
@@ -174,7 +174,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                       </mat-error>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Emergency Contact Phone</mat-label>
                       <input matInput formControlName="emergencyPhone" required>
                       <mat-error *ngIf="profileForm.get('emergencyPhone')?.hasError('required')">
@@ -201,7 +201,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                 </mat-card-header>
                 <mat-card-content>
                   <div class="form-grid">
-                    <mat-form-field appearance="outline" class="full-width">
+                    <mat-form-field class="full-width">
                       <mat-label>Skills</mat-label>
                       <mat-select formControlName="skills" multiple>
                         <mat-option value="teaching">Teaching</mat-option>
@@ -215,7 +215,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                       </mat-select>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="full-width">
+                    <mat-form-field class="full-width">
                       <mat-label>Interests</mat-label>
                       <mat-select formControlName="interests" multiple>
                         <mat-option value="education">Education</mat-option>
@@ -273,7 +273,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                 </mat-card-header>
                 <mat-card-content>
                   <div class="form-grid">
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Preferred Time of Day</mat-label>
                       <mat-select formControlName="preferredTimeOfDay" required>
                         <mat-option value="MORNING">Morning</mat-option>
@@ -285,7 +285,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                       </mat-error>
                     </mat-form-field>
 
-                    <mat-form-field appearance="outline">
+                    <mat-form-field>
                       <mat-label>Preferred Categories</mat-label>
                       <mat-select formControlName="preferredCategories" multiple>
                         <mat-option value="education">Education</mat-option>
@@ -334,7 +334,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                   <mat-icon>description</mat-icon>
                 </mat-card-header>
                 <mat-card-content>
-                  <mat-form-field appearance="outline" class="full-width">
+                  <mat-form-field class="full-width">
                     <mat-label>Tell us about yourself</mat-label>
                     <textarea matInput formControlName="bio" rows="4"></textarea>
                   </mat-form-field>

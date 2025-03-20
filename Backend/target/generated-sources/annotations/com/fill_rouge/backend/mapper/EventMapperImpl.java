@@ -5,6 +5,7 @@ import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventResponse;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-18T18:15:58+0000",
+    date = "2025-03-20T01:42:35+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -27,6 +28,30 @@ public class EventMapperImpl implements EventMapper {
 
         Event.EventBuilder event = Event.builder();
 
+        double[] coordinates = request.getCoordinates();
+        if ( coordinates != null ) {
+            event.coordinates( Arrays.copyOf( coordinates, coordinates.length ) );
+        }
+        event.waitlistEnabled( request.isWaitlistEnabled() );
+        event.maxWaitlistSize( request.getMaxWaitlistSize() );
+        List<String> list = request.getRequiredSkills();
+        if ( list != null ) {
+            event.requiredSkills( new ArrayList<String>( list ) );
+        }
+        event.virtual( request.isVirtual() );
+        event.requiresApproval( request.isRequiresApproval() );
+        event.difficulty( request.getDifficulty() );
+        Set<String> set = request.getTags();
+        if ( set != null ) {
+            event.tags( new LinkedHashSet<String>( set ) );
+        }
+        event.recurring( request.isRecurring() );
+        event.minimumAge( request.getMinimumAge() );
+        event.requiresBackground( request.isRequiresBackground() );
+        event.specialEvent( request.isSpecialEvent() );
+        event.pointsAwarded( request.getPointsAwarded() );
+        event.durationHours( request.getDurationHours() );
+        event.bannerImage( request.getBannerImage() );
         event.category( request.getCategory() );
         event.contactEmail( request.getContactEmail() );
         event.contactPerson( request.getContactPerson() );
@@ -52,6 +77,30 @@ public class EventMapperImpl implements EventMapper {
 
         EventResponse.EventResponseBuilder eventResponse = EventResponse.builder();
 
+        double[] coordinates = event.getCoordinates();
+        if ( coordinates != null ) {
+            eventResponse.coordinates( Arrays.copyOf( coordinates, coordinates.length ) );
+        }
+        eventResponse.waitlistEnabled( event.isWaitlistEnabled() );
+        eventResponse.maxWaitlistSize( event.getMaxWaitlistSize() );
+        List<String> list = event.getRequiredSkills();
+        if ( list != null ) {
+            eventResponse.requiredSkills( new ArrayList<String>( list ) );
+        }
+        eventResponse.virtual( event.isVirtual() );
+        eventResponse.requiresApproval( event.isRequiresApproval() );
+        eventResponse.difficulty( event.getDifficulty() );
+        Set<String> set = event.getTags();
+        if ( set != null ) {
+            eventResponse.tags( new LinkedHashSet<String>( set ) );
+        }
+        eventResponse.recurring( event.isRecurring() );
+        eventResponse.minimumAge( event.getMinimumAge() );
+        eventResponse.requiresBackground( event.isRequiresBackground() );
+        eventResponse.specialEvent( event.isSpecialEvent() );
+        eventResponse.pointsAwarded( event.getPointsAwarded() );
+        eventResponse.durationHours( event.getDurationHours() );
+        eventResponse.bannerImage( event.getBannerImage() );
         eventResponse.averageRating( event.getAverageRating() );
         eventResponse.category( event.getCategory() );
         eventResponse.contactEmail( event.getContactEmail() );
@@ -82,6 +131,52 @@ public class EventMapperImpl implements EventMapper {
             return;
         }
 
+        double[] coordinates = request.getCoordinates();
+        if ( coordinates != null ) {
+            event.setCoordinates( Arrays.copyOf( coordinates, coordinates.length ) );
+        }
+        event.setWaitlistEnabled( request.isWaitlistEnabled() );
+        event.setMaxWaitlistSize( request.getMaxWaitlistSize() );
+        if ( event.getRequiredSkills() != null ) {
+            List<String> list = request.getRequiredSkills();
+            if ( list != null ) {
+                event.getRequiredSkills().clear();
+                event.getRequiredSkills().addAll( list );
+            }
+        }
+        else {
+            List<String> list = request.getRequiredSkills();
+            if ( list != null ) {
+                event.setRequiredSkills( new ArrayList<String>( list ) );
+            }
+        }
+        event.setVirtual( request.isVirtual() );
+        event.setRequiresApproval( request.isRequiresApproval() );
+        if ( request.getDifficulty() != null ) {
+            event.setDifficulty( request.getDifficulty() );
+        }
+        if ( event.getTags() != null ) {
+            Set<String> set = request.getTags();
+            if ( set != null ) {
+                event.getTags().clear();
+                event.getTags().addAll( set );
+            }
+        }
+        else {
+            Set<String> set = request.getTags();
+            if ( set != null ) {
+                event.setTags( new LinkedHashSet<String>( set ) );
+            }
+        }
+        event.setRecurring( request.isRecurring() );
+        event.setMinimumAge( request.getMinimumAge() );
+        event.setRequiresBackground( request.isRequiresBackground() );
+        event.setSpecialEvent( request.isSpecialEvent() );
+        event.setPointsAwarded( request.getPointsAwarded() );
+        event.setDurationHours( request.getDurationHours() );
+        if ( request.getBannerImage() != null ) {
+            event.setBannerImage( request.getBannerImage() );
+        }
         if ( request.getCategory() != null ) {
             event.setCategory( request.getCategory() );
         }

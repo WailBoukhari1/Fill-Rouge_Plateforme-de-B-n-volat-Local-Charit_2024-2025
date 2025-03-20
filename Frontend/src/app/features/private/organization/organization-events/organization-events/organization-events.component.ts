@@ -1,24 +1,28 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, MatSort, Sort } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
-import { Event, EventStatus } from '../../../../../core/models/event.model';
-import { EventService } from '../../../../../core/services/event.service';
-import { AuthService } from '../../../../../core/services/auth.service';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil, tap } from 'rxjs/operators';
+
+import { IEvent, EventStatus, EventCategory, EventParticipationStatus } from '../../../../../core/models/event.types';
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import * as EventActions from '../../../../../store/event/event.actions';
-import { selectEventContent, selectEventLoading, selectEventError, selectEvents } from '../../../../../store/event/event.selectors';
-import { Page } from '../../../../../core/models/page.model';
+import { selectEventContent, selectEventLoading, selectEventTotalElements, selectEventError } from '../../../../../store/event/event.selectors';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-organization-events',
@@ -34,264 +38,179 @@ import { Page } from '../../../../../core/models/page.model';
     MatSortModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    MatFormFieldModule,
+    MatTooltipModule,
+    MatMenuModule
   ],
-  template: `
-    <div class="events-container">
-      <div class="header">
-        <h1>Event Management</h1>
-        <button mat-raised-button color="primary" routerLink="create">
-          <mat-icon>add</mat-icon>
-          Create Event
-        </button>
-      </div>
-
-      @if (loading$ | async) {
-        <div class="loading-wrapper">
-          <mat-spinner diameter="40"></mat-spinner>
-        </div>
-      } @else if (error$ | async) {
-        <mat-card>
-          <mat-card-content>
-            <div class="error-message">
-              <mat-icon color="warn">error_outline</mat-icon>
-              <p>{{ error$ | async }}</p>
-              <button mat-raised-button color="primary" (click)="loadEvents()">
-                <mat-icon>refresh</mat-icon>
-                Retry
-              </button>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      } @else {
-        <mat-card>
-          <mat-card-content>
-            <table mat-table [dataSource]="(events$ | async) || []" matSort (matSortChange)="onSort($event)">
-              <!-- Title Column -->
-              <ng-container matColumnDef="title">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
-                <td mat-cell *matCellDef="let event">{{event?.title || 'N/A'}}</td>
-              </ng-container>
-
-              <!-- Category Column -->
-              <ng-container matColumnDef="category">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Category</th>
-                <td mat-cell *matCellDef="let event">{{formatCategory(event?.category) || 'N/A'}}</td>
-              </ng-container>
-
-              <!-- Date Column -->
-              <ng-container matColumnDef="date">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
-                <td mat-cell *matCellDef="let event">
-                  {{event?.startDate | date:'mediumDate'}} - {{event?.endDate | date:'mediumDate'}}
-                </td>
-              </ng-container>
-
-              <!-- Location Column -->
-              <ng-container matColumnDef="location">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
-                <td mat-cell *matCellDef="let event">{{event?.location || 'N/A'}}</td>
-              </ng-container>
-
-              <!-- Status Column -->
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
-                <td mat-cell *matCellDef="let event">
-                  <span class="status-badge" [class]="event?.status?.toLowerCase()">
-                    {{formatStatus(event?.status) || 'N/A'}}
-                  </span>
-                </td>
-              </ng-container>
-
-              <!-- Participants Column -->
-              <ng-container matColumnDef="participants">
-                <th mat-header-cell *matHeaderCellDef>Participants</th>
-                <td mat-cell *matCellDef="let event">
-                  {{event?.currentParticipants || 0}} / {{event?.maxParticipants || 0}}
-                </td>
-              </ng-container>
-
-              <!-- Actions Column -->
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>Actions</th>
-                <td mat-cell *matCellDef="let event">
-                  <button mat-icon-button color="primary" [routerLink]="['edit', event?.id]" matTooltip="Edit event">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  @if (event?.status !== 'COMPLETED' && event?.status !== 'CANCELLED') {
-                    <button mat-icon-button color="accent" (click)="updateStatus(event)" matTooltip="Update status">
-                      <mat-icon>update</mat-icon>
-                    </button>
-                  }
-                  @if (event?.status === 'PENDING' || event?.status === 'SCHEDULED') {
-                    <button mat-icon-button color="warn" (click)="confirmDelete(event)" matTooltip="Delete event">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  }
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
-
-            <mat-paginator 
-              [length]="(eventsPage$ | async)?.totalElements || 0"
-              [pageSize]="pageSize"
-              [pageSizeOptions]="[5, 10, 25, 100]"
-              [showFirstLastButtons]="true"
-              (page)="onPageChange($event)"
-              aria-label="Select page of events">
-            </mat-paginator>
-          </mat-card-content>
-        </mat-card>
-      }
-    </div>
-  `,
-  styles: [`
-    .events-container {
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .header h1 {
-      margin: 0;
-      color: #333;
-    }
-
-    .loading-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 400px;
-    }
-
-    table {
-      width: 100%;
-    }
-
-    .status-badge {
-      padding: 0.25rem 0.5rem;
-      border-radius: 1rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .status-badge.pending {
-      background-color: #fff3e0;
-      color: #e65100;
-    }
-
-    .status-badge.active {
-      background-color: #e8f5e9;
-      color: #2e7d32;
-    }
-
-    .status-badge.completed {
-      background-color: #e3f2fd;
-      color: #1565c0;
-    }
-
-    .status-badge.cancelled {
-      background-color: #ffebee;
-      color: #c62828;
-    }
-
-    .status-badge.full {
-      background-color: #ede7f6;
-      color: #4527a0;
-    }
-
-    .status-badge.ongoing {
-      background-color: #e0f2f1;
-      color: #00695c;
-    }
-
-    .status-badge.scheduled {
-      background-color: #f3e5f5;
-      color: #6a1b9a;
-    }
-
-    .mat-column-actions {
-      width: 120px;
-      text-align: center;
-    }
-
-    .mat-column-status {
-      width: 120px;
-    }
-
-    .mat-column-participants {
-      width: 100px;
-      text-align: center;
-    }
-
-    .error-message {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      padding: 2rem;
-      text-align: center;
-    }
-
-    .error-message mat-icon {
-      font-size: 48px;
-      width: 48px;
-      height: 48px;
-    }
-
-    .error-message p {
-      color: #f44336;
-      font-size: 1.2rem;
-      margin: 0;
-    }
-  `]
+  templateUrl: './organization-events.component.html',
+  styleUrls: ['./organization-events.component.scss']
 })
-export class OrganizationEventsComponent implements OnInit {
-  events$: Observable<Event[]>;
-  eventsPage$: Observable<Page<Event>>;
+export class OrganizationEventsComponent implements OnInit, OnDestroy {
+  events$: Observable<IEvent[]>;
   loading$: Observable<boolean>;
+  totalElements$: Observable<number>;
   error$: Observable<string | null>;
-  displayedColumns: string[] = ['title', 'category', 'date', 'location', 'status', 'participants', 'actions'];
-  
+  displayedColumns: string[] = [
+    'title',
+    'category',
+    'date',
+    'location',
+    'status',
+    'participants',
+    'rating',
+    'actions'
+  ];
+  dataSource = new MatTableDataSource<IEvent>([]);
   pageSize = 10;
   pageIndex = 0;
+  private destroy$ = new Subject<void>();
+  private organizationId: string | null = null;
+  EventStatus = EventStatus;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
     private store: Store,
-    private eventService: EventService,
-    private authService: AuthService,
+    private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private authService: AuthService,
+    private router: Router
   ) {
     this.events$ = this.store.select(selectEventContent);
-    this.eventsPage$ = this.store.select(selectEvents);
     this.loading$ = this.store.select(selectEventLoading);
+    this.totalElements$ = this.store.select(selectEventTotalElements);
     this.error$ = this.store.select(selectEventError);
   }
 
   ngOnInit(): void {
+    console.log('Initializing OrganizationEventsComponent');
+    
+    this.organizationId = this.authService.getCurrentOrganizationId();
+    console.log('Organization ID:', this.organizationId);
+    
+    if (!this.organizationId) {
+      console.error('No organization ID found');
+      this.snackBar.open('Please log in as an organization first', 'Close', { duration: 5000 });
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+    
+    console.log('Loading events for organization:', this.organizationId);
     this.loadEvents();
+    
+    // Subscribe to events updates
+    this.events$.pipe(
+      takeUntil(this.destroy$),
+      tap(events => {
+        console.log('========== EVENTS DATA FLOW ==========');
+        console.log('1. Raw events received from store:', events);
+        
+        if (events && events.length > 0) {
+          // Log the complete first event for debugging
+          console.log('2. Complete first event:', events[0]);
+
+          // Convert date strings to Date objects and ensure all required fields are present
+          const processedEvents = events.map(event => {
+            // Parse dates safely
+            let startDate = new Date();
+            let endDate = new Date();
+            
+            try {
+              if (event.startDate) {
+                startDate = new Date(event.startDate);
+                if (isNaN(startDate.getTime())) {
+                  console.warn('Invalid startDate, using current date');
+                  startDate = new Date();
+                }
+              }
+              
+              if (event.endDate) {
+                endDate = new Date(event.endDate);
+                if (isNaN(endDate.getTime())) {
+                  console.warn('Invalid endDate, using current date');
+                  endDate = new Date();
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing dates:', error);
+            }
+
+            return {
+              ...event,
+              title: event.title || 'Untitled Event',
+              category: event.category || EventCategory.OTHER,
+              startDate,
+              endDate,
+              location: event.location || 'No location specified',
+              status: event.status || EventStatus.DRAFT,
+              registeredParticipants: event.registeredParticipants || [],
+              maxParticipants: event.maxParticipants || 0
+            };
+          });
+
+          console.log('3. Processed first event:', processedEvents[0]);
+          
+          this.dataSource.data = processedEvents;
+          console.log('4. Data source after update:', {
+            dataLength: this.dataSource.data.length,
+            firstRow: this.dataSource.data[0],
+            sortActive: this.dataSource.sort?.active,
+            sortDirection: this.dataSource.sort?.direction
+          });
+          console.log('====================================');
+          
+          // Initialize sorting if not already done
+          if (this.sort && !this.dataSource.sort) {
+            this.dataSource.sort = this.sort;
+          }
+        } else {
+          console.log('No events received or empty array');
+          this.dataSource.data = [];
+        }
+      })
+    ).subscribe();
+
+    // Subscribe to loading state
+    this.loading$.pipe(
+      takeUntil(this.destroy$),
+      tap(loading => {
+        console.log('Loading state:', loading);
+      })
+    ).subscribe();
+
+    // Subscribe to error state
+    this.error$.pipe(
+      takeUntil(this.destroy$),
+      tap(error => {
+        if (error) {
+          console.error('Error loading events:', error);
+          this.snackBar.open('Error loading events', 'Close', { duration: 5000 });
+        }
+      })
+    ).subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadEvents(): void {
-    this.store.dispatch(EventActions.loadEvents({ 
-      filters: {}, 
-      page: this.pageIndex, 
-      size: this.pageSize 
-    }));
+    if (!this.organizationId) {
+      console.log('No organization ID available');
+      return;
+    }
+
+    console.log('Loading events for organization:', this.organizationId);
+    const action = EventActions.loadEvents({
+      filters: { organizationId: this.organizationId },
+      page: this.pageIndex,
+      size: this.pageSize
+    });
+    console.log('Dispatching loadEvents action:', action);
+    this.store.dispatch(action);
   }
 
   onPageChange(event: PageEvent): void {
@@ -309,90 +228,201 @@ export class OrganizationEventsComponent implements OnInit {
   }
 
   formatStatus(status: EventStatus): string {
-    return status.toLowerCase()
+    if (!status) return '';
+    return status.toString()
+      .toLowerCase()
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 
-  formatCategory(category: string): string {
-    return category.toLowerCase()
+  formatCategory(category: EventCategory): string {
+    if (!category) return '';
+    return category.toString()
+      .toLowerCase()
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 
-  updateStatus(event: Event): void {
-    let newStatus: EventStatus;
-    switch (event.status) {
+  formatDate(date: Date | string | null): string {
+    if (!date) return 'N/A';
+    try {
+      const dateObj = date instanceof Date ? date : new Date(date);
+      if (isNaN(dateObj.getTime())) return 'Invalid Date';
+      return dateObj.toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
+  }
+
+  formatRating(rating: number, numberOfRatings: number): string {
+    if (!rating || !numberOfRatings) return 'No ratings';
+    return `${rating.toFixed(1)} (${numberOfRatings} ${numberOfRatings === 1 ? 'rating' : 'ratings'})`;
+  }
+
+  canUpdateStatus(event: IEvent): boolean {
+    if (!event) return false;
+    return event.status !== EventStatus.COMPLETED && 
+           event.status !== EventStatus.CANCELLED;
+  }
+
+  canDelete(event: IEvent): boolean {
+    if (!event) return false;
+    return event.status === EventStatus.DRAFT || 
+           event.status === EventStatus.CANCELLED ||
+           (event.status === EventStatus.PENDING && event.registeredParticipants.length === 0);
+  }
+
+  getNextStatus(currentStatus: EventStatus): EventStatus | null {
+    switch (currentStatus) {
       case EventStatus.DRAFT:
-        newStatus = EventStatus.PENDING;
-        break;
+        return EventStatus.PENDING;
       case EventStatus.PENDING:
-        newStatus = EventStatus.APPROVED;
-        break;
+        return EventStatus.APPROVED;
       case EventStatus.APPROVED:
-        newStatus = EventStatus.ACTIVE;
-        break;
+        return EventStatus.ACTIVE;
       case EventStatus.ACTIVE:
-        if (event.registeredParticipants.size >= event.maxParticipants) {
-          newStatus = EventStatus.ONGOING;
-        } else {
-          newStatus = EventStatus.ONGOING;
-        }
-        break;
-      case EventStatus.UPCOMING:
-        newStatus = EventStatus.ACTIVE;
-        break;
+        return EventStatus.ONGOING;
       case EventStatus.ONGOING:
-        newStatus = EventStatus.COMPLETED;
-        break;
-      case EventStatus.PUBLISHED:
-        newStatus = EventStatus.ACTIVE;
-        break;
-      case EventStatus.COMPLETED:
-      case EventStatus.CANCELLED:
-        return; // Terminal states, no further transitions
+        return EventStatus.COMPLETED;
       default:
-        this.snackBar.open('Invalid status transition', 'Close', { duration: 3000 });
-        return;
+        return null;
+    }
+  }
+
+  updateStatus(event: IEvent): void {
+    const newStatus = this.getNextStatus(event.status);
+    if (!newStatus) {
+      this.snackBar.open('Invalid status transition', 'Close', { duration: 3000 });
+      return;
     }
 
-    const confirmMessage = `Are you sure you want to change the event status from ${this.formatStatus(event.status)} to ${this.formatStatus(newStatus)}?`;
-    
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
       data: {
         title: 'Update Event Status',
-        message: confirmMessage,
+        message: `Are you sure you want to change the status of "${event.title}" from ${this.formatStatus(event.status)} to ${this.formatStatus(newStatus)}?`,
         confirmText: 'Update',
         cancelText: 'Cancel'
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.store.dispatch(EventActions.updateEventStatus({ 
-          eventId: event.id, 
-          status: newStatus 
+      if (result && event._id) {
+        this.store.dispatch(EventActions.updateEventStatus({
+          id: event._id,
+          status: newStatus
         }));
       }
     });
   }
 
-  confirmDelete(event: Event): void {
+  confirmDelete(event: IEvent): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
       data: {
         title: 'Delete Event',
         message: `Are you sure you want to delete "${event.title}"? This action cannot be undone.`,
         confirmText: 'Delete',
-        cancelText: 'Cancel'
+        cancelText: 'Keep'
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.store.dispatch(EventActions.deleteEvent({ id: event.id }));
+      if (result && event._id) {
+        this.store.dispatch(EventActions.deleteEvent({ id: event._id }));
       }
     });
+  }
+
+  viewDetails(event: IEvent): void {
+    // TODO: Implement event details dialog
+    console.log('View details:', event);
+  }
+
+  viewParticipants(event: IEvent): void {
+    // TODO: Implement participants dialog
+    console.log('View participants:', event);
+  }
+
+  cancelEvent(event: IEvent): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Cancel Event',
+        message: `Are you sure you want to cancel "${event.title}"? This action cannot be undone.`,
+        confirmText: 'Cancel Event',
+        cancelText: 'Keep Event'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result && event._id) {
+        this.store.dispatch(EventActions.updateEventStatus({
+          id: event._id,
+          status: EventStatus.CANCELLED
+        }));
+      }
+    });
+  }
+
+  getStatusColor(status: EventStatus): string {
+    switch (status) {
+      case EventStatus.ACTIVE:
+        return 'green';
+      case EventStatus.COMPLETED:
+        return 'blue';
+      case EventStatus.CANCELLED:
+        return 'red';
+      case EventStatus.PENDING:
+        return 'yellow';
+      case EventStatus.APPROVED:
+        return 'indigo';
+      case EventStatus.DRAFT:
+        return 'gray';
+      case EventStatus.UPCOMING:
+        return 'purple';
+      case EventStatus.ONGOING:
+        return 'green';
+      case EventStatus.PUBLISHED:
+        return 'blue';
+      default:
+        return 'gray';
+    }
+  }
+
+  getCategoryColor(category: EventCategory): string {
+    switch (category) {
+      case EventCategory.ENVIRONMENT:
+        return 'green';
+      case EventCategory.COMMUNITY_DEVELOPMENT:
+        return 'blue';
+      case EventCategory.ARTS_AND_CULTURE:
+        return 'purple';
+      case EventCategory.EDUCATION:
+        return 'yellow';
+      case EventCategory.ANIMAL_WELFARE:
+        return 'red';
+      case EventCategory.SPORTS_AND_RECREATION:
+        return 'indigo';
+      case EventCategory.HEALTH:
+        return 'pink';
+      case EventCategory.DISASTER_RELIEF:
+        return 'orange';
+      case EventCategory.SOCIAL_SERVICES:
+        return 'teal';
+      case EventCategory.OTHER:
+      default:
+        return 'gray';
+    }
   }
 } 

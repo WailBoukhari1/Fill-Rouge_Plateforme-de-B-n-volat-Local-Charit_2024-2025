@@ -1,133 +1,349 @@
-<div class="edit-event-container">
-  <div class="header">
-    <h1>Edit Event</h1>
-    <button mat-button color="primary" routerLink="../../">
-      <mat-icon>arrow_back</mat-icon>
-      Back to Events
-    </button>
-  </div>
+<div class="p-4">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Edit Event</mat-card-title>
+    </mat-card-header>
 
-  @if (loading) {
-    <div class="loading">
-      <mat-spinner></mat-spinner>
-    </div>
-  } @else if (event) {
-    <form [formGroup]="eventForm" (ngSubmit)="onSubmit()" class="event-form">
-      <div class="form-grid">
-        <!-- Basic Information -->
-        <div class="form-section">
-          <h2>Basic Information</h2>
-          
-          <mat-form-field appearance="outline">
-            <mat-label>Event Title</mat-label>
-            <input matInput formControlName="title" placeholder="Enter event title">
-            <mat-error *ngIf="eventForm.get('title')?.hasError('required')">
-              Title is required
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Category</mat-label>
-            <mat-select formControlName="category">
-              <mat-option *ngFor="let category of categories" [value]="category">
-                {{category}}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="eventForm.get('category')?.hasError('required')">
-              Category is required
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description" rows="4" 
-              placeholder="Enter event description"></textarea>
-            <mat-error *ngIf="eventForm.get('description')?.hasError('required')">
-              Description is required
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <!-- Date and Time -->
-        <div class="form-section">
-          <h3>Date and Time</h3>
-          <div class="form-grid">
-            <mat-form-field>
-              <mat-label>Start Date</mat-label>
-              <input matInput [matDatepicker]="startPicker" formControlName="startDate" required>
-              <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
-              <mat-datepicker #startPicker></mat-datepicker>
-              <mat-error *ngIf="eventForm.get('startDate')?.hasError('required')">
-                Start date is required
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field>
-              <mat-label>End Date</mat-label>
-              <input matInput [matDatepicker]="endPicker" formControlName="endDate" required>
-              <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
-              <mat-datepicker #endPicker></mat-datepicker>
-              <mat-error *ngIf="eventForm.get('endDate')?.hasError('required')">
-                End date is required
-              </mat-error>
-            </mat-form-field>
-          </div>
-          <div class="date-error" *ngIf="eventForm.errors?.['invalidDateRange']">
-            <mat-error>End date must be after start date</mat-error>
-          </div>
-        </div>
-
-        <!-- Location -->
-        <div class="form-section">
-          <h2>Location</h2>
-          
-          <mat-form-field appearance="outline">
-            <mat-label>Location</mat-label>
-            <input matInput formControlName="location" placeholder="Enter event location">
-            <mat-error *ngIf="eventForm.get('location')?.hasError('required')">
-              Location is required
-            </mat-error>
-          </mat-form-field>
-
-          <app-map 
-            [coordinates]="getMapCoordinates()"
-            [selectable]="true"
-            (locationSelected)="onCoordinatesSelected($event)">
-          </app-map>
-        </div>
-
-        <!-- Participants -->
-        <div class="form-section">
-          <h2>Participants</h2>
-          
-          <mat-form-field appearance="outline">
-            <mat-label>Maximum Participants</mat-label>
-            <input matInput type="number" formControlName="maxParticipants" min="1">
-            <mat-error *ngIf="eventForm.get('maxParticipants')?.hasError('required')">
-              Maximum participants is required
-            </mat-error>
-            <mat-error *ngIf="eventForm.get('maxParticipants')?.hasError('min')">
-              Must be at least 1
-            </mat-error>
-          </mat-form-field>
+    <mat-card-content>
+      <!-- Banner Image Section -->
+      <div class="banner-section mb-6">
+        <div class="relative h-48 md:h-64 rounded-lg overflow-hidden bg-gray-100">
+          @if (bannerImageForm.get('bannerImage')?.value) {
+            <img [src]="bannerImageForm.get('bannerImage')?.value" 
+                 alt="Event Banner" 
+                 class="w-full h-full object-cover">
+            <button type="button" 
+                    (click)="removeBannerImage()"
+                    class="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <div class="flex flex-col items-center justify-center h-full text-gray-400">
+              <mat-icon class="text-4xl mb-2">image</mat-icon>
+              <p>No banner image</p>
+            </div>
+          }
+          <button type="button" 
+                  (click)="onImageUploadClick()"
+                  class="absolute bottom-2 right-2 p-2 bg-white text-gray-700 rounded-full shadow-md hover:bg-gray-50">
+            <mat-icon>add_a_photo</mat-icon>
+          </button>
+          <input type="file" 
+                 accept="image/*" 
+                 (change)="onFileSelected($event)" 
+                 class="hidden">
         </div>
       </div>
 
-      <div class="form-actions">
-        <button mat-button type="button" routerLink="../../">Cancel</button>
-        <button mat-raised-button color="primary" type="submit" 
-          [disabled]="eventForm.invalid || submitting">
-          Save Changes
-        </button>
-      </div>
-    </form>
-  } @else {
-    <div class="error">
-      <mat-icon>error_outline</mat-icon>
-      <p>Event not found</p>
-      <button mat-raised-button color="primary" routerLink="../../">
-        Back to Events
-      </button>
-    </div>
-  }
+      <!-- Stepper Form -->
+      <mat-stepper linear #stepper>
+        <!-- Basic Information Step -->
+        <mat-step [stepControl]="basicInfoForm" label="Basic Information">
+          <form [formGroup]="basicInfoForm" class="space-y-4">
+            <mat-form-field class="w-full">
+              <mat-label>Event Title</mat-label>
+              <input matInput formControlName="title" placeholder="Enter event title">
+              <mat-error *ngIf="basicInfoForm.get('title')?.hasError('required')">
+                Title is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Category</mat-label>
+              <mat-select formControlName="category">
+                @for (category of categories; track category) {
+                  <mat-option [value]="category">{{category}}</mat-option>
+                }
+              </mat-select>
+              <mat-error *ngIf="basicInfoForm.get('category')?.hasError('required')">
+                Category is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="4" 
+                        placeholder="Enter event description"></textarea>
+              <mat-error *ngIf="basicInfoForm.get('description')?.hasError('required')">
+                Description is required
+              </mat-error>
+            </mat-form-field>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field class="w-full">
+                <mat-label>Start Date</mat-label>
+                <input matInput [matDatepicker]="startPicker" formControlName="startDate" [min]="minDate">
+                <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+                <mat-error *ngIf="basicInfoForm.get('startDate')?.hasError('required')">
+                  Start date is required
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field class="w-full">
+                <mat-label>End Date</mat-label>
+                <input matInput [matDatepicker]="endPicker" formControlName="endDate" [min]="minDate">
+                <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                <mat-datepicker #endPicker></mat-datepicker>
+                <mat-error *ngIf="basicInfoForm.get('endDate')?.hasError('required')">
+                  End date is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="flex justify-end space-x-2">
+              <button mat-button matStepperNext [disabled]="!basicInfoForm.valid">Next</button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Location Step -->
+        <mat-step [stepControl]="locationForm" label="Location">
+          <form [formGroup]="locationForm" class="space-y-4">
+            <mat-form-field class="w-full">
+              <mat-label>Location</mat-label>
+              <input matInput formControlName="location" placeholder="Enter event location">
+              <mat-error *ngIf="locationForm.get('location')?.hasError('required')">
+                Location is required
+              </mat-error>
+            </mat-form-field>
+
+            <app-map (locationSelected)="onLocationSelected($event)"></app-map>
+
+            <div class="flex justify-between space-x-2">
+              <button mat-button matStepperPrevious>Back</button>
+              <button mat-button matStepperNext [disabled]="!locationForm.valid">Next</button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Contact Information Step -->
+        <mat-step [stepControl]="contactForm" label="Contact Information">
+          <form [formGroup]="contactForm" class="space-y-4">
+            <mat-form-field class="w-full">
+              <mat-label>Contact Person</mat-label>
+              <input matInput formControlName="contactPerson" placeholder="Enter contact person name">
+              <mat-error *ngIf="contactForm.get('contactPerson')?.hasError('required')">
+                Contact person is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Contact Email</mat-label>
+              <input matInput formControlName="contactEmail" type="email" placeholder="Enter contact email">
+              <mat-error *ngIf="contactForm.get('contactEmail')?.hasError('email')">
+                Please enter a valid email
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Contact Phone</mat-label>
+              <input matInput formControlName="contactPhone" placeholder="Enter contact phone number">
+              <mat-error *ngIf="contactForm.get('contactPhone')?.hasError('pattern')">
+                Please enter a valid phone number
+              </mat-error>
+            </mat-form-field>
+
+            <div class="flex justify-between space-x-2">
+              <button mat-button matStepperPrevious>Back</button>
+              <button mat-button matStepperNext [disabled]="!contactForm.valid">Next</button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Participant Information Step -->
+        <mat-step [stepControl]="participantForm" label="Participant Information">
+          <form [formGroup]="participantForm" class="space-y-4">
+            <mat-form-field class="w-full">
+              <mat-label>Maximum Participants</mat-label>
+              <input matInput type="number" formControlName="maxParticipants" min="1">
+              <mat-error *ngIf="participantForm.get('maxParticipants')?.hasError('required')">
+                Maximum participants is required
+              </mat-error>
+            </mat-form-field>
+
+            <div class="flex items-center space-x-4">
+              <mat-slide-toggle formControlName="waitlistEnabled">
+                Enable Waitlist
+              </mat-slide-toggle>
+              @if (participantForm.get('waitlistEnabled')?.value) {
+                <mat-form-field class="w-full">
+                  <mat-label>Maximum Waitlist Size</mat-label>
+                  <input matInput type="number" formControlName="maxWaitlistSize" min="0">
+                </mat-form-field>
+              }
+            </div>
+
+            <mat-form-field class="w-full">
+              <mat-label>Required Skills</mat-label>
+              <mat-chip-grid #chipGrid>
+                @for (skill of participantForm.get('requiredSkills')?.value; track skill) {
+                  <mat-chip-row (removed)="removeSkill(skill)">
+                    {{skill}}
+                    <button matChipRemove>
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </mat-chip-row>
+                }
+              </mat-chip-grid>
+              <input placeholder="New skill..."
+                     [matChipInputFor]="chipGrid"
+                     (matChipInputTokenEnd)="addSkill($event)">
+            </mat-form-field>
+
+            <div class="flex justify-between space-x-2">
+              <button mat-button matStepperPrevious>Back</button>
+              <button mat-button matStepperNext [disabled]="!participantForm.valid">Next</button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Requirements Step -->
+        <mat-step [stepControl]="requirementsForm" label="Requirements">
+          <form [formGroup]="requirementsForm" class="space-y-4">
+            <mat-form-field class="w-full">
+              <mat-label>Difficulty Level</mat-label>
+              <mat-select formControlName="difficulty">
+                <mat-option value="BEGINNER">Beginner</mat-option>
+                <mat-option value="INTERMEDIATE">Intermediate</mat-option>
+                <mat-option value="ADVANCED">Advanced</mat-option>
+              </mat-select>
+              <mat-error *ngIf="requirementsForm.get('difficulty')?.hasError('required')">
+                Difficulty level is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Minimum Age</mat-label>
+              <input matInput type="number" formControlName="minimumAge" min="0">
+            </mat-form-field>
+
+            <div class="flex items-center space-x-4">
+              <mat-slide-toggle formControlName="requiresBackground">
+                Requires Background Check
+              </mat-slide-toggle>
+              <mat-slide-toggle formControlName="requiresApproval">
+                Requires Approval
+              </mat-slide-toggle>
+            </div>
+
+            <div class="flex justify-between space-x-2">
+              <button mat-button matStepperPrevious>Back</button>
+              <button mat-button matStepperNext [disabled]="!requirementsForm.valid">Next</button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Additional Settings Step -->
+        <mat-step [stepControl]="additionalForm" label="Additional Settings">
+          <form [formGroup]="additionalForm" class="space-y-4">
+            <mat-form-field class="w-full">
+              <mat-label>Duration (hours)</mat-label>
+              <input matInput type="number" formControlName="durationHours" min="0">
+              <mat-error *ngIf="additionalForm.get('durationHours')?.hasError('required')">
+                Duration is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Points Awarded</mat-label>
+              <input matInput type="number" formControlName="pointsAwarded" min="0">
+            </mat-form-field>
+
+            <div class="flex items-center space-x-4">
+              <mat-slide-toggle formControlName="isVirtual">
+                Virtual Event
+              </mat-slide-toggle>
+              <mat-slide-toggle formControlName="isRecurring">
+                Recurring Event
+              </mat-slide-toggle>
+            </div>
+
+            <div class="flex items-center space-x-4">
+              <mat-slide-toggle formControlName="isSpecialEvent">
+                Special Event
+              </mat-slide-toggle>
+            </div>
+
+            <mat-form-field class="w-full">
+              <mat-label>Tags</mat-label>
+              <mat-chip-grid #tagGrid>
+                @for (tag of additionalForm.get('tags')?.value; track tag) {
+                  <mat-chip-row (removed)="removeTag(tag)">
+                    {{tag}}
+                    <button matChipRemove>
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  </mat-chip-row>
+                }
+              </mat-chip-grid>
+              <input placeholder="New tag..."
+                     [matChipInputFor]="tagGrid"
+                     (matChipInputTokenEnd)="addTag($event)">
+            </mat-form-field>
+
+            <div class="flex justify-between space-x-2">
+              <button mat-button matStepperPrevious>Back</button>
+              <button mat-button matStepperNext [disabled]="!additionalForm.valid">Next</button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Review Step -->
+        <mat-step label="Review">
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Review Event Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 class="font-medium">Basic Information</h4>
+                <p><strong>Title:</strong> {{basicInfoForm.get('title')?.value}}</p>
+                <p><strong>Category:</strong> {{basicInfoForm.get('category')?.value}}</p>
+                <p><strong>Description:</strong> {{basicInfoForm.get('description')?.value}}</p>
+              </div>
+              <div>
+                <h4 class="font-medium">Location</h4>
+                <p><strong>Address:</strong> {{locationForm.get('location')?.value}}</p>
+                <p><strong>Coordinates:</strong> {{locationForm.get('coordinates')?.value}}</p>
+              </div>
+              <div>
+                <h4 class="font-medium">Contact Information</h4>
+                <p><strong>Contact Person:</strong> {{contactForm.get('contactPerson')?.value}}</p>
+                <p><strong>Email:</strong> {{contactForm.get('contactEmail')?.value}}</p>
+                <p><strong>Phone:</strong> {{contactForm.get('contactPhone')?.value}}</p>
+              </div>
+              <div>
+                <h4 class="font-medium">Participant Information</h4>
+                <p><strong>Max Participants:</strong> {{participantForm.get('maxParticipants')?.value}}</p>
+                <p><strong>Waitlist Enabled:</strong> {{participantForm.get('waitlistEnabled')?.value ? 'Yes' : 'No'}}</p>
+                <p><strong>Required Skills:</strong> {{participantForm.get('requiredSkills')?.value?.join(', ')}}</p>
+              </div>
+              <div>
+                <h4 class="font-medium">Requirements</h4>
+                <p><strong>Difficulty:</strong> {{requirementsForm.get('difficulty')?.value}}</p>
+                <p><strong>Minimum Age:</strong> {{requirementsForm.get('minimumAge')?.value}}</p>
+                <p><strong>Background Check:</strong> {{requirementsForm.get('requiresBackground')?.value ? 'Required' : 'Not Required'}}</p>
+              </div>
+              <div>
+                <h4 class="font-medium">Additional Settings</h4>
+                <p><strong>Duration:</strong> {{additionalForm.get('durationHours')?.value}} hours</p>
+                <p><strong>Points Awarded:</strong> {{additionalForm.get('pointsAwarded')?.value}}</p>
+                <p><strong>Virtual Event:</strong> {{additionalForm.get('isVirtual')?.value ? 'Yes' : 'No'}}</p>
+              </div>
+            </div>
+
+            <div class="flex justify-between space-x-2">
+              <button mat-button matStepperPrevious>Back</button>
+              <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isFormValid() || submitting">
+                @if (submitting) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  Update Event
+                }
+              </button>
+            </div>
+          </div>
+        </mat-step>
+      </mat-stepper>
+    </mat-card-content>
+  </mat-card>
 </div> 

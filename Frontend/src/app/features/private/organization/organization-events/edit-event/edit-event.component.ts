@@ -7,33 +7,25 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatStepperModule } from '@angular/material/stepper';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { EventService } from '../../../../../core/services/event.service';
-import { Event, EventCategory } from '../../../../../core/models/event.model';
-import { MapComponent, LocationData, Coordinates } from '../../../../../shared/components/map/map.component';
+import { MatCardModule } from '@angular/material/card';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { Subject, takeUntil } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { EventService } from '../../../../../core/services/event.service';
+import { IEvent, EventCategory, EventStatus } from '../../../../../core/models/event.types';
 import * as EventActions from '../../../../../store/event/event.actions';
-import { EventState } from '../../../../../store/event/event.reducer';
 import { selectSelectedEvent } from '../../../../../store/event/event.selectors';
-
-type EventFormData = {
-  title: string;
-  description: string;
-  category: EventCategory;
-  startDate: Date;
-  endDate: Date;
-  maxParticipants: number;
-  coordinates: [number, number];
-  location: string;
-  contactPerson: string;
-  contactEmail: string;
-  contactPhone: string;
-};
+import { EventState } from '../../../../../store/event/event.reducer';
+import { MapComponent, LocationData, Coordinates } from '../../../../../shared/components/map/map.component';
+import { EventResolver } from '../resolvers/event.resolver';
 
 @Component({
   selector: 'app-edit-event',
@@ -47,18 +39,30 @@ type EventFormData = {
     MatDatepickerModule,
     MatNativeDateModule,
     MatButtonModule,
+    MatCheckboxModule,
+    MatChipsModule,
     MatIconModule,
+    MatStepperModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatCardModule,
+    MatSlideToggleModule,
+    RouterModule,
     MapComponent
   ],
   templateUrl: './edit-event.component.html',
   styleUrls: ['./edit-event.component.scss']
 })
 export class EditEventComponent implements OnInit, OnDestroy {
-  eventForm!: FormGroup;
+  basicInfoForm!: FormGroup;
+  locationForm!: FormGroup;
+  contactForm!: FormGroup;
+  participantForm!: FormGroup;
+  requirementsForm!: FormGroup;
+  additionalForm!: FormGroup;
+  bannerImageForm!: FormGroup;
   categories = Object.values(EventCategory);
-  event!: Event;
+  event!: IEvent;
   loading = true;
   submitting = false;
   private destroy$ = new Subject<void>();
@@ -69,26 +73,49 @@ export class EditEventComponent implements OnInit, OnDestroy {
     private store: Store<{ event: EventState }>,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private eventService: EventService,
+    private eventResolver: EventResolver
   ) {
-    this.createForm();
+    this.createForms();
   }
 
   ngOnInit(): void {
     this.loading = true;
-    const eventId = this.route.snapshot.paramMap.get('id');
-    if (eventId) {
-      this.store.dispatch(EventActions.loadEvent({ id: eventId }));
-      this.store.select(selectSelectedEvent).subscribe(event => {
-        if (event) {
-          this.initializeForm(event);
+    console.log('EditEventComponent initialized');
+    
+    // Get the resolved event data from the route
+    this.route.data.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (data) => {
+        console.log('Route data received:', data);
+        if (data['event']) {
+          // Extract the event data from the API response
+          const eventData = data['event'].data || data['event'];
+          console.log('Event data received:', eventData);
+          
+          // Store the event data with _id property
+          this.event = {
+            ...eventData,
+            _id: eventData.id || eventData._id // Handle both id and _id
+          };
+          
+          // Initialize forms with event data
+          this.initializeForms(this.event);
           this.loading = false;
+        } else {
+          console.error('No event data found in route');
+          this.snackBar.open('Event not found', 'Close', { duration: 3000 });
+          this.router.navigate(['/organization/events']);
         }
-      });
-    } else {
-      this.snackBar.open('Event ID not found', 'Close', { duration: 3000 });
-      this.router.navigate(['/organization/events']);
-    }
+      },
+      error: (error) => {
+        console.error('Error in route data subscription:', error);
+        this.snackBar.open('Error loading event data', 'Close', { duration: 3000 });
+        this.router.navigate(['/organization/events']);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -96,180 +123,297 @@ export class EditEventComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private validateDates(control: AbstractControl): ValidationErrors | null {
-    const startDate = control.get('startDate')?.value;
-    const endDate = control.get('endDate')?.value;
-
-    if (!startDate || !endDate) {
-      return { requiredDates: true };
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const now = new Date();
-
-    if (start < now) {
-      return { pastStartDate: true };
-    }
-
-    if (end <= start) {
-      return { invalidDateRange: true };
-    }
-
-    return null;
-  }
-
-  private initializeForm(eventData: Event): void {
-    const startDate = new Date(eventData.startDate);
-    const endDate = new Date(eventData.endDate);
-
-    this.eventForm = this.fb.group({
-      title: [eventData.title, [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
-      description: [eventData.description, [Validators.required, Validators.minLength(20), Validators.maxLength(2000)]],
-      category: [eventData.category, [Validators.required]],
-      startDate: [startDate, [Validators.required]],
-      endDate: [endDate, [Validators.required]],
-      maxParticipants: [eventData.maxParticipants, [Validators.required, Validators.min(1)]],
-      coordinates: [eventData.coordinates, [Validators.required]],
-      location: [eventData.location, [Validators.required]],
-      contactPerson: [eventData.contactPerson, [Validators.required]],
-      contactEmail: [eventData.contactEmail, [Validators.required, Validators.email]],
-      contactPhone: [eventData.contactPhone, [Validators.required, Validators.pattern('^\\+?[1-9]\\d{1,14}$')]]
-    }, { validators: this.validateDates });
-
-    // Subscribe to date changes to revalidate
-    this.eventForm.get('startDate')?.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.eventForm.updateValueAndValidity();
+  private createForms(): void {
+    // Banner Image Form
+    this.bannerImageForm = this.fb.group({
+      bannerImage: ['']
     });
 
-    this.eventForm.get('endDate')?.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.eventForm.updateValueAndValidity();
+    // Basic Information Form
+    this.basicInfoForm = this.fb.group({
+      title: ['', [Validators.required, Validators.minLength(3)]],
+      description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(2000)]],
+      category: ['', Validators.required],
+      startDate: ['', Validators.required],
+      endDate: ['', Validators.required]
+    });
+
+    // Location Form
+    this.locationForm = this.fb.group({
+      location: ['', Validators.required],
+      coordinates: [[0, 0], Validators.required]
+    });
+
+    // Contact Form
+    this.contactForm = this.fb.group({
+      contactPerson: ['', Validators.required],
+      contactEmail: ['', [Validators.required, Validators.email]],
+      contactPhone: ['', [Validators.required, Validators.pattern('^\\+?[1-9]\\d{1,14}$')]]
+    });
+
+    // Participant Form
+    this.participantForm = this.fb.group({
+      maxParticipants: [0, [Validators.required, Validators.min(1)]],
+      waitlistEnabled: [false],
+      maxWaitlistSize: [0],
+      requiredSkills: [[]]
+    });
+
+    // Requirements Form
+    this.requirementsForm = this.fb.group({
+      difficulty: ['BEGINNER', Validators.required],
+      minimumAge: [0],
+      requiresBackground: [false],
+      requiresApproval: [false]
+    });
+
+    // Additional Form
+    this.additionalForm = this.fb.group({
+      durationHours: [0, [Validators.required, Validators.min(0)]],
+      pointsAwarded: [0],
+      isVirtual: [false],
+      isRecurring: [false],
+      isSpecialEvent: [false],
+      tags: [[]]
     });
   }
 
-  onCoordinatesSelected(location: LocationData): void {
-    this.eventForm.patchValue({
+  private initializeForms(eventData: IEvent): void {
+    console.log('Initializing forms with event data:', eventData);
+    
+    // Banner Image
+    this.bannerImageForm.patchValue({
+      bannerImage: eventData.bannerImage || ''
+    });
+
+    // Basic Information
+    this.basicInfoForm.patchValue({
+      title: eventData.title || '',
+      description: eventData.description || '',
+      category: eventData.category || EventCategory.OTHER,
+      startDate: eventData.startDate ? new Date(eventData.startDate) : null,
+      endDate: eventData.endDate ? new Date(eventData.endDate) : null
+    });
+
+    // Location
+    this.locationForm.patchValue({
+      location: eventData.location || '',
+      coordinates: eventData.coordinates || [0, 0]
+    });
+
+    // Contact Information
+    this.contactForm.patchValue({
+      contactPerson: eventData.contactPerson || '',
+      contactEmail: eventData.contactEmail || '',
+      contactPhone: eventData.contactPhone || ''
+    });
+
+    // Participant Information
+    this.participantForm.patchValue({
+      maxParticipants: eventData.maxParticipants || 0,
+      waitlistEnabled: eventData.waitlistEnabled || false,
+      maxWaitlistSize: eventData.maxWaitlistSize || 0,
+      requiredSkills: eventData.requiredSkills || []
+    });
+
+    // Requirements
+    this.requirementsForm.patchValue({
+      difficulty: eventData.difficulty || 'BEGINNER',
+      minimumAge: eventData.minimumAge || 0,
+      requiresBackground: eventData.requiresBackground || false,
+      requiresApproval: eventData.requiresApproval || false
+    });
+
+    // Additional Settings
+    this.additionalForm.patchValue({
+      durationHours: eventData.durationHours || 0,
+      pointsAwarded: eventData.pointsAwarded || 0,
+      isVirtual: eventData.isVirtual || false,
+      isRecurring: eventData.isRecurring || false,
+      isSpecialEvent: eventData.isSpecialEvent || false,
+      tags: eventData.tags || []
+    });
+
+    console.log('Forms initialized with values:', {
+      basicInfo: this.basicInfoForm.value,
+      location: this.locationForm.value,
+      contact: this.contactForm.value,
+      participant: this.participantForm.value,
+      requirements: this.requirementsForm.value,
+      additional: this.additionalForm.value,
+      bannerImage: this.bannerImageForm.value
+    });
+  }
+
+  onLocationSelected(location: LocationData): void {
+    this.locationForm.patchValue({
       coordinates: location.coordinates,
       location: location.address
     });
   }
 
-  getMapCoordinates(): Coordinates | undefined {
-    const coords = this.eventForm.get('coordinates')?.value;
-    return coords ? { lat: coords[0], lng: coords[1] } : undefined;
+  addSkill(event: any): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      const skills = this.participantForm.get('requiredSkills')?.value || [];
+      this.participantForm.patchValue({ requiredSkills: [...skills, value] });
+      event.chipInput!.clear();
+    }
+  }
+
+  removeSkill(skill: string): void {
+    const skills = this.participantForm.get('requiredSkills')?.value || [];
+    const index = skills.indexOf(skill);
+    if (index >= 0) {
+      skills.splice(index, 1);
+      this.participantForm.patchValue({ requiredSkills: skills });
+    }
+  }
+
+  addTag(event: any): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      const tags = this.additionalForm.get('tags')?.value || [];
+      this.additionalForm.patchValue({ tags: [...tags, value] });
+      event.chipInput!.clear();
+    }
+  }
+
+  removeTag(tag: string): void {
+    const tags = this.additionalForm.get('tags')?.value || [];
+    const index = tags.indexOf(tag);
+    if (index >= 0) {
+      tags.splice(index, 1);
+      this.additionalForm.patchValue({ tags: tags });
+    }
+  }
+
+  onImageUploadClick(): void {
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        this.snackBar.open('File size must be less than 5MB', 'Close', { duration: 3000 });
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        this.snackBar.open('File must be an image', 'Close', { duration: 3000 });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.bannerImageForm.patchValue({
+          bannerImage: e.target?.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeBannerImage(): void {
+    this.bannerImageForm.patchValue({
+      bannerImage: ''
+    });
+  }
+
+  isFormValid(): boolean {
+    return this.basicInfoForm.valid &&
+           this.locationForm.valid &&
+           this.contactForm.valid &&
+           this.participantForm.valid &&
+           this.requirementsForm.valid &&
+           this.additionalForm.valid &&
+           this.bannerImageForm.valid;
   }
 
   onSubmit(): void {
-    if (!this.eventForm.valid) {
-      this.showValidationErrors();
-      return;
-    }
+    if (this.isFormValid()) {
+      this.submitting = true;
+      console.log('Starting event update process');
 
-    const eventId = this.route.snapshot.paramMap.get('id');
-    if (!eventId) {
-      this.snackBar.open('Event ID not found', 'Close', { duration: 3000 });
-      return;
-    }
-
-    const startDateTime = this.combineDateTime(
-      this.eventForm.get('startDate')?.value,
-      this.eventForm.get('startTime')?.value
-    );
-
-    const endDateTime = this.combineDateTime(
-      this.eventForm.get('endDate')?.value,
-      this.eventForm.get('endTime')?.value
-    );
-
-    const eventData = {
-      ...this.eventForm.value,
-      startDate: startDateTime.toISOString(),
-      endDate: endDateTime.toISOString()
-    };
-
-    console.log('Dispatching update event action with data:', eventData);
-    this.store.dispatch(EventActions.updateEvent({ id: eventId, event: eventData }));
-  }
-
-  private showValidationErrors(): void {
-    if (this.eventForm.errors?.['invalidDateRange']) {
-      this.snackBar.open('End date must be after start date', 'Close', { duration: 3000 });
-    } else if (this.eventForm.errors?.['pastStartDate']) {
-      this.snackBar.open('Start date cannot be in the past', 'Close', { duration: 3000 });
-    } else if (this.eventForm.errors?.['requiredDates']) {
-      this.snackBar.open('Both start and end dates are required', 'Close', { duration: 3000 });
-    } else {
-      let errorMessage = 'Please fill in all required fields correctly';
-      
-      if (this.eventForm.get('title')?.errors?.['required']) {
-        errorMessage = 'Title is required';
-      } else if (this.eventForm.get('description')?.errors?.['required']) {
-        errorMessage = 'Description is required';
-      } else if (this.eventForm.get('category')?.errors?.['required']) {
-        errorMessage = 'Category is required';
-      } else if (this.eventForm.get('location')?.errors?.['required']) {
-        errorMessage = 'Location is required';
-      } else if (this.eventForm.get('coordinates')?.errors?.['required']) {
-        errorMessage = 'Please select a location on the map';
-      } else if (this.eventForm.get('maxParticipants')?.errors?.['required']) {
-        errorMessage = 'Maximum participants is required';
-      } else if (this.eventForm.get('contactPerson')?.errors?.['required']) {
-        errorMessage = 'Contact person is required';
-      } else if (this.eventForm.get('contactEmail')?.errors?.['required']) {
-        errorMessage = 'Contact email is required';
-      } else if (this.eventForm.get('contactEmail')?.errors?.['email']) {
-        errorMessage = 'Invalid email format';
-      } else if (this.eventForm.get('contactPhone')?.errors?.['required']) {
-        errorMessage = 'Contact phone is required';
-      } else if (this.eventForm.get('contactPhone')?.errors?.['pattern']) {
-        errorMessage = 'Invalid phone number format';
+      // Get the event ID, handling both id and _id
+      const eventId = this.event?._id;
+      if (!eventId) {
+        console.error('No event ID found');
+        this.snackBar.open('Error: Event ID not found', 'Close', { duration: 3000 });
+        this.submitting = false;
+        return;
       }
+
+      // Collect all form data
+      const eventData = {
+        ...this.event, // Preserve all existing event data first
+        ...this.basicInfoForm.value,
+        ...this.locationForm.value,
+        ...this.contactForm.value,
+        ...this.participantForm.value,
+        ...this.requirementsForm.value,
+        ...this.additionalForm.value,
+        bannerImage: this.bannerImageForm.get('bannerImage')?.value,
+        startDate: this.basicInfoForm.get('startDate')?.value,
+        endDate: this.basicInfoForm.get('endDate')?.value,
+        updatedAt: new Date()
+      };
+
+      // Validate dates
+      const startDate = new Date(eventData.startDate);
+      const endDate = new Date(eventData.endDate);
       
-      this.snackBar.open(errorMessage, 'Close', { duration: 3000 });
+      if (endDate <= startDate) {
+        this.snackBar.open('End date must be after start date', 'Close', { duration: 3000 });
+        this.submitting = false;
+        return;
+      }
+
+      console.log('Submitting event update with data:', eventData);
+
+      // Dispatch update action with the new data
+      this.store.dispatch(EventActions.updateEvent({ 
+        id: eventId, 
+        event: eventData 
+      }));
+
+      // Create a subscription to handle the update completion
+      const subscription = this.store.select(selectSelectedEvent)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEvent) => {
+            if (updatedEvent) {
+              console.log('Event updated successfully:', updatedEvent);
+              this.snackBar.open('Event updated successfully', 'Close', { duration: 3000 });
+              subscription.unsubscribe(); // Clean up subscription
+              this.router.navigate(['/organization/events']);
+            }
+          },
+          error: (error) => {
+            console.error('Error updating event:', error);
+            let errorMessage = 'Error updating event. Please try again.';
+            if (error.status === 400) {
+              errorMessage = 'Invalid event data. Please check all required fields.';
+            }
+            this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
+            this.submitting = false;
+            subscription.unsubscribe(); // Clean up subscription
+          }
+        });
+    } else {
+      console.error('Form validation failed:', {
+        basicInfo: this.basicInfoForm.errors,
+        location: this.locationForm.errors,
+        contact: this.contactForm.errors,
+        participant: this.participantForm.errors,
+        requirements: this.requirementsForm.errors,
+        additional: this.additionalForm.errors
+      });
+      this.snackBar.open('Please fill in all required fields correctly', 'Close', { duration: 3000 });
     }
-  }
-
-  private createForm(): void {
-    this.eventForm = this.fb.group({
-      title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
-      description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(2000)]],
-      category: ['', [Validators.required]],
-      startDate: ['', [Validators.required]],
-      endDate: ['', [Validators.required]],
-      maxParticipants: ['', [Validators.required, Validators.min(1)]],
-      coordinates: ['', [Validators.required]],
-      location: ['', [Validators.required]],
-      contactPerson: ['', [Validators.required]],
-      contactEmail: ['', [Validators.required, Validators.email]],
-      contactPhone: ['', [Validators.required, Validators.pattern('^\\+?[1-9]\\d{1,14}$')]]
-    }, { validators: this.validateDates });
-
-    // Subscribe to date changes to revalidate
-    this.eventForm.get('startDate')?.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.eventForm.updateValueAndValidity();
-    });
-
-    this.eventForm.get('endDate')?.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.eventForm.updateValueAndValidity();
-    });
-  }
-
-  private combineDateTime(date: Date | null, time: string | null): Date {
-    if (!date || !time) {
-      throw new Error('Invalid date or time format');
-    }
-
-    const [hours, minutes] = time.split(':').map(Number);
-    const combinedDate = new Date(date);
-    combinedDate.setHours(hours, minutes, 0, 0);
-    return combinedDate;
   }
 } 

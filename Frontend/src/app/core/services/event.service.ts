@@ -3,15 +3,14 @@ import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, map, catchError, throwError, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
-  EventResponse, 
-  EventRequest, 
   EventCategory, 
-  EventStatus, 
-  Event, 
-  EventStats,
-  EventRegistration,
-  EventFeedback
-} from '../models/event.model';
+  EventStatus,
+  IEventRegistration,
+  IEventFeedback,
+  IEvent,
+  IEventFilters,
+  IEventStats
+} from '../models/event.types';
 import { ApiResponse } from '../models/api-response.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -31,33 +30,46 @@ export class EventService {
     private authService: AuthService
   ) {}
 
-  private validateOrganizationId(): string {
-    const organizationId = localStorage.getItem('organizationId');
-    console.log('Retrieved organization ID from localStorage:', organizationId);
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    const organizationId = this.authService.getCurrentOrganizationId();
     
-    if (!organizationId) {
-      console.error('Organization ID not found in localStorage');
-      this.snackBar.open('Please log in as an organization first', 'Close', { duration: 5000 });
-      this.router.navigate(['/auth/login']);
-      throw new Error('Organization ID not found');
-    }
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
 
-    // Validate that it's a valid MongoDB ObjectId (24 characters, hexadecimal)
-    if (!/^[0-9a-fA-F]{24}$/.test(organizationId)) {
-      console.error('Invalid organization ID format:', organizationId);
-      this.snackBar.open('Invalid organization ID format', 'Close', { duration: 5000 });
-      this.router.navigate(['/auth/login']);
-      throw new Error('Invalid organization ID format');
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
     }
+    if (organizationId) {
+      headers = headers.set('X-Organization-ID', organizationId);
+    }
+    return headers;
+  }
 
-    return organizationId;
+  private getHttpOptions() {
+    return {
+      headers: this.getHeaders(),
+      withCredentials: environment.cors.withCredentials
+    };
   }
 
   private formatDateForBackend(date: Date | string): string {
-    return date instanceof Date ? date.toISOString() : date;
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toISOString();
   }
 
-  private validateEventData(eventData: Partial<Event>): boolean {
+  private validateOrganizationId(): string {
+    // Get organization ID from auth service or local storage
+    const orgId = localStorage.getItem('organizationId');
+    if (!orgId) {
+      throw new Error('Organization ID not found');
+    }
+    return orgId;
+  }
+
+  private validateEventData(eventData: Partial<IEvent>): boolean {
     if (!eventData.startDate || !eventData.endDate) {
       this.snackBar.open('Invalid date range', 'Close', { duration: 3000 });
       return false;
@@ -71,60 +83,62 @@ export class EventService {
     return true;
   }
 
-  getEvents(filters: any = {}, page: number = 0, size: number = 10): Observable<Page<Event>> {
-    const organizationId = localStorage.getItem('organizationId');
-    if (!organizationId) {
-      return throwError(() => new Error('Organization ID not found'));
+  getEvents(filters?: IEventFilters, page: number = 0, size: number = 10): Observable<Page<IEvent>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params = params.set(key, value.toString());
+        }
+      });
     }
 
-    return this.http.get<ApiResponse<Page<Event>>>(`${this.apiUrl}/organization/${organizationId}`, {
-      params: {
-        page: page.toString(),
-        size: size.toString(),
-        ...filters
-      }
+    console.log('Making API call to get events with params:', params.toString());
+    console.log('Headers:', this.getHeaders().keys());
+
+    return this.http.get<ApiResponse<IEvent[]>>(this.apiUrl, { 
+      ...this.getHttpOptions(),
+      params
     }).pipe(
       map(response => {
-        if (!response.data) {
-          throw new Error('No data in response');
-        }
+        console.log('API Response:', response);
+        // Convert array response to Page object
+        const mappedEvents = this.mapToEvents(response.data);
         return {
-          ...response.data,
-          content: response.data.content.map(event => ({
-            ...event,
-            id: event.id || '',
-            startDate: new Date(event.startDate),
-            endDate: new Date(event.endDate),
-            currentParticipants: event.registeredParticipants?.size || 0
-          }))
+          content: mappedEvents,
+          totalElements: response.meta.totalElements,
+          totalPages: response.meta.totalPages,
+          size: response.meta.size,
+          number: response.meta.page,
+          first: response.meta.page === 0,
+          last: response.meta.page === response.meta.totalPages - 1,
+          empty: mappedEvents.length === 0
         };
       }),
       catchError(error => {
+        console.error('Error fetching events:', error);
         this.snackBar.open('Error fetching events', 'Close', { duration: 3000 });
         return throwError(() => error);
       })
     );
   }
 
-  getEventById(id: string): Observable<Event> {
-    return this.http.get<Event>(`${this.apiUrl}/${id}`);
+  getEventById(id: string): Observable<IEvent> {
+    return this.http.get<IEvent>(`${this.apiUrl}/${id}`, this.getHttpOptions());
   }
 
-  createEvent(event: Partial<Event>): Observable<Event> {
-    // Validate event data
+  createEvent(event: Partial<IEvent>): Observable<IEvent> {
     if (!this.validateEventData(event)) {
       return throwError(() => new Error('Invalid event data'));
     }
 
-    // Convert the event data to the correct format
     const eventData = this.toEventRequest(event);
-
-    return this.http.post<ApiResponse<Event>>(`${this.apiUrl}`, eventData)
+    return this.http.post<ApiResponse<IEvent>>(`${this.apiUrl}`, eventData, this.getHttpOptions())
       .pipe(
-        map(response => {
-          console.log('Created event:', response);
-          return response.data;
-        }),
+        map(response => response.data),
         catchError(error => {
           console.error('Error creating event:', error);
           let message = 'Error creating event. Please try again.';
@@ -137,28 +151,55 @@ export class EventService {
       );
   }
 
-  updateEvent(id: string, event: Partial<Event>): Observable<Event> {
-    return this.http.put<Event>(`${this.apiUrl}/${id}`, event);
+  updateEvent(id: string, event: Partial<IEvent>): Observable<IEvent> {
+    if (!this.validateEventData(event)) {
+      return throwError(() => new Error('Invalid event data'));
+    }
+
+    const eventData = this.toEventRequest(event);
+    console.log('Updating event with data:', eventData);
+
+    return this.http.put<ApiResponse<IEvent>>(`${this.apiUrl}/${id}`, eventData, this.getHttpOptions())
+      .pipe(
+        map(response => {
+          console.log('Update response:', response);
+          if (!response.data) {
+            throw new Error('No data received from server');
+          }
+          const mappedEvent = this.mapToEvent(response.data);
+          console.log('Mapped event:', mappedEvent);
+          return mappedEvent;
+        }),
+        catchError(error => {
+          console.error('Error updating event:', error);
+          let message = 'Error updating event. Please try again.';
+          if (error.status === 400) {
+            message = 'Invalid event data. Please check all required fields.';
+          }
+          this.snackBar.open(message, 'Close', { duration: 5000 });
+          return throwError(() => error);
+        })
+      );
   }
 
   deleteEvent(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  updateEventStatus(eventId: string, status: EventStatus): Observable<Event> {
-    return this.http.patch<Event>(`${this.apiUrl}/${eventId}/status`, { status });
+  updateEventStatus(eventId: string, status: EventStatus): Observable<IEvent> {
+    return this.http.patch<IEvent>(`${this.apiUrl}/${eventId}/status`, { status });
   }
 
-  registerForEvent(eventId: string): Observable<EventRegistration> {
-    return this.http.post<EventRegistration>(`${this.apiUrl}/${eventId}/register`, {});
+  registerForEvent(eventId: string): Observable<IEventRegistration> {
+    return this.http.post<IEventRegistration>(`${this.apiUrl}/${eventId}/register`, {});
   }
 
   unregisterFromEvent(eventId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${eventId}/register`);
   }
 
-  cancelEvent(id: string, reason: string): Observable<Event> {
-    return this.http.patch<Event>(`${this.apiUrl}/${id}/cancel`, { reason });
+  cancelEvent(id: string, reason: string): Observable<IEvent> {
+    return this.http.patch<IEvent>(`${this.apiUrl}/${id}/cancel`, { reason });
   }
 
   getEventParticipants(eventId: string): Observable<string[]> {
@@ -166,12 +207,12 @@ export class EventService {
   }
 
   // Get events by organization
-  getEventsByOrganization(organizationId: string, page = 0, size = 10): Observable<Page<Event>> {
+  getEventsByOrganization(organizationId: string, page = 0, size = 10): Observable<Page<IEvent>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
 
-    return this.http.get<ApiResponse<Page<Event>>>(`${this.apiUrl}/organization/${organizationId}`, { params })
+    return this.http.get<ApiResponse<Page<IEvent>>>(`${this.apiUrl}/organization/${organizationId}`, { params })
       .pipe(
         map(response => response.data),
         catchError(error => {
@@ -183,30 +224,30 @@ export class EventService {
   }
 
   // Get upcoming events
-  getUpcomingEvents(page = 0, size = 10): Observable<Event[]> {
+  getUpcomingEvents(page = 0, size = 10): Observable<IEvent[]> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/upcoming`, { params })
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/upcoming`, { params })
       .pipe(map(response => this.mapToEvents(response.data)));
   }
 
   // Search events
-  searchEvents(query: string, page = 0, size = 10): Observable<Event[]> {
+  searchEvents(query: string, page = 0, size = 10): Observable<IEvent[]> {
     const params = new HttpParams()
       .set('query', query)
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/search`, { params })
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/search`, { params })
       .pipe(map(response => this.mapToEvents(response.data)));
   }
 
   // Get events by category
-  getEventsByCategory(category: EventCategory, page = 0, size = 10): Observable<Event[]> {
+  getEventsByCategory(category: EventCategory, page = 0, size = 10): Observable<IEvent[]> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/category/${category}`, { params })
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/category/${category}`, { params })
       .pipe(map(response => this.mapToEvents(response.data)));
   }
 
@@ -217,8 +258,8 @@ export class EventService {
   }
 
   // Join waitlist
-  joinWaitlist(eventId: string): Observable<EventRegistration> {
-    return this.http.post<ApiResponse<EventRegistration>>(`${this.apiUrl}/${eventId}/waitlist`, {})
+  joinWaitlist(eventId: string): Observable<IEventRegistration> {
+    return this.http.post<ApiResponse<IEventRegistration>>(`${this.apiUrl}/${eventId}/waitlist`, {})
       .pipe(map(response => response.data));
   }
 
@@ -229,108 +270,175 @@ export class EventService {
   }
 
   // Submit event feedback
-  submitEventFeedback(eventId: string, feedback: Partial<EventFeedback>): Observable<EventFeedback> {
-    return this.http.post<ApiResponse<EventFeedback>>(`${this.apiUrl}/${eventId}/feedback`, feedback)
+  submitEventFeedback(eventId: string, feedback: Partial<IEventFeedback>): Observable<IEventFeedback> {
+    return this.http.post<ApiResponse<IEventFeedback>>(`${this.apiUrl}/${eventId}/feedback`, feedback)
       .pipe(map(response => response.data));
   }
 
   // Get event feedback
-  getEventFeedback(eventId: string, page = 0, size = 10): Observable<EventFeedback[]> {
+  getEventFeedback(eventId: string, page = 0, size = 10): Observable<IEventFeedback[]> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<ApiResponse<EventFeedback[]>>(`${this.apiUrl}/${eventId}/feedback`, { params })
+    return this.http.get<ApiResponse<IEventFeedback[]>>(`${this.apiUrl}/${eventId}/feedback`, { params })
       .pipe(map(response => response.data));
   }
 
   // Get nearby events
-  getNearbyEvents(coordinates: [number, number], maxDistance: number, page = 0, size = 10): Observable<Event[]> {
+  getNearbyEvents(coordinates: [number, number], maxDistance: number, page = 0, size = 10): Observable<IEvent[]> {
     const params = new HttpParams()
       .set('lat', coordinates[0].toString())
       .set('lng', coordinates[1].toString())
       .set('distance', maxDistance.toString())
       .set('page', page.toString())
       .set('size', size.toString());
-    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/nearby`, { params })
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/nearby`, { params })
       .pipe(map(response => this.mapToEvents(response.data)));
   }
 
   // Get registered events
-  getRegisteredEvents(): Observable<Event[]> {
-    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/registered`)
+  getRegisteredEvents(): Observable<IEvent[]> {
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/registered`)
       .pipe(map(response => this.mapToEvents(response.data)));
   }
 
   // Get waitlisted events
-  getWaitlistedEvents(): Observable<Event[]> {
-    return this.http.get<ApiResponse<EventResponse[]>>(`${this.apiUrl}/waitlist`)
+  getWaitlistedEvents(): Observable<IEvent[]> {
+    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}/waitlist`)
       .pipe(map(response => this.mapToEvents(response.data)));
   }
 
   // Get event statistics
-  getEventStats(eventId: string): Observable<EventStats> {
-    return this.http.get<ApiResponse<EventStats>>(`${this.apiUrl}/${eventId}/stats`)
+  getEventStats(eventId: string): Observable<IEventStats> {
+    return this.http.get<ApiResponse<IEventStats>>(`${this.apiUrl}/${eventId}/stats`)
       .pipe(map(response => response.data));
   }
 
   // Helper method to map a single EventResponse to Event
-  private mapToEvent(event: EventResponse | null): Event {
+  private mapToEvent(event: IEvent | null): IEvent {
     if (!event) throw new Error('Event not found');
+    
+    // Convert Sets to arrays if they exist
+    const registeredParticipants = event.registeredParticipants instanceof Set 
+      ? Array.from(event.registeredParticipants) 
+      : [];
+    const waitlistedParticipants = event.waitlistedParticipants instanceof Set 
+      ? Array.from(event.waitlistedParticipants) 
+      : [];
+    const tags = event.tags instanceof Set 
+      ? Array.from(event.tags) 
+      : event.tags || [];
+
+    // Handle ID mapping
+    const eventData = { ...event } as any;
+    if (eventData.id && !eventData._id) {
+      eventData._id = eventData.id;
+    }
+
     return {
-      ...event,
+      ...eventData,
       startDate: new Date(event.startDate),
       endDate: new Date(event.endDate),
-      createdAt: new Date(event.createdAt),
-      updatedAt: new Date(event.updatedAt),
-      registeredParticipants: new Set<string>(),
-      waitlistedParticipants: new Set<string>(),
-      approvedParticipants: new Set<string>(),
-      rejectedParticipants: new Set<string>(),
-      pendingParticipants: new Set<string>(),
-      tags: new Set<string>(),
-      resources: new Set<string>(),
-      sponsors: new Set<string>(),
-      requiredSkills: [],
-      waitlistEnabled: false,
-      maxWaitlistSize: 0,
-      totalVolunteerHours: 0,
-      isCancelled: false,
-      isRecurring: false,
-      requiresApproval: false,
-      minimumAge: 0,
-      requiresBackground: false,
-      isVirtual: false,
-      difficulty: 'BEGINNER',
-      durationHours: 0,
-      isSpecialEvent: false,
-      pointsAwarded: 0,
-      isPublished: true
-    } as Event;
+      registeredParticipants: registeredParticipants,
+      waitlistedParticipants: waitlistedParticipants,
+      tags: Array.from(tags),
+      requiredSkills: event.requiredSkills || [],
+      waitlistEnabled: event.waitlistEnabled || false,
+      maxWaitlistSize: event.maxWaitlistSize || 0,
+      isRecurring: event.isRecurring || false,
+      requiresApproval: event.requiresApproval || false,
+      minimumAge: event.minimumAge || 0,
+      requiresBackground: event.requiresBackground || false,
+      isVirtual: event.isVirtual || false,
+      difficulty: event.difficulty || 'BEGINNER',
+      durationHours: event.durationHours || 0,
+      isSpecialEvent: event.isSpecialEvent || false,
+      pointsAwarded: event.pointsAwarded || 0
+    } as IEvent;
   }
 
   // Helper method to map EventResponse[] to Event[]
-  private mapToEvents(events: EventResponse[] | null): Event[] {
+  private mapToEvents(events: IEvent[] | null): IEvent[] {
     if (!events) return [];
     return events.map(event => this.mapToEvent(event));
   }
 
   // Helper method to convert Partial<IEvent> to EventRequest
-  private toEventRequest(event: Partial<Event>): EventRequest {
+  private toEventRequest(event: Partial<IEvent>): any {
+    // Start with the original event data if it exists
+    const eventData = { ...event } as any;
+    
+    // Handle ID mapping
+    if (eventData.id && !eventData._id) {
+      eventData._id = eventData.id;
+    }
+
     const request = {
+      ...eventData, // Keep all original data
+      // Override with new values or use defaults
       title: event.title || '',
       description: event.description || '',
+      category: event.category || EventCategory.OTHER,
       location: event.location || '',
       coordinates: event.coordinates || [0, 0],
-      startDate: (event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate) || new Date().toISOString(),
-      endDate: (event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate) || new Date().toISOString(),
+      startDate: event.startDate ? this.formatDateForBackend(event.startDate) : this.formatDateForBackend(new Date()),
+      endDate: event.endDate ? this.formatDateForBackend(event.endDate) : this.formatDateForBackend(new Date()),
       maxParticipants: event.maxParticipants || 0,
-      category: event.category || EventCategory.OTHER,
+      waitlistEnabled: event.waitlistEnabled ?? false,
+      maxWaitlistSize: event.maxWaitlistSize || 0,
+      requiredSkills: event.requiredSkills || [],
+      isVirtual: event.isVirtual ?? false,
+      requiresApproval: event.requiresApproval ?? false,
+      difficulty: event.difficulty || 'BEGINNER',
+      tags: Array.isArray(event.tags) ? event.tags : [],
+      isRecurring: event.isRecurring ?? false,
+      minimumAge: event.minimumAge || 0,
+      requiresBackground: event.requiresBackground ?? false,
+      isSpecialEvent: event.isSpecialEvent ?? false,
+      pointsAwarded: event.pointsAwarded || 0,
+      durationHours: event.durationHours || 0,
       contactPerson: event.contactPerson || '',
       contactEmail: event.contactEmail || '',
-      contactPhone: event.contactPhone || ''
+      contactPhone: event.contactPhone || '',
+      organizationId: event.organizationId || this.validateOrganizationId(),
+      status: event.status || EventStatus.PENDING,
+      // Preserve these fields if they exist
+      registeredParticipants: event.registeredParticipants || [],
+      waitlistedParticipants: event.waitlistedParticipants || [],
+      participations: event.participations || [],
+      averageRating: event.averageRating || 0,
+      numberOfRatings: event.numberOfRatings || 0,
+      createdAt: event.createdAt || new Date(),
+      updatedAt: new Date()
     };
     
     console.log('Converted event request:', request);
     return request;
+  }
+
+  uploadEventBanner(eventId: string, file: File): Observable<{ imageUrl: string }> {
+    const formData = new FormData();
+    formData.append('bannerImage', file);
+
+    return this.http.post<{ imageUrl: string }>(`${this.apiUrl}/${eventId}/banner`, formData, {
+      headers: this.getHeaders().delete('Content-Type')
+    }).pipe(
+      catchError(error => {
+        console.error('Error uploading banner image:', error);
+        this.snackBar.open('Error uploading banner image', 'Close', { duration: 3000 });
+        return throwError(() => error);
+      })
+    );
+  }
+
+  updateEventBanner(eventId: string, imageUrl: string): Observable<IEvent> {
+    return this.http.patch<IEvent>(`${this.apiUrl}/${eventId}/banner`, { bannerImage: imageUrl }, this.getHttpOptions())
+      .pipe(
+        catchError(error => {
+          console.error('Error updating banner image:', error);
+          this.snackBar.open('Error updating banner image', 'Close', { duration: 3000 });
+          return throwError(() => error);
+        })
+      );
   }
 } 

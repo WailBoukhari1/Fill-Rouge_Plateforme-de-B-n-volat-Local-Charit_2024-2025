@@ -8,6 +8,7 @@ import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
+import com.fill_rouge.backend.mapper.EventMapper;
 import com.fill_rouge.backend.repository.EventFeedbackRepository;
 import com.fill_rouge.backend.repository.EventRepository;
 import com.fill_rouge.backend.service.event.EventService;
@@ -32,6 +33,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final EventFeedbackRepository eventFeedbackRepository;
     private final IUserService userService;
+    private final EventMapper eventMapper;
 
     @Override
     public List<Event> getEventsByParticipant(String userId) {
@@ -209,10 +211,17 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Event createEvent(EventRequest request, String organizationId) {
-        Event event = new Event();
-        // Map request to event
+        Event event = eventMapper.toEntity(request);
         event.setOrganizationId(organizationId);
+        event.setStatus(EventStatus.PENDING);
+        event.setCreatedAt(LocalDateTime.now());
+        event.setUpdatedAt(LocalDateTime.now());
         return eventRepository.save(event);
+    }
+
+    @Override
+    public Page<Event> getAllEvents(Pageable pageable) {
+        return eventRepository.findAll(pageable);
     }
 
     @Override

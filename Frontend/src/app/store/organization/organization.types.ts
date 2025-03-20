@@ -16,7 +16,7 @@ export interface Organization {
   registrationNumber?: string;
   taxId?: string;
   phoneNumber: string;
-  email: string;
+  email?: string;
   address: string;
   city: string;
   country: string;

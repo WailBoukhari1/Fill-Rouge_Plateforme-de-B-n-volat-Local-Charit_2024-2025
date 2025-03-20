@@ -1,110 +1,130 @@
-import {
-  IEvent,
-  IEventRegistration,
-  RegistrationStatus,
-  IEventFeedback,
-  IEventStats,
-  EventStatus,
-  EventCategory
-} from './event.types';
-
-export type Event = IEvent;
-export type EventRegistration = IEventRegistration;
-export type EventFeedback = IEventFeedback;
-export type EventStats = IEventStats;
-export type EventFilters = IEventFilters;
-
-export { RegistrationStatus, EventStatus, EventCategory };
-
-export interface EventLocation {
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  postalCode: string;
-  latitude?: number;
-  longitude?: number;
+export enum EventStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  DRAFT = 'DRAFT',
+  UPCOMING = 'UPCOMING',
+  ONGOING = 'ONGOING',
+  PUBLISHED = 'PUBLISHED'
 }
 
-export interface EventParticipant {
+export enum EventCategory {
+  OTHER = 'OTHER',
+  ENVIRONMENT = 'ENVIRONMENT',
+  COMMUNITY_DEVELOPMENT = 'COMMUNITY_DEVELOPMENT',
+  ARTS_AND_CULTURE = 'ARTS_AND_CULTURE',
+  EDUCATION = 'EDUCATION',
+  ANIMAL_WELFARE = 'ANIMAL_WELFARE',
+  SPORTS_AND_RECREATION = 'SPORTS_AND_RECREATION',
+  HEALTH = 'HEALTH',
+  DISASTER_RELIEF = 'DISASTER_RELIEF',
+  SOCIAL_SERVICES = 'SOCIAL_SERVICES'
+}
+
+export interface IEventScheduleItem {
+  time: string;
+  activity: string;
+}
+
+export interface IEventFeedback {
+  rating: number;
+  comment: string;
+  userId: string;
+  createdAt: Date;
+}
+
+export interface IEvent {
+  id: string;
+  title: string;
+  description: string;
+  organizationId: string;
+  organizationName: string;
+  location: string;
+  startDate: Date;
+  endDate: Date;
+  category: EventCategory;
+  status: EventStatus;
+  maxParticipants: number;
+  currentParticipants: number;
+  requiredSkills: string[];
+  schedule: IEventScheduleItem[];
+  isRegistered?: boolean;
+  feedback?: IEventFeedback;
+  isVirtual: boolean;
+  requiresApproval: boolean;
+  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  tags: string[];
+  imageUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IEventRegistration {
+  eventId: string;
   userId: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'WAITLISTED' | 'CANCELLED';
   registrationDate: Date;
-  checkedIn: boolean;
+  checkedIn?: boolean;
   checkInTime?: Date;
   checkOutTime?: Date;
   hoursContributed?: number;
-  feedbackSubmitted: boolean;
+  feedbackSubmitted?: boolean;
   approvalDate?: Date;
   rejectionReason?: string;
   waitlistPosition?: number;
 }
 
-export interface EventDetails {
-  id: string;
-  title: string;
-  description: string;
-  date: Date;
-  location: string;
-  organizationName: string;
-  participantCount: number;
-  maxParticipants: number;
-  requiredSkills: string[];
-  status: string;
-  isRegistered: boolean;
-  isWaitlisted: boolean;
-  waitlistPosition?: number;
-}
-
-export enum EventType {
-  IN_PERSON = 'IN_PERSON',
-  VIRTUAL = 'VIRTUAL',
-  HYBRID = 'HYBRID'
-}
-
-export interface EventRequest {
-  title: string;
-  description: string;
-  location: string;
-  coordinates: [number, number];
-  startDate: string;
-  endDate: string;
-  maxParticipants: number;
-  category: EventCategory;
-  contactPerson: string;
-  contactEmail: string;
-  contactPhone: string;
-}
-
-export interface EventResponse {
-  id: string;
-  title: string;
-  description: string;
-  organizationId: string;
-  location: string;
-  coordinates: [number, number];
-  startDate: string;
-  endDate: string;
-  maxParticipants: number;
-  currentParticipants: number;
-  category: EventCategory;
-  status: EventStatus;
-  averageRating: number;
-  numberOfRatings: number;
-  contactPerson: string;
-  contactEmail: string;
-  contactPhone: string;
-  isRegistered: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface IEventFilters {
   organizationId?: string;
-  sortField?: string;
-  sortDirection?: 'asc' | 'desc';
   category?: EventCategory;
   status?: EventStatus;
   startDate?: Date;
   endDate?: Date;
+  location?: string;
+  radius?: number;
+  searchQuery?: string;
+  minParticipants?: number;
+  maxParticipants?: number;
+  requiresApproval?: boolean;
+  isVirtual?: boolean;
+  difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  tags?: string[];
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 }
+
+export interface IEventStats {
+  totalEvents: number;
+  upcomingEvents: number;
+  ongoingEvents: number;
+  completedEvents: number;
+  registeredEvents: number;
+  totalParticipants: number;
+  totalHoursContributed: number;
+  averageRating: number;
+}
+
+export interface IEventNotification {
+  id: string;
+  eventId: string;
+  userId: string;
+  type: 'REMINDER' | 'UPDATE' | 'CANCELLATION' | 'REGISTRATION' | 'FEEDBACK';
+  message: string;
+  read: boolean;
+  createdAt: Date;
+}
+
+export interface IEventAchievement {
+  id: string;
+  eventId: string;
+  userId: string;
+  type: 'PARTICIPATION' | 'HOURS' | 'LEADERSHIP' | 'FEEDBACK';
+  name: string;
+  description: string;
+  imageUrl: string;
+  earnedAt: Date;
+}
+
+export type Event = IEvent;

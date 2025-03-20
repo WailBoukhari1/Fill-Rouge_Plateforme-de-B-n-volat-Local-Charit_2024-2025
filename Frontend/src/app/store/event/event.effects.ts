@@ -6,31 +6,71 @@ import { map, mergeMap, catchError, withLatestFrom, tap, finalize, switchMap } f
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { EventService } from '../../core/services/event.service';
-import { EventStatus } from '../../core/models/event.types';
+import { EventStatus, IEvent, IEventFeedback, IEventRegistration } from '../../core/models/event.types';
+import { Event } from '../../core/models/event.model';
+import { Page } from '../../core/models/page.model';
 import * as EventActions from './event.actions';
 import { selectEventFilters } from './event.selectors';
+import { EventState } from './event.reducer';
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+  status: number;
+  meta: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+  };
+}
 
 @Injectable()
 export class EventEffects {
-  loadEvents$ = createEffect(() => {
-    return this.actions$.pipe(
-      ofType(EventActions.loadEvents),
-      switchMap(({ filters, page, size }) =>
-        this.eventService.getEvents(filters, page, size).pipe(
-          map(events => EventActions.loadEventsSuccess({ events })),
-          catchError(error => of(EventActions.loadEventsFailure({ error: error.message })))
-        )
-      )
-    );
-  });
-
-  loadEventById$ = createEffect(() =>
+  loadEvents$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(EventActions.loadEventById),
-      mergeMap(({ id }) =>
-        this.eventService.getEventById(id).pipe(
-          map(event => EventActions.loadEventByIdSuccess({ event })),
-          catchError(error => of(EventActions.loadEventByIdFailure({ error })))
+      ofType(EventActions.loadEvents),
+      tap(action => {
+        console.log('LoadEvents action dispatched:', action);
+      }),
+      mergeMap(action => {
+        console.log('Loading events with filters:', action.filters);
+        return this.eventService.getEvents(action.filters, action.page, action.size).pipe(
+          tap(page => {
+            console.log('Page object before success action:', page);
+            console.log('Page content:', page.content);
+            console.log('Page metadata:', {
+              totalElements: page.totalElements,
+              totalPages: page.totalPages,
+              size: page.size,
+              number: page.number,
+              first: page.first,
+              last: page.last,
+              empty: page.empty
+            });
+          }),
+          map(page => {
+            console.log('Dispatching loadEventsSuccess with page:', page);
+            return EventActions.loadEventsSuccess({ events: page });
+          }),
+          catchError(error => {
+            console.error('Error loading events:', error);
+            return of(EventActions.loadEventsFailure({ error }));
+          })
+        );
+      })
+    )
+  );
+
+  loadEventDetails$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.loadEventDetails),
+      mergeMap(action =>
+        this.eventService.getEventById(action.id).pipe(
+          map(event => EventActions.loadEventDetailsSuccess({ event })),
+          catchError(error => of(EventActions.loadEventDetailsFailure({ error })))
         )
       )
     )
@@ -39,9 +79,9 @@ export class EventEffects {
   createEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.createEvent),
-      switchMap(({ event }) =>
-        this.eventService.createEvent(event).pipe(
-          map(createdEvent => EventActions.createEventSuccess({ event: createdEvent })),
+      mergeMap(action =>
+        this.eventService.createEvent(action.event).pipe(
+          map(event => EventActions.createEventSuccess({ event })),
           catchError(error => of(EventActions.createEventFailure({ error })))
         )
       )
@@ -62,9 +102,9 @@ export class EventEffects {
   updateEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.updateEvent),
-      switchMap(({ id, event }) =>
-        this.eventService.updateEvent(id, event).pipe(
-          map(updatedEvent => EventActions.updateEventSuccess({ event: updatedEvent })),
+      mergeMap(action =>
+        this.eventService.updateEvent(action.id, action.event).pipe(
+          map(event => EventActions.updateEventSuccess({ event })),
           catchError(error => of(EventActions.updateEventFailure({ error })))
         )
       )
@@ -85,9 +125,9 @@ export class EventEffects {
   deleteEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.deleteEvent),
-      switchMap(({ id }) =>
-        this.eventService.deleteEvent(id).pipe(
-          map(() => EventActions.deleteEventSuccess({ id })),
+      mergeMap(action =>
+        this.eventService.deleteEvent(action.id).pipe(
+          map(() => EventActions.deleteEventSuccess({ id: action.id })),
           catchError(error => of(EventActions.deleteEventFailure({ error })))
         )
       )
@@ -107,55 +147,34 @@ export class EventEffects {
   registerForEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.registerForEvent),
-      mergeMap(({ eventId }) =>
-        this.eventService.registerForEvent(eventId).pipe(
-          map(registration => EventActions.registerForEventSuccess({ registration })),
+      mergeMap(action =>
+        this.eventService.registerForEvent(action.eventId).pipe(
+          map(registration => EventActions.registerForEventSuccess({ event: registration as unknown as IEvent })),
           catchError(error => of(EventActions.registerForEventFailure({ error })))
         )
       )
     )
   );
 
-  unregisterFromEvent$ = createEffect(() =>
+  cancelEventRegistration$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(EventActions.unregisterFromEvent),
-      mergeMap(({ eventId }) =>
-        this.eventService.cancelRegistration(eventId).pipe(
-          map(() => {
-            this.snackBar.open('Successfully unregistered from event', 'Close', { duration: 3000 });
-            return EventActions.unregisterFromEventSuccess();
-          }),
-          catchError(error => of(EventActions.unregisterFromEventFailure({ error: error.message })))
+      ofType(EventActions.cancelEventRegistration),
+      mergeMap(action =>
+        this.eventService.cancelRegistration(action.eventId).pipe(
+          map(() => EventActions.cancelEventRegistrationSuccess({ event: {} as IEvent })),
+          catchError(error => of(EventActions.cancelEventRegistrationFailure({ error })))
         )
       )
     )
   );
 
-  joinWaitlist$ = createEffect(() =>
+  submitEventFeedback$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(EventActions.joinWaitlist),
-      mergeMap(({ eventId }) =>
-        this.eventService.joinWaitlist(eventId).pipe(
-          map(() => {
-            this.snackBar.open('Successfully joined waitlist', 'Close', { duration: 3000 });
-            return EventActions.joinWaitlistSuccess();
-          }),
-          catchError(error => of(EventActions.joinWaitlistFailure({ error: error.message })))
-        )
-      )
-    )
-  );
-
-  leaveWaitlist$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(EventActions.leaveWaitlist),
-      mergeMap(({ eventId }) =>
-        this.eventService.leaveWaitlist(eventId).pipe(
-          map(() => {
-            this.snackBar.open('Successfully left waitlist', 'Close', { duration: 3000 });
-            return EventActions.leaveWaitlistSuccess();
-          }),
-          catchError(error => of(EventActions.leaveWaitlistFailure({ error: error.message })))
+      ofType(EventActions.submitEventFeedback),
+      mergeMap(action =>
+        this.eventService.submitEventFeedback(action.eventId, { rating: action.rating, feedback: action.feedback }).pipe(
+          map(feedback => EventActions.submitEventFeedbackSuccess({ event: feedback as unknown as IEvent })),
+          catchError(error => of(EventActions.submitEventFeedbackFailure({ error })))
         )
       )
     )
@@ -164,9 +183,9 @@ export class EventEffects {
   updateEventStatus$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.updateEventStatus),
-      switchMap(({ eventId, status }) =>
-        this.eventService.updateEventStatus(eventId, status as EventStatus).pipe(
-          map(updatedEvent => EventActions.updateEventStatusSuccess({ event: updatedEvent })),
+      mergeMap(action =>
+        this.eventService.updateEventStatus(action.id, action.status).pipe(
+          map(event => EventActions.updateEventStatusSuccess({ event })),
           catchError(error => of(EventActions.updateEventStatusFailure({ error })))
         )
       )
@@ -181,33 +200,6 @@ export class EventEffects {
       })
     ),
     { dispatch: false }
-  );
-
-  cancelEvent$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(EventActions.cancelEvent),
-      mergeMap(({ id, reason }) =>
-        this.eventService.cancelEvent(id, reason).pipe(
-          map(event => {
-            this.snackBar.open('Event cancelled successfully', 'Close', { duration: 3000 });
-            return EventActions.cancelEventSuccess({ event });
-          }),
-          catchError(error => of(EventActions.cancelEventFailure({ error })))
-        )
-      )
-    )
-  );
-
-  submitFeedback$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(EventActions.submitFeedback),
-      mergeMap(({ eventId, feedback }) =>
-        this.eventService.submitEventFeedback(eventId, feedback).pipe(
-          map(submittedFeedback => EventActions.submitFeedbackSuccess({ feedback: submittedFeedback })),
-          catchError(error => of(EventActions.submitFeedbackFailure({ error })))
-        )
-      )
-    )
   );
 
   loadEventStats$ = createEffect(() =>
@@ -278,9 +270,9 @@ export class EventEffects {
         EventActions.updateEventFailure,
         EventActions.deleteEventFailure,
         EventActions.loadEventsFailure,
-        EventActions.loadEventByIdFailure,
+        EventActions.loadEventDetailsFailure,
         EventActions.registerForEventFailure,
-        EventActions.submitFeedbackFailure,
+        EventActions.submitEventFeedbackFailure,
         EventActions.updateEventStatusFailure,
         EventActions.loadUpcomingEventsFailure,
         EventActions.loadRegisteredEventsFailure,
@@ -323,10 +315,22 @@ export class EventEffects {
     )
   );
 
+  updateEventBanner$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.updateEventBanner),
+      switchMap(({ id, bannerImage }) =>
+        this.eventService.updateEventBanner(id, bannerImage).pipe(
+          map(event => EventActions.updateEventBannerSuccess({ event })),
+          catchError(error => of(EventActions.updateEventBannerFailure({ error })))
+        )
+      )
+    )
+  );
+
   constructor(
     private actions$: Actions,
     private eventService: EventService,
-    private store: Store,
+    private store: Store<{ event: EventState }>,
     private snackBar: MatSnackBar,
     private router: Router
   ) {}
