@@ -1,31 +1,48 @@
 package com.fill_rouge.backend.service.report;
 
-import com.fill_rouge.backend.constant.EventStatus;
-import com.fill_rouge.backend.domain.Event;
-import com.fill_rouge.backend.domain.EventFeedback;
-import com.fill_rouge.backend.domain.VolunteerProfile;
-import com.fill_rouge.backend.domain.Skill;
-import com.fill_rouge.backend.dto.request.CustomReportRequest;
-import com.fill_rouge.backend.dto.response.*;
-import com.fill_rouge.backend.exception.ResourceNotFoundException;
-import com.fill_rouge.backend.repository.*;
-import com.fill_rouge.backend.service.event.EventService;
-import com.fill_rouge.backend.service.event.EventStatisticsService;
-import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
+import com.fill_rouge.backend.constant.EventStatus;
+import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.domain.Skill;
+import com.fill_rouge.backend.dto.request.CustomReportRequest;
+import com.fill_rouge.backend.dto.response.CustomReportResponse;
+import com.fill_rouge.backend.dto.response.DashboardOverviewResponse;
+import com.fill_rouge.backend.dto.response.EngagementReportResponse;
+import com.fill_rouge.backend.dto.response.ImpactReportResponse;
+import com.fill_rouge.backend.dto.response.OrganizationReportResponse;
+import com.fill_rouge.backend.dto.response.ReportResponse;
+import com.fill_rouge.backend.dto.response.SkillsMatchingReportResponse;
+import com.fill_rouge.backend.dto.response.TrendReportResponse;
+import com.fill_rouge.backend.dto.response.VolunteerReportResponse;
+import com.fill_rouge.backend.exception.ResourceNotFoundException;
+import com.fill_rouge.backend.repository.EventFeedbackRepository;
+import com.fill_rouge.backend.repository.EventRepository;
+import com.fill_rouge.backend.repository.OrganizationRepository;
+import com.fill_rouge.backend.repository.ReportRepository;
+import com.fill_rouge.backend.repository.VolunteerProfileRepository;
+import com.fill_rouge.backend.service.event.EventService;
+import com.fill_rouge.backend.service.event.EventStatisticsService;
+import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
 import com.fill_rouge.backend.util.ReportCalculationUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -80,17 +97,23 @@ public class ReportServiceImpl implements ReportService {
         var organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id: " + organizationId));
 
+        // Handle null stats by providing default values
+        int totalParticipants = stats != null ? ((Number) stats.getOrDefault("totalParticipants", 0)).intValue() : 0;
+        double averageRating = stats != null ? ((Number) stats.getOrDefault("averageRating", 0.0)).doubleValue() : 0.0;
+        int totalHours = stats != null ? ((Number) stats.getOrDefault("totalHours", 0)).intValue() : 0;
+        int totalEvents = stats != null ? ((Number) stats.getOrDefault("totalEvents", 0)).intValue() : 0;
+
         Map<String, Object> basicStats = ReportCalculationUtil.calculateBasicStats(
-            (Integer) stats.get("totalParticipants"),
-            (Double) stats.get("averageRating"),
-            (Integer) stats.get("totalHours"),
+            totalParticipants,
+            averageRating,
+            totalHours,
             calculateOrganizationSuccessRate(organizationId)
         );
 
         return OrganizationReportResponse.builder()
                 .organizationId(organizationId)
                 .organizationName(organization.getName())
-                .totalEventsHosted((Integer) stats.get("totalEvents"))
+                .totalEventsHosted(totalEvents)
                 .totalVolunteersEngaged((Integer) basicStats.get("participantCount"))
                 .totalVolunteerHours((Integer) basicStats.get("totalHours"))
                 .averageEventRating((Double) basicStats.get("averageRating"))

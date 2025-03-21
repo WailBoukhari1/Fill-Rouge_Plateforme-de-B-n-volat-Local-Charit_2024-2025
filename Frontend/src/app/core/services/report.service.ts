@@ -26,6 +26,7 @@ export interface OrganizationReportResponse {
   eventsByCategory: { [key: string]: number };
   mostRequestedSkills: string[];
   impactMetrics: { [key: string]: number };
+  reportGeneratedAt: Date;
   additionalStats?: { [key: string]: any };
 }
 
@@ -35,7 +36,9 @@ export interface OrganizationReportResponse {
 export class ReportService {
   private apiUrl = `${environment.apiUrl}/reports`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    console.log('ReportService initialized with API URL:', this.apiUrl);
+  }
 
   getOverviewStatistics(): Observable<OverviewStatistics> {
     return this.http.get<OverviewStatistics>(`${this.apiUrl}/overview`);
@@ -91,75 +94,111 @@ export class ReportService {
     startDate: Date,
     endDate: Date
   ): Observable<OrganizationReportResponse> {
-    // Format dates as ISO strings but only keep the date part (YYYY-MM-DD)
-    const formattedStartDate = startDate.toISOString().split('T')[0];
-    const formattedEndDate = endDate.toISOString().split('T')[0];
+    try {
+      // Format dates to match backend's expected format exactly
+      const formatDate = (date: Date): string => {
+        if (!(date instanceof Date) || isNaN(date.getTime())) {
+          throw new Error('Invalid date provided');
+        }
+        return date.toISOString().slice(0, 19); // Format: YYYY-MM-DDTHH:mm:ss
+      };
 
-    const params = new HttpParams()
-      .set('startDate', formattedStartDate)
-      .set('endDate', formattedEndDate);
+      const formattedStartDate = formatDate(startDate);
+      const formattedEndDate = formatDate(endDate);
 
-    console.log('Generating report with params:', {
-      organizationId,
-      startDate: formattedStartDate,
-      endDate: formattedEndDate,
-      url: `${this.apiUrl}/organization/${organizationId}`
-    });
+      const url = `${this.apiUrl}/organization/${organizationId}`;
+      const params = new HttpParams()
+        .set('startDate', formattedStartDate)
+        .set('endDate', formattedEndDate);
 
-    return this.http
-      .get<OrganizationReportResponse>(`${this.apiUrl}/organization/${organizationId}`, { params })
-      .pipe(
-        map(response => {
-          // Convert string dates to Date objects if they're strings
-          if (typeof response.periodStart === 'string') {
-            response.periodStart = new Date(response.periodStart);
-          }
-          if (typeof response.periodEnd === 'string') {
-            response.periodEnd = new Date(response.periodEnd);
-          }
-          return response;
-        }),
-        catchError(this.handleError)
-      );
+      console.log('Making API request:', {
+        url,
+        params: {
+          startDate: formattedStartDate,
+          endDate: formattedEndDate
+        },
+        organizationId
+      });
+
+      return this.http
+        .get<OrganizationReportResponse>(url, { params })
+        .pipe(
+          map(response => {
+            console.log('Received report response:', response);
+            
+            // Convert date strings to Date objects
+            if (response.periodStart) {
+              response.periodStart = new Date(response.periodStart);
+            }
+            if (response.periodEnd) {
+              response.periodEnd = new Date(response.periodEnd);
+            }
+            if (response.reportGeneratedAt) {
+              response.reportGeneratedAt = new Date(response.reportGeneratedAt);
+            }
+
+            // Ensure numeric values are numbers
+            response.totalEventsHosted = Number(response.totalEventsHosted) || 0;
+            response.totalVolunteersEngaged = Number(response.totalVolunteersEngaged) || 0;
+            response.totalVolunteerHours = Number(response.totalVolunteerHours) || 0;
+            response.averageEventRating = Number(response.averageEventRating) || 0;
+
+            return response;
+          }),
+          catchError(error => {
+            console.error('Error generating organization report:', {
+              status: error.status,
+              statusText: error.statusText,
+              message: error.message,
+              error: error.error
+            });
+
+            if (error.status === 400) {
+              return throwError(() => new Error('Invalid request. Please check your inputs.'));
+            }
+            if (error.status === 404) {
+              return throwError(() => new Error('Organization not found.'));
+            }
+            if (error.status === 500) {
+              const errorMessage = error.error?.message || 'Server error. Please try again later.';
+              return throwError(() => new Error(errorMessage));
+            }
+            return this.handleError(error);
+          })
+        );
+    } catch (error) {
+      console.error('Error formatting dates:', error);
+      return throwError(() => new Error('Invalid date format. Please check your date inputs.'));
+    }
   }
 
   exportOrganizationReport(organizationId: string, format: 'PDF' | 'EXCEL'): Observable<Blob> {
     const params = new HttpParams().set('format', format);
 
     return this.http
-      .get(`${this.apiUrl}/organization/${organizationId}/export`, {
+      .get(`${this.apiUrl}/export/organization/${organizationId}`, {
         params,
         responseType: 'blob'
       })
       .pipe(catchError(this.handleError));
   }
 
-  private handleError(error: HttpErrorResponse) {
-    console.error('An error occurred:', error);
-
-    let errorMessage = 'An error occurred while processing your request.';
-
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An error occurred. Please try again later.';
+    
     if (error.error instanceof ErrorEvent) {
       // Client-side error
       errorMessage = error.error.message;
     } else {
       // Server-side error
-      if (error.status === 404) {
-        errorMessage = 'Report not found. Please check your parameters and try again.';
-      } else if (error.status === 400) {
-        errorMessage = 'Invalid request parameters. Please check your input and try again.';
-      } else if (error.status === 403) {
-        errorMessage = 'You do not have permission to access this report.';
-      } else if (error.status === 500) {
-        errorMessage = 'A server error occurred. Please try again later.';
-      }
-
-      // Add more details if available
-      if (error.error?.message) {
-        errorMessage = error.error.message;
-      }
+      errorMessage = error.error?.message || error.message || errorMessage;
     }
 
-    return throwError(() => ({ error: errorMessage, status: error.status }));
+    console.error('API Error:', {
+      error,
+      message: errorMessage
+    });
+
+    return throwError(() => new Error(errorMessage));
   }
 } 

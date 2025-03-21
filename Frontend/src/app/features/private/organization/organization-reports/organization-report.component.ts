@@ -15,6 +15,9 @@ import { NgxChartsModule, Color, ScaleType } from '@swimlane/ngx-charts';
 import { ReportService, OrganizationReportResponse } from '../../../../core/services/report.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 @Component({
   selector: 'app-organization-report',
@@ -36,316 +39,339 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     NgxChartsModule
   ],
   template: `
-    <div class="container mx-auto p-4">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Organization Report</h1>
-        <div class="flex gap-4">
-          <form [formGroup]="dateRangeForm" class="flex gap-4">
+    <div class="report-container">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Organization Report</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <form [formGroup]="dateForm" class="date-form">
             <mat-form-field>
               <mat-label>Start Date</mat-label>
               <input matInput [matDatepicker]="startPicker" formControlName="startDate">
               <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
               <mat-datepicker #startPicker></mat-datepicker>
             </mat-form-field>
+
             <mat-form-field>
               <mat-label>End Date</mat-label>
               <input matInput [matDatepicker]="endPicker" formControlName="endDate">
               <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
               <mat-datepicker #endPicker></mat-datepicker>
             </mat-form-field>
-            <button mat-raised-button color="primary" (click)="loadReport()" [disabled]="loading">
-              <mat-icon>refresh</mat-icon>
-              Update Report
+
+            <button mat-raised-button color="primary" (click)="loadReport()">
+              Generate Report
             </button>
           </form>
-        </div>
-      </div>
 
-      <div *ngIf="loading" class="flex justify-center items-center h-64">
-        <mat-spinner></mat-spinner>
-      </div>
+          <div *ngIf="reportData" class="report-content">
+            <div class="stats-grid">
+              <mat-card class="stat-card">
+                <mat-card-content>
+                  <div class="stat-value">{{reportData.totalEventsHosted}}</div>
+                  <div class="stat-label">Total Events</div>
+                </mat-card-content>
+              </mat-card>
 
-      <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-        <strong class="font-bold">Error!</strong>
-        <span class="block sm:inline"> {{error}}</span>
-      </div>
+              <mat-card class="stat-card">
+                <mat-card-content>
+                  <div class="stat-value">{{reportData.totalVolunteersEngaged}}</div>
+                  <div class="stat-label">Total Volunteers</div>
+                </mat-card-content>
+              </mat-card>
 
-      <div *ngIf="!loading && !error && report" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Organization Info -->
-        <mat-card class="col-span-full">
-          <mat-card-header>
-            <mat-card-title>{{report.organizationName}}</mat-card-title>
-            <mat-card-subtitle>Report Period: {{report.periodStart | date}} - {{report.periodEnd | date}}</mat-card-subtitle>
-          </mat-card-header>
-        </mat-card>
+              <mat-card class="stat-card">
+                <mat-card-content>
+                  <div class="stat-value">{{reportData.totalVolunteerHours}}</div>
+                  <div class="stat-label">Volunteer Hours</div>
+                </mat-card-content>
+              </mat-card>
 
-        <!-- Overview Stats -->
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Overview</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="p-4">
-            <div class="grid gap-4">
-              <div class="stat-item">
-                <p class="text-gray-600">Total Events Hosted</p>
-                <h3 class="text-2xl font-bold">{{report.totalEventsHosted}}</h3>
-              </div>
-              <div class="stat-item">
-                <p class="text-gray-600">Total Volunteers</p>
-                <h3 class="text-2xl font-bold">{{report.totalVolunteersEngaged}}</h3>
-              </div>
-              <div class="stat-item">
-                <p class="text-gray-600">Volunteer Hours</p>
-                <h3 class="text-2xl font-bold">{{report.totalVolunteerHours}}</h3>
-              </div>
-              <div class="stat-item">
-                <p class="text-gray-600">Average Rating</p>
-                <div class="flex items-center">
-                  <h3 class="text-2xl font-bold">{{report.averageEventRating | number:'1.1-1'}}</h3>
-                  <mat-icon class="text-yellow-500 ml-2">star</mat-icon>
-                </div>
+              <mat-card class="stat-card">
+                <mat-card-content>
+                  <div class="stat-value">{{reportData.averageEventRating | number:'1.1-1'}}</div>
+                  <div class="stat-label">Average Rating</div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+
+            <div class="charts-container">
+              <div class="chart-card">
+                <h3>Events by Category</h3>
+                <ngx-charts-pie-chart
+                  [results]="eventsByCategoryData"
+                  [scheme]="colorScheme"
+                  [legend]="true"
+                  [labels]="true"
+                  [doughnut]="true">
+                </ngx-charts-pie-chart>
               </div>
             </div>
-          </mat-card-content>
-        </mat-card>
 
-        <!-- Events by Category -->
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Events by Category</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="p-4">
-            <div *ngIf="eventCategoryData.length > 0" style="height: 300px;">
-              <ngx-charts-pie-chart
-                [results]="eventCategoryData"
-                [scheme]="colorScheme"
-                [gradient]="true"
-                [legend]="true"
-                [labels]="true"
-                [doughnut]="true">
-              </ngx-charts-pie-chart>
+            <div class="export-buttons">
+              <button mat-raised-button color="accent" (click)="exportToPDF()">
+                Export to PDF
+              </button>
+              <button mat-raised-button color="accent" (click)="exportToExcel()">
+                Export to Excel
+              </button>
             </div>
-            <div *ngIf="eventCategoryData.length === 0" class="text-center text-gray-500 py-4">
-              No event category data available
-            </div>
-          </mat-card-content>
-        </mat-card>
+          </div>
 
-        <!-- Most Requested Skills -->
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Most Requested Skills</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="p-4">
-            <div class="grid gap-2">
-              <div *ngFor="let skill of report.mostRequestedSkills" class="skill-item p-2 bg-gray-100 rounded">
-                <span class="font-medium">{{skill}}</span>
-              </div>
-              <div *ngIf="!report.mostRequestedSkills?.length" class="text-center text-gray-500 py-4">
-                No skills data available
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Impact Metrics -->
-        <mat-card class="md:col-span-2 lg:col-span-3">
-          <mat-card-header>
-            <mat-card-title>Impact Metrics</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="p-4">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              <div *ngFor="let metric of impactMetrics" class="impact-metric p-4 bg-gray-100 rounded">
-                <p class="text-gray-600">{{metric.name}}</p>
-                <h4 class="text-xl font-bold">{{metric.value}}</h4>
-              </div>
-              <div *ngIf="impactMetrics.length === 0" class="text-center text-gray-500 py-4 col-span-full">
-                No impact metrics available
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Additional Stats -->
-        <mat-card *ngIf="report.additionalStats" class="col-span-full">
-          <mat-card-header>
-            <mat-card-title>Additional Statistics</mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="p-4">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              <div *ngFor="let stat of additionalStats" class="stat-item">
-                <p class="text-gray-600">{{stat.name}}</p>
-                <h4 class="text-xl font-bold">{{stat.value}}</h4>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
-
-      <!-- Export Options -->
-      <div class="mt-6 flex gap-4">
-        <button mat-raised-button color="primary" (click)="exportReport('PDF')" [disabled]="loading || !report">
-          <mat-icon>picture_as_pdf</mat-icon>
-          Export as PDF
-        </button>
-        <button mat-raised-button color="accent" (click)="exportReport('EXCEL')" [disabled]="loading || !report">
-          <mat-icon>table_chart</mat-icon>
-          Export as Excel
-        </button>
-      </div>
+          <div *ngIf="loading" class="loading-spinner">
+            <mat-spinner></mat-spinner>
+          </div>
+        </mat-card-content>
+      </mat-card>
     </div>
   `,
   styles: [`
-    .container {
+    .report-container {
+      padding: 20px;
       max-width: 1200px;
+      margin: 0 auto;
     }
-    .stat-item {
-      padding: 1rem;
-      background-color: #f9fafb;
-      border-radius: 0.5rem;
+
+    .date-form {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 20px;
     }
-    .impact-metric {
-      transition: transform 0.2s;
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
     }
-    .impact-metric:hover {
-      transform: translateY(-2px);
+
+    .stat-card {
+      text-align: center;
+      padding: 20px;
     }
-    mat-form-field {
-      width: 160px;
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2196f3;
+    }
+
+    .stat-label {
+      margin-top: 8px;
+      color: #666;
+    }
+
+    .charts-container {
+      margin: 30px 0;
+    }
+
+    .chart-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .export-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      margin: 40px 0;
     }
   `]
 })
 export class OrganizationReportComponent implements OnInit {
-  loading = true;
-  error: string | null = null;
-  report: OrganizationReportResponse | null = null;
-  eventCategoryData: any[] = [];
-  impactMetrics: { name: string; value: number }[] = [];
-  additionalStats: { name: string; value: any }[] = [];
-  dateRangeForm: FormGroup;
+  dateForm: FormGroup;
+  reportData: any;
+  loading = false;
+  eventsByCategoryData: any[] = [];
   
   colorScheme: Color = {
-    name: 'custom',
+    name: 'cool',
     selectable: true,
     group: ScaleType.Ordinal,
-    domain: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+    domain: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
   };
 
   constructor(
+    private formBuilder: FormBuilder,
     private reportService: ReportService,
     private authService: AuthService,
-    private snackBar: MatSnackBar,
-    private fb: FormBuilder
+    private snackBar: MatSnackBar
   ) {
-    const today = new Date();
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    
-    this.dateRangeForm = this.fb.group({
-      startDate: [lastMonth],
-      endDate: [today]
+    this.dateForm = this.formBuilder.group({
+      startDate: [new Date()],
+      endDate: [new Date()]
     });
   }
 
   ngOnInit() {
+    // Set default date range (last 30 days)
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    this.dateForm.patchValue({
+      startDate: thirtyDaysAgo,
+      endDate: today
+    });
+
     this.loadReport();
   }
 
   loadReport() {
-    this.loading = true;
-    this.error = null;
-    
     const organizationId = this.authService.getCurrentOrganizationId();
-    console.log('Loading report for organization:', organizationId);
-    
     if (!organizationId) {
-      this.error = 'Organization ID not found. Please ensure you are logged in as an organization.';
-      this.loading = false;
+      this.snackBar.open('Organization ID not found', 'Close', { duration: 5000 });
       return;
     }
 
-    const { startDate, endDate } = this.dateRangeForm.value;
-    
-    // Ensure we have valid dates
+    const startDate = this.dateForm.get('startDate')?.value;
+    const endDate = this.dateForm.get('endDate')?.value;
+
     if (!startDate || !endDate) {
-      this.error = 'Please select both start and end dates';
-      this.loading = false;
+      this.snackBar.open('Please select both start and end dates', 'Close', { duration: 5000 });
       return;
     }
 
-    // Set the time to start of day for start date and end of day for end date
-    const formattedStartDate = new Date(startDate);
-    formattedStartDate.setHours(0, 0, 0, 0);
+    // Set time to start and end of day
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
-    const formattedEndDate = new Date(endDate);
-    formattedEndDate.setHours(23, 59, 59, 999);
-
-    console.log('Fetching report with dates:', {
-      startDate: formattedStartDate.toISOString(),
-      endDate: formattedEndDate.toISOString()
+    this.loading = true;
+    console.log('Generating report for:', {
+      organizationId,
+      startDate: start.toISOString(),
+      endDate: end.toISOString()
     });
 
-    this.reportService.generateOrganizationReport(organizationId, formattedStartDate, formattedEndDate)
+    this.reportService.generateOrganizationReport(organizationId, start, end)
       .subscribe({
         next: (data) => {
           console.log('Report data received:', data);
-          this.report = data;
-          this.processReportData();
+          this.reportData = data;
+          this.updateChartData();
           this.loading = false;
         },
         error: (error) => {
           console.error('Error loading report:', error);
-          this.error = error.error || 'Failed to load organization report. Please try again later.';
           this.loading = false;
-          this.snackBar.open(this.error || 'An error occurred', 'Close', { duration: 5000 });
+          this.snackBar.open(
+            error.message || 'Error loading report. Please try again.',
+            'Close',
+            { duration: 5000 }
+          );
         }
       });
   }
 
-  private processReportData() {
-    if (!this.report) return;
-
-    // Process event categories for the pie chart
-    this.eventCategoryData = Object.entries(this.report.eventsByCategory || {})
-      .map(([name, value]) => ({ name, value }));
-
-    // Process impact metrics
-    this.impactMetrics = Object.entries(this.report.impactMetrics || {})
-      .map(([name, value]) => ({
-        name: name.split(/(?=[A-Z])/).join(' '), // Convert camelCase to spaces
-        value
-      }));
-
-    // Process additional stats
-    this.additionalStats = Object.entries(this.report.additionalStats || {})
-      .map(([name, value]) => ({
-        name: name.split(/(?=[A-Z])/).join(' '), // Convert camelCase to spaces
-        value
-      }));
+  private updateChartData() {
+    if (this.reportData && this.reportData.eventsByCategory) {
+      this.eventsByCategoryData = Object.entries(this.reportData.eventsByCategory)
+        .map(([name, value]) => ({
+          name,
+          value: Number(value)
+        }))
+        .filter(item => item.value > 0);
+    }
   }
 
-  exportReport(format: 'PDF' | 'EXCEL') {
-    const organizationId = this.authService.getCurrentOrganizationId();
-    if (!organizationId) {
-      this.snackBar.open('Organization ID not found', 'Close', { duration: 3000 });
-      return;
+  exportToPDF() {
+    if (!this.reportData) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+
+    // Title
+    doc.setFontSize(18);
+    doc.text('Organization Report', pageWidth / 2, 20, { align: 'center' });
+
+    // Organization Info
+    doc.setFontSize(12);
+    doc.text(`Organization: ${this.reportData.organizationName}`, 20, 40);
+    doc.text(`Period: ${new Date(this.reportData.periodStart).toLocaleDateString()} - ${new Date(this.reportData.periodEnd).toLocaleDateString()}`, 20, 50);
+
+    // Statistics Table
+    const statsData = [
+      ['Metric', 'Value'],
+      ['Total Events', this.reportData.totalEventsHosted],
+      ['Total Volunteers', this.reportData.totalVolunteersEngaged],
+      ['Volunteer Hours', this.reportData.totalVolunteerHours],
+      ['Average Rating', this.reportData.averageEventRating.toFixed(1)]
+    ];
+
+    (doc as any).autoTable({
+      startY: 60,
+      head: [statsData[0]],
+      body: statsData.slice(1),
+      theme: 'grid'
+    });
+
+    // Events by Category
+    if (this.eventsByCategoryData.length > 0) {
+      doc.addPage();
+      doc.text('Events by Category', 20, 20);
+      
+      const categoryData = this.eventsByCategoryData.map(item => [
+        item.name,
+        item.value.toString()
+      ]);
+
+      (doc as any).autoTable({
+        startY: 30,
+        head: [['Category', 'Count']],
+        body: categoryData,
+        theme: 'grid'
+      });
     }
 
-    this.reportService.exportOrganizationReport(organizationId, format)
-      .subscribe({
-        next: (blob) => {
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `organization-report-${format.toLowerCase()}-${new Date().toISOString().split('T')[0]}.${format.toLowerCase()}`;
-          link.click();
-          window.URL.revokeObjectURL(url);
-          this.snackBar.open(`Report exported successfully as ${format}`, 'Close', { duration: 3000 });
-        },
-        error: (error) => {
-          console.error('Error exporting report:', error);
-          this.snackBar.open(`Error exporting report as ${format}`, 'Close', { duration: 3000 });
-        }
-      });
+    // Save the PDF
+    doc.save(`organization-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  exportToExcel() {
+    if (!this.reportData) return;
+
+    // Prepare the data
+    const data = [
+      ['Organization Report'],
+      ['Organization', this.reportData.organizationName],
+      ['Period', `${new Date(this.reportData.periodStart).toLocaleDateString()} - ${new Date(this.reportData.periodEnd).toLocaleDateString()}`],
+      [],
+      ['Statistics'],
+      ['Total Events', this.reportData.totalEventsHosted],
+      ['Total Volunteers', this.reportData.totalVolunteersEngaged],
+      ['Volunteer Hours', this.reportData.totalVolunteerHours],
+      ['Average Rating', this.reportData.averageEventRating.toFixed(1)],
+      [],
+      ['Events by Category']
+    ];
+
+    // Add category data
+    this.eventsByCategoryData.forEach(item => {
+      data.push([item.name, item.value]);
+    });
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+
+    // Save the file
+    XLSX.writeFile(wb, `organization-report-${new Date().toISOString().split('T')[0]}.xlsx`);
   }
 } 
