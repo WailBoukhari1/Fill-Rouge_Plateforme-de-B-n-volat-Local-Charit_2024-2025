@@ -12,6 +12,10 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.dto.CategoryStatsDTO;
+import com.fill_rouge.backend.dto.OrganizationStatsDTO;
+import com.fill_rouge.backend.dto.VolunteerStatsDTO;
+import org.bson.Document;
 
 @Repository
 public interface ReportRepository extends MongoRepository<Event, String> {
@@ -30,37 +34,37 @@ public interface ReportRepository extends MongoRepository<Event, String> {
         "{ $group: { " +
             "_id: null, " +
             "totalEvents: { $sum: 1 }, " +
-            "totalParticipants: { $sum: { $size: '$registeredParticipants' } }, " +
-            "averageRating: { $avg: '$rating' }, " +
-            "totalHours: { $sum: { $divide: [{ $subtract: ['$endDate', '$startDate'] }, 3600000] } } " +
+            "totalParticipants: { $sum: { $size: { $ifNull: ['$registeredParticipants', []] } } }, " +
+            "averageRating: { $avg: { $ifNull: ['$rating', 0] } }, " +
+            "totalHours: { $sum: { $divide: [{ $subtract: [{ $ifNull: ['$endDate', new Date()] }, { $ifNull: ['$startDate', new Date()] }] }, 3600000] } } " +
         "} }",
         "{ $project: { " +
             "_id: 0, " +
-            "totalEvents: 1, " +
-            "totalParticipants: 1, " +
-            "averageRating: 1, " +
-            "totalHours: 1 " +
+            "totalEvents: { $ifNull: ['$totalEvents', 0] }, " +
+            "totalParticipants: { $ifNull: ['$totalParticipants', 0] }, " +
+            "averageRating: { $ifNull: ['$averageRating', 0] }, " +
+            "totalHours: { $ifNull: ['$totalHours', 0] } " +
         "} }"
     })
-    Map<String, Object> getOrganizationAggregatedStats(String organizationId, LocalDateTime startDate, LocalDateTime endDate);
+    OrganizationStatsDTO getOrganizationAggregatedStats(String organizationId, LocalDateTime startDate, LocalDateTime endDate);
     
     @Aggregation(pipeline = {
         "{ $match: { 'startDate': { $gte: ?0 }, 'endDate': { $lte: ?1 } } }",
         "{ $group: { " +
             "_id: '$category', " +
             "count: { $sum: 1 }, " +
-            "totalParticipants: { $sum: { $size: '$registeredParticipants' } }, " +
-            "averageRating: { $avg: '$rating' } " +
+            "totalParticipants: { $sum: { $size: { $ifNull: ['$registeredParticipants', []] } } }, " +
+            "averageRating: { $avg: { $ifNull: ['$rating', 0] } } " +
         "} }",
         "{ $project: { " +
             "_id: 0, " +
             "category: '$_id', " +
-            "count: 1, " +
-            "totalParticipants: 1, " +
-            "averageRating: 1 " +
+            "count: { $ifNull: ['$count', 0] }, " +
+            "totalParticipants: { $ifNull: ['$totalParticipants', 0] }, " +
+            "averageRating: { $ifNull: ['$averageRating', 0] } " +
         "} }"
     })
-    List<Map<String, Object>> getCategoryStats(LocalDateTime startDate, LocalDateTime endDate);
+    List<CategoryStatsDTO> getCategoryStats(LocalDateTime startDate, LocalDateTime endDate);
 
     @Query("{ 'volunteerId': ?0, 'startDate': { $gte: ?1 }, 'endDate': { $lte: ?2 } }")
     Page<Event> findVolunteerEvents(String volunteerId, Pageable pageable);
@@ -70,7 +74,7 @@ public interface ReportRepository extends MongoRepository<Event, String> {
         "{ $group: { " +
             "_id: '$volunteerId', " +
             "totalEvents: { $sum: 1 }, " +
-            "totalHours: { $sum: { $divide: [{ $subtract: ['$endDate', '$startDate'] }, 3600000] } } " +
+            "totalHours: { $sum: { $divide: [{ $subtract: [{ $ifNull: ['$endDate', new Date()] }, { $ifNull: ['$startDate', new Date()] }] }, 3600000] } } " +
         "} }",
         "{ $sort: { totalHours: -1 } }",
         "{ $limit: 10 }"
@@ -82,7 +86,7 @@ public interface ReportRepository extends MongoRepository<Event, String> {
         "{ $group: { " +
             "_id: '$organizationId', " +
             "totalEvents: { $sum: 1 }, " +
-            "totalParticipants: { $sum: { $size: '$registeredParticipants' } } " +
+            "totalParticipants: { $sum: { $size: { $ifNull: ['$registeredParticipants', []] } } } " +
         "} }",
         "{ $sort: { totalEvents: -1 } }",
         "{ $limit: 10 }"
@@ -93,9 +97,26 @@ public interface ReportRepository extends MongoRepository<Event, String> {
         "{ $match: { 'startDate': { $gte: ?0 }, 'endDate': { $lte: ?1 } } }",
         "{ $group: { " +
             "_id: { $dateToString: { format: '%Y-%m-%d', date: '$startDate' } }, " +
-            "participants: { $sum: { $size: '$registeredParticipants' } } " +
+            "participants: { $sum: { $size: { $ifNull: ['$registeredParticipants', []] } } } " +
         "} }",
         "{ $sort: { '_id': 1 } }"
     })
     List<Map<String, Object>> getDailyParticipationStats(LocalDateTime startDate, LocalDateTime endDate);
+
+    @Aggregation(pipeline = {
+        "{ $match: { 'registeredParticipants': { $elemMatch: { $eq: ?0 } }, 'startDate': { $gte: ?1 }, 'endDate': { $lte: ?2 } } }",
+        "{ $group: { " +
+            "_id: null, " +
+            "totalEvents: { $sum: 1 }, " +
+            "averageRating: { $avg: { $ifNull: ['$rating', 0] } }, " +
+            "totalHours: { $sum: { $divide: [{ $subtract: [{ $ifNull: ['$endDate', new Date()] }, { $ifNull: ['$startDate', new Date()] }] }, 3600000] } } " +
+        "} }",
+        "{ $project: { " +
+            "_id: 0, " +
+            "totalEvents: { $ifNull: ['$totalEvents', 0] }, " +
+            "averageRating: { $ifNull: ['$averageRating', 0] }, " +
+            "totalHours: { $ifNull: ['$totalHours', 0] } " +
+        "} }"
+    })
+    VolunteerStatsDTO getVolunteerStats(String volunteerId, LocalDateTime startDate, LocalDateTime endDate);
 } 

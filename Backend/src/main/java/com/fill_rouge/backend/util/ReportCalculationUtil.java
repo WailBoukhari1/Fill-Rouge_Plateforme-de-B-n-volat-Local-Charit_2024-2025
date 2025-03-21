@@ -21,7 +21,7 @@ public class ReportCalculationUtil {
             int totalHours, 
             double successRate) {
         return Map.of(
-            "participantCount", participantCount,
+            "participantCount", (int)participantCount,
             "averageRating", averageRating,
             "totalHours", totalHours,
             "successRate", successRate

@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import org.bson.Document;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,9 @@ import com.fill_rouge.backend.service.event.EventService;
 import com.fill_rouge.backend.service.event.EventStatisticsService;
 import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
 import com.fill_rouge.backend.util.ReportCalculationUtil;
+import com.fill_rouge.backend.dto.OrganizationStatsDTO;
+import com.fill_rouge.backend.dto.VolunteerStatsDTO;
+import com.fill_rouge.backend.dto.CategoryStatsDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -64,10 +68,21 @@ public class ReportServiceImpl implements ReportService {
         var profile = volunteerProfileService.getVolunteerProfile(volunteerId);
         var stats = reportRepository.getVolunteerStats(volunteerId, startDate, endDate);
         
+        // Default values if stats is null
+        int totalEvents = 0;
+        double averageRating = 0.0;
+        int totalHours = 0;
+        
+        if (stats != null) {
+            totalEvents = stats.getTotalEvents() != null ? stats.getTotalEvents() : 0;
+            averageRating = stats.getAverageRating() != null ? stats.getAverageRating() : 0.0;
+            totalHours = stats.getTotalHours() != null ? stats.getTotalHours() : 0;
+        }
+        
         Map<String, Object> basicStats = ReportCalculationUtil.calculateBasicStats(
-            (Integer) stats.get("totalEvents"),
-            (Double) stats.get("averageRating"),
-            (Integer) stats.get("totalHours"),
+            totalEvents,
+            averageRating,
+            totalHours,
             calculateVolunteerSuccessRate(volunteerId)
         );
 
@@ -98,10 +113,10 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id: " + organizationId));
 
         // Handle null stats by providing default values
-        int totalParticipants = stats != null ? ((Number) stats.getOrDefault("totalParticipants", 0)).intValue() : 0;
-        double averageRating = stats != null ? ((Number) stats.getOrDefault("averageRating", 0.0)).doubleValue() : 0.0;
-        int totalHours = stats != null ? ((Number) stats.getOrDefault("totalHours", 0)).intValue() : 0;
-        int totalEvents = stats != null ? ((Number) stats.getOrDefault("totalEvents", 0)).intValue() : 0;
+        int totalParticipants = stats != null ? (stats.getTotalParticipants() != null ? stats.getTotalParticipants() : 0) : 0;
+        double averageRating = stats != null ? (stats.getAverageRating() != null ? stats.getAverageRating() : 0.0) : 0.0;
+        int totalHours = stats != null ? (stats.getTotalHours() != null ? stats.getTotalHours() : 0) : 0;
+        int totalEvents = stats != null ? (stats.getTotalEvents() != null ? stats.getTotalEvents() : 0) : 0;
 
         Map<String, Object> basicStats = ReportCalculationUtil.calculateBasicStats(
             totalParticipants,
@@ -134,14 +149,41 @@ public class ReportServiceImpl implements ReportService {
     @Cacheable(value = "impactReports", key = "#category + #startDate + #endDate")
     public ImpactReportResponse generateImpactReport(String category, LocalDateTime startDate, LocalDateTime endDate) {
         var categoryStats = reportRepository.getCategoryStats(startDate, endDate);
-        Map<String, Double> metrics = ReportCalculationUtil.calculateCommonMetrics(categoryStats);
+        Map<String, Double> metrics = new HashMap<>();
+        
+        // Calculate metrics from DTOs
+        double totalParticipation = 0;
+        double averageRating = 0;
+        int count = 0;
+        
+        for (CategoryStatsDTO stat : categoryStats) {
+            totalParticipation += stat.getTotalParticipants() != null ? stat.getTotalParticipants() : 0;
+            if (stat.getAverageRating() != null) {
+                averageRating += stat.getAverageRating();
+                count++;
+            }
+        }
+        
+        if (count > 0) {
+            averageRating /= count;
+        }
+        
+        metrics.put("totalParticipation", totalParticipation);
+        metrics.put("averageRating", averageRating);
+
+        Map<String, Integer> categoryMap = new HashMap<>();
+        for (CategoryStatsDTO stat : categoryStats) {
+            if (stat.getCategory() != null) {
+                categoryMap.put(stat.getCategory(), stat.getCount() != null ? stat.getCount() : 0);
+            }
+        }
 
         return ImpactReportResponse.builder()
                 .totalVolunteers((int) volunteerProfileRepository.count())
                 .totalOrganizations((int) organizationRepository.count())
-                .totalEvents(categoryStats.stream().mapToInt(stat -> (Integer) stat.get("count")).sum())
+                .totalEvents(categoryStats.stream().mapToInt(stat -> stat.getCount() != null ? stat.getCount() : 0).sum())
                 .totalVolunteerHours(calculateTotalVolunteerHours(startDate, endDate))
-                .impactByCategory(ReportCalculationUtil.convertCategoryStats(categoryStats))
+                .impactByCategory(categoryMap)
                 .keyMetrics(metrics)
                 .reportGeneratedAt(LocalDateTime.now())
                 .periodStart(startDate)
@@ -386,10 +428,15 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private Map<String, Object> calculateKPIs() {
-        return Map.of(
-            "topVolunteers", getTopEngagedVolunteers(LocalDateTime.now().minusMonths(1), LocalDateTime.now()),
-            "topOrganizations", getTopEngagedOrganizations(LocalDateTime.now().minusMonths(1), LocalDateTime.now())
-        );
+        Map<String, Object> result = new HashMap<>();
+        
+        List<Map<String, Object>> topVolunteers = getTopEngagedVolunteers(LocalDateTime.now().minusMonths(1), LocalDateTime.now());
+        List<Map<String, Object>> topOrgs = getTopEngagedOrganizations(LocalDateTime.now().minusMonths(1), LocalDateTime.now());
+        
+        result.put("topVolunteers", topVolunteers);
+        result.put("topOrganizations", topOrgs);
+        
+        return result;
     }
 
     private int calculateActiveUsers() {
@@ -456,7 +503,15 @@ public class ReportServiceImpl implements ReportService {
 
     private Map<String, Integer> getEventsByCategory(String id, LocalDateTime startDate, LocalDateTime endDate) {
         var categoryStats = reportRepository.getCategoryStats(startDate, endDate);
-        return ReportCalculationUtil.convertCategoryStats(categoryStats);
+        Map<String, Integer> result = new HashMap<>();
+        
+        for (CategoryStatsDTO stat : categoryStats) {
+            if (stat.getCategory() != null) {
+                result.put(stat.getCategory(), stat.getCount() != null ? stat.getCount() : 0);
+            }
+        }
+        
+        return result;
     }
 
     private List<Double> calculateDailyParticipation(LocalDateTime startDate, LocalDateTime endDate) {

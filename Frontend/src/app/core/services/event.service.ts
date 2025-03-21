@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpParams,
+  HttpHeaders,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { Observable, map, catchError, throwError, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -21,7 +26,7 @@ import { AuthService } from './auth.service';
   providedIn: 'root',
 })
 export class EventService {
-  private readonly apiUrl = `${environment.apiUrl}/api/events`;
+  private readonly apiUrl = `${environment.apiUrl}/events`;
 
   constructor(
     private http: HttpClient,
@@ -37,7 +42,7 @@ export class EventService {
 
     let headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      Accept: 'application/json',
     });
 
     if (token) {
@@ -128,13 +133,16 @@ export class EventService {
   }
 
   getEvents(page: number = 0, size: number = 10): Observable<Page<IEvent>> {
-    return this.http.get<ApiResponse<IEvent[]>>(`${this.apiUrl}?page=${page}&size=${size}`, { headers: this.getHeaders() })
+    return this.http
+      .get<ApiResponse<IEvent[]>>(`${this.apiUrl}?page=${page}&size=${size}`, {
+        headers: this.getHeaders(),
+      })
       .pipe(
-        map(response => {
-          const mappedEvents = response.data.map(event => ({
+        map((response) => {
+          const mappedEvents = response.data.map((event) => ({
             ...event,
             startDate: new Date(event.startDate),
-            endDate: new Date(event.endDate)
+            endDate: new Date(event.endDate),
           }));
 
           return {
@@ -145,12 +153,14 @@ export class EventService {
             number: response.meta?.page || page,
             first: page === 0,
             last: page === (response.meta?.totalPages || 1) - 1,
-            empty: mappedEvents.length === 0
+            empty: mappedEvents.length === 0,
           };
         }),
-        catchError(error => {
+        catchError((error) => {
           console.error('Error fetching events:', error);
-          return throwError(() => new Error('Failed to fetch events. Please try again later.'));
+          return throwError(
+            () => new Error('Failed to fetch events. Please try again later.')
+          );
         })
       );
   }
@@ -158,19 +168,23 @@ export class EventService {
   getEventById(id: string): Observable<IEvent> {
     console.log('Getting event with ID:', id);
     console.log('Headers:', this.getHeaders().keys());
-    
-    return this.http.get<ApiResponse<IEvent>>(`${this.apiUrl}/${id}`, {
-      headers: this.getHeaders()
-    }).pipe(
-      map(response => {
-        console.log('Raw response:', response);
-        if (!response.success) {
-          throw new Error(response.message || 'Failed to fetch event details');
-        }
-        return response.data;
-      }),
-      catchError(this.handleError.bind(this))
-    );
+
+    return this.http
+      .get<ApiResponse<IEvent>>(`${this.apiUrl}/${id}`, {
+        headers: this.getHeaders(),
+      })
+      .pipe(
+        map((response) => {
+          console.log('Raw response:', response);
+          if (!response.success) {
+            throw new Error(
+              response.message || 'Failed to fetch event details'
+            );
+          }
+          return response.data;
+        }),
+        catchError(this.handleError.bind(this))
+      );
   }
 
   createEvent(event: Partial<IEvent>): Observable<IEvent> {
@@ -258,41 +272,47 @@ export class EventService {
   registerForEvent(eventId: string): Observable<IEvent> {
     console.log('Registering for event:', eventId);
     console.log('Headers:', this.getHeaders().keys());
-    
-    return this.http.post<ApiResponse<IEvent>>(
-      `${this.apiUrl}/${eventId}/register`,
-      {},
-      { headers: this.getHeaders() }
-    ).pipe(
-      map(response => {
-        console.log('Raw response:', response);
-        if (!response.success) {
-          throw new Error(response.message || 'Failed to register for event');
-        }
-        return response.data;
-      }),
-      catchError(this.handleError.bind(this))
-    );
+
+    return this.http
+      .post<ApiResponse<IEvent>>(
+        `${this.apiUrl}/${eventId}/register`,
+        {},
+        { headers: this.getHeaders() }
+      )
+      .pipe(
+        map((response) => {
+          console.log('Raw response:', response);
+          if (!response.success) {
+            throw new Error(response.message || 'Failed to register for event');
+          }
+          return response.data;
+        }),
+        catchError(this.handleError.bind(this))
+      );
   }
 
   unregisterFromEvent(eventId: string): Observable<IEvent> {
     console.log('Unregistering from event:', eventId);
     console.log('Headers:', this.getHeaders().keys());
-    
-    return this.http.post<ApiResponse<IEvent>>(
-      `${this.apiUrl}/${eventId}/unregister`,
-      {},
-      { headers: this.getHeaders() }
-    ).pipe(
-      map(response => {
-        console.log('Raw response:', response);
-        if (!response.success) {
-          throw new Error(response.message || 'Failed to unregister from event');
-        }
-        return response.data;
-      }),
-      catchError(this.handleError.bind(this))
-    );
+
+    return this.http
+      .post<ApiResponse<IEvent>>(
+        `${this.apiUrl}/${eventId}/unregister`,
+        {},
+        { headers: this.getHeaders() }
+      )
+      .pipe(
+        map((response) => {
+          console.log('Raw response:', response);
+          if (!response.success) {
+            throw new Error(
+              response.message || 'Failed to unregister from event'
+            );
+          }
+          return response.data;
+        }),
+        catchError(this.handleError.bind(this))
+      );
   }
 
   cancelEvent(id: string, reason: string): Observable<IEvent> {
@@ -592,31 +612,34 @@ export class EventService {
     console.error('An error occurred:', error);
 
     let errorMessage = 'An unexpected error occurred. Please try again later.';
-    
+
     if (error.error instanceof ErrorEvent) {
       // Client-side error
       errorMessage = error.error.message;
     } else {
       // Server-side error
       if (error.status === 500) {
-        errorMessage = 'An unexpected server error occurred. Please try again later or contact support.';
+        errorMessage =
+          'An unexpected server error occurred. Please try again later or contact support.';
       } else if (error.error?.message) {
         errorMessage = error.error.message;
       } else if (error.status === 404) {
-        errorMessage = 'Event not found. The requested resource does not exist.';
+        errorMessage =
+          'Event not found. The requested resource does not exist.';
       } else if (error.status === 403) {
         errorMessage = 'You do not have permission to perform this action.';
       } else if (error.status === 401) {
         errorMessage = 'Please log in to continue.';
         this.authService.logout(); // Redirect to login on unauthorized
       } else if (error.status === 400) {
-        errorMessage = error.error?.message || 'Invalid request. Please check your input.';
+        errorMessage =
+          error.error?.message || 'Invalid request. Please check your input.';
       }
     }
 
     this.snackBar.open(errorMessage, 'Close', {
       duration: 5000,
-      panelClass: ['error-snackbar']
+      panelClass: ['error-snackbar'],
     });
 
     return throwError(() => ({ message: errorMessage, status: error.status }));
