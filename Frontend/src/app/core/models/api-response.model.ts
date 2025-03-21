@@ -1,13 +1,14 @@
 export interface ApiResponse<T> {
   success: boolean;
-  message: string;
+  message?: string;
   data: T;
-  timestamp: string;
-  status: number;
-  meta: {
+  meta?: {
     page: number;
     size: number;
     totalElements: number;
     totalPages: number;
   };
+  timestamp?: string;
+  status?: number;
+  error?: string;
 } 

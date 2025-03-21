@@ -1,0 +1,47 @@
+import { EventStatus, EventCategory } from '../models/event.types';
+
+export interface IEvent {
+  _id?: string;
+  id?: string;
+  organizationId: string;
+  organizationName?: string;
+  title: string;
+  description: string;
+  category: EventCategory;
+  location: string;
+  coordinates: [number, number];
+  startDate: Date;
+  endDate: Date;
+  maxParticipants: number;
+  currentParticipants: number;
+  waitlistEnabled: boolean;
+  maxWaitlistSize: number;
+  requiredSkills: string[];
+  isVirtual: boolean;
+  requiresApproval: boolean;
+  difficulty: string;
+  tags: string[];
+  isRecurring: boolean;
+  minimumAge: number;
+  requiresBackground: boolean;
+  isSpecialEvent: boolean;
+  pointsAwarded: number;
+  durationHours: number;
+  contactPerson: string;
+  contactEmail: string;
+  contactPhone: string;
+  status: EventStatus;
+  averageRating: number;
+  numberOfRatings: number;
+  registeredParticipants: string[];
+  waitlistedParticipants: string[];
+  participations: any[];
+  bannerImage?: string;
+  imageUrl?: string;
+  schedule?: Array<{ time: string; activity: string }>;
+  feedback?: { rating: number; comment: string; createdAt: Date };
+  isRegistered?: boolean;
+  _class?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}

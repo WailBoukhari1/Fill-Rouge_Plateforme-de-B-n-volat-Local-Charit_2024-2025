@@ -530,7 +530,6 @@ export class CreateEventComponent implements OnInit {
         // Initialize empty arrays and counters
         registeredParticipants: [],
         waitlistedParticipants: [],
-        participations: [],
         averageRating: 0,
         numberOfRatings: 0
       };

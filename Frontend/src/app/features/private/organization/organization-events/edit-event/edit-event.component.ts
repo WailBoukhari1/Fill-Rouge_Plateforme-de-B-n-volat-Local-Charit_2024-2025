@@ -17,12 +17,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, merge, filter } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EventService } from '../../../../../core/services/event.service';
 import { IEvent, EventCategory, EventStatus } from '../../../../../core/models/event.types';
 import * as EventActions from '../../../../../store/event/event.actions';
-import { selectSelectedEvent } from '../../../../../store/event/event.selectors';
+import { selectSelectedEvent, selectEventError } from '../../../../../store/event/event.selectors';
 import { EventState } from '../../../../../store/event/event.reducer';
 import { MapComponent, LocationData, Coordinates } from '../../../../../shared/components/map/map.component';
 import { EventResolver } from '../resolvers/event.resolver';
@@ -373,47 +373,93 @@ export class EditEventComponent implements OnInit, OnDestroy {
         return;
       }
 
+      // Validate required fields
+      const requiredFields = {
+        'Title': eventData.title,
+        'Description': eventData.description,
+        'Location': eventData.location,
+        'Start Date': eventData.startDate,
+        'End Date': eventData.endDate,
+        'Maximum Participants': eventData.maxParticipants,
+        'Contact Person': eventData.contactPerson,
+        'Contact Email': eventData.contactEmail
+      };
+
+      for (const [field, value] of Object.entries(requiredFields)) {
+        if (!value) {
+          this.snackBar.open(`${field} is required`, 'Close', { duration: 3000 });
+          this.submitting = false;
+          return;
+        }
+      }
+
       console.log('Submitting event update with data:', eventData);
 
-      // Dispatch update action with the new data
-      this.store.dispatch(EventActions.updateEvent({ 
-        id: eventId, 
-        event: eventData 
-      }));
-
-      // Create a subscription to handle the update completion
-      const subscription = this.store.select(selectSelectedEvent)
+      // First, try to update directly through the service
+      this.eventService.updateEvent(eventId, eventData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (updatedEvent) => {
-            if (updatedEvent) {
-              console.log('Event updated successfully:', updatedEvent);
-              this.snackBar.open('Event updated successfully', 'Close', { duration: 3000 });
-              subscription.unsubscribe(); // Clean up subscription
-              this.router.navigate(['/organization/events']);
-            }
+            console.log('Event updated successfully:', updatedEvent);
+            this.snackBar.open('Event updated successfully', 'Close', { duration: 3000 });
+            this.submitting = false;
+            this.router.navigate(['/organization/events']);
           },
           error: (error) => {
             console.error('Error updating event:', error);
             let errorMessage = 'Error updating event. Please try again.';
-            if (error.status === 400) {
-              errorMessage = 'Invalid event data. Please check all required fields.';
+            
+            if (error.error?.message) {
+              errorMessage = error.error.message;
+            } else if (error.status === 500) {
+              errorMessage = 'Server error occurred. Please try again later.';
+            } else if (error.status === 400) {
+              errorMessage = 'Invalid event data. Please check all fields.';
+            } else if (error.status === 404) {
+              errorMessage = 'Event not found.';
             }
+            
             this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
             this.submitting = false;
-            subscription.unsubscribe(); // Clean up subscription
           }
         });
     } else {
-      console.error('Form validation failed:', {
-        basicInfo: this.basicInfoForm.errors,
-        location: this.locationForm.errors,
-        contact: this.contactForm.errors,
-        participant: this.participantForm.errors,
-        requirements: this.requirementsForm.errors,
-        additional: this.additionalForm.errors
-      });
-      this.snackBar.open('Please fill in all required fields correctly', 'Close', { duration: 3000 });
+      // Show specific validation errors
+      let errorMessage = 'Please correct the following errors:\n';
+      const formGroups = {
+        'Basic Information': this.basicInfoForm,
+        'Location': this.locationForm,
+        'Contact Information': this.contactForm,
+        'Participant Settings': this.participantForm,
+        'Requirements': this.requirementsForm,
+        'Additional Settings': this.additionalForm
+      };
+
+      for (const [section, form] of Object.entries(formGroups)) {
+        if (form.invalid) {
+          errorMessage += `\n${section}:`;
+          Object.keys(form.controls).forEach(key => {
+            const control = form.get(key);
+            if (control?.errors) {
+              errorMessage += `\n- ${key}: ${this.getErrorMessage(control.errors)}`;
+            }
+          });
+        }
+      }
+
+      console.error('Form validation errors:', errorMessage);
+      this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
     }
+  }
+
+  private getErrorMessage(errors: any): string {
+    if (errors.required) return 'This field is required';
+    if (errors.min) return `Minimum value is ${errors.min.min}`;
+    if (errors.max) return `Maximum value is ${errors.max.max}`;
+    if (errors.email) return 'Invalid email format';
+    if (errors.pattern) return 'Invalid format';
+    if (errors.minlength) return `Minimum length is ${errors.minlength.requiredLength}`;
+    if (errors.maxlength) return `Maximum length is ${errors.maxlength.requiredLength}`;
+    return 'Invalid value';
   }
 } 

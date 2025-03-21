@@ -9,7 +9,18 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
-import { ApiResponse } from '../models/profile.model';
+import { ApiResponse } from '../models/api-response.model';
+import { 
+  IVolunteer, 
+  IVolunteerActivity, 
+  IVolunteerFilters, 
+  VolunteerStatus 
+} from '../models/volunteer.types';
+import { 
+  IOrganizationVolunteer,
+  VolunteerRole 
+} from '../models/organization-volunteer.types';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface EmergencyContact {
   name: string;
@@ -172,7 +183,34 @@ export interface VolunteerSearchParams {
 export class VolunteerService {
   private readonly apiUrl = `${environment.apiUrl}/volunteers`;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(
+    private http: HttpClient,
+    private snackBar: MatSnackBar,
+    private authService: AuthService
+  ) {}
+
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    const organizationId = localStorage.getItem('organizationId');
+
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    if (userId) {
+      headers = headers.set('X-User-ID', userId);
+    }
+    if (organizationId) {
+      headers = headers.set('X-Organization-ID', organizationId);
+    }
+
+    return headers;
+  }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred';
@@ -186,6 +224,10 @@ export class VolunteerService {
     }
 
     console.error('API Error:', error);
+    this.snackBar.open(errorMessage, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
     return throwError(() => new Error(errorMessage));
   }
 
@@ -349,5 +391,140 @@ export class VolunteerService {
     if (params.size !== undefined) httpParams = httpParams.set('size', params.size.toString());
 
     return this.http.get<VolunteerSearchResponse>(`${this.apiUrl}/search`, { params: httpParams });
+  }
+
+  getOrganizationVolunteers(
+    organizationId: string,
+    sortBy: string = 'name',
+    sortOrder: 'asc' | 'desc' = 'asc'
+  ): Observable<IOrganizationVolunteer[]> {
+    console.log('Getting volunteers for organization:', organizationId);
+    console.log('Headers:', this.getHeaders().keys());
+
+    const params = new HttpParams()
+      .set('sortBy', sortBy)
+      .set('sortOrder', sortOrder);
+
+    return this.http.get<IOrganizationVolunteer[] | ApiResponse<IOrganizationVolunteer[]>>(
+      `${environment.apiUrl}/organizations/${organizationId}/volunteers`,
+      {
+        headers: this.getHeaders(),
+        params
+      }
+    ).pipe(
+      map(response => {
+        console.log('Raw response:', response);
+        // Check if response is an array (direct response) or ApiResponse wrapper
+        if (Array.isArray(response)) {
+          return response;
+        }
+        // If it's an ApiResponse wrapper
+        if ('success' in response) {
+          if (!response.success) {
+            throw new Error(response.message || 'Failed to fetch volunteers');
+          }
+          return response.data;
+        }
+        // If response is neither an array nor ApiResponse, throw error
+        throw new Error('Invalid response format');
+      }),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  getVolunteerDetails(volunteerId: string): Observable<IVolunteer> {
+    return this.http.get<IVolunteer>(`${this.apiUrl}/${volunteerId}`);
+  }
+
+  getVolunteerActivities(volunteerId: string): Observable<IVolunteerActivity[]> {
+    return this.http.get<IVolunteerActivity[]>(`${this.apiUrl}/${volunteerId}/activities`);
+  }
+
+  updateVolunteerStatus(
+    organizationId: string,
+    volunteerId: string,
+    status: string
+  ): Observable<IOrganizationVolunteer> {
+    return this.http.patch<ApiResponse<IOrganizationVolunteer>>(
+      `${this.apiUrl}/organization/${organizationId}/volunteer/${volunteerId}/status`,
+      { status },
+      { headers: this.getHeaders() }
+    ).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to update volunteer status');
+        }
+        return response.data;
+      }),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  updateVolunteerRole(
+    organizationId: string,
+    volunteerId: string,
+    role: string
+  ): Observable<IOrganizationVolunteer> {
+    return this.http.patch<ApiResponse<IOrganizationVolunteer>>(
+      `${this.apiUrl}/organization/${organizationId}/volunteer/${volunteerId}/role`,
+      { role },
+      { headers: this.getHeaders() }
+    ).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to update volunteer role');
+        }
+        return response.data;
+      }),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  removeVolunteerFromOrganization(
+    organizationId: string,
+    volunteerId: string
+  ): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/organization/${organizationId}/volunteer/${volunteerId}`,
+      { headers: this.getHeaders() }
+    ).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to remove volunteer');
+        }
+      }),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  addVolunteerFeedback(
+    volunteerId: string, 
+    eventId: string, 
+    feedback: string, 
+    rating?: number
+  ): Observable<IVolunteerActivity> {
+    return this.http.post<IVolunteerActivity>(
+      `${this.apiUrl}/${volunteerId}/events/${eventId}/feedback`,
+      { feedback, rating }
+    );
+  }
+
+  removeVolunteer(volunteerId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${volunteerId}`);
+  }
+
+  private buildFilterParams(filters?: IVolunteerFilters): { [key: string]: string } {
+    const params: { [key: string]: string } = {};
+    if (!filters) return params;
+
+    if (filters.searchTerm) params['search'] = filters.searchTerm;
+    if (filters.status) params['status'] = filters.status;
+    if (filters.skills?.length) params['skills'] = filters.skills.join(',');
+    if (filters.sortBy) {
+      params['sortBy'] = filters.sortBy;
+      params['sortOrder'] = filters.sortOrder || 'asc';
+    }
+
+    return params;
   }
 }

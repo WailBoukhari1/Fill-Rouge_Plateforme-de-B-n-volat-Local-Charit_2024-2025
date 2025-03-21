@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "event_participations")
-@CompoundIndex(name = "volunteer_event_idx", def = "{'volunteerId': 1, 'eventId': 1}", unique = true)
+@CompoundIndex(name = "volunteer_event_idx", def = "{'volunteerId': 1, 'eventId': 1}", unique = true, sparse = true)
 public class EventParticipation {
     @Id
     private String id;

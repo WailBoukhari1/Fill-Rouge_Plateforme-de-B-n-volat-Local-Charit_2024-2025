@@ -68,10 +68,31 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Event updateEvent(String eventId, EventRequest request) {
-        Event event = eventRepository.findById(eventId)
-            .orElseThrow(() -> new RuntimeException("Event not found"));
-        // Update event properties from request
-        return eventRepository.save(event);
+        try {
+            Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+            
+            // Validate dates
+            if (request.getEndDate().isBefore(request.getStartDate())) {
+                throw new IllegalArgumentException("End date must be after start date");
+            }
+            
+            // Use the mapper to update all fields consistently
+            eventMapper.updateEntity(request, event);
+            
+            // Set the updated timestamp
+            event.setUpdatedAt(LocalDateTime.now());
+            
+            // Save and return the updated event
+            return eventRepository.save(event);
+            
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating event: " + e.getMessage(), e);
+        }
     }
 
     @Override

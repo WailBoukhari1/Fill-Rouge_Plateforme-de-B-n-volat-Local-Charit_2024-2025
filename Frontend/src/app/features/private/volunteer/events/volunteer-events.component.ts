@@ -51,11 +51,11 @@ import { Subscription } from 'rxjs';
                   </div>
                   <div class="flex items-center mb-2">
                     <mat-icon class="text-gray-500 mr-2">group</mat-icon>
-                    <span>{{ event.registeredParticipants.length }}/{{ event.maxParticipants }} participants</span>
+                    <span>{{ (event.registeredParticipants?.length ?? 0) }}/{{ event.maxParticipants }} participants</span>
                   </div>
                   <div class="mt-2">
                     <mat-chip-listbox>
-                      @for (skill of event.requiredSkills; track skill) {
+                      @for (skill of event.requiredSkills ?? []; track skill) {
                         <mat-chip>{{ skill }}</mat-chip>
                       }
                     </mat-chip-listbox>
@@ -64,9 +64,9 @@ import { Subscription } from 'rxjs';
                 <mat-card-actions class="p-4">
                   @if (!isRegistered(event) && !isWaitlisted(event)) {
                     <button mat-raised-button color="primary" 
-                            [disabled]="event.registeredParticipants.length >= event.maxParticipants"
+                            [disabled]="(event.registeredParticipants?.length ?? 0) >= event.maxParticipants"
                             (click)="event._id && registerForEvent(event._id)">
-                      {{ event.registeredParticipants.length >= event.maxParticipants ? 'Join Waitlist' : 'Register' }}
+                      {{ (event.registeredParticipants?.length ?? 0) >= event.maxParticipants ? 'Join Waitlist' : 'Register' }}
                     </button>
                   } @else if (isRegistered(event)) {
                     <button mat-raised-button color="warn" 
@@ -248,12 +248,12 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
 
   isRegistered(event: IEvent): boolean {
     const userId = this.getCurrentUserId();
-    return event.registeredParticipants.includes(userId);
+    return event.registeredParticipants?.includes(userId) ?? false;
   }
 
   isWaitlisted(event: IEvent): boolean {
     const userId = this.getCurrentUserId();
-    return event.waitlistedParticipants.includes(userId);
+    return event.waitlistedParticipants?.includes(userId) ?? false;
   }
 
   isEventInProgress(event: IEvent): boolean {
@@ -272,7 +272,7 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
 
   getWaitlistPosition(event: IEvent): number {
     const userId = this.getCurrentUserId();
-    const waitlistArray = Array.from(event.waitlistedParticipants);
+    const waitlistArray = event.waitlistedParticipants ?? [];
     return waitlistArray.indexOf(userId) + 1;
   }
 

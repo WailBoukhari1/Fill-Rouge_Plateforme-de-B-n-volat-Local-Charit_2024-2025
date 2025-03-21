@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fill_rouge.backend.constant.EventCategory;
+import com.fill_rouge.backend.constant.EventStatus;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
@@ -77,6 +78,8 @@ public class EventRequest {
     private int pointsAwarded;
     private int durationHours;
     private String bannerImage;
+    private String organizationId;
+    private EventStatus status;
 
     @AssertTrue(message = "End date must be after start date")
     private boolean isValidDateRange() {

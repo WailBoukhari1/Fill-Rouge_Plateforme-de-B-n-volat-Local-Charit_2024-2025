@@ -1,308 +1,194 @@
-import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule, MatTableDataSource } from '@angular/material/table';
-import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
-import { MatSortModule, MatSort, Sort } from '@angular/material/sort';
+import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatMenuModule } from '@angular/material/menu';
-import { Store } from '@ngrx/store';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil, tap } from 'rxjs/operators';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { BehaviorSubject } from 'rxjs';
 
-import { IEvent, EventStatus, EventCategory, EventParticipationStatus } from '../../../../../core/models/event.types';
-import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import * as EventActions from '../../../../../store/event/event.actions';
-import { selectEventContent, selectEventLoading, selectEventTotalElements, selectEventError } from '../../../../../store/event/event.selectors';
+import { IEvent } from '../../../../../core/models/event.types';
+import { EventService } from '../../../../../core/services/event.service';
+import { OrganizationService } from '../../../../../core/services/organization.service';
 import { AuthService } from '../../../../../core/services/auth.service';
-import { Router } from '@angular/router';
+import { UserRole } from '../../../../../core/enums/user-role.enum';
+import { EventStatus } from '../../../../../core/models/event.types';
+import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { format } from 'date-fns';
+import { Page } from '../../../../../core/models/page.model';
+import { IEventFilters } from '../../../../../core/models/event.types';
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T[];
+  timestamp: string;
+  status: number;
+  meta: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+  };
+}
 
 @Component({
   selector: 'app-organization-events',
+  templateUrl: './organization-events.component.html',
+  styleUrls: ['./organization-events.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
     MatDialogModule,
-    MatFormFieldModule,
+    MatSnackBarModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
     MatTooltipModule,
-    MatMenuModule
+    MatFormFieldModule,
   ],
-  templateUrl: './organization-events.component.html',
-  styleUrls: ['./organization-events.component.scss']
 })
-export class OrganizationEventsComponent implements OnInit, OnDestroy {
-  events$: Observable<IEvent[]>;
-  loading$: Observable<boolean>;
-  totalElements$: Observable<number>;
-  error$: Observable<string | null>;
+export class OrganizationEventsComponent implements OnInit {
   displayedColumns: string[] = [
     'title',
     'category',
     'date',
     'location',
-    'status',
     'participants',
-    'rating',
+    'status',
     'actions'
   ];
-  dataSource = new MatTableDataSource<IEvent>([]);
+  dataSource: MatTableDataSource<IEvent>;
+  EventStatus = EventStatus;
   pageSize = 10;
   pageIndex = 0;
-  private destroy$ = new Subject<void>();
   private organizationId: string | null = null;
-  EventStatus = EventStatus;
+  loading$ = new BehaviorSubject<boolean>(false);
+  error$ = new BehaviorSubject<string | null>(null);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
-    private store: Store,
+    private eventService: EventService,
+    private organizationService: OrganizationService,
+    private authService: AuthService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private authService: AuthService,
     private router: Router
   ) {
-    this.events$ = this.store.select(selectEventContent);
-    this.loading$ = this.store.select(selectEventLoading);
-    this.totalElements$ = this.store.select(selectEventTotalElements);
-    this.error$ = this.store.select(selectEventError);
+    this.dataSource = new MatTableDataSource<IEvent>();
+    this.organizationId = this.authService.getCurrentOrganizationId();
   }
 
   ngOnInit(): void {
-    console.log('Initializing OrganizationEventsComponent');
-    
-    this.organizationId = this.authService.getCurrentOrganizationId();
-    console.log('Organization ID:', this.organizationId);
-    
-    if (!this.organizationId) {
-      console.error('No organization ID found');
-      this.snackBar.open('Please log in as an organization first', 'Close', { duration: 5000 });
-      this.router.navigate(['/auth/login']);
-      return;
+    if (this.organizationId) {
+      this.loadEvents();
+    } else {
+      this.error$.next('Organization ID not found');
     }
-    
-    console.log('Loading events for organization:', this.organizationId);
-    this.loadEvents();
-    
-    // Subscribe to events updates
-    this.events$.pipe(
-      takeUntil(this.destroy$),
-      tap(events => {
-        console.log('========== EVENTS DATA FLOW ==========');
-        console.log('1. Raw events received from store:', events);
-        
-        if (events && events.length > 0) {
-          // Log the complete first event for debugging
-          console.log('2. Complete first event:', events[0]);
-
-          // Convert date strings to Date objects and ensure all required fields are present
-          const processedEvents = events.map(event => {
-            // Parse dates safely
-            let startDate = new Date();
-            let endDate = new Date();
-            
-            try {
-              if (event.startDate) {
-                startDate = new Date(event.startDate);
-                if (isNaN(startDate.getTime())) {
-                  console.warn('Invalid startDate, using current date');
-                  startDate = new Date();
-                }
-              }
-              
-              if (event.endDate) {
-                endDate = new Date(event.endDate);
-                if (isNaN(endDate.getTime())) {
-                  console.warn('Invalid endDate, using current date');
-                  endDate = new Date();
-                }
-              }
-            } catch (error) {
-              console.error('Error parsing dates:', error);
-            }
-
-            return {
-              ...event,
-              title: event.title || 'Untitled Event',
-              category: event.category || EventCategory.OTHER,
-              startDate,
-              endDate,
-              location: event.location || 'No location specified',
-              status: event.status || EventStatus.DRAFT,
-              registeredParticipants: event.registeredParticipants || [],
-              maxParticipants: event.maxParticipants || 0
-            };
-          });
-
-          console.log('3. Processed first event:', processedEvents[0]);
-          
-          this.dataSource.data = processedEvents;
-          console.log('4. Data source after update:', {
-            dataLength: this.dataSource.data.length,
-            firstRow: this.dataSource.data[0],
-            sortActive: this.dataSource.sort?.active,
-            sortDirection: this.dataSource.sort?.direction
-          });
-          console.log('====================================');
-          
-          // Initialize sorting if not already done
-          if (this.sort && !this.dataSource.sort) {
-            this.dataSource.sort = this.sort;
-          }
-        } else {
-          console.log('No events received or empty array');
-          this.dataSource.data = [];
-        }
-      })
-    ).subscribe();
-
-    // Subscribe to loading state
-    this.loading$.pipe(
-      takeUntil(this.destroy$),
-      tap(loading => {
-        console.log('Loading state:', loading);
-      })
-    ).subscribe();
-
-    // Subscribe to error state
-    this.error$.pipe(
-      takeUntil(this.destroy$),
-      tap(error => {
-        if (error) {
-          console.error('Error loading events:', error);
-          this.snackBar.open('Error loading events', 'Close', { duration: 5000 });
-        }
-      })
-    ).subscribe();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
   }
 
   loadEvents(): void {
-    if (!this.organizationId) {
-      console.log('No organization ID available');
-      return;
-    }
+    if (!this.organizationId) return;
 
-    console.log('Loading events for organization:', this.organizationId);
-    const action = EventActions.loadEvents({
-      filters: { organizationId: this.organizationId },
-      page: this.pageIndex,
-      size: this.pageSize
+    this.loading$.next(true);
+    this.error$.next(null);
+
+    const filters: IEventFilters = {
+      organizationId: this.organizationId,
+      sortBy: 'startDate',
+      sortDirection: 'desc' as 'desc'
+    };
+
+    this.eventService.getEventsByOrganization(this.organizationId, this.pageIndex, this.pageSize).subscribe({
+      next: (response: any) => {
+        console.log('API Response:', response);
+        if (Array.isArray(response)) {
+          this.dataSource.data = response;
+          if (this.paginator) {
+            this.paginator.length = response.length;
+            this.paginator.pageSize = this.pageSize;
+            this.paginator.pageIndex = this.pageIndex;
+          }
+          this.loading$.next(false);
+        } else {
+          console.error('Invalid response format:', response);
+          this.error$.next('Invalid response format');
+          this.loading$.next(false);
+        }
+      },
+      error: (error: Error) => {
+        console.error('Error loading events:', error);
+        this.error$.next('Failed to load events. Please try again.');
+        this.loading$.next(false);
+      },
     });
-    console.log('Dispatching loadEvents action:', action);
-    this.store.dispatch(action);
   }
 
-  onPageChange(event: PageEvent): void {
-    this.pageSize = event.pageSize;
-    this.pageIndex = event.pageIndex;
-    this.loadEvents();
+  isAdmin(): boolean {
+    return this.authService.hasRole(UserRole.ADMIN);
   }
 
-  onSort(sort: Sort): void {
-    this.pageIndex = 0;
-    if (this.paginator) {
-      this.paginator.firstPage();
-    }
-    this.loadEvents();
+  isOrganizer(): boolean {
+    return this.authService.hasRole(UserRole.ORGANIZATION);
   }
 
-  formatStatus(status: EventStatus): string {
-    if (!status) return '';
-    return status.toString()
-      .toLowerCase()
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  getCurrentOrganizationId(): string {
+    return this.authService.getCurrentOrganizationId() || '';
   }
 
-  formatCategory(category: EventCategory): string {
-    if (!category) return '';
-    return category.toString()
-      .toLowerCase()
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
-  formatDate(date: Date | string | null): string {
-    if (!date) return 'N/A';
-    try {
-      const dateObj = date instanceof Date ? date : new Date(date);
-      if (isNaN(dateObj.getTime())) return 'Invalid Date';
-      return dateObj.toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+  viewDetails(event: IEvent): void {
+    const eventId = event._id || event.id;
+    if (eventId) {
+      this.router.navigate(['/organization/events', eventId]);
+    } else {
+      console.error('Event details error:', event);
+      this.snackBar.open('Unable to view event details: Invalid event ID', 'Close', {
+        duration: 3000,
       });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
     }
   }
 
-  formatRating(rating: number, numberOfRatings: number): string {
-    if (!rating || !numberOfRatings) return 'No ratings';
-    return `${rating.toFixed(1)} (${numberOfRatings} ${numberOfRatings === 1 ? 'rating' : 'ratings'})`;
-  }
-
-  canUpdateStatus(event: IEvent): boolean {
-    if (!event) return false;
-    return event.status !== EventStatus.COMPLETED && 
-           event.status !== EventStatus.CANCELLED;
-  }
-
-  canDelete(event: IEvent): boolean {
-    if (!event) return false;
-    return event.status === EventStatus.DRAFT || 
-           event.status === EventStatus.CANCELLED ||
-           (event.status === EventStatus.PENDING && event.registeredParticipants.length === 0);
-  }
-
-  getNextStatus(currentStatus: EventStatus): EventStatus | null {
-    switch (currentStatus) {
-      case EventStatus.DRAFT:
-        return EventStatus.PENDING;
-      case EventStatus.PENDING:
-        return EventStatus.APPROVED;
-      case EventStatus.APPROVED:
-        return EventStatus.ACTIVE;
-      case EventStatus.ACTIVE:
-        return EventStatus.ONGOING;
-      case EventStatus.ONGOING:
-        return EventStatus.COMPLETED;
-      default:
-        return null;
-    }
+  private getStatusColorClasses(status: EventStatus): string {
+    const colorClasses: Record<EventStatus, string> = {
+      [EventStatus.DRAFT]: 'text-gray-700 bg-gray-100',
+      [EventStatus.PUBLISHED]: 'text-blue-700 bg-blue-100',
+      [EventStatus.ONGOING]: 'text-green-700 bg-green-100',
+      [EventStatus.COMPLETED]: 'text-purple-700 bg-purple-100',
+      [EventStatus.CANCELLED]: 'text-red-700 bg-red-100',
+      [EventStatus.PENDING]: 'text-yellow-700 bg-yellow-100',
+      [EventStatus.APPROVED]: 'text-green-700 bg-green-100',
+      [EventStatus.ACTIVE]: 'text-blue-700 bg-blue-100',
+      [EventStatus.UPCOMING]: 'text-teal-700 bg-teal-100'
+    };
+    return colorClasses[status] || colorClasses[EventStatus.DRAFT];
   }
 
   updateStatus(event: IEvent): void {
-    const newStatus = this.getNextStatus(event.status);
-    if (!newStatus) {
-      this.snackBar.open('Invalid status transition', 'Close', { duration: 3000 });
+    const nextStatus = this.getNextStatus(event.status);
+    if (!nextStatus) {
+      this.snackBar.open('No valid status transition available', 'Close', {
+        duration: 3000,
+      });
       return;
     }
 
@@ -310,119 +196,236 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
       width: '400px',
       data: {
         title: 'Update Event Status',
-        message: `Are you sure you want to change the status of "${event.title}" from ${this.formatStatus(event.status)} to ${this.formatStatus(newStatus)}?`,
+        message: `Are you sure you want to update the status of "${
+          event.title
+        }" from ${this.formatStatus(event.status)} to ${this.formatStatus(
+          nextStatus
+        )}?`,
         confirmText: 'Update',
-        cancelText: 'Cancel'
-      }
+        cancelText: 'Cancel',
+      },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       if (result && event._id) {
-        this.store.dispatch(EventActions.updateEventStatus({
-          id: event._id,
-          status: newStatus
-        }));
+        this.eventService.updateEventStatus(event._id, nextStatus).subscribe({
+          next: () => {
+            this.loadEvents();
+          },
+          error: (error) => {
+            console.error('Error updating event status:', error);
+            this.snackBar.open('Error updating event status', 'Close', {
+              duration: 3000,
+            });
+          },
+        });
       }
     });
   }
 
   confirmDelete(event: IEvent): void {
+    const eventId = event.id || event._id;
+    if (!eventId) {
+      console.error('Event ID is missing');
+      return;
+    }
+
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
         title: 'Delete Event',
-        message: `Are you sure you want to delete "${event.title}"? This action cannot be undone.`,
+        message: `Are you sure you want to delete the event "${event.title}"?`,
         confirmText: 'Delete',
-        cancelText: 'Keep'
-      }
+        cancelText: 'Cancel',
+      },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && event._id) {
-        this.store.dispatch(EventActions.deleteEvent({ id: event._id }));
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.eventService.deleteEvent(eventId).subscribe({
+          next: () => {
+            this.loadEvents();
+            this.snackBar.open('Event deleted successfully', 'Close', {
+              duration: 3000,
+            });
+          },
+          error: (error) => {
+            console.error('Error deleting event:', error);
+            this.snackBar.open('Error deleting event', 'Close', {
+              duration: 3000,
+            });
+          },
+        });
       }
     });
-  }
-
-  viewDetails(event: IEvent): void {
-    // TODO: Implement event details dialog
-    console.log('View details:', event);
-  }
-
-  viewParticipants(event: IEvent): void {
-    // TODO: Implement participants dialog
-    console.log('View participants:', event);
   }
 
   cancelEvent(event: IEvent): void {
+    if (!event._id) {
+      console.error('Event ID is missing');
+      return;
+    }
+
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
         title: 'Cancel Event',
-        message: `Are you sure you want to cancel "${event.title}"? This action cannot be undone.`,
+        message: `Are you sure you want to cancel the event "${event.title}"?`,
         confirmText: 'Cancel Event',
-        cancelText: 'Keep Event'
-      }
+        cancelText: 'Keep Event',
+      },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && event._id) {
-        this.store.dispatch(EventActions.updateEventStatus({
-          id: event._id,
-          status: EventStatus.CANCELLED
-        }));
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.eventService
+          .updateEventStatus(event._id!, EventStatus.CANCELLED)
+          .subscribe({
+            next: () => {
+              this.loadEvents();
+            },
+            error: (error) => {
+              console.error('Error cancelling event:', error);
+              this.snackBar.open('Error cancelling event', 'Close', {
+                duration: 3000,
+              });
+            },
+          });
       }
     });
   }
 
-  getStatusColor(status: EventStatus): string {
-    switch (status) {
-      case EventStatus.ACTIVE:
-        return 'green';
-      case EventStatus.COMPLETED:
-        return 'blue';
-      case EventStatus.CANCELLED:
-        return 'red';
-      case EventStatus.PENDING:
-        return 'yellow';
-      case EventStatus.APPROVED:
-        return 'indigo';
-      case EventStatus.DRAFT:
-        return 'gray';
-      case EventStatus.UPCOMING:
-        return 'purple';
-      case EventStatus.ONGOING:
-        return 'green';
-      case EventStatus.PUBLISHED:
-        return 'blue';
-      default:
-        return 'gray';
-    }
+  viewParticipants(event: IEvent): void {
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '600px',
+      data: {
+        title: 'Event Participants',
+        message: `
+          Registered Participants: ${event.registeredParticipants?.length || 0}
+          Waitlisted Participants: ${event.waitlistedParticipants?.length || 0}
+          Available Spots: ${
+            event.maxParticipants - (event.currentParticipants || 0)
+          }
+        `,
+        confirmText: 'Close',
+        showCancel: false,
+      },
+    });
   }
 
-  getCategoryColor(category: EventCategory): string {
-    switch (category) {
-      case EventCategory.ENVIRONMENT:
-        return 'green';
-      case EventCategory.COMMUNITY_DEVELOPMENT:
-        return 'blue';
-      case EventCategory.ARTS_AND_CULTURE:
-        return 'purple';
-      case EventCategory.EDUCATION:
-        return 'yellow';
-      case EventCategory.ANIMAL_WELFARE:
-        return 'red';
-      case EventCategory.SPORTS_AND_RECREATION:
-        return 'indigo';
-      case EventCategory.HEALTH:
-        return 'pink';
-      case EventCategory.DISASTER_RELIEF:
-        return 'orange';
-      case EventCategory.SOCIAL_SERVICES:
-        return 'teal';
-      case EventCategory.OTHER:
-      default:
-        return 'gray';
-    }
+  formatDate(date: Date): string {
+    return format(new Date(date), 'PPp');
   }
-} 
+
+  formatCategory(category: string): string {
+    return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+  }
+
+  formatStatus(status: string): string {
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  }
+
+  getCategoryColor(category: string): string {
+    const colorMap: { [key: string]: string } = {
+      EDUCATION: 'blue',
+      HEALTH: 'green',
+      ENVIRONMENT: 'teal',
+      SOCIAL_SERVICES: 'purple',
+      ARTS_AND_CULTURE: 'pink',
+      SPORTS_AND_RECREATION: 'orange',
+      OTHER: 'gray',
+    };
+    return colorMap[category.toUpperCase()] || 'gray';
+  }
+
+  getStatusColor(status: string): string {
+    const colorMap: { [key: string]: string } = {
+      DRAFT: 'gray',
+      PUBLISHED: 'blue',
+      ONGOING: 'green',
+      COMPLETED: 'purple',
+      CANCELLED: 'red',
+    };
+    return colorMap[status.toUpperCase()] || 'gray';
+  }
+
+  private getNextStatus(currentStatus: EventStatus): EventStatus | null {
+    const statusFlow = {
+      [EventStatus.DRAFT]: EventStatus.PUBLISHED,
+      [EventStatus.PUBLISHED]: EventStatus.ONGOING,
+      [EventStatus.ONGOING]: EventStatus.COMPLETED,
+      [EventStatus.COMPLETED]: null,
+      [EventStatus.CANCELLED]: null,
+      [EventStatus.PENDING]: EventStatus.APPROVED,
+      [EventStatus.APPROVED]: EventStatus.ACTIVE,
+      [EventStatus.ACTIVE]: EventStatus.ONGOING,
+      [EventStatus.UPCOMING]: EventStatus.ACTIVE,
+    };
+    return statusFlow[currentStatus] || null;
+  }
+
+  onPageChange(event: any): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadEvents();
+  }
+
+  formatRating(rating: number, numberOfRatings: number): string {
+    if (!rating || !numberOfRatings) return 'No ratings yet';
+    return `${rating.toFixed(1)} (${numberOfRatings} ${numberOfRatings === 1 ? 'rating' : 'ratings'})`;
+  }
+
+  onSort(event: Sort) {
+    const data = this.dataSource.data.slice();
+    if (!event.active || event.direction === '') {
+      this.dataSource.data = data;
+      return;
+    }
+
+    this.dataSource.data = data.sort((a, b) => {
+      const isAsc = event.direction === 'asc';
+      switch (event.active) {
+        case 'title':
+          return this.compare(a.title, b.title, isAsc);
+        case 'category':
+          return this.compare(a.category, b.category, isAsc);
+        case 'date':
+          return this.compare(new Date(a.startDate), new Date(b.startDate), isAsc);
+        case 'location':
+          return this.compare(a.location, b.location, isAsc);
+        case 'participants':
+          return this.compare(a.currentParticipants, b.currentParticipants, isAsc);
+        case 'status':
+          return this.compare(a.status, b.status, isAsc);
+        default:
+          return 0;
+      }
+    });
+  }
+
+  private compare(a: any, b: any, isAsc: boolean): number {
+    if (a === null || a === undefined) return isAsc ? -1 : 1;
+    if (b === null || b === undefined) return isAsc ? 1 : -1;
+    return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
+  }
+
+  formatParticipants(event: IEvent): string {
+    return `${event.currentParticipants || 0} / ${event.maxParticipants}`;
+  }
+
+  getAvailableSpots(event: IEvent): number {
+    return event.maxParticipants - (event.currentParticipants || 0);
+  }
+
+  isRegistrationOpen(event: IEvent): boolean {
+    return event.status === 'PENDING' || event.status === 'PUBLISHED';
+  }
+
+  isInProgress(event: IEvent): boolean {
+    return event.status === 'ONGOING';
+  }
+
+  isCompleted(event: IEvent): boolean {
+    return event.status === 'COMPLETED';
+  }
+}

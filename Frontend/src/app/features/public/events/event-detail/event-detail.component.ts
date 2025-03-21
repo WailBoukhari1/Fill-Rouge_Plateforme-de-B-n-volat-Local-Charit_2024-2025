@@ -1,265 +1,312 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { Event } from '../../models/event.model';
+import { EventService } from '../../services/event.service';
 
 @Component({
   selector: 'app-event-detail',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatDividerModule,
-    MatProgressBarModule,
-    MatDialogModule,
-    MatSnackBarModule
-  ],
+  imports: [CommonModule],
   template: `
-    <section class="container mx-auto px-4 py-8">
-      <!-- Event Header -->
-      <div class="mb-8">
-        <div class="flex items-center gap-4 mb-4">
-          <button mat-icon-button routerLink="/events">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <div>
-            <div class="flex items-center gap-4">
-              <h1 class="text-3xl font-bold text-gray-900">{{ event.title }}</h1>
-              <mat-chip [color]="getStatusColor(event.status)">{{ event.status }}</mat-chip>
-            </div>
-            <p class="text-gray-600">Organized by {{ event.organizationName }}</p>
+    <div class="event-detail-container" *ngIf="event">
+      <!-- Hero Section -->
+      <div class="hero-section" [style.backgroundImage]="event ? 'url(' + event.imageUrl + ')' : ''">
+        <div class="hero-content">
+          <h1>{{event?.title}}</h1>
+          <div class="event-meta">
+            <span class="date">
+              <i class="fas fa-calendar"></i> {{event?.date | date:'longDate'}}
+            </span>
+            <span class="location">
+              <i class="fas fa-map-marker-alt"></i> {{event?.location}}
+            </span>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Main Content -->
-        <div class="lg:col-span-2">
-          <!-- Event Image -->
-          <img [src]="event.imageUrl" [alt]="event.title" 
-               class="w-full h-96 object-cover rounded-lg mb-8">
+      <!-- Main Content -->
+      <div class="main-content">
+        <div class="content-grid">
+          <!-- Left Column -->
+          <div class="details-section">
+            <h2>About This Event</h2>
+            <p class="description">{{event?.description}}</p>
 
-          <!-- Event Details -->
-          <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <h2 class="text-2xl font-semibold mb-4">About This Event</h2>
-            <p class="text-gray-700 mb-6">{{ event.description }}</p>
-
-            <!-- Event Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div class="text-center p-4 bg-gray-50 rounded-lg">
-                <mat-icon class="text-primary-500">calendar_today</mat-icon>
-                <p class="text-sm text-gray-600 mt-2">Date</p>
-                <p class="font-semibold">{{ event.startDate | date:'mediumDate' }}</p>
-              </div>
-              <div class="text-center p-4 bg-gray-50 rounded-lg">
-                <mat-icon class="text-primary-500">schedule</mat-icon>
-                <p class="text-sm text-gray-600 mt-2">Time</p>
-                <p class="font-semibold">{{ event.startDate | date:'shortTime' }}</p>
-              </div>
-              <div class="text-center p-4 bg-gray-50 rounded-lg">
-                <mat-icon class="text-primary-500">location_on</mat-icon>
-                <p class="text-sm text-gray-600 mt-2">Location</p>
-                <p class="font-semibold">{{ event.location }}</p>
-              </div>
-              <div class="text-center p-4 bg-gray-50 rounded-lg">
-                <mat-icon class="text-primary-500">group</mat-icon>
-                <p class="text-sm text-gray-600 mt-2">Spots Left</p>
-                <p class="font-semibold">{{ event.maxParticipants - event.registeredParticipants }}</p>
-              </div>
+            <div class="info-card">
+              <h3>Event Details</h3>
+              <ul>
+                <li>
+                  <i class="fas fa-clock"></i>
+                  <span>Time: {{event?.time}}</span>
+                </li>
+                <li>
+                  <i class="fas fa-users"></i>
+                  <span>Capacity: {{event?.capacity}} volunteers needed</span>
+                </li>
+                <li>
+                  <i class="fas fa-tag"></i>
+                  <span>Category: {{event?.category}}</span>
+                </li>
+              </ul>
             </div>
 
-            <mat-divider class="mb-6"></mat-divider>
-
-            <!-- Required Skills -->
-            <h3 class="text-xl font-semibold mb-4">Required Skills</h3>
-            <div class="flex flex-wrap gap-2 mb-6">
-              @for (skill of event.requiredSkills; track skill) {
-                <mat-chip>{{ skill }}</mat-chip>
-              }
-            </div>
-
-            <mat-divider class="mb-6"></mat-divider>
-
-            <!-- Impact -->
-            <h3 class="text-xl font-semibold mb-4">Event Impact</h3>
-            <p class="text-gray-700 mb-4">{{ event.impactSummary }}</p>
-
-            <!-- Organization -->
-            <mat-divider class="mb-6"></mat-divider>
-            <h3 class="text-xl font-semibold mb-4">About the Organization</h3>
-            <div class="flex items-start gap-4">
-              <img [src]="event.organizationLogo" alt="Organization Logo" 
-                   class="w-16 h-16 rounded-full object-cover">
-              <div>
-                <h4 class="font-semibold mb-2">{{ event.organizationName }}</h4>
-                <p class="text-gray-600 mb-4">{{ event.organizationDescription }}</p>
-                <a mat-button color="primary" [routerLink]="['/organizations', event.organizationId]">
-                  View Organization
-                  <mat-icon class="ml-2">arrow_forward</mat-icon>
-                </a>
+            <div class="organizer-section">
+              <h3>Organizer</h3>
+              <div class="organizer-info">
+                <img [src]="event?.organizerImage" alt="Organizer" class="organizer-image">
+                <div class="organizer-details">
+                  <h4>{{event?.organizerName}}</h4>
+                  <p>{{event?.organizerDescription}}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Sidebar -->
-        <div class="lg:col-span-1">
-          <!-- Registration Card -->
-          <div class="bg-white rounded-lg shadow-sm p-6 sticky top-24">
-            <h3 class="text-xl font-semibold mb-4">Registration</h3>
-            
-            <!-- Progress Bar -->
-            <div class="mb-4">
-              <div class="flex justify-between text-sm text-gray-600 mb-2">
-                <span>{{ event.registeredParticipants }} registered</span>
-                <span>{{ event.maxParticipants }} spots</span>
+          <!-- Right Column -->
+          <div class="action-section">
+            <div class="action-card">
+              <h3>Join This Event</h3>
+              <p class="spots-left">{{event?.spotsLeft}} spots remaining</p>
+              <button class="primary-button" (click)="registerForEvent()" [disabled]="!event?.spotsLeft">
+                Register as Volunteer
+              </button>
+              <div class="share-buttons">
+                <button class="share-button">
+                  <i class="fas fa-share-alt"></i> Share
+                </button>
+                <button class="save-button" (click)="toggleSave()">
+                  <i class="fas" [class.fa-bookmark]="isSaved" [class.fa-bookmark-o]="!isSaved"></i>
+                  {{isSaved ? 'Saved' : 'Save'}}
+                </button>
               </div>
-              <mat-progress-bar
-                mode="determinate"
-                [value]="(event.registeredParticipants / event.maxParticipants) * 100">
-              </mat-progress-bar>
             </div>
 
-            <!-- Registration Button -->
-            @if (!isEventFull()) {
-              <button mat-raised-button color="primary" class="w-full mb-4" 
-                      (click)="registerForEvent()" [disabled]="isRegistered">
-                {{ isRegistered ? 'Already Registered' : 'Register Now' }}
-              </button>
-            } @else {
-              <button mat-raised-button color="accent" class="w-full mb-4" 
-                      (click)="joinWaitlist()" [disabled]="isWaitlisted">
-                {{ isWaitlisted ? 'On Waitlist' : 'Join Waitlist' }}
-              </button>
-            }
-
-            <!-- Event Details -->
-            <div class="text-sm text-gray-600">
-              <div class="flex items-center gap-2 mb-2">
-                <mat-icon class="text-gray-400">event</mat-icon>
-                <span>Registration closes {{ event.registrationDeadline | date }}</span>
+            <div class="location-card">
+              <h3>Location</h3>
+              <div class="map-container">
+                <!-- Map integration placeholder -->
+                <div class="map-placeholder"></div>
               </div>
-              @if (event.minimumAge > 0) {
-                <div class="flex items-center gap-2 mb-2">
-                  <mat-icon class="text-gray-400">person</mat-icon>
-                  <span>Minimum age: {{ event.minimumAge }}+ years</span>
-                </div>
-              }
-              @if (event.requiresBackground) {
-                <div class="flex items-center gap-2 mb-2">
-                  <mat-icon class="text-gray-400">verified_user</mat-icon>
-                  <span>Background check required</span>
-                </div>
-              }
-            </div>
-
-            <!-- Share -->
-            <mat-divider class="my-4"></mat-divider>
-            <div class="text-center">
-              <p class="text-sm text-gray-600 mb-2">Share this event</p>
-              <div class="flex justify-center gap-4">
-                <button mat-icon-button color="primary" (click)="shareEvent('facebook')">
-                  <mat-icon>facebook</mat-icon>
-                </button>
-                <button mat-icon-button color="primary" (click)="shareEvent('twitter')">
-                  <mat-icon>twitter</mat-icon>
-                </button>
-                <button mat-icon-button color="primary" (click)="shareEvent('linkedin')">
-                  <mat-icon>linkedin</mat-icon>
-                </button>
-                <button mat-icon-button color="primary" (click)="copyEventLink()">
-                  <mat-icon>link</mat-icon>
-                </button>
-              </div>
+              <p class="address">{{event?.fullAddress}}</p>
             </div>
           </div>
         </div>
       </div>
-    </section>
-  `
+    </div>
+  `,
+  styles: [`
+    .event-detail-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    .hero-section {
+      height: 400px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      border-radius: 0 0 20px 20px;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 2rem;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      color: white;
+    }
+
+    .hero-content h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .event-meta {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 1.1rem;
+    }
+
+    .event-meta i {
+      margin-right: 0.5rem;
+    }
+
+    .main-content {
+      padding: 2rem;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .details-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .info-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .info-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .info-card li {
+      display: flex;
+      align-items: center;
+      margin: 1rem 0;
+    }
+
+    .info-card i {
+      margin-right: 1rem;
+      color: #4a90e2;
+    }
+
+    .organizer-section {
+      margin-top: 2rem;
+    }
+
+    .organizer-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .organizer-image {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .action-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .action-card, .location-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .primary-button {
+      width: 100%;
+      padding: 1rem;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .primary-button:hover {
+      background: #357abd;
+    }
+
+    .primary-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .share-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .share-button, .save-button {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .share-button:hover, .save-button:hover {
+      background: #f8f9fa;
+    }
+
+    .map-container {
+      height: 200px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+
+    .spots-left {
+      color: #28a745;
+      font-weight: 600;
+      text-align: center;
+      margin: 1rem 0;
+    }
+
+    @media (max-width: 768px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-section {
+        height: 300px;
+      }
+
+      .hero-content h1 {
+        font-size: 2rem;
+      }
+    }
+  `]
 })
 export class EventDetailComponent implements OnInit {
-  event: any = {};
-  isRegistered: boolean = false;
-  isWaitlisted: boolean = false;
+  event: Event | null = null;
+  isSaved: boolean = false;
 
   constructor(
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private route: ActivatedRoute,
+    private eventService: EventService
   ) {}
 
   ngOnInit(): void {
-    // TODO: Fetch event details from service
-    this.event = {
-      id: '1',
-      title: 'Beach Cleanup Drive',
-      description: 'Join us for a community beach cleanup event to help protect our marine environment and local wildlife. We will be collecting trash, recyclables, and documenting the types of waste found to help inform future conservation efforts.',
-      status: 'UPCOMING',
-      organizationId: 'org1',
-      organizationName: 'Ocean Conservation Society',
-      organizationLogo: 'https://source.unsplash.com/random/100x100/?logo',
-      organizationDescription: 'A non-profit organization dedicated to protecting marine ecosystems.',
-      startDate: new Date(),
-      registrationDeadline: new Date(new Date().setDate(new Date().getDate() + 7)),
-      location: 'Miami Beach',
-      imageUrl: 'https://source.unsplash.com/random/800x600/?beach',
-      registeredParticipants: 15,
-      maxParticipants: 30,
-      requiredSkills: ['Physical Activity', 'Teamwork', 'Environmental Knowledge'],
-      impactSummary: 'This event will help remove harmful waste from our beaches, protect marine life, and contribute to ongoing research about marine pollution.',
-      minimumAge: 16,
-      requiresBackground: false
-    };
-  }
-
-  getStatusColor(status: string): string {
-    const statusColors: { [key: string]: string } = {
-      'UPCOMING': 'primary',
-      'ONGOING': 'accent',
-      'COMPLETED': 'basic',
-      'CANCELLED': 'warn'
-    };
-    return statusColors[status] || 'basic';
-  }
-
-  isEventFull(): boolean {
-    return this.event.registeredParticipants >= this.event.maxParticipants;
+    this.route.params.subscribe(params => {
+      const eventId = params['id'];
+      if (eventId) {
+        this.eventService.getEventById(eventId).subscribe(
+          event => this.event = event
+        );
+      }
+    });
   }
 
   registerForEvent(): void {
-    // TODO: Implement registration logic
-    this.isRegistered = true;
-    this.snackBar.open('Successfully registered for the event!', 'Close', {
-      duration: 3000
-    });
+    if (this.event) {
+      // TODO: Implement registration logic
+      console.log('Registering for event:', this.event.id);
+    }
   }
 
-  joinWaitlist(): void {
-    // TODO: Implement waitlist logic
-    this.isWaitlisted = true;
-    this.snackBar.open('Added to the waitlist!', 'Close', {
-      duration: 3000
-    });
+  toggleSave(): void {
+    this.isSaved = !this.isSaved;
+    // TODO: Implement save logic
   }
-
-  shareEvent(platform: string): void {
-    // TODO: Implement social sharing
-    console.log(`Sharing on ${platform}`);
-  }
-
-  copyEventLink(): void {
-    // TODO: Implement copy to clipboard
-    this.snackBar.open('Event link copied to clipboard!', 'Close', {
-      duration: 2000
-    });
-  }
-} 
+}

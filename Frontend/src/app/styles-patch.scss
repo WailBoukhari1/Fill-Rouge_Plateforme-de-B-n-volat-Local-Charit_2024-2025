@@ -1,0 +1,16 @@
+// Patch for missing helper-text mixins
+@mixin helper-text-theme($theme) {
+  // Empty implementation to avoid the error
+}
+
+@mixin helper-text-typography($theme) {
+  // Empty implementation to avoid the error
+}
+
+@mixin helper-text-color($theme) {
+  // Empty implementation to avoid the error
+}
+
+@mixin helper-text-density($theme) {
+  // Empty implementation to avoid the error
+} 

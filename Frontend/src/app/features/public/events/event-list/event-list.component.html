@@ -1,12 +1,33 @@
 <div class="min-h-screen bg-gray-50 py-8">
   <div class="container mx-auto px-4">
+    <!-- Header with Create Event Button -->
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Events</h1>
+      <button
+        mat-raised-button
+        color="primary"
+        *ngIf="canCreateEvent()"
+        [routerLink]="['/events/create']"
+      >
+        <mat-icon>add</mat-icon>
+        Create Event
+      </button>
+    </div>
+
     <!-- Search and Filter Section -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-      <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <form
+        [formGroup]="filterForm"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
         <!-- Search Input -->
         <mat-form-field class="w-full">
           <mat-label>Search Events</mat-label>
-          <input matInput formControlName="search" placeholder="Search by title or description">
+          <input
+            matInput
+            formControlName="search"
+            placeholder="Search by title or description"
+          />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
 
@@ -16,7 +37,7 @@
           <mat-select formControlName="category">
             <mat-option value="">All Categories</mat-option>
             @for(category of categories; track category) {
-              <mat-option [value]="category">{{category}}</mat-option>
+            <mat-option [value]="category">{{ category }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -24,15 +45,26 @@
         <!-- Date Filter -->
         <mat-form-field class="w-full">
           <mat-label>Date</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="startDate">
-          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <input
+            matInput
+            [matDatepicker]="picker"
+            formControlName="startDate"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="picker"
+          ></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
 
         <!-- Location Filter -->
         <mat-form-field class="w-full">
           <mat-label>Location</mat-label>
-          <input matInput formControlName="location" placeholder="Filter by location">
+          <input
+            matInput
+            formControlName="location"
+            placeholder="Filter by location"
+          />
           <mat-icon matSuffix>location_on</mat-icon>
         </mat-form-field>
       </form>
@@ -48,108 +80,176 @@
 
     <!-- Loading State -->
     @if(isLoading) {
-      <div class="flex justify-center items-center py-12">
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
+    <div class="flex justify-center items-center py-12">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
     }
 
     <!-- Error State -->
     @if(error) {
-      <div class="text-center py-12">
-        <mat-icon class="text-6xl text-red-500 mb-4">error_outline</mat-icon>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">Error Loading Events</h3>
-        <p class="text-gray-600">{{error}}</p>
-        <button mat-raised-button color="primary" class="mt-4" (click)="loadEvents()">
-          <mat-icon class="mr-2">refresh</mat-icon>
-          Retry
-        </button>
-      </div>
+    <div class="text-center py-12">
+      <mat-icon class="text-6xl text-red-500 mb-4">error_outline</mat-icon>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">
+        Error Loading Events
+      </h3>
+      <p class="text-gray-600">{{ error }}</p>
+      <button
+        mat-raised-button
+        color="primary"
+        class="mt-4"
+        (click)="loadEvents()"
+      >
+        <mat-icon class="mr-2">refresh</mat-icon>
+        Retry
+      </button>
+    </div>
     }
 
     <!-- Events Grid -->
     @if(!isLoading && !error) {
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @for(event of filteredEvents; track event._id) {
-          <mat-card class="h-full">
-            <mat-card-content class="p-4">
-              <!-- Event Title -->
-              <h3 class="text-xl font-semibold mb-2">{{event.title}}</h3>
-              
-              <!-- Category Chip -->
-              <mat-chip-set class="mb-3">
-                <mat-chip color="primary">{{event.category}}</mat-chip>
-              </mat-chip-set>
-              
-              <!-- Description -->
-              <p class="text-gray-600 mb-4">{{event.description}}</p>
-              
-              <!-- Event Details -->
-              <div class="space-y-2 text-gray-500">
-                <div class="flex items-center">
-                  <mat-icon class="mr-2">calendar_today</mat-icon>
-                  <span>{{event.startDate | date:'mediumDate'}}</span>
-                </div>
-                <div class="flex items-center">
-                  <mat-icon class="mr-2">location_on</mat-icon>
-                  <span>{{event.location}}</span>
-                </div>
-                <div class="flex items-center">
-                  <mat-icon class="mr-2">group</mat-icon>
-                  <span>{{event.registeredParticipants.length}}/{{event.maxParticipants}} spots filled</span>
-                </div>
-                @if(event.averageRating > 0) {
-                  <div class="flex items-center">
-                    <mat-icon class="mr-2">star</mat-icon>
-                    <span>{{event.averageRating | number:'1.1-1'}} ({{event.numberOfRatings}} ratings)</span>
-                  </div>
-                }
-              </div>
-            </mat-card-content>
-            
-            <!-- Action Buttons -->
-            <mat-card-actions class="p-4 pt-0">
-              <button mat-button color="primary" [routerLink]="['/events', event._id]">
-                <mat-icon class="mr-1">info</mat-icon>
-                Details
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for(event of filteredEvents; track event.id) {
+      <mat-card class="h-full">
+        <mat-card-content class="p-4">
+          <!-- Event Title and Admin Actions -->
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="text-xl font-semibold">
+              <a
+                [routerLink]="['/events', event.id]"
+                class="hover:text-primary-500 transition-colors"
+              >
+                {{ event.title }}
+              </a>
+            </h3>
+            <!-- Admin/Organizer Actions -->
+            <div class="flex gap-2" *ngIf="canEditEvent(event)">
+              <button
+                mat-icon-button
+                [routerLink]="['/events', event.id, 'edit']"
+                matTooltip="Edit Event"
+              >
+                <mat-icon>edit</mat-icon>
               </button>
-              @if(isEventFull(event)) {
-                @if(event.waitlistEnabled) {
-                  <button 
-                    mat-raised-button 
-                    color="accent"
-                    (click)="event._id && joinWaitlist(event._id)"
-                    [disabled]="event.waitlistedParticipants.length >= event.maxWaitlistSize">
-                    <mat-icon class="mr-1">queue</mat-icon>
-                    Join Waitlist
-                  </button>
-                } @else {
-                  <button mat-stroked-button disabled>
-                    <mat-icon class="mr-1">event_busy</mat-icon>
-                    Event Full
-                  </button>
-                }
-              } @else {
-                <button 
-                  mat-raised-button 
-                  color="primary"
-                  (click)="event._id && registerForEvent(event._id)">
-                  <mat-icon class="mr-1">how_to_reg</mat-icon>
-                  Register
-                </button>
-              }
-            </mat-card-actions>
-          </mat-card>
-        }
-      </div>
+              <button
+                mat-icon-button
+                (click)="deleteEvent(event)"
+                *ngIf="canDeleteEvent(event)"
+                matTooltip="Delete Event"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                [routerLink]="['/events', event.id, 'participants']"
+                *ngIf="canViewParticipants(event)"
+                matTooltip="View Participants"
+              >
+                <mat-icon>people</mat-icon>
+              </button>
+              <!-- Only show status update button to admin -->
+              <button
+                mat-icon-button
+                (click)="updateStatus(event)"
+                *ngIf="isAdmin"
+                matTooltip="Update Status"
+              >
+                <mat-icon>update</mat-icon>
+              </button>
+            </div>
+          </div>
 
-      <!-- No Results Message -->
-      @if(filteredEvents.length === 0) {
-        <div class="text-center py-12">
-          <mat-icon class="text-6xl text-gray-400 mb-4">search_off</mat-icon>
-          <h3 class="text-xl font-semibold text-gray-600 mb-2">No Events Found</h3>
-          <p class="text-gray-500">Try adjusting your filters or search criteria</p>
-        </div>
+          <!-- Category and Status Chips -->
+          <mat-chip-set class="mb-3">
+            <mat-chip color="primary">{{ event.category }}</mat-chip>
+            <mat-chip [color]="getStatusColor(event.status)">{{
+              event.status
+            }}</mat-chip>
+          </mat-chip-set>
+
+          <!-- Event Details -->
+          <p class="text-gray-600 mb-4">{{ event.description }}</p>
+
+          <!-- Event Details -->
+          <div class="space-y-2 text-gray-500">
+            <div class="flex items-center">
+              <mat-icon class="mr-2">calendar_today</mat-icon>
+              <span>{{ event.startDate | date : "mediumDate" }}</span>
+            </div>
+            <div class="flex items-center">
+              <mat-icon class="mr-2">location_on</mat-icon>
+              <span>{{ event.location }}</span>
+            </div>
+            <div class="flex items-center">
+              <mat-icon class="mr-2">group</mat-icon>
+              <span
+                >{{ event.maxParticipants - event.currentParticipants }} spots
+                left</span
+              >
+            </div>
+            @if(event.averageRating > 0) {
+            <div class="flex items-center">
+              <mat-icon class="mr-2">star</mat-icon>
+              <span
+                >{{ event.averageRating | number : "1.1-1" }} ({{
+                  event.numberOfRatings
+                }}
+                ratings)</span
+              >
+            </div>
+            }
+          </div>
+        </mat-card-content>
+
+        <!-- Action Buttons -->
+        <mat-card-actions
+          class="p-4 flex justify-between items-center border-t"
+        >
+          <!-- View Details button for all users -->
+          <button
+            mat-button
+            [routerLink]="['/events', event.id]"
+            color="primary"
+          >
+            View Details
+            <mat-icon class="ml-1">arrow_forward</mat-icon>
+          </button>
+
+          <!-- Register button only for volunteers (not admin or organizer) -->
+          <button
+            mat-stroked-button
+            color="primary"
+            *ngIf="
+              !isAdmin &&
+              !isOrganizer &&
+              !event.isRegistered &&
+              event.currentParticipants < event.maxParticipants
+            "
+            (click)="registerForEvent(event)"
+            [disabled]="event.currentParticipants >= event.maxParticipants"
+          >
+            Register
+          </button>
+
+          <!-- Already Registered indicator -->
+          <span
+            *ngIf="!isAdmin && !isOrganizer && event.isRegistered"
+            class="text-green-600 flex items-center"
+          >
+            <mat-icon class="mr-1">check_circle</mat-icon>
+            Registered
+          </span>
+        </mat-card-actions>
+      </mat-card>
       }
+    </div>
+
+    <!-- No Results Message -->
+    @if(filteredEvents.length === 0) {
+    <div class="text-center py-12">
+      <mat-icon class="text-6xl text-gray-400 mb-4">search_off</mat-icon>
+      <h3 class="text-xl font-semibold text-gray-600 mb-2">No Events Found</h3>
+      <p class="text-gray-500">Try adjusting your filters or search criteria</p>
+    </div>
     }
   </div>
-</div> 
+</div>

@@ -1,0 +1,21 @@
+                  <div class="flex items-center mb-2">
+                    <mat-icon class="text-gray-500 mr-2">group</mat-icon>
+                    <span>{{ (event.registeredParticipants?.length ?? 0) }}/{{ event.maxParticipants }} participants</span>
+                  </div>
+                  <div class="mt-2">
+                    <mat-chip-listbox>
+                      @for (skill of event.requiredSkills ?? []; track skill) {
+                        <mat-chip>{{ skill }}</mat-chip>
+                      }
+                    </mat-chip-listbox>
+                  </div>
+                </mat-card-content>
+                <mat-card-actions class="p-4">
+                  @if (!isRegistered(event) && !isWaitlisted(event)) {
+                    <button mat-raised-button color="primary" 
+                            [disabled]="(event.registeredParticipants?.length ?? 0) >= event.maxParticipants"
+                            (click)="event._id && registerForEvent(event._id)">
+                      {{ (event.registeredParticipants?.length ?? 0) >= event.maxParticipants ? 'Join Waitlist' : 'Register' }}
+                    </button>
+                  }
+                </mat-card-actions> 

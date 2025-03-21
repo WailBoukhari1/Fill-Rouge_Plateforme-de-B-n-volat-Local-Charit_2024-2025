@@ -1,16 +1,13 @@
 package com.fill_rouge.backend.service.organization;
 
-import com.fill_rouge.backend.domain.Organization;
-import com.fill_rouge.backend.domain.User;
-import com.fill_rouge.backend.domain.Event;
-import com.fill_rouge.backend.constant.EventStatus;
-import com.fill_rouge.backend.dto.request.OrganizationRequest;
-import com.fill_rouge.backend.dto.response.OrganizationResponse;
-import com.fill_rouge.backend.repository.OrganizationRepository;
-import com.fill_rouge.backend.repository.UserRepository;
-import com.fill_rouge.backend.repository.EventRepository;
-import com.fill_rouge.backend.exception.ResourceNotFoundException;
-import com.fill_rouge.backend.service.storage.GridFsService;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,13 +15,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.fill_rouge.backend.constant.EventStatus;
+import com.fill_rouge.backend.domain.Event;
+import com.fill_rouge.backend.domain.Organization;
+import com.fill_rouge.backend.domain.Skill;
+import com.fill_rouge.backend.domain.User;
+import com.fill_rouge.backend.domain.VolunteerProfile;
+import com.fill_rouge.backend.dto.request.OrganizationRequest;
+import com.fill_rouge.backend.dto.response.OrganizationResponse;
+import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
+import com.fill_rouge.backend.exception.ResourceNotFoundException;
+import com.fill_rouge.backend.repository.EventRepository;
+import com.fill_rouge.backend.repository.OrganizationRepository;
+import com.fill_rouge.backend.repository.UserRepository;
+import com.fill_rouge.backend.service.storage.GridFsService;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -325,6 +330,52 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setActiveVolunteers(activeVolunteers.size());
         organization.setUpdatedAt(LocalDateTime.now());
         organizationRepository.save(organization);
+    }
+
+    @Override
+    public List<VolunteerProfileResponse> getOrganizationVolunteers(String organizationId, String sortBy, String sortOrder) {
+        Organization organization = getOrganizationEntity(organizationId);
+        List<VolunteerProfile> volunteers = organization.getVolunteerProfiles();
+
+        // Apply sorting
+        Comparator<VolunteerProfile> comparator = switch (sortBy.toLowerCase()) {
+            case "name" -> Comparator.comparing(v -> v.getFirstName() + " " + v.getLastName());
+            case "email" -> Comparator.comparing(VolunteerProfile::getEmail);
+            case "city" -> Comparator.comparing(VolunteerProfile::getCity);
+            case "rating" -> Comparator.comparing(VolunteerProfile::getAverageRating, Comparator.nullsLast(Double::compareTo));
+            case "hours" -> Comparator.comparing(VolunteerProfile::getTotalHoursVolunteered, Comparator.nullsLast(Integer::compareTo));
+            default -> Comparator.comparing(v -> v.getFirstName() + " " + v.getLastName());
+        };
+
+        if ("desc".equalsIgnoreCase(sortOrder)) {
+            comparator = comparator.reversed();
+        }
+
+        return volunteers.stream()
+            .sorted(comparator)
+            .map(this::toVolunteerProfileResponse)
+            .collect(Collectors.toList());
+    }
+
+    private VolunteerProfileResponse toVolunteerProfileResponse(VolunteerProfile profile) {
+        return VolunteerProfileResponse.builder()
+            .id(profile.getId())
+            .firstName(profile.getFirstName())
+            .lastName(profile.getLastName())
+            .email(profile.getEmail())
+            .phoneNumber(profile.getPhoneNumber())
+            .address(profile.getAddress())
+            .bio(profile.getBio())
+            .profilePicture(profile.getProfilePicture())
+            .city(profile.getCity())
+            .country(profile.getCountry())
+            .skills(profile.getSkills().stream().map(Skill::getName).collect(Collectors.toSet()))
+            .interests(profile.getInterests())
+            .preferredCategories(profile.getPreferredCategories())
+            .totalEventsAttended(profile.getTotalEventsAttended())
+            .totalVolunteerHours(profile.getTotalHoursVolunteered())
+            .averageEventRating(profile.getAverageRating())
+            .build();
     }
 
     @Override

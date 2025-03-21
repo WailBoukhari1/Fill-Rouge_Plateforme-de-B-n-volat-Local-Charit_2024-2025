@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-20T01:42:35+0000",
+    date = "2025-03-20T19:21:20+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -60,6 +60,7 @@ public class EventMapperImpl implements EventMapper {
         event.endDate( request.getEndDate() );
         event.location( request.getLocation() );
         event.maxParticipants( request.getMaxParticipants() );
+        event.organizationId( request.getOrganizationId() );
         event.startDate( request.getStartDate() );
         event.title( request.getTitle() );
 
@@ -199,6 +200,9 @@ public class EventMapperImpl implements EventMapper {
             event.setLocation( request.getLocation() );
         }
         event.setMaxParticipants( request.getMaxParticipants() );
+        if ( request.getOrganizationId() != null ) {
+            event.setOrganizationId( request.getOrganizationId() );
+        }
         if ( request.getStartDate() != null ) {
             event.setStartDate( request.getStartDate() );
         }

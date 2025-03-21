@@ -137,6 +137,10 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
   loading$: Observable<boolean>;
   isLoadingCities = false;
 
+  // Arrays for days and certifications
+  availableDays: string[] = [];
+  certifications: string[] = [];
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -588,6 +592,48 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     const index = this.preferredCauses.indexOf(cause);
     if (index >= 0) {
       this.preferredCauses.splice(index, 1);
+    }
+  }
+
+  addDay(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      this.availableDays.push(value);
+      event.chipInput!.clear();
+      this.roleSpecificFormGroup
+        .get('volunteer.availableDays')
+        ?.setValue(this.availableDays);
+    }
+  }
+
+  removeDay(day: string): void {
+    const index = this.availableDays.indexOf(day);
+    if (index >= 0) {
+      this.availableDays.splice(index, 1);
+      this.roleSpecificFormGroup
+        .get('volunteer.availableDays')
+        ?.setValue(this.availableDays);
+    }
+  }
+
+  addCertification(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      this.certifications.push(value);
+      event.chipInput!.clear();
+      this.roleSpecificFormGroup
+        .get('volunteer.certifications')
+        ?.setValue(this.certifications);
+    }
+  }
+
+  removeCertification(certification: string): void {
+    const index = this.certifications.indexOf(certification);
+    if (index >= 0) {
+      this.certifications.splice(index, 1);
+      this.roleSpecificFormGroup
+        .get('volunteer.certifications')
+        ?.setValue(this.certifications);
     }
   }
 

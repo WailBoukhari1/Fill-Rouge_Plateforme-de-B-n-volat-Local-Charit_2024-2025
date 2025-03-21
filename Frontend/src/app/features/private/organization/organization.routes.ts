@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { OrganizationProfileComponent } from './organization-profile/organization-profile.component';
 import { EventResolver } from './organization-events/resolvers/event.resolver';
+import { OrganizationReportComponent } from './organization-reports/organization-report.component';
 
 export const organizationRoutes: Routes = [
   {
@@ -14,6 +15,11 @@ export const organizationRoutes: Routes = [
         path: '',
         loadComponent: () => import('./organization-events/organization-events/organization-events.component')
           .then(m => m.OrganizationEventsComponent)
+      },
+      {
+        path: ':id',
+        loadComponent: () => import('./organization-events/event-details/event-details.component')
+          .then(m => m.EventDetailsComponent)
       },
       {
         path: 'create',
@@ -36,7 +42,7 @@ export const organizationRoutes: Routes = [
   },
   {
     path: 'reports',
-    loadComponent: () => import('./organization-reports/organization-reports.component').then(m => m.OrganizationReportsComponent)
+    loadComponent: () => import('./organization-reports/organization-report.component').then(m => m.OrganizationReportComponent)
   },
   {
     path: '',

@@ -7,7 +7,7 @@ export enum EventStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   PUBLISHED = 'PUBLISHED',
-  UPCOMING = 'UPCOMING'
+  UPCOMING = 'UPCOMING',
 }
 
 export enum EventCategory {
@@ -20,7 +20,7 @@ export enum EventCategory {
   SPORTS_AND_RECREATION = 'SPORTS_AND_RECREATION',
   HEALTH = 'HEALTH',
   DISASTER_RELIEF = 'DISASTER_RELIEF',
-  SOCIAL_SERVICES = 'SOCIAL_SERVICES'
+  SOCIAL_SERVICES = 'SOCIAL_SERVICES',
 }
 
 export enum RegistrationStatus {
@@ -28,46 +28,63 @@ export enum RegistrationStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
   WAITLISTED = 'WAITLISTED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 export interface IEvent {
+  durationHours: number;
+  requiresBackground: boolean;
   _id?: string;
-  organizationId: string;
+  id?: string;
   title: string;
   description: string;
-  category: EventCategory;
+  category: string;
   location: string;
-  coordinates: [number, number];
+  address?: string;
+  coordinates?: [number, number];
   startDate: Date;
   endDate: Date;
-  maxParticipants: number;
-  waitlistEnabled: boolean;
-  maxWaitlistSize: number;
-  requiredSkills: string[];
-  isVirtual: boolean;
-  requiresApproval: boolean;
-  difficulty: string;
-  tags: string[];
-  isRecurring: boolean;
-  minimumAge: number;
-  requiresBackground: boolean;
-  isSpecialEvent: boolean;
-  pointsAwarded: number;
-  durationHours: number;
-  contactPerson: string;
-  contactEmail: string;
-  contactPhone: string;
+  createdAt: Date;
   status: EventStatus;
-  averageRating: number;
-  numberOfRatings: number;
-  registeredParticipants: string[];
-  waitlistedParticipants: string[];
-  participations: any[];
+  currentParticipants: number;
+  
+  maxParticipants: number;
+  organizationId: string;
+  organizationName: string;
+  requirements?: string[];
+  skills?: string[];
+  ageRequirement?: string;
+  language?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  registeredParticipants?: string[];
+  waitlistedParticipants?: string[];
   bannerImage?: string;
-  _class?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  waitlistEnabled?: boolean;
+  maxWaitlistSize?: number;
+  isRegistered?: boolean;
+  averageRating?: number;
+  numberOfRatings?: number;
+  feedback?: {
+    rating: number;
+    comment: string;
+    createdAt: Date;
+  };
+  schedule?: Array<{
+    time: string;
+    activity: string;
+  }>;
+  imageUrl?: string;
+  isVirtual?: boolean;
+  difficulty?: string;
+  requiresApproval?: boolean;
+  requiredSkills?: string[];
+  tags?: string[];
+  minimumAge?: number;
+  pointsAwarded?: number;
+  isRecurring?: boolean;
+  isSpecialEvent?: boolean;
 }
 
 export interface IEventRegistration {
@@ -130,7 +147,13 @@ export interface IEventFilters {
 export interface IEventNotification {
   id: string;
   eventId: string;
-  type: 'REGISTRATION' | 'APPROVAL' | 'REJECTION' | 'REMINDER' | 'CANCELLATION' | 'UPDATE';
+  type:
+    | 'REGISTRATION'
+    | 'APPROVAL'
+    | 'REJECTION'
+    | 'REMINDER'
+    | 'CANCELLATION'
+    | 'UPDATE';
   message: string;
   createdAt: Date;
   read: boolean;
@@ -167,5 +190,5 @@ export enum EventParticipationStatus {
   WAITLISTED = 'WAITLISTED',
   ATTENDED = 'ATTENDED',
   CANCELLED = 'CANCELLED',
-  NO_SHOW = 'NO_SHOW'
-} 
+  NO_SHOW = 'NO_SHOW',
+}

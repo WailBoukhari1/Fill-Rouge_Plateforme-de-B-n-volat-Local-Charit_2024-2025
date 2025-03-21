@@ -9,12 +9,18 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventResponse;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, imports = LocalDateTime.class)
+@Mapper(
+    componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    imports = {LocalDateTime.class}
+)
 public interface EventMapper {
 
     @Mapping(target = "id", ignore = true)
@@ -39,6 +45,8 @@ public interface EventMapper {
     @Mapping(target = "pointsAwarded", source = "pointsAwarded")
     @Mapping(target = "durationHours", source = "durationHours")
     @Mapping(target = "bannerImage", source = "bannerImage")
+    @Mapping(target = "organization", ignore = true)
+    @Mapping(target = "participations", ignore = true)
     Event toEntity(EventRequest request);
 
     @Mapping(target = "currentParticipants", expression = "java(event.getRegisteredParticipants().size())")
@@ -82,6 +90,8 @@ public interface EventMapper {
     @Mapping(target = "pointsAwarded", source = "pointsAwarded")
     @Mapping(target = "durationHours", source = "durationHours")
     @Mapping(target = "bannerImage", source = "bannerImage")
+    @Mapping(target = "organization", ignore = true)
+    @Mapping(target = "participations", ignore = true)
     void updateEntity(EventRequest request, @MappingTarget Event event);
 
     List<EventResponse> toResponseList(List<Event> events, @Context String currentUserId);

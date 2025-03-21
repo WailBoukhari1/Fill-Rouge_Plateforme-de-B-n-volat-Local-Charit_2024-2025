@@ -1,0 +1,67 @@
+// Custom styles for Material table
+.mat-mdc-table {
+  width: 100%;
+  background: transparent;
+
+  .mat-mdc-header-row {
+    background-color: #f9fafb;
+  }
+
+  .mat-mdc-header-cell {
+    color: #4b5563;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 1rem;
+  }
+
+  .mat-mdc-cell {
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: #1f2937;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .mat-mdc-row {
+    &:hover {
+      background-color: #f9fafb;
+    }
+  }
+}
+
+// Status colors
+.status-active {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-inactive {
+  @apply bg-gray-100 text-gray-800;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-blocked {
+  @apply bg-red-100 text-red-800;
+}
+
+// Custom styles for Material form fields
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+// Custom styles for chips
+.mat-mdc-chip {
+  font-size: 0.75rem !important;
+  height: 24px !important;
+}
+
+// Error snackbar styles
+::ng-deep .error-snackbar {
+  background-color: #fee2e2;
+  color: #991b1b;
+  
+  .mat-simple-snackbar-action {
+    color: #991b1b;
+  }
+} 

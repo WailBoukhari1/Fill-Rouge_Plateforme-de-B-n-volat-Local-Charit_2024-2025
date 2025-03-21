@@ -37,7 +37,11 @@ export class EventEffects {
       }),
       mergeMap(action => {
         console.log('Loading events with filters:', action.filters);
-        return this.eventService.getEvents(action.filters, action.page, action.size).pipe(
+        return this.eventService.getEvents({
+          ...action.filters,
+          page: action.page,
+          size: action.size
+        }).pipe(
           tap(page => {
             console.log('Page object before success action:', page);
             console.log('Page content:', page.content);

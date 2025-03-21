@@ -1,6 +1,8 @@
 /* You can add global styles to this file, and also import other style files */
 
 @use '@angular/material' as mat;
+// Import our patch file
+@use 'app/styles-patch' as patch;
 
 @tailwind base;
 @tailwind components;
@@ -18,10 +20,42 @@ $theme: mat.define-light-theme((
     primary: $primary,
     accent: $accent,
     warn: $warn,
-  )
+  ),
+  typography: mat.define-typography-config(),
+  density: 0
 ));
 
-@include mat.all-component-themes($theme);
+// Use component-specific theming instead of all-component-themes
+@include mat.core-theme($theme);
+@include mat.button-theme($theme);
+@include mat.card-theme($theme);
+@include mat.checkbox-theme($theme);
+@include mat.chips-theme($theme);
+@include mat.dialog-theme($theme);
+@include mat.divider-theme($theme);
+@include mat.form-field-theme($theme);
+@include mat.icon-theme($theme);
+@include mat.input-theme($theme);
+@include mat.list-theme($theme);
+@include mat.menu-theme($theme);
+@include mat.paginator-theme($theme);
+@include mat.progress-bar-theme($theme);
+@include mat.progress-spinner-theme($theme);
+@include mat.radio-theme($theme);
+@include mat.select-theme($theme);
+@include mat.sidenav-theme($theme);
+@include mat.slide-toggle-theme($theme);
+@include mat.slider-theme($theme);
+@include mat.snack-bar-theme($theme);
+@include mat.sort-theme($theme);
+@include mat.stepper-theme($theme);
+@include mat.table-theme($theme);
+@include mat.tabs-theme($theme);
+@include mat.toolbar-theme($theme);
+@include mat.tooltip-theme($theme);
+@include mat.tree-theme($theme);
+// Add our patch for the helper-text
+@include patch.helper-text-theme($theme);
 
 // Basic styles
 body { 

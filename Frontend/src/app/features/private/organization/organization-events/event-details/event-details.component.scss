@@ -1,0 +1,100 @@
+// Status colors
+.status-active {
+  @apply bg-green-500 text-white;
+}
+
+.status-completed {
+  @apply bg-blue-500 text-white;
+}
+
+.status-cancelled {
+  @apply bg-red-500 text-white;
+}
+
+.status-pending {
+  @apply bg-yellow-500 text-white;
+}
+
+// Responsive image container
+.event-image-container {
+  @apply relative w-full;
+  padding-top: 40%; // 2.5:1 aspect ratio
+
+  img {
+    @apply absolute top-0 left-0 w-full h-full object-cover;
+  }
+}
+
+// Material icon alignment fix
+mat-icon {
+  @apply flex items-center justify-center;
+  font-size: 20px;
+  height: 20px;
+  width: 20px;
+}
+
+// Hover effects for buttons
+button[mat-raised-button],
+button[mat-stroked-button] {
+  @apply transition-all duration-200;
+
+  &:hover {
+    @apply transform scale-[1.02];
+  }
+}
+
+// Custom scrollbar for description
+.event-description {
+  @apply overflow-y-auto max-h-[300px] pr-4;
+
+  &::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  &::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded;
+
+    &:hover {
+      @apply bg-gray-400;
+    }
+  }
+}
+
+// Animation for loading spinner
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  @apply animate-spin;
+}
+
+// Responsive grid adjustments
+@screen sm {
+  .event-grid {
+    @apply grid-cols-1;
+  }
+}
+
+@screen md {
+  .event-grid {
+    @apply grid-cols-3;
+  }
+}
+
+// Print styles
+@media print {
+  .no-print {
+    @apply hidden;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid;
+  }
+} 

@@ -78,14 +78,14 @@ export const selectCompletedEvents = createSelector(
 export const selectRegisteredEvents = createSelector(
   selectEventContent,
   (events: IEvent[]) => events.filter(event => 
-    event.registeredParticipants.length > 0
+    (event.registeredParticipants?.length ?? 0) > 0
   )
 );
 
 export const selectWaitlistedEvents = createSelector(
   selectEventContent,
   (events: IEvent[]) => events.filter(event => 
-    event.waitlistedParticipants.length > 0
+    (event.waitlistedParticipants?.length ?? 0) > 0
   )
 );
 
@@ -96,6 +96,6 @@ export const selectEventStats = createSelector(
     upcoming: events.filter(e => e.startDate > new Date() && e.status === EventStatus.UPCOMING).length,
     ongoing: events.filter(e => e.status === EventStatus.ONGOING).length,
     completed: events.filter(e => e.status === EventStatus.COMPLETED).length,
-    registered: events.filter(e => e.registeredParticipants.length > 0).length
+    registered: events.filter(e => (e.registeredParticipants?.length ?? 0) > 0).length
   })
 ); 

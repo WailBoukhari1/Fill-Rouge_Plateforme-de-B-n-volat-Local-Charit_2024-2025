@@ -141,7 +141,7 @@ export class EventManagementComponent implements OnInit {
 
   loadEvents(): void {
     this.loading = true;
-    this.eventService.getEvents({}).subscribe({
+    this.eventService.getEvents(this.currentPage, this.pageSize).subscribe({
       next: (response) => {
         this.events = response.content;
         this.totalItems = response.totalElements;

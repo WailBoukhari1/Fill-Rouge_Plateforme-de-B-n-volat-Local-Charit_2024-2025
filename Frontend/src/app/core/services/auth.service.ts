@@ -619,4 +619,13 @@ export class AuthService {
     console.warn('No organization ID found');
     return '';
   }
+
+  hasRole(role: UserRole): boolean {
+    const userRole = this.getUserRole();
+    return userRole === role;
+  }
+
+  getCurrentUserRole(): string {
+    return this.getUserRole();
+  }
 }

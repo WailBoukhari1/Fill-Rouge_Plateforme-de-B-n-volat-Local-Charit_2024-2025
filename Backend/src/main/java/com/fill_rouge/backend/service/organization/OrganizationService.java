@@ -1,10 +1,13 @@
 package com.fill_rouge.backend.service.organization;
 
-import com.fill_rouge.backend.dto.request.OrganizationRequest;
-import com.fill_rouge.backend.dto.response.OrganizationResponse;
 import java.io.IOException;
 import java.util.List;
+
 import org.springframework.web.multipart.MultipartFile;
+
+import com.fill_rouge.backend.dto.request.OrganizationRequest;
+import com.fill_rouge.backend.dto.response.OrganizationResponse;
+import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 
 public interface OrganizationService {
     // Core operations
@@ -46,4 +49,7 @@ public interface OrganizationService {
     boolean isNameAvailable(String name);
     boolean isRegistrationNumberValid(String registrationNumber);
     boolean isTaxIdValid(String taxId);
+    
+    // Volunteer listing
+    List<VolunteerProfileResponse> getOrganizationVolunteers(String organizationId, String sortBy, String sortOrder);
 }

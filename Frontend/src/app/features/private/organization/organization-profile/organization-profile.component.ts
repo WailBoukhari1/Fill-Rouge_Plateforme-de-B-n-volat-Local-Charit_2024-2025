@@ -345,7 +345,7 @@ import { environment } from '../../../../../environments/environment';
 
     .hero-section {
       background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-      padding: 2rem 0;
+      padding: 2rem 1rem;
       color: white;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
@@ -358,21 +358,24 @@ import { environment } from '../../../../../environments/environment';
 
     .hero-info {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 2rem;
       margin-bottom: 2rem;
     }
 
     .profile-header {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 2rem;
+      text-align: center;
+      gap: 1.5rem;
     }
 
     .profile-image-wrapper {
       position: relative;
-      width: 120px;
-      height: 120px;
+      width: 150px;
+      height: 150px;
+      margin: 0 auto;
     }
 
     .profile-image {
@@ -396,7 +399,9 @@ import { environment } from '../../../../../environments/environment';
     }
 
     .profile-image-placeholder mat-icon {
-      font-size: 3rem;
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
       color: rgba(255, 255, 255, 0.9);
     }
 
@@ -404,13 +409,27 @@ import { environment } from '../../../../../environments/environment';
       position: absolute;
       bottom: 0;
       right: 0;
-      background-color: white;
-      color: #2196f3;
+      transform: translate(25%, 25%);
+      background-color: white !important;
+      color: #2196f3 !important;
+      width: 40px !important;
+      height: 40px !important;
+      line-height: 40px !important;
+    }
+
+    .upload-button mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .profile-title {
+      text-align: center;
     }
 
     .profile-title h1 {
       margin: 0;
-      font-size: 2.5rem;
+      font-size: 2rem;
       font-weight: 500;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
@@ -432,14 +451,24 @@ import { environment } from '../../../../../environments/environment';
 
     .profile-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 1rem;
+      justify-content: center;
+      padding: 0 1rem;
+    }
+
+    .profile-actions button {
+      flex: 1 1 auto;
+      min-width: 120px;
+      max-width: 200px;
     }
 
     .organization-stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 1rem;
       margin-top: 2rem;
+      padding: 0 1rem;
     }
 
     .stat-card {
@@ -450,10 +479,17 @@ import { environment } from '../../../../../environments/environment';
       padding: 1rem;
       border-radius: 8px;
       backdrop-filter: blur(4px);
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
     }
 
     .stat-card mat-icon {
       font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
       color: rgba(255, 255, 255, 0.9);
     }
 
@@ -679,31 +715,66 @@ import { environment } from '../../../../../environments/environment';
       color: #f44336;
     }
 
-    @media (max-width: 768px) {
-      .hero-info {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 1rem;
+    @media (min-width: 640px) {
+      .hero-section {
+        padding: 3rem 1.5rem;
       }
 
       .profile-header {
-        flex-direction: column;
-        text-align: center;
-        gap: 1rem;
+        flex-direction: row;
+        text-align: left;
+        justify-content: center;
+        gap: 2rem;
+      }
+
+      .profile-image-wrapper {
+        width: 180px;
+        height: 180px;
+        margin: 0;
+      }
+
+      .profile-title {
+        text-align: left;
+      }
+
+      .profile-title h1 {
+        font-size: 2.5rem;
       }
 
       .profile-actions {
-        width: 100%;
-        justify-content: center;
+        justify-content: flex-start;
+        padding: 0;
+      }
+
+      .profile-actions button {
+        flex: 0 1 auto;
       }
 
       .organization-stats {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
+        padding: 0;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .hero-info {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
       }
 
-      .content-grid {
-        grid-template-columns: 1fr;
+      .profile-header {
+        gap: 3rem;
+      }
+
+      .profile-image-wrapper {
+        width: 200px;
+        height: 200px;
+      }
+
+      .profile-actions {
+        flex-direction: row;
+        align-items: center;
       }
     }
   `]
