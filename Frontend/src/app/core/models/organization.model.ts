@@ -51,7 +51,7 @@ export enum OrganizationType {
   COMMUNITY_GROUP = 'COMMUNITY_GROUP',
   EDUCATIONAL = 'EDUCATIONAL',
   RELIGIOUS = 'RELIGIOUS',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export enum OrganizationCategory {
@@ -66,26 +66,26 @@ export enum OrganizationCategory {
   POVERTY = 'POVERTY',
   SOCIAL_SERVICES = 'SOCIAL_SERVICES',
   SPORTS_RECREATION = 'SPORTS_RECREATION',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export enum OrganizationStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
-  SUSPENDED = 'SUSPENDED'
+  SUSPENDED = 'SUSPENDED',
 }
 
 export enum VerificationStatus {
   PENDING = 'PENDING',
   VERIFIED = 'VERIFIED',
-  REJECTED = 'REJECTED'
+  REJECTED = 'REJECTED',
 }
 
 export enum OrganizationSize {
   SMALL = 'SMALL',
   MEDIUM = 'MEDIUM',
   LARGE = 'LARGE',
-  VERY_LARGE = 'VERY_LARGE'
+  VERY_LARGE = 'VERY_LARGE',
 }
 
 export interface OrganizationDocument {
@@ -101,7 +101,7 @@ export enum DocumentType {
   TAX_EXEMPTION = 'TAX_EXEMPTION',
   ANNUAL_REPORT = 'ANNUAL_REPORT',
   FINANCIAL_STATEMENT = 'FINANCIAL_STATEMENT',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export interface OrganizationStats {
@@ -128,8 +128,13 @@ export interface SocialMediaLinks {
 
 export interface ApiResponse<T> {
   data: T;
+  meta?: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+  };
   message?: string;
-  status: number;
 }
 
 export interface OrganizationProfileDTO {
@@ -157,6 +162,7 @@ export interface OrganizationProfileDTO {
 export interface OrganizationProfile {
   id: string;
   userId: string;
+  email: string;
   name: string;
   description: string;
   mission: string;
@@ -226,4 +232,4 @@ export interface OrganizationRequest {
   logo?: string;
 }
 
-export interface OrganizationResponse extends OrganizationProfile {} 
+export interface OrganizationResponse extends OrganizationProfile {}

@@ -192,13 +192,20 @@ export class EventService {
       return throwError(() => new Error('Invalid event data'));
     }
 
+    const organizationId = this.authService.getCurrentOrganizationId();
+    if (!organizationId) {
+      return throwError(() => new Error('Organization ID not found'));
+    }
+
     const eventData = this.toEventRequest(event);
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'X-Organization-ID': organizationId,
+      'X-User-ID': this.authService.getCurrentUserId() || '',
+    });
+
     return this.http
-      .post<ApiResponse<IEvent>>(
-        `${this.apiUrl}`,
-        eventData,
-        this.getHttpOptions()
-      )
+      .post<ApiResponse<IEvent>>(`${this.apiUrl}`, eventData, { headers })
       .pipe(
         map((response) => response.data),
         catchError((error) => {
@@ -273,13 +280,27 @@ export class EventService {
     console.log('Registering for event:', eventId);
     console.log('Headers:', this.getHeaders().keys());
 
+    const userId = this.authService.getCurrentUserId();
+    if (!userId) {
+      return throwError(() => new Error('User ID not found'));
+    }
+
+    // First, create the event participation record
     return this.http
-      .post<ApiResponse<IEvent>>(
-        `${this.apiUrl}/${eventId}/register`,
+      .post<ApiResponse<any>>(
+        `${environment.apiUrl}/api/event-participations/events/${eventId}/volunteers/${userId}`,
         {},
         { headers: this.getHeaders() }
       )
       .pipe(
+        // Then, register the participant in the event
+        switchMap(() => 
+          this.http.post<ApiResponse<IEvent>>(
+            `${this.apiUrl}/${eventId}/register`,
+            {},
+            { headers: this.getHeaders() }
+          )
+        ),
         map((response) => {
           console.log('Raw response:', response);
           if (!response.success) {
@@ -292,22 +313,29 @@ export class EventService {
   }
 
   unregisterFromEvent(eventId: string): Observable<IEvent> {
-    console.log('Unregistering from event:', eventId);
-    console.log('Headers:', this.getHeaders().keys());
+    const userId = this.authService.getCurrentUserId();
+    if (!userId) {
+      return throwError(() => new Error('User ID not found'));
+    }
 
+    // First, cancel the participation record
     return this.http
-      .post<ApiResponse<IEvent>>(
-        `${this.apiUrl}/${eventId}/unregister`,
-        {},
+      .delete<ApiResponse<any>>(
+        `${environment.apiUrl}/api/event-participations/events/${eventId}/volunteers/${userId}`,
         { headers: this.getHeaders() }
       )
       .pipe(
+        // Then, unregister from the event
+        switchMap(() => 
+          this.http.post<ApiResponse<IEvent>>(
+            `${this.apiUrl}/${eventId}/unregister`,
+            {},
+            { headers: this.getHeaders() }
+          )
+        ),
         map((response) => {
-          console.log('Raw response:', response);
           if (!response.success) {
-            throw new Error(
-              response.message || 'Failed to unregister from event'
-            );
+            throw new Error(response.message || 'Failed to unregister from event');
           }
           return response.data;
         }),

@@ -77,89 +77,100 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
   ],
   template: `
     <div class="container mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-6">Reports & Analytics</h1>
+      <div class="header mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Reports & Analytics</h1>
+        <p class="text-gray-600 mt-2">View and analyze your organization's performance metrics</p>
+      </div>
 
-      <mat-tab-group>
+      <mat-tab-group class="reports-tabs" animationDuration="200ms">
         <!-- Overview Tab -->
         <mat-tab label="Overview">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
             <!-- Total Users -->
-            <mat-card>
-              <mat-card-content class="p-4">
+            <mat-card class="dashboard-card hover:shadow-lg transition-shadow duration-300">
+              <mat-card-content class="p-6">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">Total Users</p>
-                    <h2 class="text-2xl font-bold">{{stats.totalUsers}}</h2>
-                    <p class="text-sm text-green-500">
-                      <mat-icon class="text-sm">arrow_upward</mat-icon>
-                      {{stats.userGrowthRate}}% growth
+                    <p class="text-gray-600 text-sm uppercase tracking-wide">Total Users</p>
+                    <h2 class="text-3xl font-bold mt-2">{{stats.totalUsers}}</h2>
+                    <p class="text-sm mt-2" [ngClass]="stats.userGrowthRate >= 0 ? 'text-green-500' : 'text-red-500'">
+                      <mat-icon class="text-sm align-middle">{{stats.userGrowthRate >= 0 ? 'arrow_upward' : 'arrow_downward'}}</mat-icon>
+                      <span class="ml-1">{{stats.userGrowthRate}}% growth</span>
                     </p>
                   </div>
-                  <mat-icon class="text-primary-500">people</mat-icon>
+                  <div class="icon-container">
+                    <mat-icon class="text-primary-500 text-4xl">people</mat-icon>
+                  </div>
                 </div>
               </mat-card-content>
             </mat-card>
 
             <!-- Active Organizations -->
-            <mat-card>
-              <mat-card-content class="p-4">
+            <mat-card class="dashboard-card hover:shadow-lg transition-shadow duration-300">
+              <mat-card-content class="p-6">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">Active Organizations</p>
-                    <h2 class="text-2xl font-bold">{{stats.activeOrganizations}}</h2>
-                    <p class="text-sm text-green-500">
-                      <mat-icon class="text-sm">arrow_upward</mat-icon>
-                      {{stats.organizationGrowthRate}}% growth
+                    <p class="text-gray-600 text-sm uppercase tracking-wide">Active Organizations</p>
+                    <h2 class="text-3xl font-bold mt-2">{{stats.activeOrganizations}}</h2>
+                    <p class="text-sm mt-2" [ngClass]="stats.organizationGrowthRate >= 0 ? 'text-green-500' : 'text-red-500'">
+                      <mat-icon class="text-sm align-middle">{{stats.organizationGrowthRate >= 0 ? 'arrow_upward' : 'arrow_downward'}}</mat-icon>
+                      <span class="ml-1">{{stats.organizationGrowthRate}}% growth</span>
                     </p>
                   </div>
-                  <mat-icon class="text-primary-500">business</mat-icon>
+                  <div class="icon-container">
+                    <mat-icon class="text-primary-500 text-4xl">business</mat-icon>
+                  </div>
                 </div>
               </mat-card-content>
             </mat-card>
 
             <!-- Total Events -->
-            <mat-card>
-              <mat-card-content class="p-4">
+            <mat-card class="dashboard-card hover:shadow-lg transition-shadow duration-300">
+              <mat-card-content class="p-6">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">Total Events</p>
-                    <h2 class="text-2xl font-bold">{{stats.totalEvents}}</h2>
-                    <p class="text-sm text-green-500">
-                      <mat-icon class="text-sm">arrow_upward</mat-icon>
-                      {{stats.eventGrowthRate}}% growth
+                    <p class="text-gray-600 text-sm uppercase tracking-wide">Total Events</p>
+                    <h2 class="text-3xl font-bold mt-2">{{stats.totalEvents}}</h2>
+                    <p class="text-sm mt-2" [ngClass]="stats.eventGrowthRate >= 0 ? 'text-green-500' : 'text-red-500'">
+                      <mat-icon class="text-sm align-middle">{{stats.eventGrowthRate >= 0 ? 'arrow_upward' : 'arrow_downward'}}</mat-icon>
+                      <span class="ml-1">{{stats.eventGrowthRate}}% growth</span>
                     </p>
                   </div>
-                  <mat-icon class="text-primary-500">event</mat-icon>
+                  <div class="icon-container">
+                    <mat-icon class="text-primary-500 text-4xl">event</mat-icon>
+                  </div>
                 </div>
               </mat-card-content>
             </mat-card>
 
             <!-- Volunteer Hours -->
-            <mat-card>
-              <mat-card-content class="p-4">
+            <mat-card class="dashboard-card hover:shadow-lg transition-shadow duration-300">
+              <mat-card-content class="p-6">
                 <div class="flex items-center justify-between">
                   <div>
-                    <p class="text-gray-600">Volunteer Hours</p>
-                    <h2 class="text-2xl font-bold">{{stats.totalVolunteerHours}}</h2>
-                    <p class="text-sm text-green-500">
-                      <mat-icon class="text-sm">arrow_upward</mat-icon>
-                      {{stats.volunteerHoursGrowthRate}}% growth
+                    <p class="text-gray-600 text-sm uppercase tracking-wide">Volunteer Hours</p>
+                    <h2 class="text-3xl font-bold mt-2">{{stats.totalVolunteerHours}}</h2>
+                    <p class="text-sm mt-2" [ngClass]="stats.volunteerHoursGrowthRate >= 0 ? 'text-green-500' : 'text-red-500'">
+                      <mat-icon class="text-sm align-middle">{{stats.volunteerHoursGrowthRate >= 0 ? 'arrow_upward' : 'arrow_downward'}}</mat-icon>
+                      <span class="ml-1">{{stats.volunteerHoursGrowthRate}}% growth</span>
                     </p>
                   </div>
-                  <mat-icon class="text-primary-500">schedule</mat-icon>
+                  <div class="icon-container">
+                    <mat-icon class="text-primary-500 text-4xl">schedule</mat-icon>
+                  </div>
                 </div>
               </mat-card-content>
             </mat-card>
           </div>
 
           <!-- Charts Section -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <!-- User Growth Chart -->
-            <mat-card>
-              <mat-card-header>
-                <mat-card-title>User Growth</mat-card-title>
+            <mat-card class="chart-card">
+              <mat-card-header class="border-b border-gray-200 p-6">
+                <mat-card-title class="text-xl font-semibold">User Growth</mat-card-title>
               </mat-card-header>
-              <mat-card-content class="p-4">
+              <mat-card-content class="p-6">
                 <ngx-charts-line-chart
                   [results]="userGrowthData"
                   [xAxis]="true"
@@ -189,11 +200,11 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
             </mat-card>
 
             <!-- Event Distribution Chart -->
-            <mat-card>
-              <mat-card-header>
-                <mat-card-title>Event Distribution</mat-card-title>
+            <mat-card class="chart-card">
+              <mat-card-header class="border-b border-gray-200 p-6">
+                <mat-card-title class="text-xl font-semibold">Event Distribution</mat-card-title>
               </mat-card-header>
-              <mat-card-content class="p-4">
+              <mat-card-content class="p-6">
                 <ngx-charts-pie-chart
                   [results]="eventDistributionData"
                   [labels]="true"
@@ -442,113 +453,126 @@ import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
   `,
   styles: [`
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
-    .ml-auto {
-      margin-left: auto;
+    .header {
+      position: relative;
     }
 
-    .mt-4 {
-      margin-top: 1rem;
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 60px;
+      height: 4px;
+      background: #2196f3;
+      border-radius: 2px;
     }
 
-    .mb-6 {
-      margin-bottom: 1.5rem;
+    .reports-tabs {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    .grid {
-      display: grid;
+    .dashboard-card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      overflow: hidden;
     }
 
-    .grid-cols-1 {
-      grid-template-columns: repeat(1, minmax(0, 1fr));
+    .chart-card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      height: 400px;
     }
 
-    .md\:grid-cols-2 {
-      @media (min-width: 768px) {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    .lg\:grid-cols-4 {
-      @media (min-width: 1024px) {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-    }
-
-    .gap-4 {
-      gap: 1rem;
-    }
-
-    .flex {
+    .icon-container {
+      background: rgba(33, 150, 243, 0.1);
+      padding: 16px;
+      border-radius: 50%;
       display: flex;
-    }
-
-    .items-center {
       align-items: center;
-    }
-
-    .justify-between {
-      justify-content: space-between;
-    }
-
-    .text-gray-600 {
-      color: #4B5563;
-    }
-
-    .text-2xl {
-      font-size: 1.5rem;
-      line-height: 2rem;
-    }
-
-    .font-bold {
-      font-weight: 700;
-    }
-
-    .text-sm {
-      font-size: 0.875rem;
-      line-height: 1.25rem;
-    }
-
-    .text-green-500 {
-      color: #10B981;
-    }
-
-    .text-primary-500 {
-      color: #3B82F6;
-    }
-
-    .text-yellow-500 {
-      color: #F59E0B;
-    }
-
-    .ml-2 {
-      margin-left: 0.5rem;
-    }
-
-    mat-card {
-      border-radius: 8px;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      justify-content: center;
     }
 
     mat-card-header {
-      padding: 1rem;
-      border-bottom: 1px solid #E5E7EB;
+      background: #fafafa;
     }
 
-    mat-card-content {
-      padding: 1rem;
+    .mat-mdc-tab-group {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .mat-mdc-tab {
+      min-width: 120px;
+    }
+
+    .align-middle {
+      vertical-align: middle;
+    }
+
+    .transition-shadow {
+      transition: box-shadow 0.3s ease-in-out;
+    }
+
+    .hover\\:shadow-lg:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
     table {
       width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th.mat-header-cell {
+      background: #fafafa;
+      padding: 16px;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    td.mat-cell {
+      padding: 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    tr.mat-row:hover {
+      background: #f9fafb;
     }
 
     .mat-column-actions {
-      width: 80px;
-      text-align: center;
+      width: 100px;
+      text-align: right;
+    }
+
+    mat-form-field {
+      width: 100%;
+    }
+
+    .mat-mdc-card-content {
+      padding: 0;
+    }
+
+    .mat-mdc-progress-bar {
+      border-radius: 4px;
+    }
+
+    .text-primary-500 {
+      color: #2196f3;
+    }
+
+    .tracking-wide {
+      letter-spacing: 0.025em;
     }
   `]
 })
@@ -614,17 +638,70 @@ export class ReportsComponent implements OnInit {
 
   loadStatistics(): void {
     this.loading = true;
+    console.log('Loading statistics...');
     this.reportService.getOverviewStatistics().subscribe({
       next: (stats) => {
-        this.stats = stats;
+        console.log('Received statistics:', stats);
+        if (!stats) {
+          console.error('Received null or undefined statistics');
+          this.snackBar.open('Error: Received invalid statistics data', 'Close', { duration: 3000 });
+          this.loading = false;
+          return;
+        }
+
+        try {
+          console.log('Processing statistics data...');
+          this.stats = {
+            totalUsers: this.getValueOrDefault(stats.totalUsers, 0, 'totalUsers'),
+            userGrowthRate: this.getValueOrDefault(stats.userGrowthRate, 0, 'userGrowthRate'),
+            activeOrganizations: this.getValueOrDefault(stats.activeOrganizations, 0, 'activeOrganizations'),
+            organizationGrowthRate: this.getValueOrDefault(stats.organizationGrowthRate, 0, 'organizationGrowthRate'),
+            totalEvents: this.getValueOrDefault(stats.totalEvents, 0, 'totalEvents'),
+            eventGrowthRate: this.getValueOrDefault(stats.eventGrowthRate, 0, 'eventGrowthRate'),
+            totalVolunteerHours: this.getValueOrDefault(stats.totalVolunteerHours, 0, 'totalVolunteerHours'),
+            volunteerHoursGrowthRate: this.getValueOrDefault(stats.volunteerHoursGrowthRate, 0, 'volunteerHoursGrowthRate')
+          };
+          console.log('Successfully updated stats object:', this.stats);
+        } catch (error) {
+          console.error('Error processing statistics data:', error);
+          this.snackBar.open('Error processing statistics data', 'Close', { duration: 3000 });
+        }
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading statistics:', error);
-        this.snackBar.open('Error loading statistics', 'Close', { duration: 3000 });
+        let errorMessage = 'An error occurred while loading statistics';
+        
+        if (error.status === 404) {
+          errorMessage = 'Statistics data not found';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied to statistics data';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error while loading statistics';
+        }
+        
+        console.log('Showing error message:', errorMessage);
+        this.snackBar.open(errorMessage, 'Close', { duration: 3000 });
         this.loading = false;
       }
     });
+  }
+
+  private getValueOrDefault(value: any, defaultValue: number, fieldName: string): number {
+    if (value === null || value === undefined) {
+      console.warn(`${fieldName} is ${value}, using default value: ${defaultValue}`);
+      return defaultValue;
+    }
+    if (typeof value !== 'number') {
+      console.warn(`${fieldName} is not a number (${typeof value}), attempting to convert...`);
+      const converted = Number(value);
+      if (isNaN(converted)) {
+        console.warn(`Could not convert ${fieldName} to number, using default value: ${defaultValue}`);
+        return defaultValue;
+      }
+      return converted;
+    }
+    return value;
   }
 
   loadUserActivity(): void {
@@ -753,24 +830,55 @@ export class ReportsComponent implements OnInit {
   }
 
   generateReport(): void {
-    if (this.loading) return;
+    if (!this.reportForm.valid) {
+      console.error('Report form is invalid:', this.reportForm.errors);
+      this.snackBar.open('Please fill in all required fields', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const formValue = this.reportForm.value;
+    console.log('Generating report with form values:', formValue);
 
     this.loading = true;
-    const formValue = this.reportForm.value;
-
     this.reportService.generateReport(
       formValue.reportType,
       formValue.startDate,
       formValue.endDate
     ).subscribe({
       next: (response) => {
-        this.downloadFile(response.fileUrl, response.fileName);
+        console.log('Report generation response:', response);
+        if (!response || !response.fileUrl) {
+          console.error('Invalid report response:', response);
+          this.snackBar.open('Error: Invalid report response from server', 'Close', { duration: 3000 });
+          return;
+        }
+
+        // Download the report
+        this.downloadFile(response.fileUrl, response.fileName || `report.${formValue.format.toLowerCase()}`);
+        this.snackBar.open('Report generated successfully', 'Close', { duration: 3000 });
+        
+        // Refresh report history
         this.loadReportHistory();
-        this.loading = false;
       },
       error: (error) => {
         console.error('Error generating report:', error);
-        this.snackBar.open('Error generating report', 'Close', { duration: 3000 });
+        let errorMessage = 'Error generating report: ';
+        
+        if (error.status === 400) {
+          errorMessage += 'Invalid request parameters';
+        } else if (error.status === 403) {
+          errorMessage += 'Access denied';
+        } else if (error.status === 404) {
+          errorMessage += 'Report type not found';
+        } else if (error.status === 500) {
+          errorMessage += 'Server error';
+        } else {
+          errorMessage += error.message || 'Unknown error';
+        }
+        
+        this.snackBar.open(errorMessage, 'Close', { duration: 3000 });
+      },
+      complete: () => {
         this.loading = false;
       }
     });

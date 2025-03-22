@@ -1,0 +1,340 @@
+<!-- Organization Profile Template -->
+<div class="container mx-auto p-4">
+  <!-- Loading Spinner -->
+  @if (loading) {
+    <div class="flex justify-center items-center h-64">
+      <mat-spinner></mat-spinner>
+    </div>
+  } @else {
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Header Section with Profile Image -->
+      <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          <!-- Profile Image Section -->
+          <div class="flex flex-col items-center space-y-4 w-full">
+            <div class="profile-image-container w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48">
+              <input 
+                #fileInput 
+                type="file" 
+                accept="image/jpeg,image/png" 
+                class="hidden" 
+                (change)="onFileSelected($event)">
+              <div 
+                class="relative w-full h-full rounded-full overflow-hidden bg-gray-100 cursor-pointer hover:opacity-90"
+                (click)="fileInput.click()">
+                @if (organization?.profilePicture) {
+                  <img 
+                    [src]="getProfilePictureUrl(organization!.profilePicture)" 
+                    alt="Organization Profile" 
+                    class="w-full h-full object-cover"
+                    (error)="onImageError($event)">
+                  <div class="overlay">
+                    <mat-icon class="text-white text-2xl sm:text-3xl md:text-4xl">edit</mat-icon>
+                  </div>
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center bg-gray-200">
+                    <div class="flex flex-col items-center p-2 text-center">
+                      <mat-icon class="text-4xl sm:text-5xl md:text-6xl text-gray-400">business</mat-icon>
+                      <span class="text-xs sm:text-sm text-gray-500 mt-2">Click to upload image</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+            <!-- User Info -->
+            @if (currentUser) {
+              <div class="text-center mt-4">
+                <p class="text-sm text-gray-600">Managed by</p>
+                <p class="font-medium">{{currentUser.firstName}} {{currentUser.lastName}}</p>
+                <p class="text-sm text-gray-500">{{currentUser.email}}</p>
+              </div>
+            }
+          </div>
+
+          <!-- Basic Info Section -->
+          <div class="md:col-span-2 space-y-4">
+            <mat-form-field class="w-full">
+              <mat-label>Organization Name</mat-label>
+              <input matInput formControlName="name">
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="3"></textarea>
+            </mat-form-field>
+
+            <!-- Focus Areas -->
+            <div class="space-y-2">
+              <label class="text-gray-700 font-medium">Focus Areas</label>
+              <div class="flex flex-col gap-4">
+                <mat-form-field class="w-full">
+                  <mat-label>Select Focus Area</mat-label>
+                  <mat-select [(ngModel)]="selectedFocusArea" [ngModelOptions]="{standalone: true}">
+                    @for (area of focusAreaOptions; track area) {
+                      <mat-option [value]="area" [disabled]="focusAreas.includes(area)">
+                        {{area}}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <div class="flex flex-wrap gap-2">
+                  @for (area of focusAreas; track area) {
+                    <mat-chip-option
+                      [selected]="true"
+                      [removable]="true"
+                      (removed)="removeFocusArea(area)">
+                      {{area}}
+                      <mat-icon matChipRemove>cancel</mat-icon>
+                    </mat-chip-option>
+                  }
+                </div>
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  type="button"
+                  [disabled]="!selectedFocusArea"
+                  (click)="addFocusArea()">
+                  Add Focus Area
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Information -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Contact Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Phone Number</mat-label>
+            <input matInput formControlName="phoneNumber" placeholder="+1234567890">
+            <mat-error *ngIf="profileForm.get('phoneNumber')?.errors?.['pattern']">
+              Please enter a valid phone number
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" type="email">
+            <mat-hint>Email is managed through your account settings</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Website</mat-label>
+            <input matInput formControlName="website" placeholder="https://www.example.com">
+            <mat-error *ngIf="profileForm.get('website')?.errors?.['pattern']">
+              Please enter a valid website URL
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Location Section -->
+          <div class="md:col-span-2">
+            <h3 class="text-lg font-medium mb-4">Location</h3>
+            
+            <!-- Map Component -->
+            <div class="map-section">
+              <app-map
+                [coordinates]="getCoordinates()"
+                [zoom]="12"
+                [selectable]="true"
+                (locationSelected)="onLocationSelected($event)">
+              </app-map>
+            </div>
+
+            <!-- Full Address with Geocoding -->
+            <mat-form-field class="w-full">
+              <mat-label>Full Address</mat-label>
+              <input matInput formControlName="fullAddress" 
+                     placeholder="Enter your full address"
+                     (blur)="updateCoordinatesFromAddress(profileForm.get('fullAddress')?.value)">
+              <button mat-icon-button matSuffix
+                      type="button"
+                      (click)="getCurrentLocation()"
+                      matTooltip="Get Current Location">
+                <mat-icon>my_location</mat-icon>
+              </button>
+            </mat-form-field>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field class="w-full">
+                <mat-label>Street Address</mat-label>
+                <input matInput formControlName="address">
+              </mat-form-field>
+
+              <mat-form-field class="w-full">
+                <mat-label>City</mat-label>
+                <input matInput formControlName="city">
+              </mat-form-field>
+
+              <mat-form-field class="w-full">
+                <mat-label>Province/State</mat-label>
+                <input matInput formControlName="province">
+              </mat-form-field>
+
+              <mat-form-field class="w-full">
+                <mat-label>Country</mat-label>
+                <input matInput formControlName="country">
+              </mat-form-field>
+
+              <mat-form-field class="w-full">
+                <mat-label>Postal Code</mat-label>
+                <input matInput formControlName="postalCode">
+              </mat-form-field>
+            </div>
+
+            <!-- Hidden Coordinates Fields -->
+            <div class="hidden">
+              <input formControlName="coordinates">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Organization Details -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Organization Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Organization Type</mat-label>
+            <mat-select formControlName="type" required>
+              @for (type of organizationTypes; track type) {
+                <mat-option [value]="type">{{type}}</mat-option>
+              }
+            </mat-select>
+            <mat-error *ngIf="profileForm.get('type')?.errors?.['required']">
+              Organization type is required
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category" required>
+              @for (category of organizationCategories; track category) {
+                <mat-option [value]="category">{{category}}</mat-option>
+              }
+            </mat-select>
+            <mat-error *ngIf="profileForm.get('category')?.errors?.['required']">
+              Category is required
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Size</mat-label>
+            <mat-select formControlName="size">
+              @for (size of organizationSizes; track size) {
+                <mat-option [value]="size">{{size}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Founded Year</mat-label>
+            <input matInput type="number" formControlName="foundedYear">
+            <mat-error *ngIf="profileForm.get('foundedYear')?.errors?.['min']">
+              Year must be after 1800
+            </mat-error>
+            <mat-error *ngIf="profileForm.get('foundedYear')?.errors?.['max']">
+              Year cannot be in the future
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>Registration Number</mat-label>
+            <input matInput formControlName="registrationNumber" required>
+            <mat-error *ngIf="profileForm.get('registrationNumber')?.errors?.['required']">
+              Registration number is required
+            </mat-error>
+            <mat-error *ngIf="profileForm.get('registrationNumber')?.errors?.['pattern']">
+              Registration number must be 5-20 characters, containing only uppercase letters, numbers, and hyphens
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Documents Section -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Documents</h2>
+        <div class="space-y-4">
+          <!-- Document Upload -->
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
+            <input
+              #documentInput
+              type="file"
+              class="hidden"
+              accept="application/pdf,image/*"
+              (change)="onDocumentSelected($event)">
+            <div class="cursor-pointer" (click)="documentInput.click()">
+              <mat-icon class="text-4xl text-gray-400 mb-2">cloud_upload</mat-icon>
+              <p class="text-sm text-gray-600 mb-1">Drag and drop documents here or click to browse</p>
+              <p class="text-xs text-gray-500">Supported formats: PDF, Images. Max size: 10MB</p>
+            </div>
+          </div>
+
+          <!-- Document List -->
+          @if (documents.length > 0) {
+            <div class="mt-4">
+              <h3 class="text-lg font-medium mb-2">Uploaded Documents</h3>
+              <div class="grid gap-4 sm:grid-cols-2">
+                @for (doc of documents; track doc.id) {
+                  <div class="bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <mat-icon [class]="getDocumentIconClass(doc.type)">
+                        {{getDocumentIcon(doc.type)}}
+                      </mat-icon>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">{{doc.name}}</p>
+                        <p class="text-xs text-gray-500">{{doc.uploadedAt | date}}</p>
+                      </div>
+                    </div>
+                    <div class="flex space-x-2">
+                      <button mat-icon-button color="primary" (click)="downloadDocument(doc.url)"
+                              matTooltip="Download">
+                        <mat-icon>download</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="deleteDocument(doc)"
+                              matTooltip="Delete">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="text-center text-gray-500 mt-4">
+              <p>No documents uploaded yet</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-between items-center">
+        <button 
+          type="button" 
+          mat-raised-button 
+          color="warn" 
+          (click)="confirmDelete()">
+          Delete Organization
+        </button>
+        
+        <div class="space-x-4">
+          <button 
+            type="button" 
+            mat-button 
+            (click)="resetForm()">
+            Reset
+          </button>
+          <button 
+            type="submit" 
+            mat-raised-button 
+            color="primary" 
+            [disabled]="loading">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </form>
+  }
+</div> 

@@ -1,27 +1,26 @@
 package com.fill_rouge.backend.service.volunteer;
 
-import com.fill_rouge.backend.domain.VolunteerProfile;
-import com.fill_rouge.backend.domain.Skill;
-import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
-import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
-import com.fill_rouge.backend.repository.VolunteerProfileRepository;
-import com.fill_rouge.backend.exception.ResourceNotFoundException;
-import com.fill_rouge.backend.exception.ValidationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.lang.NonNull;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
+
+import com.fill_rouge.backend.domain.Skill;
+import com.fill_rouge.backend.domain.VolunteerProfile;
+import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
+import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
+import com.fill_rouge.backend.exception.ResourceNotFoundException;
+import com.fill_rouge.backend.exception.ValidationException;
+import com.fill_rouge.backend.repository.VolunteerProfileRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -182,8 +181,13 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         profile.setAddress(request.getAddress());
         profile.setCity(request.getCity());
         profile.setCountry(request.getCountry());
-        profile.setEmergencyContact(request.getEmergencyContact());
-        profile.setEmergencyPhone(request.getEmergencyPhone());
+        
+        // Create and set emergency contact
+        VolunteerProfile.EmergencyContact emergencyContact = new VolunteerProfile.EmergencyContact();
+        emergencyContact.setName(request.getEmergencyContact());
+        emergencyContact.setPhone(request.getEmergencyPhone());
+        profile.setEmergencyContact(emergencyContact);
+        
         profile.setPreferredCategories(request.getPreferredCategories());
         profile.setProfilePicture(request.getProfilePicture());
         List<Skill> skills = request.getSkills().stream()
@@ -207,7 +211,7 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
 
     private void updateAverageRating(VolunteerProfile profile, double newRating) {
         double currentTotal = profile.getAverageRating() * (profile.getTotalEventsAttended() - 1);
-        profile.updateRating((currentTotal + newRating) / profile.getTotalEventsAttended());
+        profile.updateRating((int)Math.round((currentTotal + newRating) / profile.getTotalEventsAttended()));
     }
 
     private int calculateReliabilityScore(VolunteerProfile profile) {
@@ -245,15 +249,17 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
             .status(profile.getStatus())
             .totalEventsAttended(profile.getTotalEventsAttended())
             .totalVolunteerHours(profile.getTotalHoursVolunteered())
-            .averageEventRating(profile.getAverageRating())
+            .averageEventRating(profile.getAverageRating() != null ? profile.getAverageRating() : 0.0)
             .skills(profile.getSkills().stream().map(Skill::getName).collect(Collectors.toSet()))
             .interests(profile.getInterests())
             .preferredCauses(profile.getPreferredCategories())
             .city(profile.getCity())
             .country(profile.getCountry())
-            .emergencyContact(profile.getEmergencyContact())
-            .emergencyPhone(profile.getEmergencyPhone())
+            .emergencyContact(profile.getEmergencyContact() != null ? profile.getEmergencyContact().getName() : null)
+            .emergencyPhone(profile.getEmergencyContact() != null ? profile.getEmergencyContact().getPhone() : null)
             .preferredCategories(profile.getPreferredCategories())
+            .maxHoursPerWeek(profile.getMaxHoursPerWeek() != null ? profile.getMaxHoursPerWeek() : 20)
+            .preferredRadius(profile.getPreferredRadius() != null ? profile.getPreferredRadius() : 10)
             .availableDays(profile.getAvailableDays())
             .preferredTimeOfDay(profile.getPreferredTimeOfDay())
             .certifications(profile.getCertifications())
@@ -261,7 +267,8 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
             .backgroundChecked(profile.isBackgroundChecked())
             .backgroundCheckDate(profile.getBackgroundCheckDate())
             .backgroundCheckStatus(profile.getBackgroundCheckStatus())
-            .reliabilityScore(profile.getReliabilityScore())
+            .reliabilityScore(profile.getReliabilityScore() != null ? profile.getReliabilityScore().intValue() : 0)
+            .impactScore(profile.getImpactScore() != null ? profile.getImpactScore().intValue() : 0)
             .availableForEmergency(profile.isAvailableForEmergency())
             .receiveNotifications(profile.isReceiveNotifications())
             .notificationPreferences(profile.getNotificationPreferences())

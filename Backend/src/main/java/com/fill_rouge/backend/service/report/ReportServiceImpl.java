@@ -94,7 +94,7 @@ public class ReportServiceImpl implements ReportService {
                 .averageRating((Double) basicStats.get("averageRating"))
                 .topSkills(profile.getSkills().stream().map(Skill::getName).collect(Collectors.toList()))
                 .eventsByCategory(getEventsByCategory(volunteerId, startDate, endDate))
-                .achievements(profile.getBadges())
+                .achievements(new ArrayList<>(profile.getBadges()))
                 .reportGeneratedAt(LocalDateTime.now())
                 .periodStart(startDate)
                 .periodEnd(endDate)

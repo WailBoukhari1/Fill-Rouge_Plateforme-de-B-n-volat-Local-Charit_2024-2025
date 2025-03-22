@@ -232,7 +232,8 @@ mat-hint:has(text:contains("Required")) {
 }
 
 // Organization and volunteer sections
-.organization-info, .volunteer-info {
+.organization-info,
+.volunteer-info {
   padding: 0.5rem 0 1.5rem;
 }
 
@@ -303,7 +304,9 @@ h3 {
 }
 
 // Contact info and role-specific sections
-.contact-info, .organization-info, .volunteer-info {
+.contact-info,
+.organization-info,
+.volunteer-info {
   padding: 0 1rem;
 }
 
@@ -327,7 +330,8 @@ button[matStepperPrevious] {
   }
 }
 
-button[matStepperNext], button[type="button"][disabled] {
+button[matStepperNext],
+button[type="button"][disabled] {
   background-color: #3f51b5;
   color: white;
 
@@ -417,7 +421,7 @@ button[matStepperNext], button[type="button"][disabled] {
 ::ng-deep {
   .mat-mdc-radio-button {
     width: 100%;
-    
+
     .mdc-radio {
       display: none;
     }
@@ -461,7 +465,7 @@ button[matStepperNext], button[type="button"][disabled] {
 
   .mat-step-label {
     color: #4b5563;
-    
+
     &.mat-step-label-selected {
       color: #111827;
     }
@@ -483,4 +487,199 @@ mat-form-field {
 
 .mat-mdc-radio-group {
   display: grid !important;
+}
+
+.focus-area-checkbox {
+  ::ng-deep .mat-checkbox-layout {
+    width: 100%;
+    white-space: normal;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #6366f1;
+      background-color: #f5f3ff;
+    }
+  }
+
+  ::ng-deep .mat-checkbox-checked .mat-checkbox-layout {
+    background-color: #f5f3ff;
+    border-color: #6366f1;
+  }
+
+  ::ng-deep .mat-checkbox-inner-container {
+    margin-right: 12px;
+  }
+
+  ::ng-deep .mat-checkbox-label {
+    line-height: 1.5;
+  }
+}
+
+.mat-stepper-horizontal {
+  background-color: transparent;
+
+  ::ng-deep .mat-horizontal-stepper-header-container {
+    margin-bottom: 2rem;
+  }
+
+  ::ng-deep .mat-step-header {
+    &.mat-step-header-ripple {
+      background-color: rgba(99, 102, 241, 0.1);
+    }
+
+    .mat-step-icon {
+      background-color: #6366f1;
+    }
+
+    .mat-step-label {
+      color: #4b5563;
+      font-weight: 500;
+    }
+  }
+}
+
+.mat-card {
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.role-card {
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: #6366f1;
+    background-color: #f5f3ff;
+  }
+}
+
+.required-field {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+// Form field styling
+::ng-deep .mat-form-field {
+  width: 100%;
+
+  .mat-form-field-wrapper {
+    padding-bottom: 1.25em;
+  }
+
+  .mat-form-field-outline {
+    color: #e5e7eb;
+  }
+
+  &.mat-focused .mat-form-field-outline {
+    color: #6366f1;
+  }
+
+  .mat-form-field-label {
+    color: #6b7280;
+  }
+
+  &.mat-form-field-invalid {
+    .mat-form-field-outline {
+      color: #ef4444;
+    }
+  }
+}
+
+// Progress bar styling
+::ng-deep .mat-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+
+  .mat-progress-bar-fill::after {
+    background-color: #6366f1;
+  }
+
+  .mat-progress-bar-buffer {
+    background-color: #e5e7eb;
+  }
+}
+
+// Snackbar styling
+::ng-deep .success-snackbar {
+  background: #10b981;
+  color: white;
+}
+
+::ng-deep .error-snackbar {
+  background: #ef4444;
+  color: white;
+}
+
+::ng-deep .warning-snackbar {
+  background: #f59e0b;
+  color: white;
+}
+
+::ng-deep .info-snackbar {
+  background: #6366f1;
+  color: white;
+}
+
+/* Focus Areas Styles */
+.focus-area-item {
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    border-color: #6366f1;
+    background-color: #eef2ff;
+  }
+  
+  &.selected {
+    border-color: #6366f1;
+    background-color: #eef2ff;
+    
+    .mat-icon {
+      color: #6366f1;
+    }
+  }
+}
+
+.required-field {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+/* Form Field Styles */
+.form-field {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Error Message Styles */
+.error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Responsive Grid */
+@media (min-width: 640px) {
+  .focus-areas-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .focus-areas-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

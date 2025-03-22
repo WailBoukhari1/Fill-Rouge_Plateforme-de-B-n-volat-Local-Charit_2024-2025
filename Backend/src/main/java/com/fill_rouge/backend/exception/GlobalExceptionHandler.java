@@ -1,6 +1,7 @@
 package com.fill_rouge.backend.exception;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -85,13 +85,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> validationErrors = ex.getBindingResult()
-            .getFieldErrors()
-            .stream()
-            .collect(Collectors.toMap(
-                FieldError::getField,
-                error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value"
-            ));
+        Map<String, Object> validationErrors = new HashMap<>();
+        
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            String fieldName = error.getField();
+            String errorMessage = error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value";
+            
+            if (validationErrors.containsKey(fieldName)) {
+                // If the field already has an error, append the new error message
+                Object currentValue = validationErrors.get(fieldName);
+                if (currentValue instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<String> messages = (List<String>) currentValue;
+                    messages.add(errorMessage);
+                } else if (currentValue instanceof String) {
+                    List<String> messages = new ArrayList<>();
+                    messages.add((String) currentValue);
+                    messages.add(errorMessage);
+                    validationErrors.put(fieldName, messages);
+                }
+            } else {
+                validationErrors.put(fieldName, errorMessage);
+            }
+        });
 
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());

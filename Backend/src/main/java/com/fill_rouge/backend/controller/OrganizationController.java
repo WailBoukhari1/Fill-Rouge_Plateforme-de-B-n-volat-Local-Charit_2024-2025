@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fill_rouge.backend.constant.ValidationConstants;
 import com.fill_rouge.backend.dto.request.OrganizationRequest;
+import com.fill_rouge.backend.dto.request.DocumentUrlRequest;
 import com.fill_rouge.backend.dto.response.OrganizationResponse;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.service.organization.OrganizationService;
@@ -176,27 +177,27 @@ public class OrganizationController {
 
     @PostMapping("/{organizationId}/documents")
     @PreAuthorize("hasRole('ORGANIZATION')")
-    @Operation(summary = "Add document", description = "Add a document URL to organization profile")
-    @ApiResponse(responseCode = "204", description = "Document added successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid document URL")
+    @Operation(summary = "Add document to organization", description = "Add a document to an organization using the document URL")
+    @ApiResponse(responseCode = "200", description = "Document added successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request")
+    @ApiResponse(responseCode = "404", description = "Organization not found")
     public ResponseEntity<Void> addDocument(
             @PathVariable String organizationId,
-            @RequestParam @Pattern(regexp = ValidationConstants.URL_REGEX, 
-                                 message = "Invalid document URL format") String documentUrl) {
-        organizationService.addDocument(organizationId, documentUrl);
-        return ResponseEntity.noContent().build();
+            @RequestBody DocumentUrlRequest request) {
+        organizationService.addDocument(organizationId, request.getDocumentUrl());
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{organizationId}/documents")
+    @DeleteMapping("/{organizationId}/documents/{documentId}")
     @PreAuthorize("hasRole('ORGANIZATION')")
-    @Operation(summary = "Remove document", description = "Remove a document URL from organization profile")
-    @ApiResponse(responseCode = "204", description = "Document removed successfully")
-    @ApiResponse(responseCode = "404", description = "Document not found")
+    @Operation(summary = "Remove document from organization", description = "Remove a document from an organization")
+    @ApiResponse(responseCode = "200", description = "Document removed successfully")
+    @ApiResponse(responseCode = "404", description = "Organization or document not found")
     public ResponseEntity<Void> removeDocument(
             @PathVariable String organizationId,
-            @RequestParam @NotBlank(message = "Document URL is required") String documentUrl) {
-        organizationService.removeDocument(organizationId, documentUrl);
-        return ResponseEntity.noContent().build();
+            @PathVariable String documentId) {
+        organizationService.removeDocument(organizationId, documentId);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{organizationId}/statistics/update")

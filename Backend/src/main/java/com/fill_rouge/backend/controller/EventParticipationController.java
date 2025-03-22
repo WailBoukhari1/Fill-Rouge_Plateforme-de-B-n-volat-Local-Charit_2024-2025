@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fill_rouge.backend.constant.EventParticipationStatus;
 import com.fill_rouge.backend.domain.EventParticipation;
-import com.fill_rouge.backend.service.EventParticipationService;
+import com.fill_rouge.backend.service.event.EventParticipationService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

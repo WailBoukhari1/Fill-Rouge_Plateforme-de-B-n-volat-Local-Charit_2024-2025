@@ -1,6 +1,7 @@
 package com.fill_rouge.backend.mapper;
 
 import com.fill_rouge.backend.domain.Organization;
+import com.fill_rouge.backend.domain.SocialMediaLinks;
 import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.dto.request.OrganizationRequest;
 import com.fill_rouge.backend.dto.response.OrganizationResponse;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-21T13:23:52+0000",
+    date = "2025-03-21T22:50:23+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -49,7 +50,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organization.province( request.getProvince() );
         organization.registrationNumber( request.getRegistrationNumber() );
         organization.size( request.getSize() );
-        organization.socialMediaLinks( request.getSocialMediaLinks() );
+        organization.socialMediaLinks( socialMediaLinksToSocialMediaLinks( request.getSocialMediaLinks() ) );
         organization.type( request.getType() );
         organization.vision( request.getVision() );
         organization.website( request.getWebsite() );
@@ -102,7 +103,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organizationResponse.rating( organization.getRating() );
         organizationResponse.registrationNumber( organization.getRegistrationNumber() );
         organizationResponse.size( organization.getSize() );
-        organizationResponse.socialMediaLinks( organization.getSocialMediaLinks() );
+        organizationResponse.socialMediaLinks( socialMediaLinksToSocialMediaLinks1( organization.getSocialMediaLinks() ) );
         organizationResponse.totalEventsHosted( organization.getTotalEventsHosted() );
         organizationResponse.totalVolunteerHours( organization.getTotalVolunteerHours() );
         organizationResponse.type( organization.getType() );
@@ -175,7 +176,10 @@ public class OrganizationMapperImpl implements OrganizationMapper {
             organization.setSize( request.getSize() );
         }
         if ( request.getSocialMediaLinks() != null ) {
-            organization.setSocialMediaLinks( request.getSocialMediaLinks() );
+            if ( organization.getSocialMediaLinks() == null ) {
+                organization.setSocialMediaLinks( new Organization.SocialMediaLinks() );
+            }
+            socialMediaLinksToSocialMediaLinks2( request.getSocialMediaLinks(), organization.getSocialMediaLinks() );
         }
         if ( request.getType() != null ) {
             organization.setType( request.getType() );
@@ -219,6 +223,21 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         return set;
     }
 
+    protected Organization.SocialMediaLinks socialMediaLinksToSocialMediaLinks(SocialMediaLinks socialMediaLinks) {
+        if ( socialMediaLinks == null ) {
+            return null;
+        }
+
+        Organization.SocialMediaLinks socialMediaLinks1 = new Organization.SocialMediaLinks();
+
+        socialMediaLinks1.setFacebook( socialMediaLinks.getFacebook() );
+        socialMediaLinks1.setInstagram( socialMediaLinks.getInstagram() );
+        socialMediaLinks1.setLinkedin( socialMediaLinks.getLinkedin() );
+        socialMediaLinks1.setTwitter( socialMediaLinks.getTwitter() );
+
+        return socialMediaLinks1;
+    }
+
     private String organizationUserId(Organization organization) {
         if ( organization == null ) {
             return null;
@@ -232,5 +251,39 @@ public class OrganizationMapperImpl implements OrganizationMapper {
             return null;
         }
         return id;
+    }
+
+    protected SocialMediaLinks socialMediaLinksToSocialMediaLinks1(Organization.SocialMediaLinks socialMediaLinks) {
+        if ( socialMediaLinks == null ) {
+            return null;
+        }
+
+        SocialMediaLinks.SocialMediaLinksBuilder socialMediaLinks1 = SocialMediaLinks.builder();
+
+        socialMediaLinks1.facebook( socialMediaLinks.getFacebook() );
+        socialMediaLinks1.instagram( socialMediaLinks.getInstagram() );
+        socialMediaLinks1.linkedin( socialMediaLinks.getLinkedin() );
+        socialMediaLinks1.twitter( socialMediaLinks.getTwitter() );
+
+        return socialMediaLinks1.build();
+    }
+
+    protected void socialMediaLinksToSocialMediaLinks2(SocialMediaLinks socialMediaLinks, Organization.SocialMediaLinks mappingTarget) {
+        if ( socialMediaLinks == null ) {
+            return;
+        }
+
+        if ( socialMediaLinks.getFacebook() != null ) {
+            mappingTarget.setFacebook( socialMediaLinks.getFacebook() );
+        }
+        if ( socialMediaLinks.getInstagram() != null ) {
+            mappingTarget.setInstagram( socialMediaLinks.getInstagram() );
+        }
+        if ( socialMediaLinks.getLinkedin() != null ) {
+            mappingTarget.setLinkedin( socialMediaLinks.getLinkedin() );
+        }
+        if ( socialMediaLinks.getTwitter() != null ) {
+            mappingTarget.setTwitter( socialMediaLinks.getTwitter() );
+        }
     }
 }

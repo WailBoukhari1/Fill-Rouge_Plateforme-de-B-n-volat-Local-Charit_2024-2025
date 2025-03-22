@@ -155,7 +155,8 @@ public class OrganizationResponse {
             .postalCode(organization.getPostalCode())
             .coordinates(organization.getCoordinates())
             .focusAreas(organization.getFocusAreas())
-            .socialMediaLinks(organization.getSocialMediaLinks())
+            .socialMediaLinks(organization.getSocialMediaLinks() != null ? 
+                createSocialMediaLinks(organization.getSocialMediaLinks()) : new SocialMediaLinks())
             .verified(organization.isVerified())
             .verificationDate(organization.getVerificationDate())
             .registrationNumber(organization.getRegistrationNumber())
@@ -176,5 +177,14 @@ public class OrganizationResponse {
             .logo(organization.getLogo())
             .profilePicture(organization.getProfilePicture())
             .build();
+    }
+
+    private static SocialMediaLinks createSocialMediaLinks(Organization.SocialMediaLinks source) {
+        SocialMediaLinks links = new SocialMediaLinks();
+        links.setFacebook(source.getFacebook());
+        links.setTwitter(source.getTwitter());
+        links.setInstagram(source.getInstagram());
+        links.setLinkedin(source.getLinkedin());
+        return links;
     }
 }

@@ -347,15 +347,9 @@
               <ng-template matStepLabel>Additional Information</ng-template>
               <div [formGroup]="roleSpecificFormGroup">
                 <!-- Organization Form -->
-                <div
-                  *ngIf="isOrganization()"
-                  formGroupName="organization"
-                  class="space-y-4 sm:space-y-6"
-                >
+                <div *ngIf="isOrganization()" formGroupName="organization" class="space-y-4 sm:space-y-6">
                   <div class="text-center">
-                    <h2
-                      class="text-xl sm:text-2xl font-semibold text-gray-900 mb-2"
-                    >
+                    <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">
                       Organization Details
                     </h2>
                     <p class="text-sm sm:text-base text-gray-600">
@@ -363,217 +357,69 @@
                     </p>
                   </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <!-- Organization form fields with responsive classes -->
-                    <mat-form-field class="w-full">
-                      <mat-label>Organization Type</mat-label>
-                      <mat-select formControlName="type" required>
-                        <mat-option value="NGO"
-                          >Non-Governmental Organization (NGO)</mat-option
-                        >
-                        <mat-option value="NONPROFIT"
-                          >Non-Profit Organization</mat-option
-                        >
-                        <mat-option value="CHARITY"
-                          >Charitable Organization</mat-option
-                        >
-                        <mat-option value="FOUNDATION">Foundation</mat-option>
-                        <mat-option value="OTHER">Other</mat-option>
-                      </mat-select>
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.type')
-                            ?.hasError('required')
-                        "
-                      >
-                        Organization type is required
-                      </mat-error>
-                    </mat-form-field>
+                  <!-- Organization Type -->
+                  <mat-form-field class="w-full">
+                    <mat-label>Organization Type <span class="required-field">*</span></mat-label>
+                    <mat-select formControlName="type" required>
+                      <mat-option *ngFor="let type of organizationTypes" [value]="type">
+                        {{type | titlecase}}
+                      </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="roleSpecificFormGroup.get('organization.type')?.hasError('required')">
+                      Organization type is required
+                    </mat-error>
+                  </mat-form-field>
 
-                    <!-- Add responsive classes to other organization form fields -->
-                    <mat-form-field class="w-full">
-                      <mat-label>Organization Name</mat-label>
-                      <input matInput formControlName="name" required />
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.name')
-                            ?.hasError('required')
-                        "
-                      >
-                        Organization name is required
-                      </mat-error>
-                    </mat-form-field>
+                  <!-- Organization Name -->
+                  <mat-form-field class="w-full">
+                    <mat-label>Organization Name <span class="required-field">*</span></mat-label>
+                    <input matInput formControlName="name" required>
+                    <mat-error *ngIf="roleSpecificFormGroup.get('organization.name')?.hasError('required')">
+                      Organization name is required
+                    </mat-error>
+                  </mat-form-field>
 
-                    <!-- Description field with responsive textarea -->
-                    <mat-form-field class="w-full sm:col-span-2">
-                      <mat-label>Description</mat-label>
-                      <textarea
-                        matInput
-                        formControlName="description"
-                        rows="4"
-                        required
-                        class="min-h-[100px] sm:min-h-[120px]"
-                      ></textarea>
-                      <mat-hint align="end">
-                        {{
-                          roleSpecificFormGroup.get("organization.description")
-                            ?.value?.length || 0
-                        }}/2000
-                      </mat-hint>
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.description')
-                            ?.hasError('required')
-                        "
-                      >
-                        Description is required
-                      </mat-error>
-                    </mat-form-field>
+                  <!-- Description -->
+                  <mat-form-field class="w-full">
+                    <mat-label>Description <span class="required-field">*</span></mat-label>
+                    <textarea matInput formControlName="description" rows="4" required></textarea>
+                    <mat-error *ngIf="roleSpecificFormGroup.get('organization.description')?.hasError('required')">
+                      Description is required
+                    </mat-error>
+                  </mat-form-field>
 
-                    <!-- Mission Statement with responsive textarea -->
-                    <mat-form-field class="w-full sm:col-span-2">
-                      <mat-label>Mission Statement</mat-label>
-                      <textarea
-                        matInput
-                        formControlName="missionStatement"
-                        rows="3"
-                        required
-                        class="min-h-[80px] sm:min-h-[100px]"
-                      ></textarea>
-                      <mat-hint align="end">
-                        {{
-                          roleSpecificFormGroup.get(
-                            "organization.missionStatement"
-                          )?.value?.length || 0
-                        }}/1000
-                      </mat-hint>
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.missionStatement')
-                            ?.hasError('required')
-                        "
-                      >
-                        Mission statement is required
-                      </mat-error>
-                    </mat-form-field>
+                  <!-- Mission Statement -->
+                  <mat-form-field class="w-full">
+                    <mat-label>Mission Statement <span class="required-field">*</span></mat-label>
+                    <textarea matInput formControlName="missionStatement" rows="3" required></textarea>
+                    <mat-error *ngIf="roleSpecificFormGroup.get('organization.missionStatement')?.hasError('required')">
+                      Mission statement is required
+                    </mat-error>
+                  </mat-form-field>
 
-                    <!-- Vision with responsive textarea -->
-                    <mat-form-field class="w-full sm:col-span-2">
-                      <mat-label>Vision (Optional)</mat-label>
-                      <textarea
-                        matInput
-                        formControlName="vision"
-                        rows="3"
-                        class="min-h-[80px] sm:min-h-[100px]"
-                      ></textarea>
-                      <mat-hint align="end">
-                        {{
-                          roleSpecificFormGroup.get("organization.vision")
-                            ?.value?.length || 0
-                        }}/1000
-                      </mat-hint>
-                    </mat-form-field>
-
-                    <!-- Website and Registration fields -->
-                    <mat-form-field class="w-full">
-                      <mat-label>Website (Optional)</mat-label>
-                      <input matInput formControlName="website" type="url" />
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.website')
-                            ?.hasError('pattern')
-                        "
-                      >
-                        Please enter a valid website URL
-                      </mat-error>
-                    </mat-form-field>
-
-                    <mat-form-field class="w-full">
-                      <mat-label>Registration Number (Optional)</mat-label>
-                      <input matInput formControlName="registrationNumber" />
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.registrationNumber')
-                            ?.hasError('pattern')
-                        "
-                      >
-                        Please enter a valid registration number
-                      </mat-error>
-                    </mat-form-field>
-
-                    <!-- Tax ID and Founded Year -->
-                    <mat-form-field class="w-full">
-                      <mat-label>Tax ID (Optional)</mat-label>
-                      <input matInput formControlName="taxId" />
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.taxId')
-                            ?.hasError('pattern')
-                        "
-                      >
-                        Please enter a valid tax ID
-                      </mat-error>
-                    </mat-form-field>
-
-                    <mat-form-field class="w-full">
-                      <mat-label>Founded Year (Optional)</mat-label>
-                      <input
-                        matInput
-                        formControlName="foundedYear"
-                        type="number"
-                      />
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.foundedYear')
-                            ?.hasError('min')
-                        "
-                      >
-                        Year must be 1800 or later
-                      </mat-error>
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.foundedYear')
-                            ?.hasError('max')
-                        "
-                      >
-                        Year cannot be in the future
-                      </mat-error>
-                    </mat-form-field>
-
-                    <!-- Focus Areas with responsive select -->
-                    <mat-form-field class="w-full sm:col-span-2">
-                      <mat-label>Focus Areas</mat-label>
-                      <mat-select
-                        formControlName="focusAreas"
-                        multiple
-                        required
-                      >
-                        <mat-option
-                          *ngFor="let area of focusAreaOptions"
-                          [value]="area.value"
-                        >
-                          {{ area.label }}
-                        </mat-option>
-                      </mat-select>
-                      <mat-error
-                        *ngIf="
-                          roleSpecificFormGroup
-                            .get('organization.focusAreas')
-                            ?.hasError('required')
-                        "
-                      >
-                        Please select at least one focus area
-                      </mat-error>
-                    </mat-form-field>
+                  <!-- Focus Areas -->
+                  <div class="form-field">
+                    <label class="form-label mb-2 block text-sm font-medium text-gray-700">
+                      Focus Areas <span class="required-field text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" [formGroupName]="'organization'">
+                      <div *ngFor="let area of focusAreaOptions" 
+                           (click)="toggleFocusArea(area.value)"
+                           class="focus-area-item p-3 rounded-lg border-2 cursor-pointer transition-all duration-200"
+                           [class.border-indigo-500]="isAreaSelected(area.value)"
+                           [class.bg-indigo-50]="isAreaSelected(area.value)"
+                           [class.border-gray-200]="!isAreaSelected(area.value)">
+                        <div class="flex items-center space-x-2">
+                          <mat-icon class="text-indigo-600" [class.opacity-100]="isAreaSelected(area.value)" [class.opacity-40]="!isAreaSelected(area.value)">
+                            {{isAreaSelected(area.value) ? 'check_circle' : 'radio_button_unchecked'}}
+                          </mat-icon>
+                          <span class="text-sm">{{area.label}}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div *ngIf="showFocusAreasError()" class="mt-2 text-sm text-red-600">
+                      Please select at least one focus area
+                    </div>
                   </div>
 
                   <!-- Social Media Section -->
@@ -868,23 +714,106 @@
                     </mat-form-field>
 
                     <!-- Available for Emergency field -->
-                    <div class="w-full sm:col-span-2">
+                    <div
+                      class="w-full sm:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200"
+                    >
                       <label
-                        class="block text-sm font-medium text-gray-700 mb-2"
+                        class="block text-lg font-medium text-gray-900 mb-4"
                       >
                         Available for Emergency Response
                       </label>
                       <mat-radio-group
                         formControlName="availableForEmergency"
-                        class="flex space-x-4"
+                        class="grid grid-cols-2 gap-4"
                       >
-                        <mat-radio-button value="true">Yes</mat-radio-button>
-                        <mat-radio-button value="false">No</mat-radio-button>
+                        <div
+                          class="relative flex items-center justify-center p-4 rounded-lg cursor-pointer transition-all duration-200"
+                          [class.bg-indigo-50]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value === true
+                          "
+                          [class.border-indigo-500]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value === true
+                          "
+                          [class.border-2]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value === true
+                          "
+                          [class.border]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value !== true
+                          "
+                          [class.border-gray-200]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value !== true
+                          "
+                        >
+                          <mat-radio-button [value]="true">
+                            <div class="flex items-center space-x-2">
+                              <mat-icon class="text-indigo-600"
+                                >check_circle</mat-icon
+                              >
+                              <span class="text-gray-900 font-medium">Yes</span>
+                            </div>
+                          </mat-radio-button>
+                        </div>
+                        <div
+                          class="relative flex items-center justify-center p-4 rounded-lg cursor-pointer transition-all duration-200"
+                          [class.bg-gray-50]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value === false
+                          "
+                          [class.border-indigo-500]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value === false
+                          "
+                          [class.border-2]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value === false
+                          "
+                          [class.border]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value !== false
+                          "
+                          [class.border-gray-200]="
+                            roleSpecificFormGroup.get(
+                              'volunteer.availableForEmergency'
+                            )?.value !== false
+                          "
+                        >
+                          <mat-radio-button [value]="false">
+                            <div class="flex items-center space-x-2">
+                              <mat-icon class="text-gray-600">cancel</mat-icon>
+                              <span class="text-gray-900 font-medium">No</span>
+                            </div>
+                          </mat-radio-button>
+                        </div>
                       </mat-radio-group>
+                      <p class="mt-2 text-sm text-gray-600">
+                        Select 'Yes' if you're willing to be contacted for
+                        emergency volunteer opportunities
+                      </p>
                     </div>
 
                     <!-- Emergency Contact Section -->
-                    <div class="w-full sm:col-span-2 mt-4 sm:mt-6">
+                    <div
+                      *ngIf="
+                        roleSpecificFormGroup.get(
+                          'volunteer.availableForEmergency'
+                        )?.value
+                      "
+                      class="w-full sm:col-span-2 mt-4 sm:mt-6"
+                    >
                       <h3 class="text-lg font-medium text-gray-900 mb-4">
                         Emergency Contact
                       </h3>
@@ -992,3 +921,48 @@
     </mat-card>
   </div>
 </div>
+
+<style>
+.focus-areas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.focus-area-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.focus-area-item:hover {
+  border-color: #6366f1;
+  background-color: #f8fafc;
+}
+
+.focus-area-item.selected {
+  border-color: #6366f1;
+  background-color: #eef2ff;
+}
+
+.area-icon {
+  margin-right: 0.5rem;
+  color: #6366f1;
+}
+
+.area-label {
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+</style>

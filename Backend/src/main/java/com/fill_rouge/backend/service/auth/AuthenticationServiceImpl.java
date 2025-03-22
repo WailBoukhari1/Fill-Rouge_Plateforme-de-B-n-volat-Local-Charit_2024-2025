@@ -2,9 +2,9 @@ package com.fill_rouge.backend.service.auth;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fill_rouge.backend.config.security.JwtService;
 import com.fill_rouge.backend.constant.Role;
 import com.fill_rouge.backend.domain.Organization;
-import com.fill_rouge.backend.domain.SocialMediaLinks;
+import com.fill_rouge.backend.domain.Skill;
 import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.domain.VolunteerProfile;
-import com.fill_rouge.backend.domain.Skill;
 import com.fill_rouge.backend.dto.request.LoginRequest;
 import com.fill_rouge.backend.dto.request.QuestionnaireRequest;
 import com.fill_rouge.backend.dto.request.RegisterRequest;
@@ -368,6 +366,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             profile.setCountry(request.getCountry());
             
             // Update volunteer-specific fields
+            if (request.getEducation() != null) {
+                profile.setEducation(request.getEducation());
+            }
+            if (request.getExperience() != null) {
+                profile.setExperience(request.getExperience());
+            }
+            if (request.getSpecialNeeds() != null) {
+                profile.setSpecialNeeds(request.getSpecialNeeds());
+            }
             if (request.getSkills() != null) {
                 List<Skill> skillsList = new ArrayList<>();
                 for (String skillName : request.getSkills()) {
@@ -378,29 +385,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 profile.setSkills(skillsList);
             }
             if (request.getInterests() != null) {
-                profile.setInterests(request.getInterests());
+                profile.setInterests(new HashSet<>(request.getInterests()));
             }
             if (request.getAvailableDays() != null) {
-                profile.setAvailableDays(request.getAvailableDays());
+                profile.setAvailableDays(new HashSet<>(request.getAvailableDays()));
+            }
+            if (request.getPreferredTimeOfDay() != null) {
+                profile.setPreferredTimeOfDay(request.getPreferredTimeOfDay());
             }
             if (request.getLanguages() != null) {
-                profile.setLanguages(request.getLanguages());
+                profile.setLanguages(new ArrayList<>(request.getLanguages()));
             }
             if (request.getCertifications() != null) {
-                profile.setCertifications(request.getCertifications());
+                profile.setCertifications(new ArrayList<>(request.getCertifications()));
             }
             
-            profile.setPreferredTimeOfDay(request.getPreferredTimeOfDay());
             profile.setAvailableForEmergency(request.isAvailableForEmergency());
             
-            // Set emergency contact if provided
+            // Handle emergency contact
             if (request.getEmergencyContact() != null) {
-                profile.setEmergencyContact(request.getEmergencyContact().getName());
-                profile.setEmergencyPhone(request.getEmergencyContact().getPhone());
+                VolunteerProfile.EmergencyContact emergencyContact = new VolunteerProfile.EmergencyContact();
+                emergencyContact.setName(request.getEmergencyContact().getName());
+                emergencyContact.setRelationship(request.getEmergencyContact().getRelationship());
+                emergencyContact.setPhone(request.getEmergencyContact().getPhone());
+                profile.setEmergencyContact(emergencyContact);
             }
             
-            profile.setUpdatedAt(LocalDateTime.now());
-            volunteerProfileRepository.save(profile);
+            // Save the volunteer profile
+            profile = volunteerProfileRepository.save(profile);
+            
         } else if (Role.ORGANIZATION.equals(request.getRole())) {
             user.setRole(Role.ORGANIZATION);
             // Create or update organization profile
@@ -424,11 +437,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             org.setPhoneNumber(request.getPhoneNumber());
             org.setAddress(request.getAddress());
             org.setCity(request.getCity());
+            org.setProvince(request.getProvince());
             org.setCountry(request.getCountry());
             
             // Update organization-specific fields
             if (request.getFocusAreas() != null) {
-                org.setFocusAreas(request.getFocusAreas());
+                org.setFocusAreas(new HashSet<>(request.getFocusAreas()));
             }
             if (request.getRegistrationNumber() != null) {
                 org.setRegistrationNumber(request.getRegistrationNumber());
@@ -439,7 +453,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             
             // Update social media links if provided
             if (request.getSocialMediaLinks() != null) {
-                SocialMediaLinks socialMediaLinks = new SocialMediaLinks();
+                Organization.SocialMediaLinks socialMediaLinks = new Organization.SocialMediaLinks();
                 socialMediaLinks.setFacebook(request.getSocialMediaLinks().getFacebook());
                 socialMediaLinks.setTwitter(request.getSocialMediaLinks().getTwitter());
                 socialMediaLinks.setInstagram(request.getSocialMediaLinks().getInstagram());
@@ -447,8 +461,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 org.setSocialMediaLinks(socialMediaLinks);
             }
             
-            org.setUpdatedAt(LocalDateTime.now());
-            organizationRepository.save(org);
+            // Save the organization
+            org = organizationRepository.save(org);
         } else {
             throw new RuntimeException("Invalid role selected");
         }

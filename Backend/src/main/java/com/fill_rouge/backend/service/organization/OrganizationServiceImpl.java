@@ -414,7 +414,17 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setProvince(request.getProvince());
         organization.setPostalCode(request.getPostalCode());
         organization.setCoordinates(request.getCoordinates());
-        organization.setSocialMediaLinks(request.getSocialMediaLinks());
+        
+        // Convert SocialMediaLinks
+        if (request.getSocialMediaLinks() != null) {
+            Organization.SocialMediaLinks links = new Organization.SocialMediaLinks();
+            links.setFacebook(request.getSocialMediaLinks().getFacebook());
+            links.setTwitter(request.getSocialMediaLinks().getTwitter());
+            links.setInstagram(request.getSocialMediaLinks().getInstagram());
+            links.setLinkedin(request.getSocialMediaLinks().getLinkedin());
+            organization.setSocialMediaLinks(links);
+        }
+        
         organization.setRegistrationNumber(request.getRegistrationNumber());
         organization.setType(request.getType());
         organization.setCategory(request.getCategory());

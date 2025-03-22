@@ -41,7 +41,27 @@ export class ReportService {
   }
 
   getOverviewStatistics(): Observable<OverviewStatistics> {
-    return this.http.get<OverviewStatistics>(`${this.apiUrl}/overview`);
+    console.log('Fetching overview statistics...');
+    return this.http.get<OverviewStatistics>(`${this.apiUrl}/overview`).pipe(
+      map(response => {
+        console.log('Received overview statistics:', response);
+        // Ensure all numeric fields have default values
+        return {
+          totalUsers: response.totalUsers || 0,
+          userGrowthRate: response.userGrowthRate || 0,
+          activeOrganizations: response.activeOrganizations || 0,
+          organizationGrowthRate: response.organizationGrowthRate || 0,
+          totalEvents: response.totalEvents || 0,
+          eventGrowthRate: response.eventGrowthRate || 0,
+          totalVolunteerHours: response.totalVolunteerHours || 0,
+          volunteerHoursGrowthRate: response.volunteerHoursGrowthRate || 0
+        };
+      }),
+      catchError(error => {
+        console.error('Error fetching overview statistics:', error);
+        throw error;
+      })
+    );
   }
 
   getUserActivity(): Observable<UserActivity[]> {
@@ -61,16 +81,44 @@ export class ReportService {
   }
 
   generateReport(type: ReportType, startDate?: Date, endDate?: Date): Observable<ReportResponse> {
+    console.log('Generating report with params:', { type, startDate, endDate });
+    
     const request: ReportRequest = {
       type,
       startDate,
       endDate
     };
-    return this.http.post<ReportResponse>(`${this.apiUrl}/generate`, request);
+
+    return this.http.post<ReportResponse>(`${this.apiUrl}/generate`, request).pipe(
+      map(response => {
+        console.log('Report generation response:', response);
+        if (!response || !response.fileUrl) {
+          throw new Error('Invalid response format from server');
+        }
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error generating report:', error);
+        throw error;
+      })
+    );
   }
 
   getReport(id: string): Observable<Report> {
-    return this.http.get<Report>(`${this.apiUrl}/${id}`);
+    console.log('Fetching report:', id);
+    return this.http.get<Report>(`${this.apiUrl}/${id}`).pipe(
+      map(response => {
+        console.log('Received report:', response);
+        if (!response) {
+          throw new Error('Report not found');
+        }
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error fetching report:', error);
+        throw error;
+      })
+    );
   }
 
   deleteReport(id: string): Observable<void> {
@@ -78,7 +126,13 @@ export class ReportService {
   }
 
   downloadReport(fileUrl: string): Observable<Blob> {
-    return this.http.get(fileUrl, { responseType: 'blob' });
+    console.log('Downloading report from:', fileUrl);
+    return this.http.get(fileUrl, { responseType: 'blob' }).pipe(
+      catchError(error => {
+        console.error('Error downloading report:', error);
+        throw error;
+      })
+    );
   }
 
   scheduleReport(type: ReportType, schedule: string, filters?: ReportFilter[]): Observable<Report> {

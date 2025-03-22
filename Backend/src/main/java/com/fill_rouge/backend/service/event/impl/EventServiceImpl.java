@@ -1,10 +1,18 @@
 package com.fill_rouge.backend.service.event.impl;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.fill_rouge.backend.constant.EventCategory;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
-import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
@@ -13,17 +21,8 @@ import com.fill_rouge.backend.repository.EventFeedbackRepository;
 import com.fill_rouge.backend.repository.EventRepository;
 import com.fill_rouge.backend.service.event.EventService;
 import com.fill_rouge.backend.service.user.IUserService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional

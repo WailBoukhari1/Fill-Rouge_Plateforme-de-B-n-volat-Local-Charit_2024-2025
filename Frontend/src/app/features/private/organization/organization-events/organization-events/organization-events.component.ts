@@ -69,7 +69,7 @@ export class OrganizationEventsComponent implements OnInit {
     'location',
     'participants',
     'status',
-    'actions'
+    'actions',
   ];
   dataSource: MatTableDataSource<IEvent>;
   EventStatus = EventStatus;
@@ -108,40 +108,57 @@ export class OrganizationEventsComponent implements OnInit {
   }
 
   loadEvents(): void {
-    if (!this.organizationId) return;
+    if (!this.organizationId) {
+      console.error('Organization ID is missing');
+      this.error$.next('Organization ID is missing');
+      return;
+    }
 
+    console.log('Loading events for organization:', this.organizationId);
     this.loading$.next(true);
     this.error$.next(null);
 
-    const filters: IEventFilters = {
-      organizationId: this.organizationId,
-      sortBy: 'startDate',
-      sortDirection: 'desc' as 'desc'
-    };
-
-    this.eventService.getEventsByOrganization(this.organizationId, this.pageIndex, this.pageSize).subscribe({
-      next: (response: any) => {
-        console.log('API Response:', response);
-        if (Array.isArray(response)) {
-          this.dataSource.data = response;
-          if (this.paginator) {
-            this.paginator.length = response.length;
-            this.paginator.pageSize = this.pageSize;
-            this.paginator.pageIndex = this.pageIndex;
+    this.organizationService
+      .getOrganizationEvents(
+        this.organizationId,
+        this.pageIndex,
+        this.pageSize
+      )
+      .subscribe({
+        next: (response: Page<IEvent>) => {
+          console.log('Events response:', response);
+          if (response && Array.isArray(response.content)) {
+            this.dataSource.data = response.content;
+            if (this.paginator) {
+              this.paginator.length = response.totalElements;
+              this.paginator.pageSize = response.size;
+              this.paginator.pageIndex = response.number;
+            }
+            this.loading$.next(false);
+          } else {
+            console.error('Invalid response format:', response);
+            this.error$.next('No events found');
+            this.loading$.next(false);
           }
+        },
+        error: (error: any) => {
+          console.error('Error loading events:', error);
+          let errorMessage = 'Failed to load events. Please try again.';
+
+          if (error.status === 401) {
+            errorMessage = 'You are not authorized to view these events.';
+          } else if (error.status === 403) {
+            errorMessage = 'You do not have permission to access these events.';
+          } else if (error.status === 404) {
+            errorMessage = 'Organization not found.';
+          } else if (error.status === 500) {
+            errorMessage = 'Server error occurred. Please try again later.';
+          }
+
+          this.error$.next(errorMessage);
           this.loading$.next(false);
-        } else {
-          console.error('Invalid response format:', response);
-          this.error$.next('Invalid response format');
-          this.loading$.next(false);
-        }
-      },
-      error: (error: Error) => {
-        console.error('Error loading events:', error);
-        this.error$.next('Failed to load events. Please try again.');
-        this.loading$.next(false);
-      },
-    });
+        },
+      });
   }
 
   isAdmin(): boolean {
@@ -162,9 +179,13 @@ export class OrganizationEventsComponent implements OnInit {
       this.router.navigate(['/organization/events', eventId]);
     } else {
       console.error('Event details error:', event);
-      this.snackBar.open('Unable to view event details: Invalid event ID', 'Close', {
-        duration: 3000,
-      });
+      this.snackBar.open(
+        'Unable to view event details: Invalid event ID',
+        'Close',
+        {
+          duration: 3000,
+        }
+      );
     }
   }
 
@@ -178,7 +199,7 @@ export class OrganizationEventsComponent implements OnInit {
       [EventStatus.PENDING]: 'text-yellow-700 bg-yellow-100',
       [EventStatus.APPROVED]: 'text-green-700 bg-green-100',
       [EventStatus.ACTIVE]: 'text-blue-700 bg-blue-100',
-      [EventStatus.UPCOMING]: 'text-teal-700 bg-teal-100'
+      [EventStatus.UPCOMING]: 'text-teal-700 bg-teal-100',
     };
     return colorClasses[status] || colorClasses[EventStatus.DRAFT];
   }
@@ -372,7 +393,9 @@ export class OrganizationEventsComponent implements OnInit {
 
   formatRating(rating: number, numberOfRatings: number): string {
     if (!rating || !numberOfRatings) return 'No ratings yet';
-    return `${rating.toFixed(1)} (${numberOfRatings} ${numberOfRatings === 1 ? 'rating' : 'ratings'})`;
+    return `${rating.toFixed(1)} (${numberOfRatings} ${
+      numberOfRatings === 1 ? 'rating' : 'ratings'
+    })`;
   }
 
   onSort(event: Sort) {
@@ -390,11 +413,19 @@ export class OrganizationEventsComponent implements OnInit {
         case 'category':
           return this.compare(a.category, b.category, isAsc);
         case 'date':
-          return this.compare(new Date(a.startDate), new Date(b.startDate), isAsc);
+          return this.compare(
+            new Date(a.startDate),
+            new Date(b.startDate),
+            isAsc
+          );
         case 'location':
           return this.compare(a.location, b.location, isAsc);
         case 'participants':
-          return this.compare(a.currentParticipants, b.currentParticipants, isAsc);
+          return this.compare(
+            a.currentParticipants,
+            b.currentParticipants,
+            isAsc
+          );
         case 'status':
           return this.compare(a.status, b.status, isAsc);
         default:

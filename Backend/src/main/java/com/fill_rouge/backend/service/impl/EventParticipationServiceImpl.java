@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fill_rouge.backend.constant.EventParticipationStatus;
 import com.fill_rouge.backend.domain.EventParticipation;
 import com.fill_rouge.backend.repository.EventParticipationRepository;
-import com.fill_rouge.backend.service.EventParticipationService;
+import com.fill_rouge.backend.service.event.EventParticipationService;
 
 import lombok.RequiredArgsConstructor;
 

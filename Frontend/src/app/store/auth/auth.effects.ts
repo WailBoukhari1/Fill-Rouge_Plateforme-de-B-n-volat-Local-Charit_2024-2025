@@ -396,20 +396,25 @@ export class AuthEffects {
               throw new Error('No data in response');
             }
 
-            return AuthActions.submitQuestionnaireSuccess({
-              user: {
-                ...response.data,
-                id: response.data.userId || '',
-                roles: [response.data.role as UserRole],
-                emailVerified: response.data.emailVerified || false,
-                twoFactorEnabled: response.data.twoFactorEnabled || false,
-                accountLocked: response.data.accountLocked || false,
-                accountExpired: response.data.accountExpired || false,
-                credentialsExpired: response.data.credentialsExpired || false,
-                questionnaireCompleted: response.data.questionnaireCompleted || false,
-                role: response.data.role as UserRole
-              }
-            });
+            const userRole = response.data.roles?.[0]?.replace('ROLE_', '');
+            if (!userRole) {
+              throw new Error('No role found in response');
+            }
+
+            const userData: User = {
+              ...response.data,
+              id: response.data.userId || '',
+              role: userRole as UserRole,
+              roles: [userRole as UserRole],
+              emailVerified: response.data.emailVerified || false,
+              twoFactorEnabled: response.data.twoFactorEnabled || false,
+              accountLocked: response.data.accountLocked || false,
+              accountExpired: response.data.accountExpired || false,
+              credentialsExpired: response.data.credentialsExpired || false,
+              questionnaireCompleted: true
+            };
+
+            return AuthActions.submitQuestionnaireSuccess({ user: userData });
           }),
           catchError(error => {
             console.error('Questionnaire submission error:', error);
@@ -430,26 +435,27 @@ export class AuthEffects {
         tap(({ user }) => {
           console.log('Questionnaire submitted successfully, user:', user);
 
-          // Ensure the user data is properly stored
-          const updatedUser = {
-            ...user,
-            questionnaireCompleted: true
-          };
+          if (!user.role) {
+            console.error('Invalid role after questionnaire:', user.role);
+            return;
+          }
 
           // Store the updated user data
-          localStorage.setItem('user_data', JSON.stringify(updatedUser));
+          localStorage.setItem('user_data', JSON.stringify(user));
 
           // Navigate based on role
           switch (user.role) {
             case UserRole.VOLUNTEER:
-              this.router.navigate(['/dashboard/volunteer/profile']);
+              console.log('Navigating to volunteer dashboard');
+              this.router.navigate(['/volunteer']);
               break;
             case UserRole.ORGANIZATION:
-              this.router.navigate(['/dashboard']);
+              console.log('Navigating to organization dashboard');
+              this.router.navigate(['/organization']);
               break;
             default:
-              console.error('Invalid role after questionnaire:', user.role);
-              this.router.navigate(['/dashboard']);
+              console.error('Unknown role:', user.role);
+              this.router.navigate(['/home']);
           }
         })
       ),

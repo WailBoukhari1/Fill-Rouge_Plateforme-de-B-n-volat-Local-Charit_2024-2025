@@ -1,15 +1,23 @@
 package com.fill_rouge.backend.controller;
 
-import com.fill_rouge.backend.service.EventWaitlistService;
-import com.fill_rouge.backend.exception.EventNotFoundException;
-import com.fill_rouge.backend.exception.WaitlistFullException;
-import com.fill_rouge.backend.exception.AlreadyRegisteredException;
-import com.fill_rouge.backend.exception.WaitlistDisabledException;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fill_rouge.backend.exception.AlreadyRegisteredException;
+import com.fill_rouge.backend.exception.EventNotFoundException;
+import com.fill_rouge.backend.exception.WaitlistDisabledException;
+import com.fill_rouge.backend.exception.WaitlistFullException;
+import com.fill_rouge.backend.service.event.EventWaitlistService;
+
 import lombok.RequiredArgsConstructor;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/events/{eventId}/waitlist")

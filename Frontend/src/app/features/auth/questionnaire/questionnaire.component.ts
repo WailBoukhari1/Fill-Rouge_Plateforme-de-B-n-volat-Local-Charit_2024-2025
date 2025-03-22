@@ -12,8 +12,8 @@ import { COMMA, ENTER } from '@angular/cdk/keycodes';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Store } from '@ngrx/store';
-import { finalize, takeUntil, filter, take } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { finalize, takeUntil, filter, take, tap, catchError } from 'rxjs/operators';
+import { Subject, EMPTY } from 'rxjs';
 import * as AuthActions from '../../../store/auth/auth.actions';
 import { QuestionnaireService } from '../../../core/services/questionnaire.service';
 import {
@@ -142,6 +142,7 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
   certifications: string[] = [];
 
   private destroy$ = new Subject<void>();
+  private isUpdatingValidity = false;
 
   constructor(
     private fb: FormBuilder,
@@ -176,10 +177,7 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     });
 
     this.contactFormGroup = this.fb.group({
-      phoneNumber: [
-        '',
-        [Validators.required, Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/)],
-      ],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/)]],
       address: ['', Validators.required],
       city: ['', Validators.required],
       province: ['', Validators.required],
@@ -189,14 +187,7 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     // Initialize role-specific form groups
     this.roleSpecificFormGroup = this.fb.group({
       volunteer: this.fb.group({
-        bio: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(50),
-            Validators.maxLength(1000),
-          ],
-        ],
+        bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(1000)]],
         education: [''],
         experience: [''],
         specialNeeds: [''],
@@ -208,86 +199,29 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
         certifications: [[]],
         availableForEmergency: [false],
         emergencyContact: this.fb.group({
-          name: [
-            '',
-            [
-              Validators.required,
-              Validators.minLength(2),
-              Validators.maxLength(100),
-            ],
-          ],
+          name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
           relationship: [''],
-          phone: [
-            '',
-            [
-              Validators.required,
-              Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/),
-            ],
-          ],
-        }),
+          phone: ['', [Validators.required, Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/)]]
+        })
       }),
       organization: this.fb.group({
-        type: ['', [Validators.required]],
-        name: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(2),
-            Validators.maxLength(100),
-            Validators.pattern(/^[a-zA-Z0-9\s\-_'.&]+$/),
-          ],
-        ],
-        description: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(20),
-            Validators.maxLength(2000),
-          ],
-        ],
-        missionStatement: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(20),
-            Validators.maxLength(1000),
-          ],
-        ],
-        vision: ['', [Validators.maxLength(1000)]],
-        website: [
-          '',
-          [
-            Validators.pattern(
-              /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
-            ),
-          ],
-        ],
-        registrationNumber: ['', [Validators.pattern(/^[A-Z0-9\-\/]+$/)]],
-        taxId: ['', [Validators.pattern(/^[A-Z0-9\-\/]+$/)]],
+        type: ['', Validators.required],
+        name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+        description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(2000)]],
+        missionStatement: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(1000)]],
+        vision: [''],
+        website: ['', Validators.pattern(/^https?:\/\/.+/)],
+        registrationNumber: [''],
+        taxId: [''],
         focusAreas: [[], [Validators.required, Validators.minLength(1)]],
-        foundedYear: [
-          null,
-          [Validators.min(1800), Validators.max(new Date().getFullYear())],
-        ],
-        socialMedia: this.fb.group({
-          facebook: [
-            '',
-            [Validators.pattern(/^(https?:\/\/)?(www\.)?facebook\.com\/.*$/)],
-          ],
-          twitter: [
-            '',
-            [Validators.pattern(/^(https?:\/\/)?(www\.)?twitter\.com\/.*$/)],
-          ],
-          instagram: [
-            '',
-            [Validators.pattern(/^(https?:\/\/)?(www\.)?instagram\.com\/.*$/)],
-          ],
-          linkedin: [
-            '',
-            [Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/)],
-          ],
-        }),
-      }),
+        foundedYear: [null],
+        socialMediaLinks: this.fb.group({
+          facebook: [''],
+          twitter: [''],
+          instagram: [''],
+          linkedin: ['']
+        })
+      })
     });
 
     // Create main form group
@@ -298,16 +232,9 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     });
 
     // Subscribe to role changes
-    this.roleFormGroup.get('type')?.valueChanges.subscribe((role) => {
+    this.roleFormGroup.get('type')?.valueChanges.subscribe(role => {
       this.currentRole = role;
       this.updateFormValidity();
-
-      // Reset the non-selected role's form
-      if (role === 'ORGANIZATION') {
-        this.roleSpecificFormGroup.get('volunteer')?.reset();
-      } else if (role === 'VOLUNTEER') {
-        this.roleSpecificFormGroup.get('organization')?.reset();
-      }
     });
 
     // Clear error message when form becomes valid
@@ -316,164 +243,199 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
         this.errorMessage = '';
       }
     });
+
+    // Subscribe to availableForEmergency changes
+    this.roleSpecificFormGroup
+      .get('volunteer.availableForEmergency')
+      ?.valueChanges.subscribe(() => {
+        this.updateFormValidity();
+      });
   }
 
   /**
    * Updates the validity of all form controls
    */
   updateFormValidity(): void {
+    if (this.isUpdatingValidity) {
+      return; // Prevent recursive calls
+    }
+    
+    this.isUpdatingValidity = true;
+    try {
     const role = this.roleFormGroup.get('type')?.value;
-    const volunteerGroup = this.roleSpecificFormGroup.get('volunteer');
-    const organizationGroup = this.roleSpecificFormGroup.get('organization');
+      const volunteerGroup = this.roleSpecificFormGroup.get('volunteer') as FormGroup;
+      const organizationGroup = this.roleSpecificFormGroup.get('organization') as FormGroup;
 
+      // First, clear all validators
+      this.clearAllValidators(volunteerGroup, organizationGroup);
+
+      // Then apply validators based on role
     if (role === 'ORGANIZATION') {
-      // Add validators for organization fields
-      organizationGroup?.get('type')?.setValidators([Validators.required]);
-      organizationGroup
-        ?.get('name')
-        ?.setValidators([
-          Validators.required,
-          Validators.minLength(2),
-          Validators.maxLength(100),
-        ]);
-      organizationGroup
-        ?.get('description')
-        ?.setValidators([
-          Validators.required,
-          Validators.minLength(20),
-          Validators.maxLength(2000),
-        ]);
-      organizationGroup
-        ?.get('missionStatement')
-        ?.setValidators([
-          Validators.required,
-          Validators.minLength(20),
-          Validators.maxLength(1000),
-        ]);
-      organizationGroup
-        ?.get('website')
-        ?.setValidators([
-          Validators.pattern(
-            '^(https?:\\/\\/)?([\\w\\-])+\\.{1}([a-zA-Z]{2,63})([\\/\\w-]*)*\\/?$'
-          ),
-        ]);
-      organizationGroup
-        ?.get('registrationNumber')
-        ?.setValidators([Validators.pattern('^[A-Z0-9-]{5,20}$')]);
-      organizationGroup
-        ?.get('taxId')
-        ?.setValidators([Validators.pattern('^[A-Z0-9-]{5,20}$')]);
-      organizationGroup
-        ?.get('foundedYear')
-        ?.setValidators([
-          Validators.min(1800),
-          Validators.max(new Date().getFullYear()),
-        ]);
+        this.applyOrganizationValidators(organizationGroup);
+      } else if (role === 'VOLUNTEER') {
+        this.applyVolunteerValidators(volunteerGroup);
+      }
 
-      // Add validators for social media URLs
-      const socialMediaGroup = organizationGroup?.get('socialMedia');
-      socialMediaGroup
-        ?.get('facebook')
-        ?.setValidators([
-          Validators.pattern(
-            '^(https?:\\/\\/)?(www\\.)?facebook\\.com\\/[a-zA-Z0-9.-]+\\/?$'
-          ),
-        ]);
-      socialMediaGroup
-        ?.get('twitter')
-        ?.setValidators([
-          Validators.pattern(
-            '^(https?:\\/\\/)?(www\\.)?twitter\\.com\\/[a-zA-Z0-9_]+\\/?$'
-          ),
-        ]);
-      socialMediaGroup
-        ?.get('instagram')
-        ?.setValidators([
-          Validators.pattern(
-            '^(https?:\\/\\/)?(www\\.)?instagram\\.com\\/[a-zA-Z0-9_.]+\\/?$'
-          ),
-        ]);
-      socialMediaGroup
-        ?.get('linkedin')
-        ?.setValidators([
-          Validators.pattern(
-            '^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/(?:company|in)\\/[a-zA-Z0-9-]+\\/?$'
-          ),
-        ]);
+      // Update validity for all controls without triggering additional validation
+      if (volunteerGroup) {
+        Object.keys(volunteerGroup.controls).forEach(key => {
+          const control = volunteerGroup.get(key);
+          if (control) {
+            control.updateValueAndValidity({ emitEvent: false });
+          }
+        });
+      }
 
-      // Clear volunteer validators
-      volunteerGroup?.get('bio')?.clearValidators();
-      volunteerGroup?.get('emergencyContact.name')?.clearValidators();
-      volunteerGroup?.get('emergencyContact.phone')?.clearValidators();
-      volunteerGroup?.get('education')?.clearValidators();
-      volunteerGroup?.get('experience')?.clearValidators();
-      volunteerGroup?.get('specialNeeds')?.clearValidators();
-    } else if (role === 'VOLUNTEER') {
-      // Add validators for volunteer fields
-      volunteerGroup
-        ?.get('bio')
-        ?.setValidators([
-          Validators.required,
-          Validators.minLength(50),
-          Validators.maxLength(1000),
-        ]);
-      volunteerGroup
-        ?.get('education')
-        ?.setValidators([Validators.maxLength(500)]);
-      volunteerGroup
-        ?.get('experience')
-        ?.setValidators([Validators.maxLength(1000)]);
-      volunteerGroup
-        ?.get('specialNeeds')
-        ?.setValidators([Validators.maxLength(500)]);
+      if (organizationGroup) {
+        Object.keys(organizationGroup.controls).forEach(key => {
+          const control = organizationGroup.get(key);
+          if (control) {
+            control.updateValueAndValidity({ emitEvent: false });
+          }
+        });
+      }
 
-      const emergencyContactGroup = volunteerGroup?.get('emergencyContact');
-      emergencyContactGroup
-        ?.get('name')
-        ?.setValidators([
-          Validators.required,
-          Validators.minLength(2),
-          Validators.maxLength(100),
-        ]);
-      emergencyContactGroup
-        ?.get('relationship')
-        ?.setValidators([Validators.maxLength(50)]);
-      emergencyContactGroup
-        ?.get('phone')
-        ?.setValidators([
-          Validators.required,
-          Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/),
-        ]);
+      // Log form validity state for debugging
+      console.log('Form validity state:', {
+        role: this.roleFormGroup.valid,
+        contact: this.contactFormGroup.valid,
+        volunteer: volunteerGroup?.valid,
+        organization: organizationGroup?.valid,
+        overall: this.questionnaireForm.valid,
+      });
+    } finally {
+      this.isUpdatingValidity = false;
+    }
+  }
 
-      // Clear organization validators
-      organizationGroup?.get('type')?.clearValidators();
-      organizationGroup?.get('name')?.clearValidators();
-      organizationGroup?.get('description')?.clearValidators();
-      organizationGroup?.get('missionStatement')?.clearValidators();
-      organizationGroup?.get('website')?.clearValidators();
-      organizationGroup?.get('registrationNumber')?.clearValidators();
-      organizationGroup?.get('taxId')?.clearValidators();
-      organizationGroup?.get('foundedYear')?.clearValidators();
+  private clearAllValidators(volunteerGroup: AbstractControl | null, organizationGroup: AbstractControl | null): void {
+    // Clear volunteer validators
+    if (volunteerGroup instanceof FormGroup) {
+      volunteerGroup.get('bio')?.clearValidators();
+      volunteerGroup.get('education')?.clearValidators();
+      volunteerGroup.get('experience')?.clearValidators();
+      volunteerGroup.get('specialNeeds')?.clearValidators();
+      const emergencyContact = volunteerGroup.get('emergencyContact');
+      emergencyContact?.get('name')?.clearValidators();
+      emergencyContact?.get('relationship')?.clearValidators();
+      emergencyContact?.get('phone')?.clearValidators();
+    }
 
-      const socialMediaGroup = organizationGroup?.get('socialMedia');
+    // Clear organization validators
+    if (organizationGroup instanceof FormGroup) {
+      organizationGroup.get('type')?.clearValidators();
+      organizationGroup.get('name')?.clearValidators();
+      organizationGroup.get('description')?.clearValidators();
+      organizationGroup.get('missionStatement')?.clearValidators();
+      organizationGroup.get('website')?.clearValidators();
+      organizationGroup.get('registrationNumber')?.clearValidators();
+      organizationGroup.get('taxId')?.clearValidators();
+      organizationGroup.get('foundedYear')?.clearValidators();
+      organizationGroup.get('focusAreas')?.clearValidators();
+      
+      const socialMediaGroup = organizationGroup.get('socialMediaLinks');
       socialMediaGroup?.get('facebook')?.clearValidators();
       socialMediaGroup?.get('twitter')?.clearValidators();
       socialMediaGroup?.get('instagram')?.clearValidators();
       socialMediaGroup?.get('linkedin')?.clearValidators();
     }
+  }
+
+  private applyOrganizationValidators(organizationGroup: AbstractControl | null): void {
+    if (!(organizationGroup instanceof FormGroup)) return;
+
+    organizationGroup.get('type')?.setValidators([Validators.required]);
+    organizationGroup.get('name')?.setValidators([
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(100),
+        ]);
+    organizationGroup.get('description')?.setValidators([
+          Validators.required,
+          Validators.minLength(20),
+          Validators.maxLength(2000),
+        ]);
+    organizationGroup.get('missionStatement')?.setValidators([
+          Validators.required,
+          Validators.minLength(20),
+          Validators.maxLength(1000),
+        ]);
+    organizationGroup.get('focusAreas')?.setValidators([
+      Validators.required,
+      Validators.minLength(1)
+    ]);
+    organizationGroup.get('website')?.setValidators([
+      Validators.pattern('^(https?:\\/\\/)?([\\w\\-])+\\.{1}([a-zA-Z]{2,63})([\\/\\w-]*)*\\/?$'),
+    ]);
+    organizationGroup.get('registrationNumber')?.setValidators([
+      Validators.pattern('^[A-Z0-9-]{5,20}$'),
+    ]);
+    organizationGroup.get('taxId')?.setValidators([
+      Validators.pattern('^[A-Z0-9-]{5,20}$'),
+    ]);
+    organizationGroup.get('foundedYear')?.setValidators([
+      Validators.min(1800),
+      Validators.max(new Date().getFullYear()),
+    ]);
 
     // Update validity for all controls
-    this.roleSpecificFormGroup.updateValueAndValidity();
-    volunteerGroup?.updateValueAndValidity();
-    organizationGroup?.updateValueAndValidity();
+    Object.keys(organizationGroup.controls).forEach(key => {
+      organizationGroup.get(key)?.updateValueAndValidity();
+    });
+  }
 
-    // Log form validity state for debugging
-    console.log('Form validity state:', {
-      role: this.roleFormGroup.valid,
-      contact: this.contactFormGroup.valid,
-      volunteer: volunteerGroup?.valid,
-      organization: organizationGroup?.valid,
-      overall: this.questionnaireForm.valid,
+  private applyVolunteerValidators(volunteerGroup: AbstractControl | null): void {
+    if (!(volunteerGroup instanceof FormGroup)) return;
+
+    volunteerGroup.get('bio')?.setValidators([
+          Validators.required,
+          Validators.minLength(50),
+          Validators.maxLength(1000),
+        ]);
+    volunteerGroup.get('education')?.setValidators([
+      Validators.maxLength(500),
+    ]);
+    volunteerGroup.get('experience')?.setValidators([
+      Validators.maxLength(1000),
+    ]);
+    volunteerGroup.get('specialNeeds')?.setValidators([
+      Validators.maxLength(500),
+    ]);
+
+    const emergencyContactGroup = volunteerGroup.get('emergencyContact');
+    const isEmergencyAvailable = volunteerGroup.get('availableForEmergency')?.value;
+
+    // Clear emergency contact validators first
+    emergencyContactGroup?.get('name')?.clearValidators();
+    emergencyContactGroup?.get('relationship')?.clearValidators();
+    emergencyContactGroup?.get('phone')?.clearValidators();
+
+    // Only apply validators if emergency contact is available
+      if (isEmergencyAvailable) {
+      emergencyContactGroup?.get('name')?.setValidators([
+            Validators.required,
+            Validators.minLength(2),
+            Validators.maxLength(100),
+          ]);
+      emergencyContactGroup?.get('relationship')?.setValidators([
+        Validators.maxLength(50),
+      ]);
+      emergencyContactGroup?.get('phone')?.setValidators([
+            Validators.required,
+            Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/),
+          ]);
+    }
+
+    // Update validity for all controls
+    Object.keys(volunteerGroup.controls).forEach(key => {
+      const control = volunteerGroup.get(key);
+      if (control instanceof FormGroup) {
+        Object.keys(control.controls).forEach(subKey => {
+          control.get(subKey)?.updateValueAndValidity({ emitEvent: false });
+        });
+      } else {
+        control?.updateValueAndValidity({ emitEvent: false });
+      }
     });
   }
 
@@ -654,37 +616,6 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     // Mark all fields as touched to trigger validation
     this.markFormGroupTouched(this.questionnaireForm);
 
-    // Check form validity and provide specific feedback
-    const roleValid = this.roleFormGroup.valid;
-    const contactValid = this.contactFormGroup.valid;
-    const roleSpecificValid = this.roleSpecificFormGroup.valid;
-
-    if (!roleValid) {
-      this.snackBar.open('Please select a role to continue.', 'Close', {
-        duration: 3000,
-      });
-      return;
-    }
-
-    if (!contactValid) {
-      this.snackBar.open(
-        'Please complete all required contact information.',
-        'Close',
-        { duration: 3000 }
-      );
-      return;
-    }
-
-    if (!roleSpecificValid) {
-      const role = this.roleFormGroup.get('type')?.value;
-      const message =
-        role === 'ORGANIZATION'
-          ? 'Please complete all required organization information.'
-          : 'Please complete all required volunteer information.';
-      this.snackBar.open(message, 'Close', { duration: 3000 });
-      return;
-    }
-
     if (this.questionnaireForm.valid) {
       this.isSubmitting = true;
       const loadingRef = this.snackBar.open('Submitting questionnaire...', '', {
@@ -720,16 +651,44 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
         )
         .subscribe((user) => {
           if (!user) return;
+          
           // Refresh token to update role
-          this.authService.refreshToken(user.id.toString()).subscribe({
-            next: () => {
+          this.authService.refreshToken(user.id.toString())
+            .pipe(
+              tap(response => {
+                // Force update the auth state with the new token and user data
+                if (response.data) {
+                  const userData = {
+                    ...user,
+                    role: response.data.roles?.[0]?.replace('ROLE_', '') || user.role,
+                    questionnaireCompleted: true
+                  };
+                  
+                  // Update auth state
+                  this.store.dispatch(AuthActions.loginSuccess({
+                    user: userData,
+                    token: response.data.token,
+                    refreshToken: response.data.refreshToken,
+                    redirect: false
+                  }));
+
+                  // Show success message
               this.snackBar.open('Profile completed successfully!', 'Close', {
                 duration: 3000,
                 panelClass: ['success-snackbar'],
               });
+
+                  // Navigate based on role
+                  if (userData.role === 'VOLUNTEER') {
+                    this.router.navigate(['/dashboard/volunteer']);
+                  } else if (userData.role === 'ORGANIZATION') {
+                    this.router.navigate(['/dashboard/organization']);
+                  } else {
               this.router.navigate(['/dashboard']);
-            },
-            error: (error) => {
+                  }
+                }
+              }),
+              catchError(error => {
               console.error('Error refreshing token:', error);
               this.snackBar.open(
                 'Profile saved but please log out and log in again to access all features.',
@@ -739,9 +698,11 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
                   panelClass: ['warning-snackbar'],
                 }
               );
-              this.router.navigate(['/dashboard']);
-            },
-          });
+                this.router.navigate(['/auth/login']);
+                return EMPTY;
+              })
+            )
+            .subscribe();
         });
 
       // Handle error case
@@ -818,10 +779,10 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
         focusAreas: Array.isArray(orgData.focusAreas) ? orgData.focusAreas : [],
         foundedYear: orgData.foundedYear || null,
         socialMediaLinks: {
-          facebook: orgData.socialMedia?.facebook || '',
-          twitter: orgData.socialMedia?.twitter || '',
-          instagram: orgData.socialMedia?.instagram || '',
-          linkedin: orgData.socialMedia?.linkedin || '',
+          facebook: orgData.socialMediaLinks?.facebook || '',
+          twitter: orgData.socialMediaLinks?.twitter || '',
+          instagram: orgData.socialMediaLinks?.instagram || '',
+          linkedin: orgData.socialMediaLinks?.linkedin || '',
         },
       };
     } else {
@@ -1072,13 +1033,7 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     const organizationForm = this.roleSpecificFormGroup.get('organization');
     if (!organizationForm) return false;
 
-    const requiredFields = [
-      'type',
-      'name',
-      'description',
-      'missionStatement',
-      'focusAreas',
-    ];
+    const requiredFields = ['type', 'name', 'description', 'missionStatement'];
     const isRequiredFieldsValid = requiredFields.every((field) => {
       const control = organizationForm.get(field);
       return control && control.valid && !control.hasError('required');
@@ -1109,18 +1064,64 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     const volunteerForm = this.roleSpecificFormGroup.get('volunteer');
     if (!volunteerForm) return false;
 
-    const requiredFields = ['bio', 'emergencyContact'];
+    const requiredFields = ['bio'];
     const isRequiredFieldsValid = requiredFields.every((field) => {
       const control = volunteerForm.get(field);
       return control && control.valid;
     });
 
-    const emergencyContact = volunteerForm.get('emergencyContact');
-    const isEmergencyContactValid =
-      emergencyContact?.get('name')?.valid === true &&
-      emergencyContact?.get('phone')?.valid === true;
+    const isEmergencyAvailable = volunteerForm.get('availableForEmergency')?.value;
+    let isEmergencyContactValid = true;
+
+    if (isEmergencyAvailable) {
+      const emergencyContact = volunteerForm.get('emergencyContact');
+      if (emergencyContact instanceof FormGroup) {
+      isEmergencyContactValid =
+          emergencyContact.get('name')?.valid === true &&
+          emergencyContact.get('phone')?.valid === true;
+      }
+    }
+
+    console.log('Volunteer Form Validation:', {
+      requiredFieldsValid: isRequiredFieldsValid,
+      isEmergencyAvailable,
+      isEmergencyContactValid,
+      emergencyContact: volunteerForm.get('emergencyContact')?.value,
+      emergencyContactValid: volunteerForm.get('emergencyContact')?.valid
+    });
 
     return isRequiredFieldsValid && isEmergencyContactValid;
+  }
+
+  // Add these methods after the existing methods
+  toggleFocusArea(area: string): void {
+    const focusAreasControl = this.roleSpecificFormGroup.get('organization.focusAreas');
+    const currentAreas = focusAreasControl?.value || [];
+
+    if (currentAreas.includes(area)) {
+      // Remove the area if it's already selected
+      const updatedAreas = currentAreas.filter((a: string) => a !== area);
+      focusAreasControl?.setValue(updatedAreas);
+    } else {
+      // Add the area if it's not already selected
+      const updatedAreas = [...currentAreas, area];
+      focusAreasControl?.setValue(updatedAreas);
+    }
+
+    focusAreasControl?.markAsTouched();
+    this.updateFormValidity();
+  }
+
+  isAreaSelected(area: string): boolean {
+    const focusAreasControl = this.roleSpecificFormGroup.get('organization.focusAreas');
+    return focusAreasControl?.value?.includes(area) || false;
+  }
+
+  showFocusAreasError(): boolean {
+    const focusAreasControl = this.roleSpecificFormGroup.get('organization.focusAreas');
+    return !!(focusAreasControl?.touched && 
+           (focusAreasControl?.hasError('required') || 
+            focusAreasControl?.hasError('minlength')));
   }
 
   ngOnDestroy(): void {

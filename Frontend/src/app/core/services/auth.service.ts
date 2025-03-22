@@ -238,7 +238,7 @@ export class AuthService {
           profilePicture: response.data.profilePicture,
           lastLoginIp: response.data.lastLoginIp,
           lastLoginAt: response.data.lastLoginAt,
-          questionnaireCompleted: response.data.questionnaireCompleted || false
+          questionnaireCompleted: true
         };
 
         // Store the new tokens and user data
@@ -248,43 +248,39 @@ export class AuthService {
 
         // Store organization ID if user is an organization
         if (userRole === 'ORGANIZATION' && response.data.userId) {
-          console.log('Fetching organization ID for user:', response.data.userId);
-          this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/user/${response.data.userId}`)
+          // First try to get organization by user ID
+          this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/search?userId=${response.data.userId}`)
             .subscribe({
-              next: (orgResponse) => {
-                if (orgResponse.data?.id) {
-                  console.log('Storing organization ID:', orgResponse.data.id);
-                  localStorage.setItem('organizationId', orgResponse.data.id);
-                } else if (orgResponse.data?._id) {
-                  // Handle MongoDB style _id
-                  console.log('Storing organization _id:', orgResponse.data._id);
-                  localStorage.setItem('organizationId', orgResponse.data._id);
+              next: (searchResponse) => {
+                if (searchResponse.data?.id) {
+                  console.log('Found organization ID through search:', searchResponse.data.id);
+                  localStorage.setItem('organizationId', searchResponse.data.id);
+                } else if (searchResponse.data?._id) {
+                  console.log('Found organization _id through search:', searchResponse.data._id);
+                  localStorage.setItem('organizationId', searchResponse.data._id);
                 } else {
-                  // If no direct ID found, try to find the organization by userId
-                  this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/search?userId=${response.data.userId}`)
+                  // Fallback to direct user ID lookup
+                  this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/user/${response.data.userId}`)
                     .subscribe({
-                      next: (searchResponse) => {
-                        if (searchResponse.data?.id) {
-                          console.log('Found organization ID through search:', searchResponse.data.id);
-                          localStorage.setItem('organizationId', searchResponse.data.id);
-                        } else if (searchResponse.data?._id) {
-                          console.log('Found organization _id through search:', searchResponse.data._id);
-                          localStorage.setItem('organizationId', searchResponse.data._id);
+                      next: (orgResponse) => {
+                        if (orgResponse.data?.id) {
+                          console.log('Found organization ID:', orgResponse.data.id);
+                          localStorage.setItem('organizationId', orgResponse.data.id);
+                        } else if (orgResponse.data?._id) {
+                          console.log('Found organization _id:', orgResponse.data._id);
+                          localStorage.setItem('organizationId', orgResponse.data._id);
                         } else {
                           console.error('No organization found for user:', response.data.userId);
-                          this.snackBar.open('Error: Organization not found for user', 'Close', { duration: 5000 });
                         }
                       },
-                      error: (searchError) => {
-                        console.error('Error searching for organization:', searchError);
-                        this.snackBar.open('Error finding organization details', 'Close', { duration: 5000 });
+                      error: (error) => {
+                        console.error('Error fetching organization ID:', error);
                       }
                     });
                 }
               },
               error: (error) => {
-                console.error('Error fetching organization ID:', error);
-                this.snackBar.open('Error fetching organization details', 'Close', { duration: 5000 });
+                console.error('Error searching for organization:', error);
               }
             });
         }

@@ -1,24 +1,31 @@
 package com.fill_rouge.backend.controller;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.fill_rouge.backend.domain.VolunteerAchievement;
 import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.response.ApiResponse;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.dto.response.VolunteerAchievementResponse;
-import com.fill_rouge.backend.service.event.EventStatisticsService;
 import com.fill_rouge.backend.service.achievement.AchievementService;
+import com.fill_rouge.backend.service.event.EventStatisticsService;
 import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/volunteers")
@@ -93,6 +100,7 @@ public class VolunteerStatisticsController {
     public ResponseEntity<ApiResponse<List<String>>> getVolunteerBadges(
             @RequestHeader("X-User-ID") String volunteerId) {
         VolunteerProfile profile = volunteerProfileService.getVolunteerProfile(volunteerId);
-        return ResponseEntity.ok(ApiResponse.success(profile.getBadges(), "Volunteer badges retrieved successfully"));
+        List<String> badges = new ArrayList<>(profile.getBadges());
+        return ResponseEntity.ok(ApiResponse.success(badges, "Volunteer badges retrieved successfully"));
     }
 } 

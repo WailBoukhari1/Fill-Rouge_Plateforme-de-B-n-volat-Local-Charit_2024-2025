@@ -1,5 +1,31 @@
 package com.fill_rouge.backend.controller;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.dto.request.EventRequest;
@@ -9,24 +35,13 @@ import com.fill_rouge.backend.dto.response.EventResponse;
 import com.fill_rouge.backend.dto.response.FeedbackResponse;
 import com.fill_rouge.backend.mapper.EventMapper;
 import com.fill_rouge.backend.service.event.EventFeedbackService;
+import com.fill_rouge.backend.service.event.EventParticipationService;
 import com.fill_rouge.backend.service.event.EventService;
-import com.fill_rouge.backend.constant.EventStatus;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/events")
@@ -37,6 +52,9 @@ public class EventController {
     private final EventService eventService;
     private final EventFeedbackService feedbackService;
     private final EventMapper eventMapper;
+    private final EventParticipationService participationService;
+    
+    private static final Logger log = LoggerFactory.getLogger(EventController.class);
     
     @PostMapping
     @PreAuthorize("hasRole('ORGANIZATION')")
@@ -144,7 +162,18 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponse>> registerForEvent(
             @PathVariable String eventId,
             @RequestHeader("X-User-ID") String userId) {
+        // First, register the participant in the event
         Event event = eventService.registerParticipant(eventId, userId);
+        
+        // Then, create an event participation record
+        try {
+            participationService.registerForEvent(userId, eventId);
+        } catch (RuntimeException e) {
+            // If creating the participation record fails, rollback the event registration
+            eventService.unregisterParticipant(eventId, userId);
+            throw e;
+        }
+        
         return ResponseEntity.ok(ApiResponse.success(
             eventMapper.toResponse(event, userId),
             "Successfully registered for event"
@@ -157,6 +186,16 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponse>> unregisterFromEvent(
             @PathVariable String eventId,
             @RequestHeader("X-User-ID") String userId) {
+        // First, cancel the participation record
+        try {
+            participationService.cancelParticipation(userId, eventId);
+        } catch (RuntimeException e) {
+            // If the participation record doesn't exist, just log it and continue
+            // This can happen if the user was registered but the participation record was not created
+            log.warn("Failed to cancel participation record for user {} in event {}: {}", userId, eventId, e.getMessage());
+        }
+        
+        // Then, unregister from the event
         Event event = eventService.unregisterParticipant(eventId, userId);
         return ResponseEntity.ok(ApiResponse.success(
             eventMapper.toResponse(event, userId),
