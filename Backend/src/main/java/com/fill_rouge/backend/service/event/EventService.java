@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.dto.request.EventRegistrationRequest;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 
@@ -32,6 +33,7 @@ public interface EventService {
     
     // Participant Management
     Event registerParticipant(String eventId, String userId);
+    Event registerParticipantWithDetails(String eventId, String email, EventRegistrationRequest registrationData);
     Event unregisterParticipant(String eventId, String userId);
     boolean isEventFull(String eventId);
     long getParticipantCount(String eventId);

@@ -192,3 +192,14 @@ export enum EventParticipationStatus {
   CANCELLED = 'CANCELLED',
   NO_SHOW = 'NO_SHOW',
 }
+
+export interface IEventRegistrationRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  specialRequirements?: string;
+  notes?: string;
+  termsAccepted: boolean;
+  eventId?: string;
+}

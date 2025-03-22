@@ -1,4 +1,4 @@
-package com.fill_rouge.backend.service.impl;
+package com.fill_rouge.backend.service.event.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +36,27 @@ public class EventParticipationServiceImpl implements EventParticipationService 
             .status(EventParticipationStatus.REGISTERED)
             .registeredAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
+            .build();
+
+        return participationRepository.save(participation);
+    }
+
+    @Override
+    public EventParticipation registerForEventWithDetails(String volunteerId, String eventId, 
+                                                         String specialRequirements, String notes) {
+        // Check if already registered
+        if (participationRepository.existsByVolunteerIdAndEventId(volunteerId, eventId)) {
+            throw new RuntimeException("Volunteer is already registered for this event");
+        }
+
+        EventParticipation participation = EventParticipation.builder()
+            .volunteerId(volunteerId)
+            .eventId(eventId)
+            .status(EventParticipationStatus.REGISTERED)
+            .registeredAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .specialRequirements(specialRequirements)
+            .notes(notes)
             .build();
 
         return participationRepository.save(participation);

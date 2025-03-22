@@ -15,6 +15,7 @@ import {
   IEvent,
   IEventFilters,
   IEventStats,
+  IEventRegistrationRequest,
 } from '../models/event.types';
 import { ApiResponse } from '../models/api-response.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -277,38 +278,61 @@ export class EventService {
   }
 
   registerForEvent(eventId: string): Observable<IEvent> {
-    console.log('Registering for event:', eventId);
-    console.log('Headers:', this.getHeaders().keys());
-
-    const userId = this.authService.getCurrentUserId();
-    if (!userId) {
-      return throwError(() => new Error('User ID not found'));
-    }
-
-    // First, create the event participation record
+    console.log(`Registering for event with ID: ${eventId}`);
     return this.http
-      .post<ApiResponse<any>>(
-        `${environment.apiUrl}/api/event-participations/events/${eventId}/volunteers/${userId}`,
+      .post<ApiResponse<IEvent>>(
+        `${this.apiUrl}/${eventId}/register`,
         {},
-        { headers: this.getHeaders() }
+        this.getHttpOptions()
       )
       .pipe(
-        // Then, register the participant in the event
-        switchMap(() => 
-          this.http.post<ApiResponse<IEvent>>(
-            `${this.apiUrl}/${eventId}/register`,
-            {},
-            { headers: this.getHeaders() }
-          )
-        ),
         map((response) => {
-          console.log('Raw response:', response);
           if (!response.success) {
-            throw new Error(response.message || 'Failed to register for event');
+            throw new Error(
+              response.message || 'Failed to register for event'
+            );
           }
           return response.data;
         }),
-        catchError(this.handleError.bind(this))
+        catchError((error) => {
+          console.error('Error registering for event:', error);
+          return throwError(
+            () => new Error('Failed to register for event. Please try again.')
+          );
+        })
+      );
+  }
+
+  registerWithDetails(
+    eventId: string,
+    registrationData: IEventRegistrationRequest
+  ): Observable<IEvent> {
+    console.log(`Registering for event with ID: ${eventId} with details:`, registrationData);
+    
+    if (!registrationData.termsAccepted) {
+      return throwError(() => new Error('You must accept the terms and conditions'));
+    }
+    
+    return this.http
+      .post<ApiResponse<IEvent>>(
+        `${this.apiUrl}/${eventId}/register`,
+        registrationData,
+        this.getHttpOptions()
+      )
+      .pipe(
+        map((response) => {
+          if (!response.success) {
+            throw new Error(
+              response.message || 'Failed to register for event'
+            );
+          }
+          return response.data;
+        }),
+        catchError((error) => {
+          console.error('Error registering for event with details:', error);
+          const errorMessage = error.error?.message || 'Failed to register for event. Please try again.';
+          return throwError(() => new Error(errorMessage));
+        })
       );
   }
 

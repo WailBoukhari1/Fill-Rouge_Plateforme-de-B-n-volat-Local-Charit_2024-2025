@@ -13,6 +13,7 @@ import com.fill_rouge.backend.constant.EventCategory;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.dto.request.EventRegistrationRequest;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
@@ -21,8 +22,10 @@ import com.fill_rouge.backend.repository.EventFeedbackRepository;
 import com.fill_rouge.backend.repository.EventRepository;
 import com.fill_rouge.backend.service.event.EventService;
 import com.fill_rouge.backend.service.user.IUserService;
+import com.fill_rouge.backend.service.event.EventParticipationService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
@@ -33,6 +36,7 @@ public class EventServiceImpl implements EventService {
     private final EventFeedbackRepository eventFeedbackRepository;
     private final IUserService userService;
     private final EventMapper eventMapper;
+    private final EventParticipationService participationService;
 
     @Override
     public List<Event> getEventsByParticipant(String userId) {
@@ -198,6 +202,43 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
             .orElseThrow(() -> new RuntimeException("Event not found"));
         event.getRegisteredParticipants().add(userId);
+        return eventRepository.save(event);
+    }
+
+    @Override
+    public Event registerParticipantWithDetails(String eventId, String email, EventRegistrationRequest registrationData) {
+        Event event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new RuntimeException("Event not found"));
+            
+        // Check if the event is already full
+        if (isEventFull(eventId)) {
+            throw new RuntimeException("This event is already full");
+        }
+        
+        // If user ID is provided, register the user with details
+        if (registrationData.getUserId() != null && !registrationData.getUserId().isEmpty()) {
+            // Register with participation service (stores special requirements and notes)
+            try {
+                userService.getUserById(registrationData.getUserId());
+                // Use the participation service to register with details
+                participationService.registerForEventWithDetails(
+                    registrationData.getUserId(), 
+                    eventId, 
+                    registrationData.getSpecialRequirements(),
+                    registrationData.getNotes()
+                );
+                // Also add to the event's registered participants
+                event.getRegisteredParticipants().add(registrationData.getUserId());
+            } catch (Exception e) {
+                throw new RuntimeException("Error registering user: " + e.getMessage());
+            }
+        } else {
+            // Otherwise, store the email to track the registration
+            // This is a simple approach; in a real application, you might want to 
+            // create a non-user participant record with all the details
+            event.getGuestParticipantEmails().add(email);
+        }
+        
         return eventRepository.save(event);
     }
 

@@ -49,6 +49,8 @@ public class EventParticipation {
     private LocalDateTime registeredAt;
     private LocalDateTime updatedAt;
     private Integer hours;
+    private String specialRequirements;
+    private String notes;
     
     public void checkIn() {
         this.status = EventParticipationStatus.ATTENDED;

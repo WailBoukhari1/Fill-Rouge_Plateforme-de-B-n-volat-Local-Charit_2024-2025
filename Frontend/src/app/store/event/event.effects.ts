@@ -151,12 +151,44 @@ export class EventEffects {
   registerForEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.registerForEvent),
-      mergeMap(action =>
-        this.eventService.registerForEvent(action.eventId).pipe(
-          map(registration => EventActions.registerForEventSuccess({ event: registration as unknown as IEvent })),
+      switchMap(({ eventId }) =>
+        this.eventService.registerForEvent(eventId).pipe(
+          map(event => EventActions.registerForEventSuccess({ event })),
           catchError(error => of(EventActions.registerForEventFailure({ error })))
         )
       )
+    )
+  );
+
+  registerForEventWithDetails$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.registerForEventWithDetails),
+      switchMap(({ eventId, specialRequirements, notes }) => {
+        // Get the current user data to populate the registration request
+        const userId = localStorage.getItem('userId');
+        const firstName = localStorage.getItem('firstName') || '';
+        const lastName = localStorage.getItem('lastName') || '';
+        const email = localStorage.getItem('email') || '';
+        const phoneNumber = localStorage.getItem('phoneNumber') || '';
+        
+        // Create a complete registration request
+        const registrationRequest = {
+          firstName,
+          lastName,
+          email,
+          phoneNumber,
+          specialRequirements,
+          notes,
+          termsAccepted: true,
+          eventId,
+          userId
+        };
+        
+        return this.eventService.registerWithDetails(eventId, registrationRequest).pipe(
+          map(event => EventActions.registerForEventWithDetailsSuccess({ event })),
+          catchError(error => of(EventActions.registerForEventWithDetailsFailure({ error })))
+        );
+      })
     )
   );
 
@@ -328,6 +360,59 @@ export class EventEffects {
           catchError(error => of(EventActions.updateEventBannerFailure({ error })))
         )
       )
+    )
+  );
+
+  // Add success effects for registration actions
+  registerForEventSuccess$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.registerForEventSuccess),
+      map(({ event }) => {
+        const userId = localStorage.getItem('userId') || '';
+        
+        if (event.waitlistedParticipants?.includes(userId)) {
+          if (event.registeredParticipants && event.registeredParticipants.length >= event.maxParticipants) {
+            this.snackBar.open('Event is full. You have been added to the waitlist.', 'Close', { duration: 5000 });
+          } else {
+            this.snackBar.open('Your registration requires approval. You are on the waitlist pending approval.', 'Close', { duration: 5000 });
+          }
+        } else if (event.registeredParticipants?.includes(userId)) {
+          this.snackBar.open('Successfully registered for the event!', 'Close', { duration: 5000 });
+        }
+        
+        return EventActions.setLoading({ loading: false });
+      })
+    )
+  );
+
+  registerForEventWithDetailsSuccess$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.registerForEventWithDetailsSuccess),
+      map(({ event }) => {
+        const userId = localStorage.getItem('userId') || '';
+        
+        if (event.waitlistedParticipants?.includes(userId)) {
+          if (event.registeredParticipants && event.registeredParticipants.length >= event.maxParticipants) {
+            this.snackBar.open('Event is full. You have been added to the waitlist with your details.', 'Close', { duration: 5000 });
+          } else {
+            this.snackBar.open('Your registration with details requires approval. You are on the waitlist pending approval.', 'Close', { duration: 5000 });
+          }
+        } else if (event.registeredParticipants?.includes(userId)) {
+          this.snackBar.open('Successfully registered for the event with your requirements!', 'Close', { duration: 5000 });
+        }
+        
+        return EventActions.setLoading({ loading: false });
+      })
+    )
+  );
+
+  unregisterFromEventSuccess$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.unregisterFromEventSuccess),
+      tap(() => {
+        this.snackBar.open('You have been removed from the event.', 'Close', { duration: 3000 });
+      }),
+      map(() => EventActions.setLoading({ loading: false }))
     )
   );
 

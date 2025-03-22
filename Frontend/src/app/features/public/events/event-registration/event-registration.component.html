@@ -1,0 +1,290 @@
+<!-- Event Registration Component -->
+<div class="event-registration">
+  <!-- Loading Spinner -->
+  @if (loading) {
+    <div class="flex justify-center items-center p-8">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
+  
+  <!-- Quick Registration Processing -->
+  @if (processingQuickRegistration) {
+    <div class="quick-registration-processing">
+      <mat-card class="p-6 text-center">
+        <mat-spinner diameter="40" class="mx-auto mb-4"></mat-spinner>
+        <h2 class="text-xl font-semibold mb-2">Processing Quick Registration</h2>
+        <p class="text-gray-600">Please wait while we register you for this event with your profile information...</p>
+      </mat-card>
+    </div>
+  } @else {
+    <!-- Registration Form -->
+    @if (!isRegistered) {
+      <div class="form-container fade-in">
+        <h2 class="text-xl md:text-2xl font-semibold mb-4 text-center">Register for Event</h2>
+        
+        <!-- Event Information Summary -->
+        @if (event) {
+          <div class="bg-gray-50 rounded-md p-4 mb-6">
+            <div class="flex items-center mb-3">
+              <mat-icon class="text-primary-500 mr-2">event</mat-icon>
+              <h3 class="text-lg font-medium">{{event.title}}</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div class="flex items-center">
+                <mat-icon class="text-gray-500 mr-2 text-sm">calendar_today</mat-icon>
+                <span class="text-sm">{{event.startDate | date:'fullDate'}}</span>
+              </div>
+              
+              <div class="flex items-center">
+                <mat-icon class="text-gray-500 mr-2 text-sm">schedule</mat-icon>
+                <span class="text-sm">{{event.startDate | date:'shortTime'}}</span>
+              </div>
+              
+              <div class="flex items-center">
+                <mat-icon class="text-gray-500 mr-2 text-sm">location_on</mat-icon>
+                <span class="text-sm">{{event.location}}</span>
+              </div>
+              
+              <div class="flex items-center">
+                <mat-icon class="text-gray-500 mr-2 text-sm">people</mat-icon>
+                <span class="text-sm">{{event.currentParticipants}}/{{event.maxParticipants}} participants</span>
+              </div>
+            </div>
+            
+            <!-- Event Full Notice -->
+            @if (event && event.currentParticipants >= event.maxParticipants) {
+              <div class="mt-3 bg-yellow-50 p-3 rounded flex items-start">
+                <mat-icon class="text-yellow-600 mr-2">warning</mat-icon>
+                <div>
+                  <p class="text-sm font-medium text-yellow-800">This event is currently full</p>
+                  @if (event.waitlistEnabled) {
+                    <p class="text-xs text-yellow-700">You can still register to join the waitlist</p>
+                  }
+                </div>
+              </div>
+            }
+            
+            <!-- Quick Registration Button -->
+            @if (isUserLoggedIn && currentUser) {
+              <div class="mt-4 pt-3 border-t border-gray-200">
+                <button 
+                  mat-raised-button 
+                  color="accent" 
+                  class="w-full justify-center"
+                  (click)="quickRegister()"
+                  [disabled]="isRegistering">
+                  <mat-icon class="mr-2">flash_on</mat-icon>
+                  Quick Register with Profile Data
+                </button>
+                <p class="text-xs text-center mt-2 text-gray-500">
+                  Use your profile information to register instantly
+                </p>
+              </div>
+            }
+          </div>
+        }
+        
+        @if (event?.requiresApproval) {
+          <div class="mb-6 bg-yellow-50 p-4 rounded-md">
+            <p class="text-yellow-700 flex items-center">
+              <mat-icon class="mr-2 text-yellow-600">info</mat-icon>
+              This event requires approval from the organizer. You will be notified once your registration is approved.
+            </p>
+          </div>
+        }
+        
+        <form [formGroup]="registrationForm" (ngSubmit)="submitRegistration()" class="space-y-6">
+          <!-- Login required message for non-authenticated users -->
+          @if (!isUserLoggedIn) {
+            <div class="mb-6 bg-blue-50 p-4 rounded-md text-center">
+              <p class="text-blue-700 flex items-center justify-center mb-3">
+                <mat-icon class="mr-2 text-blue-600">info</mat-icon>
+                You need to be logged in to register for this event
+              </p>
+              <button mat-raised-button color="primary" (click)="navigateToLogin()">
+                <mat-icon class="mr-2">login</mat-icon>
+                Log in to Continue
+              </button>
+            </div>
+          }
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>First Name</mat-label>
+              <input matInput formControlName="firstName" placeholder="Enter your first name" required [readonly]="true">
+              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+              <mat-error *ngIf="registrationForm.get('firstName')?.hasError('required')">
+                First name is required
+              </mat-error>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Last Name</mat-label>
+              <input matInput formControlName="lastName" placeholder="Enter your last name" required [readonly]="true">
+              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+              <mat-error *ngIf="registrationForm.get('lastName')?.hasError('required')">
+                Last name is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+          
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" placeholder="Enter your email" required type="email" [readonly]="true">
+            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+            <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">
+              Email is required
+            </mat-error>
+            <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">
+              Please enter a valid email address
+            </mat-error>
+          </mat-form-field>
+          
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Phone Number</mat-label>
+            <input matInput formControlName="phoneNumber" placeholder="Enter your phone number" required [readonly]="true">
+            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+            <mat-error *ngIf="registrationForm.get('phoneNumber')?.hasError('required')">
+              Phone number is required
+            </mat-error>
+            <mat-error *ngIf="registrationForm.get('phoneNumber')?.hasError('pattern')">
+              Please enter a valid phone number
+            </mat-error>
+          </mat-form-field>
+          
+          <!-- Only show additional fields for authenticated users -->
+          @if (isUserLoggedIn) {
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Special Requirements (Optional)</mat-label>
+              <textarea matInput formControlName="specialRequirements" placeholder="Any special needs or accommodations?"></textarea>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Notes (Optional)</mat-label>
+              <textarea matInput formControlName="notes" placeholder="Any additional notes or information?"></textarea>
+            </mat-form-field>
+            
+            <div class="my-4">
+              <mat-checkbox formControlName="termsAccepted" required>
+                I agree to the <a routerLink="/terms" class="text-primary-500 hover:underline">terms and conditions</a>
+              </mat-checkbox>
+              <mat-error class="mt-1 text-sm" *ngIf="registrationForm.get('termsAccepted')?.hasError('required') && registrationForm.get('termsAccepted')?.touched">
+                You must accept the terms and conditions
+              </mat-error>
+            </div>
+            
+            <div class="flex justify-center mt-6">
+              <button mat-raised-button color="primary" type="submit" class="px-6" [disabled]="isRegistering || registrationForm.invalid">
+                @if (event && event.currentParticipants >= event.maxParticipants && event.waitlistEnabled) {
+                  Join Waitlist
+                } @else {
+                  Register
+                }
+                @if (isRegistering) {
+                  <mat-spinner diameter="20" class="ml-2"></mat-spinner>
+                }
+              </button>
+            </div>
+          }
+        </form>
+      </div>
+    } @else {
+      <!-- Registration Complete/Success Message -->
+      <div class="form-container slide-up">
+        <div class="text-center">
+          <div class="bg-green-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+            <mat-icon class="text-green-500" style="font-size: 40px; width: 40px; height: 40px;">check_circle</mat-icon>
+          </div>
+          <h2 class="text-xl md:text-2xl font-semibold mb-2 text-center">Registration Complete!</h2>
+          <p class="mb-6">Thank you for registering for this event.</p>
+          
+          <!-- Registration Status Banner -->
+          @if (event?.requiresApproval || registrationData?.status) {
+            <div [ngClass]="{'mb-6 p-4 rounded-md': true, 
+                'bg-yellow-50': registrationData?.status === 'PENDING' || registrationData?.status === 'WAITLISTED' || event?.requiresApproval, 
+                'bg-green-50': registrationData?.status === 'APPROVED',
+                'bg-red-50': registrationData?.status === 'REJECTED'}">
+              <p [ngClass]="{'flex items-center': true, 
+                  'text-yellow-700': registrationData?.status === 'PENDING' || registrationData?.status === 'WAITLISTED' || event?.requiresApproval,
+                  'text-green-700': registrationData?.status === 'APPROVED',
+                  'text-red-700': registrationData?.status === 'REJECTED'}">
+                <mat-icon class="align-middle mr-2" 
+                  [ngClass]="{
+                    'text-yellow-600': registrationData?.status === 'PENDING' || registrationData?.status === 'WAITLISTED' || event?.requiresApproval,
+                    'text-green-600': registrationData?.status === 'APPROVED',
+                    'text-red-600': registrationData?.status === 'REJECTED'
+                  }">
+                  @if (registrationData?.status === 'APPROVED') {
+                    check_circle
+                  } @else if (registrationData?.status === 'REJECTED') {
+                    cancel
+                  } @else {
+                    info
+                  }
+                </mat-icon>
+                
+                @if (registrationData?.status === 'PENDING') {
+                  Your registration is pending approval from the organizer.
+                } @else if (registrationData?.status === 'WAITLISTED') {
+                  You are currently on the waitlist for this event.
+                } @else if (registrationData?.status === 'APPROVED') {
+                  Your registration has been approved! We look forward to seeing you at the event.
+                } @else if (registrationData?.status === 'REJECTED') {
+                  Your registration request was not approved for this event.
+                } @else if (event?.requiresApproval) {
+                  This event requires approval from the organizer. You will be notified once your registration is approved.
+                }
+              </p>
+            </div>
+          }
+          
+          <!-- Display Registration Information -->
+          <div class="bg-gray-50 p-4 rounded-md text-left mb-6">
+            <h3 class="font-medium text-lg mb-3">Your Registration Information:</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <p class="text-sm text-gray-500">Full Name</p>
+                <p class="font-medium">{{registrationData?.firstName}} {{registrationData?.lastName}}</p>
+              </div>
+              
+              <div class="space-y-1">
+                <p class="text-sm text-gray-500">Email</p>
+                <p class="font-medium">{{registrationData?.email}}</p>
+              </div>
+              
+              <div class="space-y-1">
+                <p class="text-sm text-gray-500">Phone Number</p>
+                <p class="font-medium">{{registrationData?.phoneNumber}}</p>
+              </div>
+              
+              @if (registrationData?.specialRequirements) {
+                <div class="space-y-1 md:col-span-2">
+                  <p class="text-sm text-gray-500">Special Requirements</p>
+                  <p>{{registrationData?.specialRequirements}}</p>
+                </div>
+              }
+              
+              @if (registrationData?.notes) {
+                <div class="space-y-1 md:col-span-2">
+                  <p class="text-sm text-gray-500">Additional Notes</p>
+                  <p>{{registrationData?.notes}}</p>
+                </div>
+              }
+            </div>
+          </div>
+          
+          <div class="flex justify-center space-x-4">
+            <button mat-stroked-button color="primary" routerLink="/events">
+              Back to Events
+            </button>
+            <button mat-raised-button color="primary" [routerLink]="['/events', eventId]">
+              Event Details
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div> 

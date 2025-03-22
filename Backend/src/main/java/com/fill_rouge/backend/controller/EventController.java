@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.dto.request.EventRegistrationRequest;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.request.FeedbackRequest;
 import com.fill_rouge.backend.dto.response.ApiResponse;
@@ -391,6 +393,37 @@ public class EventController {
             @RequestHeader(value = "X-User-ID", required = false) String userId,
             @PageableDefault(size = 10) Pageable pageable) {
         return createPagedResponse(eventService.getAllEvents(pageable), userId);
+    }
+
+    @PostMapping("/{eventId}/register-with-details")
+    @Operation(summary = "Register for event with details", description = "Register a volunteer for an event with additional details")
+    public ResponseEntity<ApiResponse<EventResponse>> registerWithDetails(
+            @PathVariable String eventId,
+            @Valid @RequestBody EventRegistrationRequest registrationRequest) {
+        
+        // Ensure eventId is included in the registration data
+        registrationRequest.setEventId(eventId);
+        
+        // Check if terms are accepted
+        if (!registrationRequest.isTermsAccepted()) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.<EventResponse>error("You must accept the terms and conditions", HttpStatus.BAD_REQUEST)
+            );
+        }
+        
+        log.info("Registering for event with ID: {} with details: {}", eventId, registrationRequest);
+        
+        // Register the participant in the event with details
+        Event event = eventService.registerParticipantWithDetails(
+            eventId, 
+            registrationRequest.getEmail(),
+            registrationRequest
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(
+            eventMapper.toResponse(event, registrationRequest.getUserId()),
+            "Successfully registered for event"
+        ));
     }
 
     // Helper method to create paged response

@@ -1,0 +1,294 @@
+<!-- Event Detail Section -->
+<div class="event-detail" *ngIf="event">
+  <!-- Event Header -->
+  <div class="event-header" [ngStyle]="{'background-image': 'url(' + (event.imageUrl || '/assets/images/event-placeholder.jpg') + ')'}">
+    <div class="event-header-overlay"></div>
+    <div class="container">
+      <div class="event-header-content">
+        <h1 class="event-title">{{event.title}}</h1>
+        <div class="event-meta">
+          <div class="event-meta-item">
+            <mat-icon>calendar_today</mat-icon>
+            <span>{{event.startDate | date:'fullDate'}}</span>
+          </div>
+          <div class="event-meta-item">
+            <mat-icon>schedule</mat-icon>
+            <span>{{event.startDate | date:'shortTime'}} - {{event.durationHours}} hours</span>
+          </div>
+          <div class="event-meta-item">
+            <mat-icon>location_on</mat-icon>
+            <span>{{event.location}}</span>
+          </div>
+        </div>
+        
+        <!-- Status Badge -->
+        <div class="event-status-badge" [ngClass]="getStatusClass()">
+          {{event.status}}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="container">
+    <div class="event-content">
+      <!-- Left Column - Event Details -->
+      <div class="event-main">
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" *ngIf="canRegister()" (click)="register()">
+            <mat-icon>how_to_reg</mat-icon>
+            Register Now
+          </button>
+          
+          <button mat-raised-button color="accent" *ngIf="isUserLoggedIn && canRegister()" [routerLink]="['/events', event.id, 'register']" [queryParams]="{quick: 'true'}">
+            <mat-icon>flash_on</mat-icon>
+            Quick Register
+          </button>
+          
+          <button mat-stroked-button color="primary" *ngIf="isRegistered()">
+            <mat-icon>check_circle</mat-icon>
+            Registered
+          </button>
+          
+          <button mat-stroked-button color="warn" *ngIf="event.status === 'FULL'">
+            <mat-icon>person_off</mat-icon>
+            Event Full
+          </button>
+          
+          <button mat-stroked-button disabled *ngIf="event.status === 'CANCELLED' || event.status === 'COMPLETED'">
+            <mat-icon>event_busy</mat-icon>
+            {{event.status === 'CANCELLED' ? 'Cancelled' : 'Completed'}}
+          </button>
+          
+          <button mat-stroked-button (click)="shareEvent()">
+            <mat-icon>share</mat-icon>
+            Share
+          </button>
+          
+          <button mat-icon-button [matMenuTriggerFor]="moreMenu" aria-label="More options">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #moreMenu="matMenu">
+            <button mat-menu-item (click)="addToCalendar()">
+              <mat-icon>event</mat-icon>
+              <span>Add to Calendar</span>
+            </button>
+            <button mat-menu-item (click)="reportEvent()">
+              <mat-icon>flag</mat-icon>
+              <span>Report Event</span>
+            </button>
+          </mat-menu>
+        </div>
+        
+        <!-- Event Description -->
+        <mat-card>
+          <mat-card-content>
+            <h2>About this Event</h2>
+            <div class="event-description" [innerHTML]="event.description"></div>
+          </mat-card-content>
+        </mat-card>
+        
+        <!-- Event Requirements -->
+        <mat-card *ngIf="event.requirements && event.requirements.length > 0">
+          <mat-card-content>
+            <h2>Requirements</h2>
+            <ul class="requirements-list">
+              <li *ngFor="let requirement of event.requirements">
+                <mat-icon>check</mat-icon>
+                <span>{{requirement}}</span>
+              </li>
+            </ul>
+          </mat-card-content>
+        </mat-card>
+        
+        <!-- Event Location Map -->
+        <mat-card>
+          <mat-card-content>
+            <h2>Location</h2>
+            <p class="location-address">{{event.location}}</p>
+            <div class="map-container">
+              <!-- Map Component Here -->
+              <app-map [coordinates]="event.coordinates || [0, 0]" [zoom]="14"></app-map>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        
+        <!-- Organizer Info -->
+        <mat-card *ngIf="event.organizationId">
+          <mat-card-content>
+            <h2>Organizer</h2>
+            <div class="organizer-info">
+              <img [src]="event.organizationLogo || '/assets/images/organization-placeholder.jpg'" alt="Organization Logo" class="organizer-logo">
+              <div class="organizer-details">
+                <h3>{{event.organizationName}}</h3>
+                <p>{{event.organizationDescription | slice:0:150}}...</p>
+                <a [routerLink]="['/organizations', event.organizationId]" mat-stroked-button color="primary">
+                  Visit Organizer
+                </a>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      
+      <!-- Right Column - Sidebar -->
+      <div class="event-sidebar">
+        <!-- Event Summary Card -->
+        <mat-card class="summary-card">
+          <mat-card-content>
+            <div class="summary-item">
+              <mat-icon>people</mat-icon>
+              <div class="summary-text">
+                <span class="summary-label">Participants</span>
+                <span class="summary-value">{{event.currentParticipants}}/{{event.maxParticipants}}</span>
+              </div>
+            </div>
+            
+            <div class="summary-item">
+              <mat-icon>category</mat-icon>
+              <div class="summary-text">
+                <span class="summary-label">Category</span>
+                <span class="summary-value">{{event.category}}</span>
+              </div>
+            </div>
+            
+            <div class="summary-item">
+              <mat-icon>volunteer_activism</mat-icon>
+              <div class="summary-text">
+                <span class="summary-label">Volunteer Hours</span>
+                <span class="summary-value">{{event.durationHours}}</span>
+              </div>
+            </div>
+            
+            <div class="summary-item" *ngIf="event.requiresApproval">
+              <mat-icon color="warn">info</mat-icon>
+              <div class="summary-text">
+                <span class="summary-label">Registration Approval</span>
+                <span class="summary-value">Required</span>
+              </div>
+            </div>
+            
+            <div class="event-registration-progress">
+              <span class="progress-text">{{getRegistrationPercentage()}}% Filled</span>
+              <mat-progress-bar 
+                [color]="getRegistrationProgressColor()" 
+                mode="determinate" 
+                [value]="getRegistrationPercentage()">
+              </mat-progress-bar>
+            </div>
+            
+            <div class="cta-button" *ngIf="canRegister()">
+              <button mat-raised-button color="primary" class="register-button" (click)="register()">
+                Register for this Event
+              </button>
+              
+              <!-- Quick Registration Button for logged-in users -->
+              <button 
+                *ngIf="isUserLoggedIn" 
+                mat-raised-button 
+                color="accent" 
+                class="quick-register-button" 
+                [routerLink]="['/events', event.id, 'register']" 
+                [queryParams]="{quick: 'true'}"
+                matTooltip="Register instantly with your profile information">
+                <mat-icon>flash_on</mat-icon>
+                Quick Register
+              </button>
+            </div>
+            
+            <div class="event-countdown" *ngIf="event.status === 'UPCOMING'">
+              <h3>Event Starts In</h3>
+              <div class="countdown-timer">
+                <div class="countdown-unit">
+                  <span class="countdown-value">{{countdown.days}}</span>
+                  <span class="countdown-label">Days</span>
+                </div>
+                <div class="countdown-unit">
+                  <span class="countdown-value">{{countdown.hours}}</span>
+                  <span class="countdown-label">Hours</span>
+                </div>
+                <div class="countdown-unit">
+                  <span class="countdown-value">{{countdown.minutes}}</span>
+                  <span class="countdown-label">Minutes</span>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        
+        <!-- Related Events -->
+        <mat-card class="related-events-card">
+          <mat-card-header>
+            <mat-card-title>Similar Events</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="related-events-list">
+              <div class="related-event" *ngFor="let relatedEvent of relatedEvents">
+                <img [src]="relatedEvent.imageUrl || '/assets/images/event-placeholder.jpg'" alt="{{relatedEvent.title}}" class="related-event-image">
+                <div class="related-event-details">
+                  <h4>{{relatedEvent.title}}</h4>
+                  <p class="related-event-date">
+                    <mat-icon>calendar_today</mat-icon>
+                    {{relatedEvent.startDate | date:'mediumDate'}}
+                  </p>
+                  <a [routerLink]="['/events', relatedEvent.id]" mat-stroked-button color="primary">View</a>
+                </div>
+              </div>
+              
+              <div class="no-related-events" *ngIf="!relatedEvents || relatedEvents.length === 0">
+                <p>No similar events at the moment.</p>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        
+        <!-- Share Widget -->
+        <mat-card class="share-card">
+          <mat-card-content>
+            <h3>Share this Event</h3>
+            <div class="share-buttons">
+              <button mat-mini-fab color="primary" aria-label="Share on Facebook">
+                <mat-icon>facebook</mat-icon>
+              </button>
+              <button mat-mini-fab color="accent" aria-label="Share on Twitter">
+                <mat-icon>twitter</mat-icon>
+              </button>
+              <button mat-mini-fab color="warn" aria-label="Share via Email">
+                <mat-icon>email</mat-icon>
+              </button>
+              <button mat-mini-fab aria-label="Copy Link">
+                <mat-icon>link</mat-icon>
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div class="loading-container" *ngIf="loading">
+  <mat-spinner></mat-spinner>
+</div>
+
+<!-- Error State -->
+<div class="error-container" *ngIf="error">
+  <mat-icon class="error-icon">error_outline</mat-icon>
+  <h2>Event Not Found</h2>
+  <p>The event you're looking for might have been removed or is no longer available.</p>
+  <button mat-raised-button color="primary" routerLink="/events">Browse Events</button>
+</div>
+
+<!-- Floating Action Button for Quick Registration on Mobile -->
+<button 
+  *ngIf="isUserLoggedIn && canRegister() && event"
+  mat-fab 
+  color="accent" 
+  class="mobile-quick-register-fab"
+  [routerLink]="['/events', event.id, 'register']" 
+  [queryParams]="{quick: 'true'}"
+  matTooltip="Quick Register">
+  <mat-icon>flash_on</mat-icon>
+</button> 

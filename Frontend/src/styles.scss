@@ -124,3 +124,258 @@ html, body { height: 100%; }
     transform: translateY(0); 
   }
 }
+
+/* Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #3f51b5;
+  --primary-light: #7986cb;
+  --primary-dark: #303f9f;
+  --accent-color: #ff4081;
+  --warn-color: #f44336;
+  --success-color: #4caf50;
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --background-light: #f5f7fa;
+  --background-card: #ffffff;
+  --border-light: #e0e0e0;
+  --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --transition-fast: 0.2s ease;
+  --transition-medium: 0.3s ease;
+  --radius-small: 4px;
+  --radius-medium: 8px;
+  --radius-large: 16px;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+  background-color: var(--background-light);
+  line-height: 1.6;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+h3 {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* Cards and Containers */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.page-container {
+  padding: 2rem 1rem;
+}
+
+.card {
+  background-color: var(--background-card);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-light);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: box-shadow var(--transition-medium);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-medium);
+}
+
+/* Material overrides */
+.mat-mdc-card {
+  border-radius: var(--radius-medium) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-light) !important;
+  transition: transform var(--transition-medium), box-shadow var(--transition-medium) !important;
+}
+
+.mat-mdc-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium) !important;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.mat-mdc-button {
+  font-weight: 500 !important;
+  border-radius: var(--radius-small) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.mat-mdc-raised-button.mat-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.mat-mdc-raised-button.mat-accent {
+  background-color: var(--accent-color) !important;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility classes */
+.text-center { text-align: center; }
+.text-primary { color: var(--primary-color); }
+.text-accent { color: var(--accent-color); }
+.text-success { color: var(--success-color); }
+.text-error { color: var(--warn-color); }
+.text-muted { color: var(--text-secondary); }
+
+.mt-0 { margin-top: 0 !important; }
+.mb-0 { margin-bottom: 0 !important; }
+.my-1 { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
+.my-2 { margin-top: 1rem !important; margin-bottom: 1rem !important; }
+.my-3 { margin-top: 1.5rem !important; margin-bottom: 1.5rem !important; }
+.mt-2 { margin-top: 1rem !important; }
+.mb-2 { margin-bottom: 1rem !important; }
+.mt-3 { margin-top: 1.5rem !important; }
+.mb-3 { margin-bottom: 1.5rem !important; }
+
+/* Responsive grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+.col-12 { grid-column: span 12; }
+.col-6 { grid-column: span 6; }
+.col-4 { grid-column: span 4; }
+.col-3 { grid-column: span 3; }
+
+@media (max-width: 768px) {
+  .col-md-12 { grid-column: span 12; }
+  .col-md-6 { grid-column: span 6; }
+}
+
+@media (max-width: 576px) {
+  .col-sm-12 { grid-column: span 12; }
+  
+  .container {
+    padding: 0.75rem;
+  }
+  
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.5rem; }
+}
+
+/* Snackbar customization */
+.success-snackbar {
+  background-color: var(--success-color) !important;
+  color: white !important;
+}
+
+.error-snackbar {
+  background-color: var(--warn-color) !important;
+  color: white !important;
+}
+
+/* Beautiful form styling */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: var(--background-card);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-medium);
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  color: var(--primary-color);
+}
+
+/* PowerShell hint - remove for production */
+.powershell-hint {
+  background-color: #1e1e1e;
+  color: #dddddd;
+  padding: 1rem;
+  border-radius: var(--radius-small);
+  font-family: 'Consolas', monospace;
+  margin: 1rem 0;
+}
+
+.powershell-hint::before {
+  content: "PowerShell command: ";
+  color: #4ec9b0;
+  font-weight: bold;
+}
+
+.command {
+  color: #569cd6;
+  font-weight: bold;
+}

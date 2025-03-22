@@ -220,5 +220,27 @@ export const eventReducer = createReducer(
     ...state,
     loading: false,
     error
+  })),
+
+  // Register for Event with Details
+  on(EventActions.registerForEventWithDetails, state => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(EventActions.registerForEventWithDetailsSuccess, (state, { event }) => ({
+    ...state,
+    events: {
+      ...state.events,
+      content: state.events.content.map(e => e._id === event._id ? event : e)
+    },
+    selectedEvent: state.selectedEvent?._id === event._id ? event : state.selectedEvent,
+    loading: false,
+    error: null
+  })),
+  on(EventActions.registerForEventWithDetailsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
   }))
 ); 

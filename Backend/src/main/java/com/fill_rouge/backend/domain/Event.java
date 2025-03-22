@@ -3,11 +3,11 @@ package com.fill_rouge.backend.domain;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -74,6 +74,8 @@ public class Event {
     private Set<String> registeredParticipants = new HashSet<>();
     @Builder.Default
     private Set<String> waitlistedParticipants = new HashSet<>();
+    @Builder.Default
+    private Set<String> guestParticipantEmails = new HashSet<>();
     
     @NotNull(message = "Event category is required")
     private EventCategory category;

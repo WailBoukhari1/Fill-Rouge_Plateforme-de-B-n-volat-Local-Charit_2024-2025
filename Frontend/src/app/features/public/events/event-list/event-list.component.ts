@@ -164,144 +164,183 @@ import { Router } from '@angular/router';
 
         <!-- Events Grid -->
         @if(!isLoading && !error) {
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @for(event of filteredEvents; track event.id) {
-              <mat-card class="h-full">
-                <mat-card-content class="p-4">
-                  <!-- Event Title and Admin Actions -->
-                  <div class="flex justify-between items-start mb-2">
-                    <h3 class="text-xl font-semibold">
-                      <a
-                        [routerLink]="['/events', event.id]"
-                        class="hover:text-primary-500 transition-colors"
+          @if(filteredEvents.length === 0) {
+            <div class="text-center py-12 bg-white rounded-lg shadow-sm">
+              <mat-icon class="text-6xl text-gray-400 mb-4">event_busy</mat-icon>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                No Events Found
+              </h3>
+              <p class="text-gray-600 mb-6">There are no events matching your search criteria.</p>
+              <button
+                mat-raised-button
+                color="primary"
+                class="mt-4"
+                (click)="clearFilters()"
+              >
+                <mat-icon class="mr-2">refresh</mat-icon>
+                Clear Filters
+              </button>
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              @for(event of filteredEvents; track event.id) {
+                <mat-card class="h-full flex flex-col hover:shadow-lg transition-shadow duration-300">
+                  @if(event.bannerImage || event.imageUrl) {
+                    <div class="h-48 overflow-hidden">
+                      <img 
+                        [src]="event.bannerImage || event.imageUrl" 
+                        [alt]="event.title"
+                        class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                        onerror="this.src='assets/images/default-event.jpg'; this.onerror=null;"
                       >
-                        {{ event.title }}
-                      </a>
-                    </h3>
-                    <!-- Admin/Organizer Actions -->
-                    @if (canEditEvent(event)) {
-                      <div class="flex gap-2">
-                        <button
-                          mat-icon-button
-                          [routerLink]="['/events', event.id, 'edit']"
-                          matTooltip="Edit Event"
+                    </div>
+                  } @else {
+                    <div class="h-48 bg-gray-200 flex items-center justify-center">
+                      <mat-icon class="text-6xl text-gray-400">event</mat-icon>
+                    </div>
+                  }
+                  
+                  <mat-card-content class="p-4 flex-grow">
+                    <!-- Event Title and Admin Actions -->
+                    <div class="flex justify-between items-start mb-2">
+                      <h3 class="text-xl font-semibold">
+                        <a
+                          [routerLink]="['/events', event.id]"
+                          class="hover:text-primary-500 transition-colors"
                         >
-                          <mat-icon>edit</mat-icon>
-                        </button>
-                        @if (canDeleteEvent(event)) {
+                          {{ event.title }}
+                        </a>
+                      </h3>
+                      <!-- Admin/Organizer Actions -->
+                      @if (canEditEvent(event)) {
+                        <div class="flex gap-1">
                           <button
                             mat-icon-button
-                            (click)="deleteEvent(event)"
-                            matTooltip="Delete Event"
+                            [routerLink]="['/events', event.id, 'edit']"
+                            matTooltip="Edit Event"
                           >
-                            <mat-icon>delete</mat-icon>
+                            <mat-icon class="text-gray-600">edit</mat-icon>
                           </button>
-                        }
-                        @if (canViewParticipants(event)) {
-                          <button
-                            mat-icon-button
-                            [routerLink]="['/events', event.id, 'participants']"
-                            matTooltip="View Participants"
-                          >
-                            <mat-icon>people</mat-icon>
-                          </button>
-                        }
-                        @if (isAdmin) {
-                          <button
-                            mat-icon-button
-                            (click)="updateStatus(event)"
-                            matTooltip="Update Status"
-                          >
-                            <mat-icon>update</mat-icon>
-                          </button>
-                        }
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Category and Status Chips -->
-                  <mat-chip-set class="mb-3">
-                    <mat-chip color="primary">{{ event.category }}</mat-chip>
-                    <mat-chip [color]="getStatusColor(event.status)">
-                      {{ event.status }}
-                    </mat-chip>
-                  </mat-chip-set>
-
-                  <!-- Event Details -->
-                  <p class="text-gray-600 mb-4">{{ event.description }}</p>
-
-                  <!-- Event Details -->
-                  <div class="space-y-2 text-gray-500">
-                    <div class="flex items-center">
-                      <mat-icon class="mr-2">calendar_today</mat-icon>
-                      <span>{{ event.startDate | date : 'mediumDate' }}</span>
+                          @if (canDeleteEvent(event)) {
+                            <button
+                              mat-icon-button
+                              (click)="deleteEvent(event)"
+                              matTooltip="Delete Event"
+                            >
+                              <mat-icon class="text-red-500">delete</mat-icon>
+                            </button>
+                          }
+                        </div>
+                      }
                     </div>
-                    <div class="flex items-center">
-                      <mat-icon class="mr-2">location_on</mat-icon>
-                      <span>{{ event.location }}</span>
+
+                    <!-- Category and Status Chips -->
+                    <div class="flex flex-wrap gap-2 mb-3">
+                      <mat-chip color="primary">{{ event.category }}</mat-chip>
+                      <mat-chip [color]="getStatusColor(event.status)" [ngClass]="getStatusClass(event.status)">
+                        {{ event.status }}
+                      </mat-chip>
                     </div>
-                    <div class="flex items-center">
-                      <mat-icon class="mr-2">group</mat-icon>
-                      <span>
-                        {{ event.maxParticipants - event.currentParticipants }}
-                        spots left
-                      </span>
-                    </div>
-                    @if(event.averageRating && event.numberOfRatings) {
+
+                    <!-- Event Description -->
+                    <p class="text-gray-600 mb-4 line-clamp-3">{{ event.description }}</p>
+
+                    <!-- Event Details -->
+                    <div class="space-y-2 text-gray-500">
                       <div class="flex items-center">
-                        <mat-icon class="mr-2">star</mat-icon>
-                        <span>
-                          {{ event.averageRating | number : '1.1-1' }}
-                          ({{ event.numberOfRatings }} ratings)
+                        <mat-icon class="mr-2 text-primary-400">calendar_today</mat-icon>
+                        <span>{{ event.startDate | date : 'EEE, MMM d, y' }}</span>
+                      </div>
+                      <div class="flex items-center">
+                        <mat-icon class="mr-2 text-primary-400">schedule</mat-icon>
+                        <span>{{ event.startDate | date : 'h:mm a' }}</span>
+                        <span class="mx-1">•</span>
+                        <span>{{ event.durationHours }} hours</span>
+                      </div>
+                      <div class="flex items-center">
+                        <mat-icon class="mr-2 text-primary-400">location_on</mat-icon>
+                        <span class="truncate">{{ event.location }}</span>
+                      </div>
+                      <div class="flex items-center">
+                        <mat-icon class="mr-2 text-primary-400">group</mat-icon>
+                        <span [ngClass]="{'text-red-500': isEventFull(event), 'text-green-500': !isEventFull(event) && event.currentParticipants > 0}">
+                          {{ event.currentParticipants }}/{{ event.maxParticipants }}
+                          participants
                         </span>
                       </div>
-                    }
-                  </div>
-                </mat-card-content>
+                      @if(event.averageRating && event.numberOfRatings) {
+                        <div class="flex items-center">
+                          <mat-icon class="mr-2 text-yellow-500">star</mat-icon>
+                          <span>{{ event.averageRating.toFixed(1) }} ({{ event.numberOfRatings }} reviews)</span>
+                        </div>
+                      }
+                    </div>
+                  </mat-card-content>
 
-                <!-- Action Buttons -->
-                <mat-card-actions class="p-4 flex justify-between items-center border-t">
-                  <!-- View Details button for all users -->
-                  <button
-                    mat-button
-                    [routerLink]="['/events', event.id]"
-                    color="primary"
-                  >
-                    View Details
-                    <mat-icon class="ml-1">arrow_forward</mat-icon>
-                  </button>
-
-                  <!-- Register button only for volunteers (not admin or organizer) -->
-                  @if (!isAdmin && !isOrganizer && !event.isRegistered && event.currentParticipants < event.maxParticipants) {
-                    <button
-                      mat-stroked-button
-                      color="primary"
-                      (click)="registerForEvent(event)"
-                      [disabled]="event.currentParticipants >= event.maxParticipants"
-                    >
-                      Register
-                    </button>
-                  }
-
-                  <!-- Already Registered indicator -->
-                  @if (!isAdmin && !isOrganizer && event.isRegistered) {
-                    <span class="text-green-600 flex items-center">
-                      <mat-icon class="mr-1">check_circle</mat-icon>
-                      Registered
-                    </span>
-                  }
-                </mat-card-actions>
-              </mat-card>
-            }
-          </div>
-
-          <!-- No Results Message -->
-          @if(filteredEvents.length === 0) {
-            <div class="text-center py-12">
-              <mat-icon class="text-6xl text-gray-400 mb-4">search_off</mat-icon>
-              <h3 class="text-xl font-semibold text-gray-600 mb-2">No Events Found</h3>
-              <p class="text-gray-500">Try adjusting your filters or search criteria</p>
+                  <mat-card-actions class="p-4 pt-0 border-t mt-auto">
+                    <div class="flex justify-between items-center">
+                      <a mat-button [routerLink]="['/events', event.id]" color="primary">
+                        View Details
+                      </a>
+                      @if (!event.isRegistered) {
+                        @if (isEventFull(event)) {
+                          @if (event.waitlistEnabled) {
+                            <button
+                              mat-raised-button
+                              color="accent"
+                              (click)="joinWaitlist(event.id!)"
+                              [disabled]="isLoading"
+                            >
+                              Join Waitlist
+                            </button>
+                          } @else {
+                            <button
+                              mat-raised-button
+                              disabled
+                            >
+                              Full
+                            </button>
+                          }
+                        } @else {
+                          <button
+                            mat-raised-button
+                            color="primary"
+                            (click)="registerForEvent(event)"
+                            [disabled]="isLoading || event.status === 'COMPLETED' || event.status === 'CANCELLED'"
+                          >
+                            Register
+                          </button>
+                        }
+                      } @else {
+                        <button
+                          mat-raised-button
+                          color="primary"
+                          disabled
+                        >
+                          Registered
+                        </button>
+                      }
+                    </div>
+                  </mat-card-actions>
+                </mat-card>
+              }
             </div>
+            
+            <!-- Pagination -->
+            @if(totalEvents > pageSize) {
+              <div class="mt-6 flex justify-center">
+                <mat-paginator
+                  [length]="totalEvents"
+                  [pageSize]="pageSize"
+                  [pageIndex]="currentPage"
+                  [pageSizeOptions]="[6, 12, 24, 48]"
+                  (page)="onPageChange($event)"
+                  aria-label="Select page"
+                  class="bg-white rounded-lg shadow-sm"
+                >
+                </mat-paginator>
+              </div>
+            }
           }
         }
       </div>
@@ -597,5 +636,23 @@ export class EventListComponent implements OnInit {
         );
       },
     });
+  }
+
+  getStatusClass(status: EventStatus): string {
+    switch (status) {
+      case EventStatus.ACTIVE:
+      case EventStatus.ONGOING:
+      case EventStatus.UPCOMING:
+        return 'bg-green-100 text-green-800';
+      case EventStatus.PENDING:
+      case EventStatus.DRAFT:
+        return 'bg-yellow-100 text-yellow-800';
+      case EventStatus.COMPLETED:
+        return 'bg-blue-100 text-blue-800';
+      case EventStatus.CANCELLED:
+        return 'bg-red-100 text-red-800';
+      default:
+        return '';
+    }
   }
 }

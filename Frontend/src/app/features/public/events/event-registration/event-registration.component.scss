@@ -1,0 +1,149 @@
+/* Event Registration Component Styles */
+
+.event-registration {
+  padding: 2rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Form container */
+.form-container {
+  background-color: white;
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-light);
+  padding: 2rem;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Success message styling */
+.success-icon {
+  color: var(--success);
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+/* Quick registration button */
+.quick-register-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 10;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-medium);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.quick-register-btn:hover {
+  transform: scale(1.05);
+}
+
+.quick-register-btn mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Registration info display */
+.registration-info {
+  background-color: var(--background-light);
+  border-radius: var(--radius-medium);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.info-value {
+  font-weight: 500;
+}
+
+/* Approval notice */
+.approval-notice {
+  background-color: rgba(var(--warning-rgb), 0.1);
+  border-radius: var(--radius-medium);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.approval-notice mat-icon {
+  color: var(--warning);
+  margin-right: 0.75rem;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .event-registration {
+    padding: 1rem;
+  }
+  
+  .form-container {
+    padding: 1.5rem;
+  }
+  
+  .quick-register-btn {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-container {
+    padding: 1rem;
+  }
+  
+  .quick-register-btn {
+    bottom: 1rem;
+    right: 1rem;
+    width: 45px;
+    height: 45px;
+  }
+  
+  .quick-register-btn mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+} 

@@ -6,7 +6,7 @@ import { PRIVATE_ROUTES } from './features/private/private.routes';
 export const routes: Routes = [
   ...PUBLIC_ROUTES,
   {
-    path: 'auth',
+    path: '',
     children: AUTH_ROUTES
   },
   ...PRIVATE_ROUTES,

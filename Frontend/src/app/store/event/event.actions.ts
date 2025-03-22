@@ -276,4 +276,19 @@ export const updateEventBannerSuccess = createAction(
 export const updateEventBannerFailure = createAction(
   '[Event] Update Event Banner Failure',
   props<{ error: any }>()
+);
+
+export const registerForEventWithDetails = createAction(
+  '[Event] Register for Event With Details',
+  props<{ eventId: string; specialRequirements: string; notes: string }>()
+);
+
+export const registerForEventWithDetailsSuccess = createAction(
+  '[Event] Register for Event With Details Success',
+  props<{ event: IEvent }>()
+);
+
+export const registerForEventWithDetailsFailure = createAction(
+  '[Event] Register for Event With Details Failure',
+  props<{ error: any }>()
 ); 

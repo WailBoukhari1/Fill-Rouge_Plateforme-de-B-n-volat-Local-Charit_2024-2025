@@ -1,5 +1,12 @@
 import { Routes } from '@angular/router';
 import { PublicLayoutComponent } from '../../layouts/public-layout/public-layout.component';
+import { AuthGuard } from '../../core/guards/auth.guard';
+
+import { EVENTS_ROUTES } from './events/events.routes';
+import { ORGANIZATIONS_ROUTES } from './organizations/organizations.routes';
+import { AUTH_ROUTES } from './auth/auth.routes';
+import { VOLUNTEER_ROUTES } from './volunteer/volunteer.routes';
+import { LEGAL_ROUTES } from './legal/legal.routes';
 
 export const PUBLIC_ROUTES: Routes = [
   {
@@ -8,32 +15,36 @@ export const PUBLIC_ROUTES: Routes = [
     children: [
       {
         path: '',
-        loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
+        loadComponent: () => import('./home/home.component').then(m => m.HomeComponent),
+        data: { title: 'Home - Local Charity', animation: 'homePage' }
       },
       {
         path: 'events',
-        loadComponent: () => import('./events/event-list/event-list.component').then(m => m.EventListComponent)
-      },
-      {
-        path: 'events/:id',
-        loadComponent: () => import('./events/event-detail/event-detail.component').then(m => m.EventDetailComponent)
+        children: EVENTS_ROUTES
       },
       {
         path: 'organizations',
-        loadComponent: () => import('./organizations/organization-list/organization-list.component').then(m => m.OrganizationListComponent)
+        children: ORGANIZATIONS_ROUTES
       },
       {
-        path: 'organizations/:id',
-        loadComponent: () => import('./organizations/organization-detail/organization-detail.component').then(m => m.OrganizationDetailComponent)
+        path: 'auth',
+        children: AUTH_ROUTES
+      },
+      {
+        path: 'volunteer',
+        children: VOLUNTEER_ROUTES
       },
       {
         path: 'about',
-        loadComponent: () => import('./about/about.component').then(m => m.AboutComponent)
+        loadComponent: () => import('./about/about.component').then(m => m.AboutComponent),
+        data: { title: 'About Us - Local Charity', animation: 'aboutPage' }
       },
       {
         path: 'contact',
-        loadComponent: () => import('./contact/contact.component').then(m => m.ContactComponent)
-      }
+        loadComponent: () => import('./contact/contact.component').then(m => m.ContactComponent),
+        data: { title: 'Contact Us - Local Charity', animation: 'contactPage' }
+      },
+      ...LEGAL_ROUTES
     ]
   }
 ]; 

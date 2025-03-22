@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { EventService } from '../../../../core/services/event.service';
@@ -14,6 +15,7 @@ import * as EventActions from '../../../../store/event/event.actions';
 import * as EventSelectors from '../../../../store/event/event.selectors';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Subscription } from 'rxjs';
+import { EventRegistrationDialogComponent } from './event-registration-dialog.component';
 
 @Component({
   selector: 'app-volunteer-events',
@@ -26,7 +28,8 @@ import { Subscription } from 'rxjs';
     MatIconModule,
     MatTabsModule,
     MatChipsModule,
-    MatBadgeModule
+    MatBadgeModule,
+    MatDialogModule
   ],
   template: `
     <div class="container mx-auto p-4">
@@ -65,7 +68,7 @@ import { Subscription } from 'rxjs';
                   @if (!isRegistered(event) && !isWaitlisted(event)) {
                     <button mat-raised-button color="primary" 
                             [disabled]="(event.registeredParticipants?.length ?? 0) >= event.maxParticipants"
-                            (click)="event._id && registerForEvent(event._id)">
+                            (click)="event._id && openRegistrationDialog(event)">
                       {{ (event.registeredParticipants?.length ?? 0) >= event.maxParticipants ? 'Join Waitlist' : 'Register' }}
                     </button>
                   } @else if (isRegistered(event)) {
@@ -120,7 +123,7 @@ import { Subscription } from 'rxjs';
                   }
                   @if (isEventCompleted(event)) {
                     <button mat-raised-button color="primary" 
-                            [routerLink]="['/dashboard/feedback', event._id]">
+                            [routerLink]="['/volunteer/feedback', event._id]">
                       Provide Feedback
                     </button>
                   }
@@ -152,6 +155,11 @@ import { Subscription } from 'rxjs';
                     <mat-icon class="text-gray-500 mr-2">people_alt</mat-icon>
                     <span>Position in waitlist: {{ getWaitlistPosition(event) }}</span>
                   </div>
+                  <div class="mt-2">
+                    <mat-chip-listbox>
+                      <mat-chip color="warn">Pending Approval</mat-chip>
+                    </mat-chip-listbox>
+                  </div>
                 </mat-card-content>
                 <mat-card-actions class="p-4">
                   <button mat-raised-button color="warn" 
@@ -177,7 +185,8 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
   constructor(
     private store: Store,
     private eventService: EventService,
-    private authService: AuthService
+    private authService: AuthService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -234,8 +243,33 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
     );
   }
 
+  openRegistrationDialog(event: IEvent): void {
+    const dialogRef = this.dialog.open(EventRegistrationDialogComponent, {
+      width: '650px',
+      data: { event }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (!result) return;
+      
+      if (result.type === 'quick') {
+        this.registerForEvent(result.eventId);
+      } else if (result.type === 'standard') {
+        this.registerWithDetails(result.eventId, result.data);
+      }
+    });
+  }
+
   registerForEvent(eventId: string): void {
     this.store.dispatch(EventActions.registerForEvent({ eventId }));
+  }
+
+  registerWithDetails(eventId: string, details: { specialRequirements: string, notes: string }): void {
+    this.store.dispatch(EventActions.registerForEventWithDetails({ 
+      eventId, 
+      specialRequirements: details.specialRequirements,
+      notes: details.notes 
+    }));
   }
 
   cancelRegistration(eventId: string): void {
