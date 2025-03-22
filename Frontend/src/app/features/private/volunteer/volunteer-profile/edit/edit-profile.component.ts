@@ -75,10 +75,16 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                 <mat-card-content>
                   <div class="profile-picture-container">
                     <div class="profile-picture-wrapper">
-                      <img [src]="profilePictureUrl" 
-                           alt="Profile Picture" 
-                           class="profile-picture"
-                           (error)="onImageError($event)">
+                      @if (loading) {
+                        <div class="profile-picture-placeholder">
+                          <mat-spinner diameter="40"></mat-spinner>
+                        </div>
+                      } @else {
+                        <img [src]="profilePictureUrl" 
+                             alt="Profile Picture" 
+                             class="profile-picture"
+                             >
+                      }
                       <div class="profile-picture-overlay">
                         <button mat-icon-button color="primary" (click)="fileInput.click()">
                           <mat-icon>camera_alt</mat-icon>
@@ -135,8 +141,12 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                     <mat-form-field>
                       <mat-label>Phone</mat-label>
                       <input matInput formControlName="phoneNumber" required>
+                      <mat-hint>Format: +123456789 (must start with a non-zero digit)</mat-hint>
                       <mat-error *ngIf="profileForm.get('phoneNumber')?.hasError('required')">
                         Phone is required
+                      </mat-error>
+                      <mat-error *ngIf="profileForm.get('phoneNumber')?.hasError('pattern')">
+                        Please enter a valid phone number (must start with + followed by a non-zero digit, or a non-zero digit)
                       </mat-error>
                     </mat-form-field>
 
@@ -177,8 +187,12 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
                     <mat-form-field>
                       <mat-label>Emergency Contact Phone</mat-label>
                       <input matInput formControlName="emergencyPhone" required>
+                      <mat-hint>Format: +123456789 (must start with a non-zero digit)</mat-hint>
                       <mat-error *ngIf="profileForm.get('emergencyPhone')?.hasError('required')">
                         Emergency contact phone is required
+                      </mat-error>
+                      <mat-error *ngIf="profileForm.get('emergencyPhone')?.hasError('pattern')">
+                        Please enter a valid phone number (must start with + followed by a non-zero digit, or a non-zero digit)
                       </mat-error>
                     </mat-form-field>
                   </div>
@@ -579,12 +593,12 @@ export class EditProfileComponent implements OnInit {
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      phoneNumber: [''],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^\+?[1-9]\d{1,14}$/)]],
       address: [''],
       city: [''],
       country: [''],
-      emergencyContact: [''],
-      emergencyPhone: [''],
+      emergencyContact: ['', Validators.required],
+      emergencyPhone: ['', [Validators.required, Validators.pattern(/^\+?[1-9]\d{1,14}$/)]],
       skills: [[]],
       interests: [[]],
       preferredTimeOfDay: [''],
@@ -703,6 +717,10 @@ export class EditProfileComponent implements OnInit {
 
       const formValue = this.profileForm.value;
       
+      // Format phone numbers
+      const phoneNumber = this.formatPhoneNumber(formValue.phoneNumber);
+      const emergencyPhone = this.formatPhoneNumber(formValue.emergencyPhone);
+      
       // Convert availability data to match backend format
       const availableDays = Object.entries(formValue.availability)
         .filter(([_, isAvailable]) => isAvailable)
@@ -718,12 +736,12 @@ export class EditProfileComponent implements OnInit {
 
       const profileRequest: VolunteerProfileRequest = {
         bio: formValue.bio || '',
-        phoneNumber: formValue.phoneNumber || '',
+        phoneNumber: phoneNumber,
         address: formValue.address || '',
         city: formValue.city || '',
         country: formValue.country || '',
         emergencyContact: formValue.emergencyContact || '',
-        emergencyPhone: formValue.emergencyPhone || '',
+        emergencyPhone: emergencyPhone,
         preferredCategories: formValue.preferredCategories || [],
         skills: formValue.skills || [],
         interests: formValue.interests || [],
@@ -811,6 +829,51 @@ export class EditProfileComponent implements OnInit {
 
   onImageError(event: Event): void {
     console.error('Error loading image:', event);
+    // Prevent the target from triggering additional error events
+    const target = event.target as HTMLImageElement;
+    target.onerror = null; // Remove the error handler to prevent loops
+    
+    // Set default image
     this.profilePictureUrl = this.sanitizer.bypassSecurityTrustUrl('assets/images/default-avatar.png');
+    
+    // Notify user
+    this.snackBar.open('Could not load profile image. Using default image instead.', 'Close', {
+      duration: 5000,
+      panelClass: ['warning-snackbar']
+    });
+  }
+
+  // Helper method to ensure phone numbers are correctly formatted
+  private formatPhoneNumber(phone: string): string {
+    if (!phone) return '';
+    
+    // Remove all non-digit characters except the leading +
+    let formatted = phone.trim();
+    if (formatted.startsWith('+')) {
+      // For international format starting with +
+      formatted = '+' + formatted.substring(1).replace(/\D/g, '');
+      
+      // Ensure it starts with a non-zero digit after the +
+      if (formatted.length > 1 && formatted.charAt(1) === '0') {
+        formatted = '+' + formatted.substring(2); // Remove the 0 after +
+      }
+    } else {
+      // For local format without +
+      formatted = formatted.replace(/\D/g, '');
+      
+      // Remove leading zeros
+      while (formatted.startsWith('0')) {
+        formatted = formatted.substring(1);
+      }
+    }
+    
+    // Ensure the number isn't too long (max 15 digits including the +)
+    if (formatted.startsWith('+') && formatted.length > 16) {
+      formatted = formatted.substring(0, 16);
+    } else if (!formatted.startsWith('+') && formatted.length > 15) {
+      formatted = formatted.substring(0, 15);
+    }
+    
+    return formatted;
   }
 } 

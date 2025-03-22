@@ -1,13 +1,12 @@
 package com.fill_rouge.backend.dto.response;
 
+import java.util.List;
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -27,20 +26,33 @@ public class StatisticsResponse {
     public static class AdminStats {
         // Platform Overview
         private long totalUsers;
+        private long activeUsers;
         private long totalVolunteers;
         private long totalOrganizations;
+        private long activeOrganizations;
         private long totalEvents;
+        private double platformEngagementRate;
+        
+        // Organization Metrics
+        private long verifiedOrganizations;
+        private long pendingVerifications;
         
         // Activity Metrics
         private long activeEvents;
         private long completedEvents;
+        private long canceledEvents;
         private long totalVolunteerHours;
+        private long totalResources;
+        private long totalEventCategories;
+        private long totalPeopleImpacted;
         private double averageVolunteerHoursPerEvent;
         
         // Growth Metrics
         private List<TimeSeriesData> userGrowth;
         private List<TimeSeriesData> eventGrowth;
         private Map<String, Long> eventsByCategory;
+        private List<TimeSeriesData> platformGrowth;
+        private List<TimeSeriesData> userEngagement;
         
         // Engagement Metrics
         private double averageVolunteersPerEvent;

@@ -77,13 +77,13 @@ export class OrganizationListComponent implements OnInit {
 
   private loadOrganizations(): void {
     this.loading = true;
-    this.organizationService.getOrganizations(this.currentPage, this.pageSize).subscribe({
+    this.organizationService.getAllOrganizations(this.currentPage, this.pageSize).subscribe({
       next: (response) => {
         this.organizations = response.content;
         this.totalItems = response.totalElements;
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading organizations:', error);
         this.snackBar.open('Error loading organizations', 'Close', { duration: 3000 });
         this.loading = false;

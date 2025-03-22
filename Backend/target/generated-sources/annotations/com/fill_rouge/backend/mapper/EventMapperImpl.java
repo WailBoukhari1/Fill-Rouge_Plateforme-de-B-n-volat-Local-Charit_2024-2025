@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-22T01:40:43+0000",
+    date = "2025-03-22T22:08:12+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -239,5 +239,189 @@ public class EventMapperImpl implements EventMapper {
         }
 
         return set;
+    }
+
+    @Override
+    public EventRequest toRequest(Event event) {
+        if ( event == null ) {
+            return null;
+        }
+
+        EventRequest.EventRequestBuilder eventRequest = EventRequest.builder();
+
+        double[] coordinates = event.getCoordinates();
+        if ( coordinates != null ) {
+            eventRequest.coordinates( Arrays.copyOf( coordinates, coordinates.length ) );
+        }
+        eventRequest.waitlistEnabled( event.isWaitlistEnabled() );
+        eventRequest.maxWaitlistSize( event.getMaxWaitlistSize() );
+        List<String> list = event.getRequiredSkills();
+        if ( list != null ) {
+            eventRequest.requiredSkills( new ArrayList<String>( list ) );
+        }
+        eventRequest.virtual( event.isVirtual() );
+        eventRequest.requiresApproval( event.isRequiresApproval() );
+        eventRequest.difficulty( event.getDifficulty() );
+        Set<String> set = event.getTags();
+        if ( set != null ) {
+            eventRequest.tags( new LinkedHashSet<String>( set ) );
+        }
+        eventRequest.recurring( event.isRecurring() );
+        eventRequest.minimumAge( event.getMinimumAge() );
+        eventRequest.requiresBackground( event.isRequiresBackground() );
+        eventRequest.specialEvent( event.isSpecialEvent() );
+        eventRequest.pointsAwarded( event.getPointsAwarded() );
+        eventRequest.durationHours( event.getDurationHours() );
+        eventRequest.bannerImage( event.getBannerImage() );
+        eventRequest.category( event.getCategory() );
+        eventRequest.contactEmail( event.getContactEmail() );
+        eventRequest.contactPerson( event.getContactPerson() );
+        eventRequest.contactPhone( event.getContactPhone() );
+        eventRequest.description( event.getDescription() );
+        eventRequest.endDate( event.getEndDate() );
+        eventRequest.location( event.getLocation() );
+        eventRequest.maxParticipants( event.getMaxParticipants() );
+        eventRequest.organizationId( event.getOrganizationId() );
+        eventRequest.startDate( event.getStartDate() );
+        eventRequest.status( event.getStatus() );
+        eventRequest.title( event.getTitle() );
+
+        return eventRequest.build();
+    }
+
+    @Override
+    public Event toEvent(EventRequest eventRequest) {
+        if ( eventRequest == null ) {
+            return null;
+        }
+
+        Event.EventBuilder event = Event.builder();
+
+        event.bannerImage( eventRequest.getBannerImage() );
+        event.category( eventRequest.getCategory() );
+        event.contactEmail( eventRequest.getContactEmail() );
+        event.contactPerson( eventRequest.getContactPerson() );
+        event.contactPhone( eventRequest.getContactPhone() );
+        double[] coordinates = eventRequest.getCoordinates();
+        if ( coordinates != null ) {
+            event.coordinates( Arrays.copyOf( coordinates, coordinates.length ) );
+        }
+        event.description( eventRequest.getDescription() );
+        event.difficulty( eventRequest.getDifficulty() );
+        event.durationHours( eventRequest.getDurationHours() );
+        event.endDate( eventRequest.getEndDate() );
+        event.location( eventRequest.getLocation() );
+        event.maxParticipants( eventRequest.getMaxParticipants() );
+        event.maxWaitlistSize( eventRequest.getMaxWaitlistSize() );
+        event.minimumAge( eventRequest.getMinimumAge() );
+        event.pointsAwarded( eventRequest.getPointsAwarded() );
+        event.recurring( eventRequest.isRecurring() );
+        List<String> list = eventRequest.getRequiredSkills();
+        if ( list != null ) {
+            event.requiredSkills( new ArrayList<String>( list ) );
+        }
+        event.requiresApproval( eventRequest.isRequiresApproval() );
+        event.requiresBackground( eventRequest.isRequiresBackground() );
+        event.specialEvent( eventRequest.isSpecialEvent() );
+        event.startDate( eventRequest.getStartDate() );
+        Set<String> set = eventRequest.getTags();
+        if ( set != null ) {
+            event.tags( new LinkedHashSet<String>( set ) );
+        }
+        event.title( eventRequest.getTitle() );
+        event.virtual( eventRequest.isVirtual() );
+        event.waitlistEnabled( eventRequest.isWaitlistEnabled() );
+
+        return event.build();
+    }
+
+    @Override
+    public Event updateEventFromRequest(EventRequest eventRequest, Event event) {
+        if ( eventRequest == null ) {
+            return event;
+        }
+
+        if ( eventRequest.getBannerImage() != null ) {
+            event.setBannerImage( eventRequest.getBannerImage() );
+        }
+        if ( eventRequest.getCategory() != null ) {
+            event.setCategory( eventRequest.getCategory() );
+        }
+        if ( eventRequest.getContactEmail() != null ) {
+            event.setContactEmail( eventRequest.getContactEmail() );
+        }
+        if ( eventRequest.getContactPerson() != null ) {
+            event.setContactPerson( eventRequest.getContactPerson() );
+        }
+        if ( eventRequest.getContactPhone() != null ) {
+            event.setContactPhone( eventRequest.getContactPhone() );
+        }
+        double[] coordinates = eventRequest.getCoordinates();
+        if ( coordinates != null ) {
+            event.setCoordinates( Arrays.copyOf( coordinates, coordinates.length ) );
+        }
+        if ( eventRequest.getDescription() != null ) {
+            event.setDescription( eventRequest.getDescription() );
+        }
+        if ( eventRequest.getDifficulty() != null ) {
+            event.setDifficulty( eventRequest.getDifficulty() );
+        }
+        event.setDurationHours( eventRequest.getDurationHours() );
+        if ( eventRequest.getEndDate() != null ) {
+            event.setEndDate( eventRequest.getEndDate() );
+        }
+        if ( eventRequest.getLocation() != null ) {
+            event.setLocation( eventRequest.getLocation() );
+        }
+        event.setMaxParticipants( eventRequest.getMaxParticipants() );
+        event.setMaxWaitlistSize( eventRequest.getMaxWaitlistSize() );
+        event.setMinimumAge( eventRequest.getMinimumAge() );
+        if ( eventRequest.getOrganizationId() != null ) {
+            event.setOrganizationId( eventRequest.getOrganizationId() );
+        }
+        event.setPointsAwarded( eventRequest.getPointsAwarded() );
+        event.setRecurring( eventRequest.isRecurring() );
+        if ( event.getRequiredSkills() != null ) {
+            List<String> list = eventRequest.getRequiredSkills();
+            if ( list != null ) {
+                event.getRequiredSkills().clear();
+                event.getRequiredSkills().addAll( list );
+            }
+        }
+        else {
+            List<String> list = eventRequest.getRequiredSkills();
+            if ( list != null ) {
+                event.setRequiredSkills( new ArrayList<String>( list ) );
+            }
+        }
+        event.setRequiresApproval( eventRequest.isRequiresApproval() );
+        event.setRequiresBackground( eventRequest.isRequiresBackground() );
+        event.setSpecialEvent( eventRequest.isSpecialEvent() );
+        if ( eventRequest.getStartDate() != null ) {
+            event.setStartDate( eventRequest.getStartDate() );
+        }
+        if ( eventRequest.getStatus() != null ) {
+            event.setStatus( eventRequest.getStatus() );
+        }
+        if ( event.getTags() != null ) {
+            Set<String> set = eventRequest.getTags();
+            if ( set != null ) {
+                event.getTags().clear();
+                event.getTags().addAll( set );
+            }
+        }
+        else {
+            Set<String> set = eventRequest.getTags();
+            if ( set != null ) {
+                event.setTags( new LinkedHashSet<String>( set ) );
+            }
+        }
+        if ( eventRequest.getTitle() != null ) {
+            event.setTitle( eventRequest.getTitle() );
+        }
+        event.setVirtual( eventRequest.isVirtual() );
+        event.setWaitlistEnabled( eventRequest.isWaitlistEnabled() );
+
+        return event;
     }
 }

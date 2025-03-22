@@ -83,6 +83,7 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   role?: UserRole;
+  phoneNumber?: string;
 }
 
 export interface EmailVerificationRequest {

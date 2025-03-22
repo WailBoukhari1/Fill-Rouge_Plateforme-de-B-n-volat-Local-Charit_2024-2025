@@ -202,4 +202,5 @@ export interface IEventRegistrationRequest {
   notes?: string;
   termsAccepted: boolean;
   eventId?: string;
+  userId?: string;
 }

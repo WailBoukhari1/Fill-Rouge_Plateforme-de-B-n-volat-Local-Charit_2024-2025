@@ -154,6 +154,17 @@ public class Organization {
     @Builder.Default
     private List<Event> events = new ArrayList<>();
 
+    // Status Fields for Approval System
+    @Builder.Default
+    private String roleStatus = "INCOMPLETE"; // INCOMPLETE, PENDING, APPROVED, REJECTED
+    
+    private String rejectionReason;
+    
+    @Builder.Default
+    private boolean banned = false;
+    
+    private String banReason;
+
     @Data
     public static class SocialMediaLinks {
         private String facebook;

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.service.storage.GridFsService;
 import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
+import com.fill_rouge.backend.constant.VolunteerStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,6 +35,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/volunteers")
@@ -173,5 +176,45 @@ public class VolunteerProfileController {
 
         // Update profile and return response
         return ResponseEntity.ok(profileService.updateProfile(volunteerId, request));
+    }
+
+    @PatchMapping("/{volunteerId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Approve volunteer", description = "Approve a volunteer's profile")
+    @ApiResponse(responseCode = "200", description = "Volunteer approved successfully")
+    @ApiResponse(responseCode = "404", description = "Volunteer not found")
+    public ResponseEntity<VolunteerProfileResponse> approveVolunteer(@PathVariable String volunteerId) {
+        return ResponseEntity.ok(profileService.updateVolunteerApprovalStatus(volunteerId, VolunteerStatus.APPROVED.name(), null));
+    }
+
+    @PatchMapping("/{volunteerId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Reject volunteer", description = "Reject a volunteer's profile")
+    @ApiResponse(responseCode = "200", description = "Volunteer rejected successfully")
+    @ApiResponse(responseCode = "404", description = "Volunteer not found")
+    public ResponseEntity<VolunteerProfileResponse> rejectVolunteer(
+            @PathVariable String volunteerId,
+            @RequestParam String reason) {
+        return ResponseEntity.ok(profileService.updateVolunteerApprovalStatus(volunteerId, VolunteerStatus.REJECTED.name(), reason));
+    }
+
+    @PatchMapping("/{volunteerId}/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Ban volunteer", description = "Ban a volunteer from using the platform")
+    @ApiResponse(responseCode = "200", description = "Volunteer banned successfully")
+    @ApiResponse(responseCode = "404", description = "Volunteer not found")
+    public ResponseEntity<VolunteerProfileResponse> banVolunteer(
+            @PathVariable String volunteerId,
+            @RequestParam String reason) {
+        return ResponseEntity.ok(profileService.updateVolunteerBanStatus(volunteerId, true, reason));
+    }
+
+    @PatchMapping("/{volunteerId}/unban")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Unban volunteer", description = "Unban a previously banned volunteer")
+    @ApiResponse(responseCode = "200", description = "Volunteer unbanned successfully")
+    @ApiResponse(responseCode = "404", description = "Volunteer not found")
+    public ResponseEntity<VolunteerProfileResponse> unbanVolunteer(@PathVariable String volunteerId) {
+        return ResponseEntity.ok(profileService.updateVolunteerBanStatus(volunteerId, false, null));
     }
 } 

@@ -4,6 +4,7 @@ import { Observable, map, take } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectUser } from '../../store/auth/auth.selectors';
 import { AuthService } from '../services/auth.service';
+import { UserRole } from '../models/auth.models';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,8 @@ export class QuestionnaireGuard {
     return this.store.select(selectUser).pipe(
       take(1),
       map(user => {
-        if (user && user.questionnaireCompleted) {
+        // For admin role or if questionnaire is completed, allow access
+        if (!user || user.role === UserRole.ADMIN || user.questionnaireCompleted) {
           return true;
         }
 

@@ -141,9 +141,9 @@ export class AuthEffects {
 
             const userData: User = {
               id: response.data.userId || '',
-              email: response.data.email,
-              firstName: response.data.firstName,
-              lastName: response.data.lastName,
+              email: response.data.email || action.email,
+              firstName: response.data.firstName || action.firstName,
+              lastName: response.data.lastName || action.lastName,
               role: UserRole.UNASSIGNED,
               roles: [UserRole.UNASSIGNED],
               emailVerified: response.data.emailVerified || false,
@@ -154,7 +154,8 @@ export class AuthEffects {
               profilePicture: response.data.profilePicture,
               lastLoginIp: response.data.lastLoginIp,
               lastLoginAt: response.data.lastLoginAt,
-              questionnaireCompleted: false
+              questionnaireCompleted: false,
+              phoneNumber: ''
             };
 
             return AuthActions.registerSuccess({

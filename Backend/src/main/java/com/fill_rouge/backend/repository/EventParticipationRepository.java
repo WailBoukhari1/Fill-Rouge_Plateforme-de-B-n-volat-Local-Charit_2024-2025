@@ -31,7 +31,7 @@ public interface EventParticipationRepository extends MongoRepository<EventParti
     long countActiveVolunteersByOrganizationId(String organizationId);
     
     @Query(value = "{}", fields = "{ 'hours': 1 }")
-    long sumTotalHours();
+    Long sumTotalHours();
     
     List<EventParticipation> findByVolunteerIdAndStatus(String volunteerId, String status);
 
@@ -52,5 +52,5 @@ public interface EventParticipationRepository extends MongoRepository<EventParti
     List<EventParticipation> findByOrganizationIdAndStatus(String organizationId, EventParticipationStatus status);
 
     @Query(value = "{ 'status': 'COMPLETED' }", fields = "{ 'hours': 1 }")
-    long sumTotalHoursCompleted();
+    Long sumTotalHoursCompleted();
 } 

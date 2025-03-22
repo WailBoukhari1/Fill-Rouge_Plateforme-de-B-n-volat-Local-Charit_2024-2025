@@ -20,20 +20,17 @@ import com.fill_rouge.backend.repository.OrganizationRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
     private final JwtConfig jwtConfig;
     private final Key signingKey;
     private final OrganizationRepository organizationRepository;
-
-    public JwtService(JwtConfig jwtConfig, OrganizationRepository organizationRepository) {
-        this.jwtConfig = jwtConfig;
-        this.signingKey = Keys.hmacShaKeyFor(jwtConfig.getSecretKey().getBytes());
-        this.organizationRepository = organizationRepository;
-    }
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);

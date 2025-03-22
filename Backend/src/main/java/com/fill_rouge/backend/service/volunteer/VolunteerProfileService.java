@@ -1,9 +1,10 @@
 package com.fill_rouge.backend.service.volunteer;
 
+import java.util.List;
+
 import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
-import java.util.List;
 
 public interface VolunteerProfileService {
     // Core profile operations
@@ -25,4 +26,24 @@ public interface VolunteerProfileService {
     
     // Internal use
     VolunteerProfile getVolunteerProfile(String volunteerId);
+    
+    /**
+     * Update the approval status of a volunteer profile
+     * 
+     * @param volunteerId The volunteer ID to update
+     * @param status The new approval status (PENDING, APPROVED, REJECTED)
+     * @param reason The reason for rejection (required when status is REJECTED)
+     * @return The updated volunteer profile
+     */
+    VolunteerProfileResponse updateVolunteerApprovalStatus(String volunteerId, String status, String reason);
+    
+    /**
+     * Update the ban status of a volunteer
+     * 
+     * @param volunteerId The volunteer ID to update
+     * @param banned Whether to ban (true) or unban (false)
+     * @param reason The reason for banning (required when banning)
+     * @return The updated volunteer profile
+     */
+    VolunteerProfileResponse updateVolunteerBanStatus(String volunteerId, boolean banned, String reason);
 } 

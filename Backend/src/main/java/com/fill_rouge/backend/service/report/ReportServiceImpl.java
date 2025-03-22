@@ -9,7 +9,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import org.bson.Document;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -22,6 +21,7 @@ import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.domain.Skill;
+import com.fill_rouge.backend.dto.CategoryStatsDTO;
 import com.fill_rouge.backend.dto.request.CustomReportRequest;
 import com.fill_rouge.backend.dto.response.CustomReportResponse;
 import com.fill_rouge.backend.dto.response.DashboardOverviewResponse;
@@ -42,9 +42,6 @@ import com.fill_rouge.backend.service.event.EventService;
 import com.fill_rouge.backend.service.event.EventStatisticsService;
 import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
 import com.fill_rouge.backend.util.ReportCalculationUtil;
-import com.fill_rouge.backend.dto.OrganizationStatsDTO;
-import com.fill_rouge.backend.dto.VolunteerStatsDTO;
-import com.fill_rouge.backend.dto.CategoryStatsDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -88,7 +85,7 @@ public class ReportServiceImpl implements ReportService {
 
         return VolunteerReportResponse.builder()
                 .volunteerId(volunteerId)
-                .volunteerName(profile.getFirstName() + " " + profile.getLastName())
+                .volunteerName(profile.getUser().getFirstName() + " " + profile.getUser().getLastName())
                 .totalEventsAttended((Integer) basicStats.get("participantCount"))
                 .totalHoursContributed((Integer) basicStats.get("totalHours"))
                 .averageRating((Double) basicStats.get("averageRating"))

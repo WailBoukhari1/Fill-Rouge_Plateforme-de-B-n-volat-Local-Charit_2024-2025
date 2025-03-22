@@ -23,8 +23,14 @@ export class QuestionnaireGuard implements CanActivate {
           return this.router.createUrlTree(['/auth/login']);
         }
 
+        // For admin role, always redirect to dashboard silently (without logging)
+        if (user.role === UserRole.ADMIN) {
+          return this.router.createUrlTree(['/dashboard']);
+        }
+
         // If questionnaire is completed or role is not UNASSIGNED, redirect to dashboard
         if (user.questionnaireCompleted || user.role !== UserRole.UNASSIGNED) {
+          // Only log for non-admin roles
           console.log('Questionnaire access denied:', {
             completed: user.questionnaireCompleted,
             role: user.role

@@ -34,60 +34,6 @@ import { EventRegistrationDialogComponent } from './event-registration-dialog.co
   template: `
     <div class="container mx-auto p-4">
       <mat-tab-group>
-        <mat-tab label="Upcoming Events">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            @for (event of upcomingEvents; track event._id) {
-              <mat-card>
-                <mat-card-header>
-                  <mat-card-title>{{ event.title }}</mat-card-title>
-                  <mat-card-subtitle>{{ event.organizationId }}</mat-card-subtitle>
-                </mat-card-header>
-                <mat-card-content class="p-4">
-                  <p class="mb-2">{{ event.description }}</p>
-                  <div class="flex items-center mb-2">
-                    <mat-icon class="text-gray-500 mr-2">calendar_today</mat-icon>
-                    <span>{{ event.startDate | date:'medium' }}</span>
-                  </div>
-                  <div class="flex items-center mb-2">
-                    <mat-icon class="text-gray-500 mr-2">location_on</mat-icon>
-                    <span>{{ event.location }}</span>
-                  </div>
-                  <div class="flex items-center mb-2">
-                    <mat-icon class="text-gray-500 mr-2">group</mat-icon>
-                    <span>{{ (event.registeredParticipants?.length ?? 0) }}/{{ event.maxParticipants }} participants</span>
-                  </div>
-                  <div class="mt-2">
-                    <mat-chip-listbox>
-                      @for (skill of event.requiredSkills ?? []; track skill) {
-                        <mat-chip>{{ skill }}</mat-chip>
-                      }
-                    </mat-chip-listbox>
-                  </div>
-                </mat-card-content>
-                <mat-card-actions class="p-4">
-                  @if (!isRegistered(event) && !isWaitlisted(event)) {
-                    <button mat-raised-button color="primary" 
-                            [disabled]="(event.registeredParticipants?.length ?? 0) >= event.maxParticipants"
-                            (click)="event._id && openRegistrationDialog(event)">
-                      {{ (event.registeredParticipants?.length ?? 0) >= event.maxParticipants ? 'Join Waitlist' : 'Register' }}
-                    </button>
-                  } @else if (isRegistered(event)) {
-                    <button mat-raised-button color="warn" 
-                            (click)="event._id && cancelRegistration(event._id)">
-                      Cancel Registration
-                    </button>
-                  } @else if (isWaitlisted(event)) {
-                    <button mat-raised-button color="accent" 
-                            (click)="event._id && leaveWaitlist(event._id)">
-                      Leave Waitlist
-                    </button>
-                  }
-                </mat-card-actions>
-              </mat-card>
-            }
-          </div>
-        </mat-tab>
-
         <mat-tab label="My Events">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             @for (event of registeredEvents; track event._id) {
@@ -163,7 +109,7 @@ import { EventRegistrationDialogComponent } from './event-registration-dialog.co
                 </mat-card-content>
                 <mat-card-actions class="p-4">
                   <button mat-raised-button color="warn" 
-                          (click)="event._id && leaveWaitlist(event._id)">
+                          (click)="event._id && cancelRegistration(event._id)">
                     Leave Waitlist
                   </button>
                 </mat-card-actions>
@@ -176,7 +122,6 @@ import { EventRegistrationDialogComponent } from './event-registration-dialog.co
   `
 })
 export class VolunteerEventsComponent implements OnInit, OnDestroy {
-  upcomingEvents: IEvent[] = [];
   registeredEvents: IEvent[] = [];
   waitlistedEvents: IEvent[] = [];
   loading = false;
@@ -199,22 +144,8 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
 
   loadEvents(): void {
     this.loading = true;
-    this.store.dispatch(EventActions.loadUpcomingEvents());
     this.store.dispatch(EventActions.loadRegisteredEvents());
     this.store.dispatch(EventActions.loadWaitlistedEvents());
-
-    this.subscriptions.add(
-      this.store.select(EventSelectors.selectUpcomingEvents).subscribe(
-        events => {
-          this.upcomingEvents = events;
-          this.loading = false;
-        },
-        error => {
-          console.error('Error loading upcoming events:', error);
-          this.loading = false;
-        }
-      )
-    );
 
     this.subscriptions.add(
       this.store.select(EventSelectors.selectRegisteredEvents).subscribe(
@@ -251,7 +182,7 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (!result) return;
-      
+       
       if (result.type === 'quick') {
         this.registerForEvent(result.eventId);
       } else if (result.type === 'standard') {
@@ -273,11 +204,7 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
   }
 
   cancelRegistration(eventId: string): void {
-    this.store.dispatch(EventActions.unregisterFromEvent({ eventId }));
-  }
-
-  leaveWaitlist(eventId: string): void {
-    this.store.dispatch(EventActions.unregisterFromEvent({ eventId }));
+    this.store.dispatch(EventActions.cancelEventRegistration({ eventId }));
   }
 
   isRegistered(event: IEvent): boolean {
@@ -312,14 +239,14 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
 
   getStatusColor(status: EventStatus): string {
     switch (status) {
+      case EventStatus.PENDING:
+        return 'basic';
       case EventStatus.ACTIVE:
         return 'primary';
       case EventStatus.COMPLETED:
         return 'accent';
       case EventStatus.CANCELLED:
         return 'warn';
-      case EventStatus.PENDING:
-        return 'basic';
       case EventStatus.APPROVED:
         return 'accent';
       case EventStatus.DRAFT:
@@ -336,6 +263,6 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
   }
 
   private getCurrentUserId(): string {
-    return localStorage.getItem('userId') || '';
+    return this.authService.getCurrentUserId() || '';
   }
 } 

@@ -26,7 +26,6 @@ import {
   selectEventLoading, 
   selectEventError, 
   selectEvents,
-  selectUpcomingEvents,
   selectOngoingEvents,
   selectCompletedEvents,
   selectRegisteredEvents
@@ -63,92 +62,6 @@ import { Page } from '../../../../core/models/page.model';
       </div>
 
       <mat-tab-group>
-        <!-- Upcoming Events -->
-        <mat-tab label="Upcoming">
-          <ng-template matTabContent>
-            <div class="tab-content">
-              @if (loading$ | async) {
-                <div class="loading-wrapper">
-                  <mat-spinner diameter="40"></mat-spinner>
-                </div>
-              } @else if (error$ | async) {
-                <mat-card>
-                  <mat-card-content>
-                    <div class="error-message">
-                      <mat-icon color="warn">error_outline</mat-icon>
-                      <p>{{ error$ | async }}</p>
-                      <button mat-raised-button color="primary" (click)="loadEvents()">
-                        <mat-icon>refresh</mat-icon>
-                        Retry
-                      </button>
-                    </div>
-                  </mat-card-content>
-                </mat-card>
-              } @else {
-                <mat-card>
-                  <mat-card-content>
-                    <table mat-table [dataSource]="upcomingEventsDataSource" matSort (matSortChange)="onSort($event)">
-                      <!-- Title Column -->
-                      <ng-container matColumnDef="title">
-                        <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
-                        <td mat-cell *matCellDef="let event">{{event?.title || 'N/A'}}</td>
-                      </ng-container>
-
-                      <!-- Organization Column -->
-                      <ng-container matColumnDef="organization">
-                        <th mat-header-cell *matHeaderCellDef mat-sort-header>Organization</th>
-                        <td mat-cell *matCellDef="let event">{{event?.organizationName || 'N/A'}}</td>
-                      </ng-container>
-
-                      <!-- Date Column -->
-                      <ng-container matColumnDef="date">
-                        <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
-                        <td mat-cell *matCellDef="let event">
-                          {{event?.startDate | date:'mediumDate'}} - {{event?.endDate | date:'mediumDate'}}
-                        </td>
-                      </ng-container>
-
-                      <!-- Location Column -->
-                      <ng-container matColumnDef="location">
-                        <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
-                        <td mat-cell *matCellDef="let event">{{event?.location || 'N/A'}}</td>
-                      </ng-container>
-
-                      <!-- Status Column -->
-                      <ng-container matColumnDef="status">
-                        <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
-                        <td mat-cell *matCellDef="let event">
-                          <span class="status-badge" [class]="event?.status?.toLowerCase()">
-                            {{formatStatus(event?.status) || 'N/A'}}
-                          </span>
-                        </td>
-                      </ng-container>
-
-                      <!-- Actions Column -->
-                      <ng-container matColumnDef="actions">
-                        <th mat-header-cell *matHeaderCellDef>Actions</th>
-                        <td mat-cell *matCellDef="let event">
-                          <button mat-icon-button color="primary" [routerLink]="['/events', event?.id]" matTooltip="View details">
-                            <mat-icon>visibility</mat-icon>
-                          </button>
-                          @if (event?.isRegistered) {
-                            <button mat-icon-button color="warn" (click)="confirmCancelRegistration(event)" matTooltip="Cancel registration">
-                              <mat-icon>cancel</mat-icon>
-                            </button>
-                          }
-                        </td>
-                      </ng-container>
-
-                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-                    </table>
-                  </mat-card-content>
-                </mat-card>
-              }
-            </div>
-          </ng-template>
-        </mat-tab>
-
         <!-- Ongoing Events -->
         <mat-tab label="Ongoing">
           <ng-template matTabContent>
@@ -156,7 +69,57 @@ import { Page } from '../../../../core/models/page.model';
               <mat-card>
                 <mat-card-content>
                   <table mat-table [dataSource]="ongoingEventsDataSource" matSort (matSortChange)="onSort($event)">
-                    <!-- Same columns as above -->
+                    <!-- Title Column -->
+                    <ng-container matColumnDef="title">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+                      <td mat-cell *matCellDef="let event">{{event?.title || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Organization Column -->
+                    <ng-container matColumnDef="organization">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Organization</th>
+                      <td mat-cell *matCellDef="let event">{{event?.organizationName || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Date Column -->
+                    <ng-container matColumnDef="date">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+                      <td mat-cell *matCellDef="let event">
+                        {{event?.startDate | date:'mediumDate'}} - {{event?.endDate | date:'mediumDate'}}
+                      </td>
+                    </ng-container>
+
+                    <!-- Location Column -->
+                    <ng-container matColumnDef="location">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
+                      <td mat-cell *matCellDef="let event">{{event?.location || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Status Column -->
+                    <ng-container matColumnDef="status">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+                      <td mat-cell *matCellDef="let event">
+                        <span class="status-badge" [class]="event?.status?.toLowerCase()">
+                          {{formatStatus(event?.status) || 'N/A'}}
+                        </span>
+                      </td>
+                    </ng-container>
+
+                    <!-- Actions Column -->
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef>Actions</th>
+                      <td mat-cell *matCellDef="let event">
+                        <button mat-icon-button color="primary" [routerLink]="['/events', event?.id]" matTooltip="View details">
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                        @if (event?.isRegistered) {
+                          <button mat-icon-button color="warn" (click)="confirmCancelRegistration(event)" matTooltip="Cancel registration">
+                            <mat-icon>cancel</mat-icon>
+                          </button>
+                        }
+                      </td>
+                    </ng-container>
+
                     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
                   </table>
@@ -173,7 +136,57 @@ import { Page } from '../../../../core/models/page.model';
               <mat-card>
                 <mat-card-content>
                   <table mat-table [dataSource]="completedEventsDataSource" matSort (matSortChange)="onSort($event)">
-                    <!-- Same columns as above -->
+                    <!-- Title Column -->
+                    <ng-container matColumnDef="title">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+                      <td mat-cell *matCellDef="let event">{{event?.title || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Organization Column -->
+                    <ng-container matColumnDef="organization">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Organization</th>
+                      <td mat-cell *matCellDef="let event">{{event?.organizationName || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Date Column -->
+                    <ng-container matColumnDef="date">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+                      <td mat-cell *matCellDef="let event">
+                        {{event?.startDate | date:'mediumDate'}} - {{event?.endDate | date:'mediumDate'}}
+                      </td>
+                    </ng-container>
+
+                    <!-- Location Column -->
+                    <ng-container matColumnDef="location">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
+                      <td mat-cell *matCellDef="let event">{{event?.location || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Status Column -->
+                    <ng-container matColumnDef="status">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+                      <td mat-cell *matCellDef="let event">
+                        <span class="status-badge" [class]="event?.status?.toLowerCase()">
+                          {{formatStatus(event?.status) || 'N/A'}}
+                        </span>
+                      </td>
+                    </ng-container>
+
+                    <!-- Actions Column -->
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef>Actions</th>
+                      <td mat-cell *matCellDef="let event">
+                        <button mat-icon-button color="primary" [routerLink]="['/events', event?.id]" matTooltip="View details">
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                        @if (event?.isRegistered) {
+                          <button mat-icon-button color="warn" (click)="confirmCancelRegistration(event)" matTooltip="Cancel registration">
+                            <mat-icon>cancel</mat-icon>
+                          </button>
+                        }
+                      </td>
+                    </ng-container>
+
                     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
                   </table>
@@ -190,7 +203,57 @@ import { Page } from '../../../../core/models/page.model';
               <mat-card>
                 <mat-card-content>
                   <table mat-table [dataSource]="registeredEventsDataSource" matSort (matSortChange)="onSort($event)">
-                    <!-- Same columns as above -->
+                    <!-- Title Column -->
+                    <ng-container matColumnDef="title">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+                      <td mat-cell *matCellDef="let event">{{event?.title || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Organization Column -->
+                    <ng-container matColumnDef="organization">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Organization</th>
+                      <td mat-cell *matCellDef="let event">{{event?.organizationName || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Date Column -->
+                    <ng-container matColumnDef="date">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+                      <td mat-cell *matCellDef="let event">
+                        {{event?.startDate | date:'mediumDate'}} - {{event?.endDate | date:'mediumDate'}}
+                      </td>
+                    </ng-container>
+
+                    <!-- Location Column -->
+                    <ng-container matColumnDef="location">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
+                      <td mat-cell *matCellDef="let event">{{event?.location || 'N/A'}}</td>
+                    </ng-container>
+
+                    <!-- Status Column -->
+                    <ng-container matColumnDef="status">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+                      <td mat-cell *matCellDef="let event">
+                        <span class="status-badge" [class]="event?.status?.toLowerCase()">
+                          {{formatStatus(event?.status) || 'N/A'}}
+                        </span>
+                      </td>
+                    </ng-container>
+
+                    <!-- Actions Column -->
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef>Actions</th>
+                      <td mat-cell *matCellDef="let event">
+                        <button mat-icon-button color="primary" [routerLink]="['/events', event?.id]" matTooltip="View details">
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                        @if (event?.isRegistered) {
+                          <button mat-icon-button color="warn" (click)="confirmCancelRegistration(event)" matTooltip="Cancel registration">
+                            <mat-icon>cancel</mat-icon>
+                          </button>
+                        }
+                      </td>
+                    </ng-container>
+
                     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
                   </table>
@@ -310,7 +373,6 @@ import { Page } from '../../../../core/models/page.model';
   `]
 })
 export class VolunteerEventsComponent implements OnInit {
-  upcomingEvents$: Observable<IEvent[]>;
   ongoingEvents$: Observable<IEvent[]>;
   completedEvents$: Observable<IEvent[]>;
   registeredEvents$: Observable<IEvent[]>;
@@ -318,7 +380,6 @@ export class VolunteerEventsComponent implements OnInit {
   error$: Observable<string | null>;
   displayedColumns: string[] = ['title', 'organization', 'date', 'location', 'status', 'actions'];
   
-  upcomingEventsDataSource: MatTableDataSource<IEvent>;
   ongoingEventsDataSource: MatTableDataSource<IEvent>;
   completedEventsDataSource: MatTableDataSource<IEvent>;
   registeredEventsDataSource: MatTableDataSource<IEvent>;
@@ -336,7 +397,6 @@ export class VolunteerEventsComponent implements OnInit {
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {
-    this.upcomingEvents$ = this.store.select(selectUpcomingEvents);
     this.ongoingEvents$ = this.store.select(selectOngoingEvents);
     this.completedEvents$ = this.store.select(selectCompletedEvents);
     this.registeredEvents$ = this.store.select(selectRegisteredEvents);
@@ -344,7 +404,6 @@ export class VolunteerEventsComponent implements OnInit {
     this.error$ = this.store.select(selectEventError);
 
     // Initialize table data sources
-    this.upcomingEventsDataSource = new MatTableDataSource<IEvent>([]);
     this.ongoingEventsDataSource = new MatTableDataSource<IEvent>([]);
     this.completedEventsDataSource = new MatTableDataSource<IEvent>([]);
     this.registeredEventsDataSource = new MatTableDataSource<IEvent>([]);
@@ -356,12 +415,6 @@ export class VolunteerEventsComponent implements OnInit {
   }
 
   private setupTableDataSources(): void {
-    this.upcomingEvents$.pipe(
-      map(events => events || [])
-    ).subscribe(events => {
-      this.upcomingEventsDataSource.data = events;
-    });
-
     this.ongoingEvents$.pipe(
       map(events => events || [])
     ).subscribe(events => {
@@ -414,6 +467,11 @@ export class VolunteerEventsComponent implements OnInit {
   }
 
   confirmCancelRegistration(event: IEvent): void {
+    if (!event.id) {
+      this.snackBar.open('Event ID is missing', 'Close', { duration: 3000 });
+      return;
+    }
+    
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Cancel Registration',
@@ -425,7 +483,7 @@ export class VolunteerEventsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.store.dispatch(EventActions.cancelEventRegistration({ eventId: event.id }));
+        this.store.dispatch(EventActions.cancelEventRegistration({ eventId: event.id as string }));
       }
     });
   }

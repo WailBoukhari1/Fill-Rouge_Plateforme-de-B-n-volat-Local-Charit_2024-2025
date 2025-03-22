@@ -12,6 +12,7 @@ import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.dto.request.EventRegistrationRequest;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
+import com.fill_rouge.backend.dto.response.EventResponse;
 
 public interface EventService {
     // Core Event Operations
@@ -21,6 +22,10 @@ public interface EventService {
     Event getEventById(String eventId);
     Event updateEventStatus(String eventId, EventStatus status);
     Page<Event> getAllEvents(Pageable pageable);
+    Page<Event> getAllEventsForAdmin(Pageable pageable);
+    
+    // Public Events (no authentication required)
+    Page<Event> getPublicEvents(Pageable pageable);
     
     // Event Search & Filtering
     Page<Event> getEventsByOrganization(String organizationId, Pageable pageable);
@@ -50,4 +55,8 @@ public interface EventService {
     EventStatisticsResponse getEventStatistics(String eventId);
     double calculateEventSuccessRate(String eventId);
     int getTotalVolunteerHours(String eventId);
+
+    List<EventResponse> getUpcomingEvents();
+    EventResponse getEventResponseById(String id);
+    EventResponse createEvent(EventRequest eventRequest);
 }

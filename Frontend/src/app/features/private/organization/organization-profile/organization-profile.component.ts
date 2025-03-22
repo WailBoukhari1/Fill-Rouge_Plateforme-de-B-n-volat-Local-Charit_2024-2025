@@ -633,9 +633,8 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
       .updateOrganization(this.organization.id, organizationData)
       .subscribe({
         next: (response) => {
-          // Check for null/undefined response
           if (response && response.data) {
-            this.organization = response.data;
+            this.organization = response.data as unknown as OrganizationProfile;
             
             // Check profile completeness after update
             this.checkProfileCompleteness();
@@ -724,10 +723,10 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response && response.data) {
-            this.organization = response.data;
+            this.organization = response.data as unknown as OrganizationProfile;
             this.checkProfileCompleteness();
             this.initForm();
-            this.focusAreas = [...this.organization.focusAreas];
+            this.focusAreas = this.organization ? [...this.organization.focusAreas] : [];
             
             this.snackBar.open('Default values applied successfully. Profile should now be complete.', 'Close', {
               duration: 5000,
@@ -818,12 +817,14 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
         .uploadLogo(this.organization.id, event)
         .subscribe({
           next: (response) => {
-            this.organization = response.data;
-            this.snackBar.open('Logo uploaded successfully', 'Close', {
-              duration: 3000,
-            });
+            if (response && response.data) {
+              this.organization = response.data as OrganizationProfile;
+              this.snackBar.open('Logo uploaded successfully', 'Close', {
+                duration: 3000,
+              });
+            }
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error uploading logo:', error);
             this.snackBar.open('Error uploading logo', 'Close', {
               duration: 3000,
@@ -835,47 +836,17 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
 
   onDocumentSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (!input.files?.length) {
+    const file = input.files?.[0];
+    const organizationId = this.organization?.id;
+
+    if (!file) {
       console.log('No file selected');
       return;
     }
 
-    const file = input.files[0];
-    const organizationId = this.organization?.id;
-
-    // Log file details
-    console.log('File details:', {
-      name: file.name,
-      type: file.type,
-      size: `${(file.size / 1024 / 1024).toFixed(2)}MB`
-    });
-
     if (!organizationId) {
-      console.error('Organization ID missing');
-      this.snackBar.open('Organization ID is missing', 'Close', {
-        duration: 3000,
-        verticalPosition: 'top'
-      });
-      return;
-    }
-
-    // Validate file type
-    if (!file.type.match(/^(application\/pdf|image\/)/)) {
-      console.warn('Invalid file type:', file.type);
-      this.snackBar.open('Only PDF and image files are allowed', 'Close', {
-        duration: 3000,
-        verticalPosition: 'top'
-      });
-      return;
-    }
-
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      console.warn('File too large:', `${(file.size / 1024 / 1024).toFixed(2)}MB`);
-      this.snackBar.open('File size must be less than 10MB', 'Close', {
-        duration: 3000,
-        verticalPosition: 'top'
-      });
+      console.error('Organization ID not found');
+      this.snackBar.open('Organization ID is required', 'Close', { duration: 3000 });
       return;
     }
 
@@ -1036,14 +1007,16 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
       this.organizationService
         .uploadProfilePicture(this.organization.id, formData)
         .subscribe({
-          next: (response: OrganizationProfile) => {
-            this.organization = response;
-            this.loading = false;
-            this.snackBar.open(
-              'Profile picture updated successfully',
-              'Close',
-              { duration: 3000 }
-            );
+          next: (response) => {
+            if (response && response.data) {
+              this.organization = response.data as OrganizationProfile;
+              this.loading = false;
+              this.snackBar.open(
+                'Profile picture updated successfully',
+                'Close',
+                { duration: 3000 }
+              );
+            }
           },
           error: (error: any) => {
             this.loading = false;
@@ -1069,41 +1042,41 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
       // Validate file type
       if (!file.type.startsWith('image/')) {
         this.snackBar.open('Please select an image file', 'Close', { duration: 3000 });
-      return;
-    }
+        return;
+      }
 
       // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         this.snackBar.open('File size should not exceed 5MB', 'Close', { duration: 3000 });
-      return;
-    }
+        return;
+      }
 
       // Create FormData
-    const formData = new FormData();
-    formData.append('file', file);
+      const formData = new FormData();
+      formData.append('file', file);
 
       // Show loading indicator
       this.loading = true;
 
       // Upload the file
-            this.organizationService
+      this.organizationService
         .uploadProfilePicture(this.organization.id, formData)
         .pipe(finalize(() => this.loading = false))
-              .subscribe({
-                next: (response) => {
-            if (response.profilePicture) {
+        .subscribe({
+          next: (response) => {
+            if (response && response.data) {
               this.organization = {
                 ...this.organization,
-                profilePicture: response.profilePicture
+                profilePicture: response.data.profilePicture
               } as OrganizationProfile;
+              this.snackBar.open('Profile picture updated successfully', 'Close', { duration: 3000 });
             }
-            this.snackBar.open('Profile picture updated successfully', 'Close', { duration: 3000 });
-                },
-                error: (error) => {
+          },
+          error: (error: any) => {
             console.error('Error uploading profile picture:', error);
-                  this.snackBar.open(
+            this.snackBar.open(
               error.error?.message || 'Error uploading profile picture',
-                    'Close',
+              'Close',
               { duration: 3000 }
             );
           }
@@ -1396,20 +1369,20 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
     this.organizationService.getOrganization(this.organization.id)
       .subscribe({
         next: (response) => {
-          if (response.data) {
+          if (response && response.data) {
             // The service automatically preserves images
-            this.organization = response.data;
+            this.organization = response.data as OrganizationProfile;
             
             // Reinitialize the form with updated data
             this.initForm();
             
             // Update focus areas
-            if (this.organization.focusAreas) {
+            if (this.organization && this.organization.focusAreas) {
               this.focusAreas = [...this.organization.focusAreas];
             }
             
             // Update documents
-            if (this.organization.documents && this.organization.documents.length > 0) {
+            if (this.organization && this.organization.documents && this.organization.documents.length > 0) {
               this.documents = this.organization.documents.map(docId => ({
                 id: docId,
                 name: `Document ${docId}`,
@@ -1424,7 +1397,7 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
           }
           this.loading = false;
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading organization profile:', error);
           this.snackBar.open('Failed to load organization profile', 'Close', {
             duration: 5000,

@@ -402,7 +402,7 @@
                     <label class="form-label mb-2 block text-sm font-medium text-gray-700">
                       Focus Areas <span class="required-field text-red-500">*</span>
                     </label>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" [formGroupName]="'organization'">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div *ngFor="let area of focusAreaOptions" 
                            (click)="toggleFocusArea(area.value)"
                            class="focus-area-item p-3 rounded-lg border-2 cursor-pointer transition-all duration-200"
@@ -428,7 +428,7 @@
                       Social Media Presence
                     </h3>
                     <div
-                      formGroupName="socialMedia"
+                      formGroupName="socialMediaLinks"
                       class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
                     >
                       <mat-form-field class="w-full">
@@ -437,7 +437,7 @@
                         <mat-error
                           *ngIf="
                             roleSpecificFormGroup
-                              .get('organization.socialMedia.facebook')
+                              .get('organization.socialMediaLinks.facebook')
                               ?.hasError('pattern')
                           "
                         >
@@ -451,7 +451,7 @@
                         <mat-error
                           *ngIf="
                             roleSpecificFormGroup
-                              .get('organization.socialMedia.twitter')
+                              .get('organization.socialMediaLinks.twitter')
                               ?.hasError('pattern')
                           "
                         >
@@ -465,7 +465,7 @@
                         <mat-error
                           *ngIf="
                             roleSpecificFormGroup
-                              .get('organization.socialMedia.instagram')
+                              .get('organization.socialMediaLinks.instagram')
                               ?.hasError('pattern')
                           "
                         >
@@ -479,7 +479,7 @@
                         <mat-error
                           *ngIf="
                             roleSpecificFormGroup
-                              .get('organization.socialMedia.linkedin')
+                              .get('organization.socialMediaLinks.linkedin')
                               ?.hasError('pattern')
                           "
                         >

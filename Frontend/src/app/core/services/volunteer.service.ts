@@ -8,7 +8,7 @@ import {
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { AuthService } from '../auth/auth.service';
+import { AuthService } from '../services/auth.service';
 import { ApiResponse } from '../models/api-response.model';
 import { 
   IVolunteer, 
@@ -73,8 +73,6 @@ export interface VolunteerProfile {
   backgroundChecked: boolean;
   backgroundCheckDate: string;
   backgroundCheckStatus: string;
-  createdAt: string;
-  updatedAt: string;
   isActive: boolean;
   status: string;
   maxHoursPerWeek: number;
@@ -83,6 +81,12 @@ export interface VolunteerProfile {
   completionPercentage: number;
   impactScore: number;
   references: string[];
+  userId: number;
+  approved?: boolean;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  banned?: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export interface VolunteerProfileRequest {
@@ -526,5 +530,187 @@ export class VolunteerService {
     }
 
     return params;
+  }
+
+  approveVolunteer(volunteerId: string): Observable<any> {
+    return this.http
+      .patch<any>(
+        `${this.apiUrl}/${volunteerId}/approve`,
+        {}
+      )
+      .pipe(
+        catchError(error => {
+          console.error('Error approving volunteer:', error);
+          return throwError(() => new Error(error.error?.message || 'Failed to approve volunteer'));
+        })
+      );
+  }
+
+  rejectVolunteer(volunteerId: string, reason: string): Observable<any> {
+    return this.http
+      .patch<any>(
+        `${this.apiUrl}/${volunteerId}/reject`,
+        {},
+        { 
+          params: { reason } 
+        }
+      )
+      .pipe(
+        catchError(error => {
+          console.error('Error rejecting volunteer:', error);
+          return throwError(() => new Error(error.error?.message || 'Failed to reject volunteer'));
+        })
+      );
+  }
+
+  banVolunteer(volunteerId: string, reason: string): Observable<any> {
+    return this.http
+      .patch<any>(
+        `${this.apiUrl}/${volunteerId}/ban`,
+        {},
+        { 
+          params: { reason } 
+        }
+      )
+      .pipe(
+        catchError(error => {
+          console.error('Error banning volunteer:', error);
+          return throwError(() => new Error(error.error?.message || 'Failed to ban volunteer'));
+        })
+      );
+  }
+
+  unbanVolunteer(volunteerId: string): Observable<any> {
+    return this.http
+      .patch<any>(
+        `${this.apiUrl}/${volunteerId}/unban`,
+        {}
+      )
+      .pipe(
+        catchError(error => {
+          console.error('Error unbanning volunteer:', error);
+          return throwError(() => new Error(error.error?.message || 'Failed to unban volunteer'));
+        })
+      );
+  }
+
+  /**
+   * Get the volunteer profile for the current user
+   */
+  getVolunteerProfile(): Observable<VolunteerProfile> {
+    return this.http.get<VolunteerProfile>(`${this.apiUrl}/me`).pipe(
+      map(profile => this.ensureValidVolunteerProfile(profile))
+    );
+  }
+  
+  /**
+   * Get a volunteer profile by ID (admin only)
+   */
+  getVolunteerById(id: number): Observable<VolunteerProfile> {
+    return this.http.get<VolunteerProfile>(`${this.apiUrl}/${id}`).pipe(
+      map(profile => this.ensureValidVolunteerProfile(profile))
+    );
+  }
+  
+  /**
+   * Get all volunteers with filtering options
+   */
+  getAllVolunteers(page: number, size: number, filters?: any): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+      
+    if (filters) {
+      if (filters.status) params = params.set('status', filters.status);
+      if (filters.search) params = params.set('search', filters.search);
+      if (filters.skills && filters.skills.length) {
+        filters.skills.forEach((skill: string) => {
+          params = params.append('skills', skill);
+        });
+      }
+    }
+    
+    return this.http.get<any>(`${this.apiUrl}`, { params });
+  }
+  
+  /**
+   * Get pending volunteer approvals (admin only)
+   */
+  getPendingVolunteers(page: number, size: number): Observable<any> {
+    return this.getAllVolunteers(page, size, { status: 'PENDING' });
+  }
+  
+  /**
+   * Create or update volunteer profile
+   */
+  updateVolunteerProfile(profile: Partial<VolunteerProfile>): Observable<VolunteerProfile> {
+    // Remove firstName, lastName, and email fields as they come from User entity
+    const { firstName, lastName, email, ...profileData } = profile;
+    
+    // Create sanitized profile without the User fields
+    const sanitizedProfile = {
+      ...profileData,
+    };
+    
+    return this.http.put<VolunteerProfile>(`${this.apiUrl}/me`, sanitizedProfile).pipe(
+      map(profile => this.ensureValidVolunteerProfile(profile))
+    );
+  }
+  
+  /**
+   * Get volunteer events (participations)
+   */
+  getVolunteerEvents(page: number, size: number, status?: string): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+      
+    if (status) {
+      params = params.set('status', status);
+    }
+    
+    return this.http.get<any>(`${this.apiUrl}/me/events`, { params });
+  }
+  
+  /**
+   * Get volunteer participation for a specific event
+   */
+  getVolunteerEventParticipation(eventId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/me/events/${eventId}`);
+  }
+  
+  /**
+   * Check if volunteer profile is complete and approved
+   */
+  isProfileCompleteAndApproved(): Observable<{ complete: boolean; approved: boolean; status: string }> {
+    return this.http.get<{ complete: boolean; approved: boolean; status: string }>(
+      `${this.apiUrl}/me/status`
+    );
+  }
+
+  // Ensure valid volunteer profile with proper defaults
+  ensureValidVolunteerProfile(profile: any): VolunteerProfile {
+    // Note: firstName, lastName, and email come exclusively from User entity
+    // Email is not stored in VolunteerProfile table to avoid duplication
+    return {
+      ...profile,
+      firstName: profile.firstName || '', // From User entity 
+      lastName: profile.lastName || '',   // From User entity
+      email: profile.email || '',         // From User entity - not stored in VolunteerProfile
+      phoneNumber: profile.phoneNumber || '',
+      address: profile.address || '',
+      city: profile.city || '',
+      country: profile.country || '',
+      bio: profile.bio || '',
+      profilePicture: profile.profilePicture || '',
+      emergencyContact: profile.emergencyContact || '',
+      emergencyPhone: profile.emergencyPhone || '',
+      // Ensure array fields are never null
+      skills: profile.skills || [],
+      interests: profile.interests || [],
+      preferredCategories: profile.preferredCategories || [],
+      availableDays: profile.availableDays || [],
+      notificationPreferences: profile.notificationPreferences || []
+    } as VolunteerProfile;
   }
 }

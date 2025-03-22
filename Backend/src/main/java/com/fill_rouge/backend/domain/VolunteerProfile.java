@@ -12,13 +12,10 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -42,16 +39,6 @@ public class VolunteerProfile {
     @NotNull(message = "User reference is required")
     private User user;
 
-    @NotBlank(message = "First name is required")
-    private String firstName;
-
-    @NotBlank(message = "Last name is required")
-    private String lastName;
-
-    @Email(message = "Invalid email format")
-    @NotBlank(message = "Email is required")
-    @Indexed(unique = true)
-    private String email;
 
     // Personal Information
     @Size(min = 50, max = 1000, message = "Bio must be between 50 and 1000 characters")
@@ -73,6 +60,17 @@ public class VolunteerProfile {
     
     @NotBlank(message = "Country is required")
     private String country;
+
+    // Status Fields for Approval System
+    @Builder.Default
+    private String approvalStatus = "PENDING"; // PENDING, APPROVED, REJECTED
+    
+    private String rejectionReason;
+    
+    @Builder.Default
+    private boolean banned = false;
+    
+    private String banReason;
 
     // Emergency Contact Information
     private EmergencyContact emergencyContact;

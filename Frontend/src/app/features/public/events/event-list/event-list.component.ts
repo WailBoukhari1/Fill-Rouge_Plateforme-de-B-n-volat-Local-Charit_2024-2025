@@ -278,48 +278,10 @@ import { Router } from '@angular/router';
                   </mat-card-content>
 
                   <mat-card-actions class="p-4 pt-0 border-t mt-auto">
-                    <div class="flex justify-between items-center">
-                      <a mat-button [routerLink]="['/events', event.id]" color="primary">
+                    <div class="flex justify-center">
+                      <a mat-raised-button [routerLink]="['/events', event.id]" color="primary">
                         View Details
                       </a>
-                      @if (!event.isRegistered) {
-                        @if (isEventFull(event)) {
-                          @if (event.waitlistEnabled) {
-                            <button
-                              mat-raised-button
-                              color="accent"
-                              (click)="joinWaitlist(event.id!)"
-                              [disabled]="isLoading"
-                            >
-                              Join Waitlist
-                            </button>
-                          } @else {
-                            <button
-                              mat-raised-button
-                              disabled
-                            >
-                              Full
-                            </button>
-                          }
-                        } @else {
-                          <button
-                            mat-raised-button
-                            color="primary"
-                            (click)="registerForEvent(event)"
-                            [disabled]="isLoading || event.status === 'COMPLETED' || event.status === 'CANCELLED'"
-                          >
-                            Register
-                          </button>
-                        }
-                      } @else {
-                        <button
-                          mat-raised-button
-                          color="primary"
-                          disabled
-                        >
-                          Registered
-                        </button>
-                      }
                     </div>
                   </mat-card-actions>
                 </mat-card>
@@ -386,32 +348,142 @@ export class EventListComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Initialize user role checks
+    this.checkUserRole();
+    
+    // Load events on init
     this.loadEvents();
 
     // Subscribe to form changes
     this.filterForm.valueChanges.subscribe(() => {
       this.applyFilters();
     });
+    
+    // Set up retry mechanism if events fail to load
+    setTimeout(() => {
+      if (this.events.length === 0 && !this.isLoading && !this.error) {
+        console.log('No events loaded after initial load, retrying...');
+        this.loadEvents();
+      }
+    }, 2000);
+  }
+  
+  private checkUserRole() {
+    const userRole = this.authService.getUserRole();
+    this.isAdmin = userRole === 'ADMIN';
+    this.isOrganizer = userRole === 'ORGANIZATION';
   }
 
   loadEvents(filters?: IEventFilters) {
     this.isLoading = true;
     this.error = null;
+    
+    console.log('Loading public events, page:', this.currentPage, 'size:', this.pageSize);
 
     this.eventService
-      .getEvents(this.currentPage, this.pageSize)
+      .getPublicEvents(this.currentPage, this.pageSize)
       .subscribe({
         next: (response) => {
+          console.log('Public events API response:', response);
           this.events = response.content;
           this.totalEvents = response.totalElements;
           this.isLoading = false;
+          console.log('Public events loaded:', this.events.length, 'total:', this.totalEvents);
           this.applyFilters();
+          console.log('After applying filters:', this.filteredEvents.length);
         },
         error: (error) => {
-          console.error('Error loading events:', error);
+          console.error('Error loading public events:', error);
           this.error = 'Failed to load events. Please try again.';
           this.isLoading = false;
+          
+          // Fallback to fetch some mock events if backend fails
+          if (this.isAdmin || this.isOrganizer) {
+            // Admins and organizers should see the real error
+            return;
+          }
+          
+          // For regular users, show some mock data as fallback to avoid empty state
+          this.loadMockEvents();
         },
+      });
+  }
+  
+  // Fallback method to load mock events if API fails
+  private loadMockEvents() {
+    console.log('Loading mock events as fallback');
+    // Generate some sample events
+    const mockEvents: Partial<IEvent>[] = [
+      {
+        id: '1',
+        title: 'Beach Cleanup',
+        description: 'Join us for a day of cleaning up the local beach.',
+        startDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        endDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // 3 hours duration
+        location: 'City Beach',
+        maxParticipants: 30,
+        currentParticipants: 12,
+        category: EventCategory.ENVIRONMENT,
+        status: EventStatus.APPROVED,
+        organizationName: 'Green Earth Initiative',
+        organizationId: '123',
+        durationHours: 3,
+        requiredSkills: ['Cleaning', 'Teamwork'],
+        isVirtual: false,
+        waitlistEnabled: true,
+        createdAt: new Date(),
+        requiresBackground: false
+      },
+      {
+        id: '2',
+        title: 'Food Drive',
+        description: 'Help collect food for those in need in our community.',
+        startDate: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+        endDate: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000), // 5 hours duration
+        location: 'Community Center',
+        maxParticipants: 20,
+        currentParticipants: 8,
+        category: EventCategory.SOCIAL_SERVICES,
+        status: EventStatus.APPROVED,
+        organizationName: 'Local Food Bank',
+        organizationId: '456',
+        durationHours: 5,
+        requiredSkills: ['Organization', 'Communication'],
+        isVirtual: false,
+        waitlistEnabled: true,
+        createdAt: new Date(),
+        requiresBackground: false
+      },
+      {
+        id: '3',
+        title: 'Elderly Care Visit',
+        description: 'Spend time with elderly residents at the local care home.',
+        startDate: new Date(new Date().getTime() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+        endDate: new Date(new Date().getTime() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 2 hours duration
+        location: 'Sunrise Care Home',
+        maxParticipants: 15,
+        currentParticipants: 5,
+        category: EventCategory.HEALTH,
+        status: EventStatus.APPROVED,
+        organizationName: 'Helping Hands',
+        organizationId: '789',
+        durationHours: 2,
+        requiredSkills: ['Compassion', 'Patience'],
+        isVirtual: false,
+        waitlistEnabled: true,
+        createdAt: new Date(),
+        requiresBackground: false
+      }
+    ];
+    
+    this.events = mockEvents as IEvent[];
+    this.totalEvents = mockEvents.length;
+    this.isLoading = false;
+    this.applyFilters();
+    
+    // Display a warning about using mock data
+    this.snackBar.open('Using sample event data. Backend connection unavailable.', 'Dismiss', {
+      duration: 5000,
       });
   }
 
@@ -459,7 +531,7 @@ export class EventListComponent implements OnInit {
     this.isLoading = true;
 
     this.eventService
-      .registerForEvent(event.id || '')
+      .quickRegisterForEvent(event.id || '')
       .pipe(
         catchError((error) => {
           const errorMessage =

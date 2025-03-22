@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '../../../core/guards/auth.guard';
+import { AdminGuard } from '../../../core/guards/admin.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
     path: '',
+    canActivate: [AdminGuard],
     children: [
       {
         path: '',
@@ -16,6 +18,13 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./user-management/user-management.component')
           .then(m => m.UserManagementComponent),
         canActivate: [AuthGuard]
+      },
+      {
+        path: 'users/create',
+        loadComponent: () => import('./user-management/user-add.component')
+          .then(m => m.UserAddComponent),
+        canActivate: [AuthGuard],
+        title: 'Add User'
       },
       {
         path: 'organizations',
@@ -34,6 +43,24 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./reports/reports.component')
           .then(m => m.ReportsComponent),
         canActivate: [AuthGuard]
+      },
+      {
+        path: 'volunteer-approval',
+        loadComponent: () => 
+          import('./volunteer-management/volunteer-approval.component').then(c => c.VolunteerApprovalComponent),
+        title: 'Volunteer Approval'
+      },
+      {
+        path: 'organization-approval',
+        loadComponent: () => 
+          import('./organization-management/organization-approval.component').then(c => c.OrganizationApprovalComponent),
+        title: 'Organization Approval'
+      },
+      {
+        path: 'event-approval',
+        loadComponent: () => 
+          import('./event-management/event-approval.component').then(c => c.EventApprovalComponent),
+        title: 'Event Approval'
       }
     ]
   }

@@ -3,6 +3,7 @@ import { CanActivate, Router, UrlTree } from '@angular/router';
 import { Observable, map, take } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectUser } from '../../../store/auth/auth.selectors';
+import { UserRole } from '../../../core/models/auth.models';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,11 @@ export class QuestionnaireCompletedGuard implements CanActivate {
       map(user => {
         if (!user) {
           return this.router.createUrlTree(['/auth/login']);
+        }
+
+        // Admin users can access regardless of questionnaire status
+        if (user.role === UserRole.ADMIN) {
+          return true;
         }
 
         if (!user.questionnaireCompleted) {

@@ -133,11 +133,23 @@ export interface AdminStatistics {
   totalEvents: number;
   totalVolunteerHours: number;
   activeUsers: number;
+  activeOrganizations: number;
   totalPeopleImpacted: number;
   totalEventCategories: number;
-  activeOrganizations: number;
-  userGrowth: { month: string; users: number }[];
-  eventDistribution: { [key: string]: number };
-  platformGrowth: { month: string; growth: number }[];
-  userEngagement: { month: string; engagement: number }[];
+  platformEngagementRate: number;
+  verifiedOrganizations: number;
+  pendingVerifications: number;
+  activeEvents: number;
+  completedEvents: number;
+  canceledEvents: number;
+  totalResources: number;
+  averageVolunteerHoursPerEvent: number;
+  userGrowth: TimeSeriesData[];
+  eventGrowth: TimeSeriesData[];
+  eventsByCategory: { [key: string]: number };
+  platformGrowth: TimeSeriesData[];
+  userEngagement: TimeSeriesData[];
+  averageVolunteersPerEvent: number;
+  volunteerRetentionRate: number;
+  volunteersByLocation: { [key: string]: number };
 }

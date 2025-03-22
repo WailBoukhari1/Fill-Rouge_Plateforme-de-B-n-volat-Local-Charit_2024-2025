@@ -71,7 +71,7 @@
                 <button 
                   mat-raised-button 
                   color="accent" 
-                  class="w-full justify-center"
+                  class="w-full justify-center text-white"
                   (click)="quickRegister()"
                   [disabled]="isRegistering">
                   <mat-icon class="mr-2">flash_on</mat-icon>
@@ -112,8 +112,9 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>First Name</mat-label>
-              <input matInput formControlName="firstName" placeholder="Enter your first name" required [readonly]="true">
-              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+              <input matInput formControlName="firstName" placeholder="Enter your first name" required readonly>
+              <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">account_circle</mat-icon>
+              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
               <mat-error *ngIf="registrationForm.get('firstName')?.hasError('required')">
                 First name is required
               </mat-error>
@@ -121,8 +122,9 @@
             
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Last Name</mat-label>
-              <input matInput formControlName="lastName" placeholder="Enter your last name" required [readonly]="true">
-              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+              <input matInput formControlName="lastName" placeholder="Enter your last name" required readonly>
+              <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">account_circle</mat-icon>
+              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
               <mat-error *ngIf="registrationForm.get('lastName')?.hasError('required')">
                 Last name is required
               </mat-error>
@@ -131,8 +133,9 @@
           
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Email</mat-label>
-            <input matInput formControlName="email" placeholder="Enter your email" required type="email" [readonly]="true">
-            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+            <input matInput formControlName="email" placeholder="Enter your email" required type="email" readonly>
+            <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">email</mat-icon>
+            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
             <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">
               Email is required
             </mat-error>
@@ -143,8 +146,9 @@
           
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Phone Number</mat-label>
-            <input matInput formControlName="phoneNumber" placeholder="Enter your phone number" required [readonly]="true">
-            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile</mat-hint>
+            <input matInput formControlName="phoneNumber" placeholder="Enter your phone number" required readonly>
+            <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">phone</mat-icon>
+            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
             <mat-error *ngIf="registrationForm.get('phoneNumber')?.hasError('required')">
               Phone number is required
             </mat-error>
@@ -175,7 +179,7 @@
             </div>
             
             <div class="flex justify-center mt-6">
-              <button mat-raised-button color="primary" type="submit" class="px-6" [disabled]="isRegistering || registrationForm.invalid">
+              <button mat-raised-button color="primary" type="submit" class="px-6 text-white" [disabled]="isRegistering || registrationForm.invalid">
                 @if (event && event.currentParticipants >= event.maxParticipants && event.waitlistEnabled) {
                   Join Waitlist
                 } @else {
@@ -276,10 +280,10 @@
           </div>
           
           <div class="flex justify-center space-x-4">
-            <button mat-stroked-button color="primary" routerLink="/events">
+            <button mat-stroked-button color="primary" routerLink="/events" class="text-white">
               Back to Events
             </button>
-            <button mat-raised-button color="primary" [routerLink]="['/events', eventId]">
+            <button mat-raised-button color="primary" [routerLink]="['/events', eventId]" class="text-white">
               Event Details
             </button>
           </div>

@@ -3,6 +3,7 @@ package com.fill_rouge.backend.service.organization;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -222,15 +223,14 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public void addDocument(String organizationId, String documentUrl) {
-        if (!StringUtils.hasText(documentUrl)) {
-            throw new IllegalArgumentException("Document URL is required");
+    public void addDocument(String organizationId, String documentUrl, String documentType) {
+        Organization organization = getOrganizationEntity(organizationId);
+        
+        if (organization == null) {
+            throw new ResourceNotFoundException("Organization not found with ID: " + organizationId);
         }
         
-        Organization organization = getOrganizationEntity(organizationId);
-        if (organization.getDocuments() == null) {
-            organization.setDocuments(new ArrayList<>());
-        }
+        // Add the document URL to the organization
         organization.getDocuments().add(documentUrl);
         organization.setUpdatedAt(LocalDateTime.now());
         organizationRepository.save(organization);
@@ -339,12 +339,21 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         // Apply sorting
         Comparator<VolunteerProfile> comparator = switch (sortBy.toLowerCase()) {
-            case "name" -> Comparator.comparing(v -> v.getFirstName() + " " + v.getLastName());
-            case "email" -> Comparator.comparing(VolunteerProfile::getEmail);
+            case "name" -> Comparator.comparing((VolunteerProfile v) -> {
+                User user = v.getUser();
+                return (user != null) ? (user.getFirstName() + " " + user.getLastName()) : "";
+            });
+            case "email" -> Comparator.comparing((VolunteerProfile v) -> {
+                User user = v.getUser();
+                return (user != null) ? user.getEmail() : "";
+            });
             case "city" -> Comparator.comparing(VolunteerProfile::getCity);
             case "rating" -> Comparator.comparing(VolunteerProfile::getAverageRating, Comparator.nullsLast(Double::compareTo));
             case "hours" -> Comparator.comparing(VolunteerProfile::getTotalHoursVolunteered, Comparator.nullsLast(Integer::compareTo));
-            default -> Comparator.comparing(v -> v.getFirstName() + " " + v.getLastName());
+            default -> Comparator.comparing((VolunteerProfile v) -> {
+                User user = v.getUser();
+                return (user != null) ? (user.getFirstName() + " " + user.getLastName()) : "";
+            });
         };
 
         if ("desc".equalsIgnoreCase(sortOrder)) {
@@ -358,11 +367,12 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     private VolunteerProfileResponse toVolunteerProfileResponse(VolunteerProfile profile) {
+        User user = profile.getUser();
         return VolunteerProfileResponse.builder()
             .id(profile.getId())
-            .firstName(profile.getFirstName())
-            .lastName(profile.getLastName())
-            .email(profile.getEmail())
+            .firstName(user != null ? user.getFirstName() : "")
+            .lastName(user != null ? user.getLastName() : "")
+            .email(user != null ? user.getEmail() : "")
             .phoneNumber(profile.getPhoneNumber())
             .address(profile.getAddress())
             .bio(profile.getBio())
@@ -393,6 +403,73 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         // Return the updated organization response
         return OrganizationResponse.fromOrganization(organization);
+    }
+
+    @Override
+    public OrganizationResponse updateOrganizationStatus(String organizationId, String status, String reason) {
+        Organization organization = getOrganizationEntity(organizationId);
+        
+        if (organization == null) {
+            throw new ResourceNotFoundException("Organization not found with ID: " + organizationId);
+        }
+        
+        // Validate the status
+        if (!Arrays.asList("INCOMPLETE", "PENDING", "APPROVED", "REJECTED").contains(status)) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        
+        // If rejecting, reason is required
+        if ("REJECTED".equals(status) && (reason == null || reason.trim().isEmpty())) {
+            throw new IllegalArgumentException("Rejection reason is required");
+        }
+        
+        organization.setRoleStatus(status);
+        
+        if ("REJECTED".equals(status)) {
+            organization.setRejectionReason(reason);
+        } else {
+            organization.setRejectionReason(null);
+        }
+        
+        organization.setUpdatedAt(LocalDateTime.now());
+        organization = organizationRepository.save(organization);
+        
+        return OrganizationResponse.fromOrganization(organization);
+    }
+
+    @Override
+    public OrganizationResponse updateOrganizationBanStatus(String organizationId, boolean banned, String reason) {
+        Organization organization = getOrganizationEntity(organizationId);
+        
+        if (organization == null) {
+            throw new ResourceNotFoundException("Organization not found with ID: " + organizationId);
+        }
+        
+        // If banning, reason is required
+        if (banned && (reason == null || reason.trim().isEmpty())) {
+            throw new IllegalArgumentException("Ban reason is required");
+        }
+        
+        organization.setBanned(banned);
+        
+        if (banned) {
+            organization.setBanReason(reason);
+        } else {
+            organization.setBanReason(null);
+        }
+        
+        organization.setUpdatedAt(LocalDateTime.now());
+        organization = organizationRepository.save(organization);
+        
+        return OrganizationResponse.fromOrganization(organization);
+    }
+
+    @Override
+    public List<OrganizationResponse> getAllOrganizations() {
+        List<Organization> organizations = organizationRepository.findAll();
+        return organizations.stream()
+                .map(OrganizationResponse::fromOrganization)
+                .collect(Collectors.toList());
     }
 
     // Helper methods

@@ -29,6 +29,50 @@
     </div>
   </div>
   
+  <!-- Event Status Banner -->
+  <div *ngIf="event && (event.status !== 'ACTIVE' || isEventOrganizer)" 
+       class="mb-4 p-3 rounded-md" 
+       [ngClass]="{
+         'bg-yellow-50': event.status === 'PENDING',
+         'bg-green-50': event.status === 'ACTIVE',
+         'bg-red-50': event.status === 'CANCELLED',
+         'bg-blue-50': event.status === 'COMPLETED'
+       }">
+    <p class="flex items-center" 
+       [ngClass]="{
+         'text-yellow-700': event.status === 'PENDING',
+         'text-green-700': event.status === 'ACTIVE',
+         'text-red-700': event.status === 'CANCELLED',
+         'text-blue-700': event.status === 'COMPLETED'
+       }">
+      <mat-icon class="mr-2" 
+        [ngClass]="{
+          'text-yellow-600': event.status === 'PENDING',
+          'text-green-600': event.status === 'ACTIVE',
+          'text-red-600': event.status === 'CANCELLED',
+          'text-blue-600': event.status === 'COMPLETED'
+        }">
+        <ng-container *ngIf="event.status === 'PENDING'">pending</ng-container>
+        <ng-container *ngIf="event.status === 'ACTIVE'">check_circle</ng-container>
+        <ng-container *ngIf="event.status === 'CANCELLED'">cancel</ng-container>
+        <ng-container *ngIf="event.status === 'COMPLETED'">done_all</ng-container>
+      </mat-icon>
+      
+      <ng-container *ngIf="event.status === 'PENDING'">
+        This event is pending admin approval and is not visible to the public yet.
+      </ng-container>
+      <ng-container *ngIf="event.status === 'ACTIVE'">
+        This event is approved and open for registration.
+      </ng-container>
+      <ng-container *ngIf="event.status === 'CANCELLED'">
+        This event has been cancelled.
+      </ng-container>
+      <ng-container *ngIf="event.status === 'COMPLETED'">
+        This event has been completed.
+      </ng-container>
+    </p>
+  </div>
+  
   <!-- Main Content -->
   <div class="container">
     <div class="event-content">
@@ -291,4 +335,45 @@
   [queryParams]="{quick: 'true'}"
   matTooltip="Quick Register">
   <mat-icon>flash_on</mat-icon>
-</button> 
+</button>
+
+<!-- Registration Status Banner (if user is registered) -->
+<div *ngIf="isRegistered && registrationStatus" 
+     class="mb-4 p-3 rounded-md"
+     [ngClass]="{
+       'bg-yellow-50': registrationStatus === 'PENDING' || registrationStatus === 'WAITLISTED',
+       'bg-green-50': registrationStatus === 'APPROVED',
+       'bg-red-50': registrationStatus === 'REJECTED'
+     }">
+  <p class="flex items-center"
+     [ngClass]="{
+       'text-yellow-700': registrationStatus === 'PENDING' || registrationStatus === 'WAITLISTED',
+       'text-green-700': registrationStatus === 'APPROVED',
+       'text-red-700': registrationStatus === 'REJECTED'
+     }">
+    <mat-icon class="mr-2"
+      [ngClass]="{
+        'text-yellow-600': registrationStatus === 'PENDING' || registrationStatus === 'WAITLISTED',
+        'text-green-600': registrationStatus === 'APPROVED',
+        'text-red-600': registrationStatus === 'REJECTED'
+      }">
+      <ng-container *ngIf="registrationStatus === 'PENDING'">pending</ng-container>
+      <ng-container *ngIf="registrationStatus === 'WAITLISTED'">pending</ng-container>
+      <ng-container *ngIf="registrationStatus === 'APPROVED'">check_circle</ng-container>
+      <ng-container *ngIf="registrationStatus === 'REJECTED'">cancel</ng-container>
+    </mat-icon>
+    
+    <ng-container *ngIf="registrationStatus === 'PENDING'">
+      Your registration is pending approval from the organizer.
+    </ng-container>
+    <ng-container *ngIf="registrationStatus === 'WAITLISTED'">
+      You are currently on the waitlist for this event.
+    </ng-container>
+    <ng-container *ngIf="registrationStatus === 'APPROVED'">
+      Your registration has been approved! We look forward to seeing you at the event.
+    </ng-container>
+    <ng-container *ngIf="registrationStatus === 'REJECTED'">
+      Your registration request was not approved for this event.
+    </ng-container>
+  </p>
+</div> 

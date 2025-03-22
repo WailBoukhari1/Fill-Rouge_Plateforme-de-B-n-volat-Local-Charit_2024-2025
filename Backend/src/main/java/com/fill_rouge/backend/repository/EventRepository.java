@@ -2,11 +2,11 @@ package com.fill_rouge.backend.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -56,6 +56,11 @@ public interface EventRepository extends MongoRepository<Event, String> {
 
     Page<Event> findByStartDateAfterAndStatusOrderByStartDateAsc(LocalDateTime now, EventStatus status, Pageable pageable);
 
+    Page<Event> findByStatus(EventStatus status, Pageable pageable);
+    
+    @Query("{'status': {$in: ?0}}")
+    Page<Event> findByStatusIn(List<EventStatus> statuses, Pageable pageable);
+
     long countByOrganizationId(String organizationId);
     
     @Query(value = "{'organizationId': ?0, 'status': ?1, 'endDate': {$gt: ?2}}")
@@ -68,13 +73,15 @@ public interface EventRepository extends MongoRepository<Event, String> {
     long countByOrganizationIdAndStatusAndStartDateAfter(String organizationId, String status, LocalDateTime date);
     
     @Query("{'status': ?0, 'endDate': {$gt: ?1}}")
-    long countByStatusAndEndDateAfter(String status, LocalDateTime date);
+    Long countByStatusAndEndDateAfter(String status, LocalDateTime date);
     
     @Query("{'status': ?0, 'endDate': {$lt: ?1}}")
-    long countByStatusAndEndDateBefore(String status, LocalDateTime date);
+    Long countByStatusAndEndDateBefore(String status, LocalDateTime date);
     
-    @Query(value = "{}", fields = "{'category': 1}")
-    Map<String, Long> countByCategory();
+    @Aggregation(pipeline = {
+        "{ $group: { _id: '$category', count: { $sum: 1 } } }"
+    })
+    List<CategoryCount> countByCategory();
     
     @Query(value = "{'createdAt': {$gte: ?0, $lte: ?1}}", fields = "{'createdAt': 1}")
     List<Object[]> getEventGrowthByDay(LocalDateTime start, LocalDateTime end);
@@ -83,4 +90,7 @@ public interface EventRepository extends MongoRepository<Event, String> {
     
     @Query(value = "{}", fields = "{ 'category': 1 }")
     List<Event> findAllCategories();
+    
+    @Query("{'status': ?0}")
+    Long countByStatus(String status);
 }

@@ -1,16 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterModule } from '@angular/router';
-import { Organization } from '../../../../core/models/organization.model';
+import { Store } from '@ngrx/store';
+import { Observable, Subject, takeUntil } from 'rxjs';
+
+import { Organization, OrganizationStatus, VerificationStatus } from '../../../../core/models/organization.model';
 import { OrganizationService } from '../../../../core/services/organization.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+
+import * as AdminActions from '../../../../store/admin/admin.actions';
+import * as AdminSelectors from '../../../../store/admin/admin.selectors';
+import { AppState } from '../../../../store';
 
 @Component({
   selector: 'app-organization-management',
@@ -24,6 +34,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatCardModule,
     MatMenuModule,
     MatChipsModule,
+    MatProgressSpinnerModule,
     RouterModule
   ],
   template: `
@@ -37,8 +48,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       </div>
 
       <mat-card>
-        <div class="overflow-x-auto">
-          <table mat-table [dataSource]="organizations" class="w-full">
+        <div *ngIf="loading$ | async" class="flex justify-center p-4">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        
+        <div *ngIf="!(loading$ | async)" class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" class="w-full">
             <!-- Logo Column -->
             <ng-container matColumnDef="logo">
               <th mat-header-cell *matHeaderCellDef>Logo</th>
@@ -75,7 +90,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
             <ng-container matColumnDef="verification">
               <th mat-header-cell *matHeaderCellDef>Verification</th>
               <td mat-cell *matCellDef="let org">
-                <mat-chip [color]="org.verificationStatus === 'VERIFIED' ? 'primary' : 'warn'">
+                <mat-chip [color]="org.verificationStatus === VerificationStatus.VERIFIED ? 'primary' : 'warn'">
                   {{org.verificationStatus}}
                 </mat-chip>
               </td>
@@ -97,18 +112,18 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                     <mat-icon>visibility</mat-icon>
                     <span>View Details</span>
                   </button>
-                  @if (org.verificationStatus === 'UNVERIFIED') {
+                  @if (org.verificationStatus === VerificationStatus.PENDING) {
                     <button mat-menu-item (click)="verifyOrganization(org)">
                       <mat-icon>verified</mat-icon>
                       <span>Verify</span>
                     </button>
                   }
-                  @if (org.status === 'ACTIVE') {
+                  @if (org.status === OrganizationStatus.ACTIVE) {
                     <button mat-menu-item (click)="suspendOrganization(org)">
                       <mat-icon>block</mat-icon>
                       <span>Suspend</span>
                     </button>
-                  } @else if (org.status === 'SUSPENDED') {
+                  } @else if (org.status === OrganizationStatus.SUSPENDED) {
                     <button mat-menu-item (click)="reactivateOrganization(org)">
                       <mat-icon>restore</mat-icon>
                       <span>Reactivate</span>
@@ -127,8 +142,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
           </table>
         </div>
 
+        <div *ngIf="error$ | async as error" class="p-4 text-red-600 text-center">
+          {{ error }}
+        </div>
+
         <mat-paginator
-          [length]="totalItems"
+          [length]="totalCount$ | async"
           [pageSize]="pageSize"
           [pageSizeOptions]="[5, 10, 25, 100]"
           (page)="onPageChange($event)">
@@ -137,49 +156,64 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     </div>
   `
 })
-export class OrganizationManagementComponent implements OnInit {
-  organizations: Organization[] = [];
+export class OrganizationManagementComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = ['logo', 'name', 'email', 'status', 'verification', 'actions'];
-  totalItems = 0;
+  dataSource = new MatTableDataSource<Organization>([]);
   pageSize = 10;
-  currentPage = 0;
-  loading = false;
+  pageIndex = 0;
+  
+  loading$: Observable<boolean>;
+  error$: Observable<string | null>;
+  totalCount$: Observable<number>;
+  private destroy$ = new Subject<void>();
+  
+  // Make enums available in the template
+  OrganizationStatus = OrganizationStatus;
+  VerificationStatus = VerificationStatus;
 
-  constructor(private organizationService: OrganizationService, private snackBar: MatSnackBar) {}
+  constructor(
+    private store: Store<AppState>,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
+    private organizationService: OrganizationService
+  ) {
+    this.loading$ = this.store.select(AdminSelectors.selectAdminLoading);
+    this.error$ = this.store.select(AdminSelectors.selectAdminError);
+    this.totalCount$ = this.store.select(AdminSelectors.selectTotalOrganizations);
+  }
 
   ngOnInit(): void {
     this.loadOrganizations();
+    
+    // Subscribe to organizations from the store
+    this.store.select(AdminSelectors.selectAllOrganizations)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(organizations => {
+        // Update the data source with the organizations
+        this.dataSource.data = organizations || [];
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadOrganizations(): void {
-    this.loading = true;
-    this.organizationService.getOrganizationsDetailed(this.currentPage, this.pageSize).subscribe({
-      next: (response) => {
-        this.organizations = response.content;
-        this.totalItems = response.totalElements;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading organizations:', error);
-        this.snackBar.open('Error loading organizations', 'Close', { duration: 3000 });
-        this.loading = false;
-      }
-    });
+    this.store.dispatch(AdminActions.loadOrganizations({ page: this.pageIndex, size: this.pageSize }));
   }
 
   onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
+    this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.loadOrganizations();
   }
 
-  getStatusColor(status: string): string {
+  getStatusColor(status: OrganizationStatus): string {
     switch (status) {
-      case 'ACTIVE':
+      case OrganizationStatus.ACTIVE:
         return 'primary';
-      case 'PENDING':
-        return 'accent';
-      case 'SUSPENDED':
+      case OrganizationStatus.SUSPENDED:
         return 'warn';
       default:
         return '';
@@ -187,28 +221,79 @@ export class OrganizationManagementComponent implements OnInit {
   }
 
   viewDetails(org: Organization): void {
-    // Navigate to organization details view
+    // TODO: Implement view details
   }
 
   verifyOrganization(org: Organization): void {
-    this.organizationService.verifyOrganization(org.id).subscribe({
-      next: () => this.loadOrganizations(),
-      error: (error) => console.error('Error verifying organization:', error)
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Verify Organization',
+        message: `Are you sure you want to verify ${org.name}?`,
+        confirmText: 'Verify',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.store.dispatch(AdminActions.verifyOrganization({ organizationId: org.id }));
+      }
     });
   }
 
   suspendOrganization(org: Organization): void {
-    // Implement suspension dialog and logic
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Suspend Organization',
+        message: `Are you sure you want to suspend ${org.name}?`,
+        confirmText: 'Suspend',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.store.dispatch(AdminActions.suspendOrganization({ organizationId: org.id }));
+      }
+    });
   }
 
   reactivateOrganization(org: Organization): void {
-    this.organizationService.reactivateOrganization(org.id).subscribe({
-      next: () => this.loadOrganizations(),
-      error: (error) => console.error('Error reactivating organization:', error)
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Reactivate Organization',
+        message: `Are you sure you want to reactivate ${org.name}?`,
+        confirmText: 'Reactivate',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.store.dispatch(AdminActions.reactivateOrganization({ organizationId: org.id }));
+      }
     });
   }
 
   deleteOrganization(org: Organization): void {
-    // Implement deletion confirmation dialog and logic
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Organization',
+        message: `Are you sure you want to delete ${org.name}? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.store.dispatch(AdminActions.deleteOrganization({ organizationId: org.id }));
+      }
+    });
   }
 } 

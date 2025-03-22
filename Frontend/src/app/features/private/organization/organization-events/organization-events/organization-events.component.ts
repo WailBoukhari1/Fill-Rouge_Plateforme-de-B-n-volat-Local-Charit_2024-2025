@@ -14,13 +14,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { BehaviorSubject } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 import { IEvent } from '../../../../../core/models/event.types';
 import { EventService } from '../../../../../core/services/event.service';
 import { OrganizationService } from '../../../../../core/services/organization.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { UserRole } from '../../../../../core/enums/user-role.enum';
-import { EventStatus } from '../../../../../core/models/event.types';
+import { EventStatus, EventCategory } from '../../../../../core/models/event.types';
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { format } from 'date-fns';
 import { Page } from '../../../../../core/models/page.model';
@@ -78,6 +79,9 @@ export class OrganizationEventsComponent implements OnInit {
   private organizationId: string | null = null;
   loading$ = new BehaviorSubject<boolean>(false);
   error$ = new BehaviorSubject<string | null>(null);
+  
+  // Add Math reference for template
+  Math = Math;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -107,7 +111,7 @@ export class OrganizationEventsComponent implements OnInit {
     this.dataSource.sort = this.sort;
   }
 
-  loadEvents(): void {
+  loadEvents(page = 0): void {
     if (!this.organizationId) {
       console.error('Organization ID is missing');
       this.error$.next('Organization ID is missing');
@@ -115,30 +119,84 @@ export class OrganizationEventsComponent implements OnInit {
     }
 
     console.log('Loading events for organization:', this.organizationId);
-    this.loading$.next(true);
-    this.error$.next(null);
+    this.loading$ = new BehaviorSubject<boolean>(true);
+    this.error$ = new BehaviorSubject<string | null>(null);
 
     this.organizationService
       .getOrganizationEvents(
         this.organizationId,
-        this.pageIndex,
+        page,
         this.pageSize
       )
+      .pipe(finalize(() => this.loading$.next(false)))
       .subscribe({
-        next: (response: Page<IEvent>) => {
+        next: (response: any) => {
           console.log('Events response:', response);
-          if (response && Array.isArray(response.content)) {
-            this.dataSource.data = response.content;
-            if (this.paginator) {
-              this.paginator.length = response.totalElements;
-              this.paginator.pageSize = response.size;
-              this.paginator.pageIndex = response.number;
-            }
-            this.loading$.next(false);
+          
+          // Handle wrapped API response format 
+          let eventsData: any;
+          
+          if (response && response.success && Array.isArray(response.data)) {
+            console.log('Processing response as direct array in data property');
+            // Direct array response (unwrapped data array)
+            eventsData = {
+              content: response.data.map((event: any) => this.normalizeEventData(event)),
+              totalElements: response.data.length,
+              size: this.pageSize,
+              number: page
+            };
+          } else if (response && response.success && response.data && Array.isArray(response.data.content)) {
+            console.log('Processing response as paginated data inside data property');
+            // Paginated response inside data property
+            eventsData = {
+              ...response.data,
+              content: response.data.content.map((event: any) => this.normalizeEventData(event))
+            };
+          } else if (response && Array.isArray(response.content)) {
+            console.log('Processing response as direct paginated response');
+            // Direct paginated response
+            eventsData = {
+              ...response,
+              content: response.content.map((event: any) => this.normalizeEventData(event))
+            };
+          } else if (response && response.success && !response.data) {
+            console.log('Response success but empty data');
+            // Empty data but successful response
+            eventsData = {
+              content: [],
+              totalElements: 0,
+              size: this.pageSize,
+              number: page
+            };
+          } else if (Array.isArray(response)) {
+            console.log('Processing response as direct array');
+            // Direct array response
+            eventsData = {
+              content: response.map((event: any) => this.normalizeEventData(event)),
+              totalElements: response.length,
+              size: this.pageSize,
+              number: page
+            };
           } else {
             console.error('Invalid response format:', response);
             this.error$.next('No events found');
-            this.loading$.next(false);
+            return;
+          }
+          
+          console.log('Processed events data:', eventsData);
+          
+          if (!eventsData.content || eventsData.content.length === 0) {
+            console.log('No events found in the response');
+            this.error$.next('No events found for this organization');
+          }
+          
+          this.dataSource.data = eventsData.content;
+          console.log('Updated dataSource.data:', this.dataSource.data);
+          
+          if (this.paginator) {
+            this.paginator.length = eventsData.totalElements;
+            this.paginator.pageSize = eventsData.size;
+            this.paginator.pageIndex = eventsData.number;
           }
         },
         error: (error: any) => {
@@ -156,7 +214,6 @@ export class OrganizationEventsComponent implements OnInit {
           }
 
           this.error$.next(errorMessage);
-          this.loading$.next(false);
         },
       });
   }
@@ -458,5 +515,146 @@ export class OrganizationEventsComponent implements OnInit {
 
   isCompleted(event: IEvent): boolean {
     return event.status === 'COMPLETED';
+  }
+
+  // New helper method to normalize event data
+  private normalizeEventData(event: any): IEvent {
+    if (!event) {
+      console.warn('Received null/undefined event object');
+      return this.createEmptyEvent();
+    }
+    
+    // Ensure id is set
+    const id = event.id || event._id || '';
+    if (!id) {
+      console.warn('Event has no ID:', event);
+    }
+    
+    return {
+      id: id,
+      title: event.title || 'Untitled Event',
+      description: event.description || '',
+      category: event.category || 'OTHER',
+      startDate: event.startDate ? new Date(event.startDate) : new Date(),
+      endDate: event.endDate ? new Date(event.endDate) : new Date(),
+      location: event.location || 'No location specified',
+      maxParticipants: typeof event.maxParticipants === 'number' ? event.maxParticipants : 0,
+      currentParticipants: typeof event.currentParticipants === 'number' ? event.currentParticipants : 0,
+      status: event.status || EventStatus.DRAFT,
+      organizationId: event.organizationId || this.organizationId || '',
+      contactPerson: event.contactPerson || '',
+      contactEmail: event.contactEmail || '',
+      contactPhone: event.contactPhone || '',
+      durationHours: typeof event.durationHours === 'number' ? event.durationHours : 0,
+      registeredParticipants: Array.isArray(event.registeredParticipants) ? event.registeredParticipants : [],
+      waitlistedParticipants: Array.isArray(event.waitlistedParticipants) ? event.waitlistedParticipants : [],
+      waitlistEnabled: !!event.waitlistEnabled,
+      maxWaitlistSize: typeof event.maxWaitlistSize === 'number' ? event.maxWaitlistSize : 0,
+      // Preserve all other properties
+      ...event
+    };
+  }
+  
+  private createEmptyEvent(): IEvent {
+    return {
+      id: '',
+      _id: '',
+      title: 'Untitled Event',
+      description: '',
+      category: 'OTHER',
+      startDate: new Date(),
+      endDate: new Date(),
+      createdAt: new Date(),
+      location: 'No location specified',
+      maxParticipants: 0,
+      currentParticipants: 0,
+      status: EventStatus.DRAFT,
+      organizationId: this.organizationId || '',
+      organizationName: '',
+      requiresBackground: false,
+      durationHours: 0,
+      contactPerson: '',
+      contactEmail: '',
+      contactPhone: '',
+      registeredParticipants: [],
+      waitlistedParticipants: [],
+      waitlistEnabled: false,
+      maxWaitlistSize: 0
+    };
+  }
+
+  // Debug helper method
+  debugEvents(): void {
+    console.log('Debug: Organization ID:', this.organizationId);
+    console.log('Debug: Current user roles:', this.authService.hasRole(UserRole.ORGANIZATION) ? 'ORGANIZATION' : 'OTHER');
+    console.log('Debug: Data source data:', this.dataSource.data);
+    
+    // Test with mock data if needed
+    if (this.dataSource.data.length === 0) {
+      console.log('Debug: Adding mock data for testing');
+      const mockEvents = this.generateMockEvents();
+      this.dataSource.data = mockEvents;
+      if (this.paginator) {
+        this.paginator.length = mockEvents.length;
+      }
+      this.error$.next(null);
+    } else {
+      // If there is data, just reload
+      this.loadEvents();
+    }
+  }
+  
+  // Generate mock events for testing
+  private generateMockEvents(): IEvent[] {
+    const categories = ['ENVIRONMENT', 'EDUCATION', 'HEALTH', 'SOCIAL_SERVICES', 'OTHER'];
+    const statuses = [EventStatus.DRAFT, EventStatus.PUBLISHED, EventStatus.ONGOING, EventStatus.COMPLETED, EventStatus.CANCELLED];
+    
+    return Array(5).fill(0).map((_, i) => ({
+      ...this.createEmptyEvent(),
+      id: `mock-${i}`,
+      title: `Mock Event ${i+1}`,
+      description: 'This is a mock event for testing',
+      category: categories[i % categories.length],
+      status: statuses[i % statuses.length],
+      startDate: new Date(Date.now() + 86400000 * i),
+      endDate: new Date(Date.now() + 86400000 * (i + 1)),
+      location: `Mock Location ${i+1}`,
+      maxParticipants: 20 + i * 5,
+      currentParticipants: i * 3,
+      durationHours: 2 + i
+    }));
+  }
+  
+  // Pagination helper methods
+  showPageNumber(current: number, position: number, total: number): boolean {
+    // Return true if this position should show a page number
+    if (total <= 5) return position < total;
+    
+    if (current <= 2) {
+      // Show first 5 pages
+      return position < 5;
+    } else if (current >= total - 3) {
+      // Show last 5 pages
+      return position >= 0 && total - position <= 5;
+    } else {
+      // Show 2 before and 2 after current
+      return Math.abs(current - position) <= 2;
+    }
+  }
+
+  pageNumberToShow(current: number, position: number, total: number): number {
+    // Return the page number that should be shown at this position
+    if (total <= 5) return position;
+    
+    if (current <= 2) {
+      // First 5 pages
+      return position;
+    } else if (current >= total - 3) {
+      // Last 5 pages
+      return total - 5 + position;
+    } else {
+      // Show current in the middle with 2 on each side
+      return current - 2 + position;
+    }
   }
 }

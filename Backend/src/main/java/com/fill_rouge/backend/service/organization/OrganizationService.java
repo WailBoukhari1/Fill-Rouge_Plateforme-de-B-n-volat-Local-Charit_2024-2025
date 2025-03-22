@@ -19,6 +19,7 @@ public interface OrganizationService {
     
     // Search and filtering
     List<OrganizationResponse> searchOrganizations(String query);
+    List<OrganizationResponse> getAllOrganizations();
     List<OrganizationResponse> findByFocusAreas(List<String> areas);
     List<OrganizationResponse> findNearbyOrganizations(double latitude, double longitude, double radius);
     List<OrganizationResponse> findByCity(String city);
@@ -31,7 +32,7 @@ public interface OrganizationService {
     void rejectVerification(String organizationId, String reason);
     
     // Document management
-    void addDocument(String organizationId, String documentUrl);
+    void addDocument(String organizationId, String documentUrl, String documentType);
     void removeDocument(String organizationId, String documentUrl);
     
     // Profile picture management
@@ -52,4 +53,24 @@ public interface OrganizationService {
     
     // Volunteer listing
     List<VolunteerProfileResponse> getOrganizationVolunteers(String organizationId, String sortBy, String sortOrder);
+    
+    /**
+     * Update the status of an organization
+     * 
+     * @param organizationId The organization ID to update
+     * @param status The new status (INCOMPLETE, PENDING, APPROVED, REJECTED)
+     * @param reason The reason for rejection (required when status is REJECTED)
+     * @return The updated organization
+     */
+    OrganizationResponse updateOrganizationStatus(String organizationId, String status, String reason);
+    
+    /**
+     * Update the ban status of an organization
+     * 
+     * @param organizationId The organization ID to update
+     * @param banned Whether to ban (true) or unban (false) 
+     * @param reason The reason for banning (required when banning)
+     * @return The updated organization
+     */
+    OrganizationResponse updateOrganizationBanStatus(String organizationId, boolean banned, String reason);
 }

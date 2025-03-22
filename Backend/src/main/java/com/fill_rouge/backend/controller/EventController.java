@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.domain.EventParticipation;
 import com.fill_rouge.backend.dto.request.EventRegistrationRequest;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.request.FeedbackRequest;
@@ -41,6 +43,10 @@ import com.fill_rouge.backend.service.event.EventParticipationService;
 import com.fill_rouge.backend.service.event.EventService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -92,6 +98,16 @@ public class EventController {
     public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable String eventId) {
         eventService.deleteEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(null, "Event deleted successfully"));
+    }
+    
+    @GetMapping("/public")
+    @Operation(summary = "Get public events", description = "Get all publicly viewable events without authentication")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getPublicEvents(
+            @PageableDefault(size = 10) Pageable pageable) {
+        log.info("Fetching public events with pagination: {}", pageable);
+        Page<Event> eventPage = eventService.getPublicEvents(pageable);
+        
+        return createPagedResponse(eventPage, null); // Null user ID since this is public
     }
     
     @GetMapping("/{eventId}")
@@ -159,50 +175,165 @@ public class EventController {
     }
     
     @PostMapping("/{eventId}/register")
-    @PreAuthorize("hasRole('VOLUNTEER')")
-    @Operation(summary = "Register for event", description = "Register a volunteer for an event")
+    @Operation(summary = "Register for event", description = "Register a user for an event with detailed information")
     public ResponseEntity<ApiResponse<EventResponse>> registerForEvent(
             @PathVariable String eventId,
-            @RequestHeader("X-User-ID") String userId) {
-        // First, register the participant in the event
-        Event event = eventService.registerParticipant(eventId, userId);
+            @Valid @RequestBody EventRegistrationRequest registrationRequest,
+            @RequestHeader(value = "X-User-ID", required = false) String userId) {
         
-        // Then, create an event participation record
-        try {
-            participationService.registerForEvent(userId, eventId);
-        } catch (RuntimeException e) {
-            // If creating the participation record fails, rollback the event registration
-            eventService.unregisterParticipant(eventId, userId);
-            throw e;
+        log.info("Registering for event: {} with data: {}", eventId, registrationRequest);
+        
+        // Set userId in request if provided in header
+        if (userId != null && !userId.isEmpty() && (registrationRequest.getUserId() == null || registrationRequest.getUserId().isEmpty())) {
+            registrationRequest.setUserId(userId);
         }
         
-        return ResponseEntity.ok(ApiResponse.success(
-            eventMapper.toResponse(event, userId),
-            "Successfully registered for event"
-        ));
+        // Validate required fields
+        if (!registrationRequest.isTermsAccepted()) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.error("Terms and conditions must be accepted", HttpStatus.BAD_REQUEST)
+            );
+        }
+        
+        String email = registrationRequest.getEmail();
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.error("Email is required", HttpStatus.BAD_REQUEST)
+            );
+        }
+        
+        try {
+            Event event = eventService.registerParticipantWithDetails(eventId, email, registrationRequest);
+            return ResponseEntity.ok(ApiResponse.success(
+                eventMapper.toResponse(event, registrationRequest.getUserId()),
+                "Successfully registered for event"
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.unprocessableEntity().body(
+                ApiResponse.error(e.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY)
+            );
+        } catch (Exception e) {
+            log.error("Error registering for event: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(
+                ApiResponse.error("Failed to register for event: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR)
+            );
+        }
     }
     
-    @PostMapping("/{eventId}/unregister")
+    @DeleteMapping("/{eventId}/register")
     @PreAuthorize("hasRole('VOLUNTEER')")
-    @Operation(summary = "Unregister from event", description = "Unregister a volunteer from an event")
-    public ResponseEntity<ApiResponse<EventResponse>> unregisterFromEvent(
+    @Operation(summary = "Cancel registration", description = "Cancel a volunteer's registration for an event")
+    public ResponseEntity<ApiResponse<Void>> cancelRegistration(
             @PathVariable String eventId,
             @RequestHeader("X-User-ID") String userId) {
-        // First, cancel the participation record
-        try {
-            participationService.cancelParticipation(userId, eventId);
-        } catch (RuntimeException e) {
-            // If the participation record doesn't exist, just log it and continue
-            // This can happen if the user was registered but the participation record was not created
-            log.warn("Failed to cancel participation record for user {} in event {}: {}", userId, eventId, e.getMessage());
-        }
         
-        // Then, unregister from the event
-        Event event = eventService.unregisterParticipant(eventId, userId);
-        return ResponseEntity.ok(ApiResponse.success(
-            eventMapper.toResponse(event, userId),
-            "Successfully unregistered from event"
-        ));
+        log.info("Cancelling registration for event: {} by user: {}", eventId, userId);
+        
+        try {
+            // Remove from registered participants in event
+            Event event = eventService.unregisterParticipant(eventId, userId);
+            
+            // Also cancel in the participation service if available
+            try {
+                participationService.cancelParticipation(userId, eventId);
+            } catch (Exception e) {
+                log.warn("Could not cancel participation record: {}", e.getMessage());
+                // Continue even if participation record can't be cancelled
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(null, "Registration cancelled successfully"));
+        } catch (Exception e) {
+            log.error("Error cancelling registration: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(
+                ApiResponse.error("Failed to cancel registration: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR)
+            );
+        }
+    }
+    
+    @PostMapping("/{eventId}/waitlist")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    @Operation(summary = "Join waitlist", description = "Add a volunteer to the event waitlist")
+    public ResponseEntity<ApiResponse<EventResponse>> joinWaitlist(
+            @PathVariable String eventId,
+            @RequestHeader("X-User-ID") String userId) {
+        
+        log.info("Adding user: {} to waitlist for event: {}", userId, eventId);
+        
+        try {
+            Event event = eventService.getEventById(eventId);
+            
+            // Check if event is full and waitlist enabled
+            if (event.getRegisteredParticipants().size() < event.getMaxParticipants()) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.error("Event is not full. Please register normally.", HttpStatus.BAD_REQUEST)
+                );
+            }
+            
+            if (!event.isWaitlistEnabled()) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.error("Waitlist is not enabled for this event.", HttpStatus.BAD_REQUEST)
+                );
+            }
+            
+            // Add to waitlisted participants
+            if (!event.getWaitlistedParticipants().contains(userId)) {
+                event.getWaitlistedParticipants().add(userId);
+                event = eventService.updateEvent(eventId, eventMapper.toRequest(event));
+                
+                // Create a participation record with WAITLISTED status
+                try {
+                    participationService.registerForEventWithDetailsAndStatus(userId, eventId, null, null, "WAITLISTED");
+                } catch (Exception e) {
+                    log.warn("Could not create waitlist participation record: {}", e.getMessage());
+                    // Continue even if participation record can't be created
+                }
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(
+                eventMapper.toResponse(event, userId),
+                "Successfully added to waitlist"
+            ));
+        } catch (Exception e) {
+            log.error("Error joining waitlist: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(
+                ApiResponse.error("Failed to join waitlist: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR)
+            );
+        }
+    }
+    
+    @DeleteMapping("/{eventId}/waitlist")
+    @PreAuthorize("hasRole('VOLUNTEER')")
+    @Operation(summary = "Leave waitlist", description = "Remove a volunteer from the event waitlist")
+    public ResponseEntity<ApiResponse<Void>> leaveWaitlist(
+            @PathVariable String eventId,
+            @RequestHeader("X-User-ID") String userId) {
+        
+        log.info("Removing user: {} from waitlist for event: {}", userId, eventId);
+        
+        try {
+            Event event = eventService.getEventById(eventId);
+            
+            // Remove from waitlisted participants
+            if (event.getWaitlistedParticipants().contains(userId)) {
+                event.getWaitlistedParticipants().remove(userId);
+                eventService.updateEvent(eventId, eventMapper.toRequest(event));
+                
+                // Cancel the participation record
+                try {
+                    participationService.cancelParticipation(userId, eventId);
+                } catch (Exception e) {
+                    log.warn("Could not cancel waitlist participation record: {}", e.getMessage());
+                    // Continue even if participation record can't be cancelled
+                }
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(null, "Successfully removed from waitlist"));
+        } catch (Exception e) {
+            log.error("Error leaving waitlist: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(
+                ApiResponse.error("Failed to leave waitlist: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR)
+            );
+        }
     }
     
     @GetMapping("/{eventId}/is-full")
@@ -238,11 +369,13 @@ public class EventController {
     @Operation(summary = "Reject event", description = "Reject an event from being published")
     public ResponseEntity<ApiResponse<EventResponse>> rejectEvent(
             @PathVariable String eventId,
+            @RequestParam(required = false) String reason,
             @RequestHeader("X-User-ID") String userId) {
-        Event event = eventService.updateEventStatus(eventId, EventStatus.PENDING);
+        Event event = eventService.updateEventStatus(eventId, EventStatus.REJECTED);
+        // If you have a field for rejection reason, you could set it here
         return ResponseEntity.ok(ApiResponse.success(
             eventMapper.toResponse(event, userId),
-            "Event rejected"
+            "Event rejected" + (reason != null ? ": " + reason : "")
         ));
     }
     
@@ -388,11 +521,21 @@ public class EventController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all events", description = "Get a paginated list of all events")
+    @Operation(summary = "Get all events", description = "Get a paginated list of all active events")
     public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEvents(
             @RequestHeader(value = "X-User-ID", required = false) String userId,
             @PageableDefault(size = 10) Pageable pageable) {
-        return createPagedResponse(eventService.getAllEvents(pageable), userId);
+        Page<Event> eventPage = eventService.getAllEvents(pageable);
+        return createPagedResponse(eventPage, userId);
+    }
+
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all events for admin", description = "Get a paginated list of all events regardless of status")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getAllEventsForAdmin(
+            @RequestHeader("X-User-ID") String userId,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return createPagedResponse(eventService.getAllEventsForAdmin(pageable), userId);
     }
 
     @PostMapping("/{eventId}/register-with-details")
@@ -424,6 +567,39 @@ public class EventController {
             eventMapper.toResponse(event, registrationRequest.getUserId()),
             "Successfully registered for event"
         ));
+    }
+
+    @GetMapping("/{eventId}/registrations/status/{userId}")
+    @Operation(summary = "Check registration status", description = "Check if a user is registered for an event and get their registration status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkRegistrationStatus(
+            @PathVariable String eventId,
+            @PathVariable String userId) {
+        log.info("Checking registration status for user {} in event {}", userId, eventId);
+        
+        // Get the event
+        Event event = eventService.getEventById(eventId);
+        
+        // Check if user is in registered participants
+        boolean isRegistered = event.getRegisteredParticipants().contains(userId);
+        boolean isWaitlisted = event.getWaitlistedParticipants().contains(userId);
+        
+        // Get detailed status from participation service if available
+        String status = "NOT_REGISTERED";
+        if (isRegistered || isWaitlisted) {
+            Optional<EventParticipation> participation = participationService.getParticipation(userId, eventId);
+            if (participation.isPresent()) {
+                status = participation.get().getStatus().name();
+            } else {
+                // Default statuses if no participation record
+                status = isRegistered ? "APPROVED" : "WAITLISTED";
+            }
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("isRegistered", isRegistered || isWaitlisted);
+        result.put("status", status);
+        
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     // Helper method to create paged response

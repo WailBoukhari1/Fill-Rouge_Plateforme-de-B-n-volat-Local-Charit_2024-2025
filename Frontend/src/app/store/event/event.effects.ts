@@ -6,7 +6,7 @@ import { map, mergeMap, catchError, withLatestFrom, tap, finalize, switchMap } f
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { EventService } from '../../core/services/event.service';
-import { EventStatus, IEvent, IEventFeedback, IEventRegistration } from '../../core/models/event.types';
+import { EventStatus, IEvent, IEventFeedback, IEventRegistration, IEventRegistrationRequest } from '../../core/models/event.types';
 import { Event } from '../../core/models/event.model';
 import { Page } from '../../core/models/page.model';
 import * as EventActions from './event.actions';
@@ -151,12 +151,46 @@ export class EventEffects {
   registerForEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.registerForEvent),
-      switchMap(({ eventId }) =>
-        this.eventService.registerForEvent(eventId).pipe(
-          map(event => EventActions.registerForEventSuccess({ event })),
+      switchMap(({ eventId }) => {
+        // Create a minimal registration request
+        const userId = localStorage.getItem('userId');
+        const minimalRegistration: IEventRegistrationRequest = {
+          firstName: '',
+          lastName: '',
+          email: '',
+          phoneNumber: '',
+          termsAccepted: true,
+          userId: userId || undefined
+        };
+        
+        return this.eventService.registerForEvent(eventId, minimalRegistration).pipe(
+          map((response: any) => {
+            // Extract event data from response, handle both wrapped and direct responses
+            const eventData = response.data || response;
+            const event: IEvent = {
+              ...eventData,
+              id: eventData.id || eventData._id,
+              startDate: new Date(eventData.startDate),
+              endDate: new Date(eventData.endDate),
+              createdAt: new Date(eventData.createdAt),
+              status: eventData.status || EventStatus.DRAFT,
+              title: eventData.title || '',
+              description: eventData.description || '',
+              location: eventData.location || '',
+              category: eventData.category || '',
+              currentParticipants: eventData.currentParticipants || 0,
+              maxParticipants: eventData.maxParticipants || 0,
+              organizationId: eventData.organizationId || '',
+              organizationName: eventData.organizationName || '',
+              isRegistered: true,
+              durationHours: eventData.durationHours || 0,
+              requiresBackground: eventData.requiresBackground || false
+            };
+            return EventActions.registerForEventSuccess({ event });
+          }),
           catchError(error => of(EventActions.registerForEventFailure({ error })))
-        )
-      )
+        );
+      })
     )
   );
 
@@ -172,7 +206,7 @@ export class EventEffects {
         const phoneNumber = localStorage.getItem('phoneNumber') || '';
         
         // Create a complete registration request
-        const registrationRequest = {
+        const registrationRequest: IEventRegistrationRequest = {
           firstName,
           lastName,
           email,
@@ -181,11 +215,34 @@ export class EventEffects {
           notes,
           termsAccepted: true,
           eventId,
-          userId
+          userId: userId || undefined
         };
         
         return this.eventService.registerWithDetails(eventId, registrationRequest).pipe(
-          map(event => EventActions.registerForEventWithDetailsSuccess({ event })),
+          map((response: any) => {
+            // Extract event data from response, handle both wrapped and direct responses
+            const eventData = response.data || response;
+            const event: IEvent = {
+              ...eventData,
+              id: eventData.id || eventData._id,
+              startDate: new Date(eventData.startDate),
+              endDate: new Date(eventData.endDate),
+              createdAt: new Date(eventData.createdAt),
+              status: eventData.status || EventStatus.DRAFT,
+              title: eventData.title || '',
+              description: eventData.description || '',
+              location: eventData.location || '',
+              category: eventData.category || '',
+              currentParticipants: eventData.currentParticipants || 0,
+              maxParticipants: eventData.maxParticipants || 0,
+              organizationId: eventData.organizationId || '',
+              organizationName: eventData.organizationName || '',
+              isRegistered: true,
+              durationHours: eventData.durationHours || 0,
+              requiresBackground: eventData.requiresBackground || false
+            };
+            return EventActions.registerForEventWithDetailsSuccess({ event });
+          }),
           catchError(error => of(EventActions.registerForEventWithDetailsFailure({ error })))
         );
       })

@@ -1,9 +1,10 @@
-package com.fill_rouge.backend.service.event;
+package com.fill_rouge.backend.service.event.impl;
 
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
 import com.fill_rouge.backend.repository.*;
+import com.fill_rouge.backend.service.event.EventStatisticsService;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.dto.response.VolunteerStatsResponse;

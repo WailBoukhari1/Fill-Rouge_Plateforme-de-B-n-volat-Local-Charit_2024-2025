@@ -107,149 +107,138 @@
 
     <!-- Events Grid -->
     @if(!isLoading && !error) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      @for(event of filteredEvents; track event.id) {
-      <mat-card class="h-full">
-        <mat-card-content class="p-4">
-          <!-- Event Title and Admin Actions -->
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="text-xl font-semibold">
-              <a
-                [routerLink]="['/events', event.id]"
-                class="hover:text-primary-500 transition-colors"
-              >
-                {{ event.title }}
-              </a>
-            </h3>
-            <!-- Admin/Organizer Actions -->
-            <div class="flex gap-2" *ngIf="canEditEvent(event)">
-              <button
-                mat-icon-button
-                [routerLink]="['/events', event.id, 'edit']"
-                matTooltip="Edit Event"
-              >
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button
-                mat-icon-button
-                (click)="deleteEvent(event)"
-                *ngIf="canDeleteEvent(event)"
-                matTooltip="Delete Event"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
-              <button
-                mat-icon-button
-                [routerLink]="['/events', event.id, 'participants']"
-                *ngIf="canViewParticipants(event)"
-                matTooltip="View Participants"
-              >
-                <mat-icon>people</mat-icon>
-              </button>
-              <!-- Only show status update button to admin -->
-              <button
-                mat-icon-button
-                (click)="updateStatus(event)"
-                *ngIf="isAdmin"
-                matTooltip="Update Status"
-              >
-                <mat-icon>update</mat-icon>
-              </button>
-            </div>
-          </div>
-
-          <!-- Category and Status Chips -->
-          <mat-chip-set class="mb-3">
-            <mat-chip color="primary">{{ event.category }}</mat-chip>
-            <mat-chip [color]="getStatusColor(event.status)">{{
-              event.status
-            }}</mat-chip>
-          </mat-chip-set>
-
-          <!-- Event Details -->
-          <p class="text-gray-600 mb-4">{{ event.description }}</p>
-
-          <!-- Event Details -->
-          <div class="space-y-2 text-gray-500">
-            <div class="flex items-center">
-              <mat-icon class="mr-2">calendar_today</mat-icon>
-              <span>{{ event.startDate | date : "mediumDate" }}</span>
-            </div>
-            <div class="flex items-center">
-              <mat-icon class="mr-2">location_on</mat-icon>
-              <span>{{ event.location }}</span>
-            </div>
-            <div class="flex items-center">
-              <mat-icon class="mr-2">group</mat-icon>
-              <span
-                >{{ event.maxParticipants - event.currentParticipants }} spots
-                left</span
-              >
-            </div>
-            @if(event.averageRating > 0) {
-            <div class="flex items-center">
-              <mat-icon class="mr-2">star</mat-icon>
-              <span
-                >{{ event.averageRating | number : "1.1-1" }} ({{
-                  event.numberOfRatings
-                }}
-                ratings)</span
-              >
-            </div>
-            }
-          </div>
-        </mat-card-content>
-
-        <!-- Action Buttons -->
-        <mat-card-actions
-          class="p-4 flex justify-between items-center border-t"
-        >
-          <!-- View Details button for all users -->
+      @if(filteredEvents.length === 0) {
+        <div class="text-center py-12">
+          <mat-icon class="text-6xl text-gray-400 mb-4">search_off</mat-icon>
+          <h3 class="text-xl font-semibold text-gray-600 mb-2">No Events Found</h3>
+          <p class="text-gray-500">There are no events matching your criteria.</p>
           <button
-            mat-button
-            [routerLink]="['/events', event.id]"
+            mat-raised-button
             color="primary"
+            class="mt-4"
+            (click)="clearFilters(); loadEvents()"
           >
-            View Details
-            <mat-icon class="ml-1">arrow_forward</mat-icon>
+            <mat-icon class="mr-2">refresh</mat-icon>
+            Refresh Events
           </button>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for(event of filteredEvents; track event.id) {
+            <mat-card class="h-full">
+              <mat-card-content class="p-4">
+                <!-- Event Title and Admin Actions -->
+                <div class="flex justify-between items-start mb-2">
+                  <h3 class="text-xl font-semibold">
+                    <a
+                      [routerLink]="['/events', event.id]"
+                      class="hover:text-primary-500 transition-colors"
+                    >
+                      {{ event.title }}
+                    </a>
+                  </h3>
+                  <!-- Admin/Organizer Actions -->
+                  <div class="flex gap-2" *ngIf="canEditEvent(event)">
+                    <button
+                      mat-icon-button
+                      [routerLink]="['/events', event.id, 'edit']"
+                      matTooltip="Edit Event"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      (click)="deleteEvent(event)"
+                      *ngIf="canDeleteEvent(event)"
+                      matTooltip="Delete Event"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      [routerLink]="['/events', event.id, 'participants']"
+                      *ngIf="canViewParticipants(event)"
+                      matTooltip="View Participants"
+                    >
+                      <mat-icon>people</mat-icon>
+                    </button>
+                    <!-- Only show status update button to admin -->
+                    <button
+                      mat-icon-button
+                      (click)="updateStatus(event)"
+                      *ngIf="isAdmin"
+                      matTooltip="Update Status"
+                    >
+                      <mat-icon>update</mat-icon>
+                    </button>
+                  </div>
+                </div>
 
-          <!-- Register button only for volunteers (not admin or organizer) -->
-          <button
-            mat-stroked-button
-            color="primary"
-            *ngIf="
-              !isAdmin &&
-              !isOrganizer &&
-              !event.isRegistered &&
-              event.currentParticipants < event.maxParticipants
-            "
-            (click)="registerForEvent(event)"
-            [disabled]="event.currentParticipants >= event.maxParticipants"
-          >
-            Register
-          </button>
+                <!-- Category and Status Chips -->
+                <mat-chip-set class="mb-3">
+                  <mat-chip color="primary">{{ event.category }}</mat-chip>
+                  <mat-chip [color]="getStatusColor(event.status)">{{
+                    event.status
+                  }}</mat-chip>
+                </mat-chip-set>
 
-          <!-- Already Registered indicator -->
-          <span
-            *ngIf="!isAdmin && !isOrganizer && event.isRegistered"
-            class="text-green-600 flex items-center"
-          >
-            <mat-icon class="mr-1">check_circle</mat-icon>
-            Registered
-          </span>
-        </mat-card-actions>
-      </mat-card>
+                <!-- Event Details -->
+                <p class="text-gray-600 mb-4">{{ event.description }}</p>
+
+                <!-- Event Details -->
+                <div class="space-y-2 text-gray-500">
+                  <div class="flex items-center">
+                    <mat-icon class="mr-2">calendar_today</mat-icon>
+                    <span>{{ event.startDate | date : "mediumDate" }}</span>
+                  </div>
+                  <div class="flex items-center">
+                    <mat-icon class="mr-2">location_on</mat-icon>
+                    <span>{{ event.location }}</span>
+                  </div>
+                  <div class="flex items-center">
+                    <mat-icon class="mr-2">group</mat-icon>
+                    <span>{{ event.maxParticipants - (event.currentParticipants || 0) }} spots left</span>
+                  </div>
+                  @if(event.averageRating > 0) {
+                  <div class="flex items-center">
+                    <mat-icon class="mr-2">star</mat-icon>
+                    <span
+                      >{{ event.averageRating | number : "1.1-1" }} ({{
+                        event.numberOfRatings
+                      }}
+                      ratings)</span
+                    >
+                  </div>
+                  }
+                </div>
+              </mat-card-content>
+
+              <!-- Action Buttons -->
+              <mat-card-actions class="p-4 flex justify-between items-center border-t">
+                <!-- View Details button for all users -->
+                <button
+                  mat-button
+                  [routerLink]="['/events', event.id]"
+                  color="primary"
+                >
+                  View Details
+                  <mat-icon class="ml-1">arrow_forward</mat-icon>
+                </button>
+
+                <!-- Register button -->
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="registerForEvent(event)"
+                  [disabled]="(event.currentParticipants || 0) >= (event.maxParticipants || 0)"
+                >
+                  Register
+                </button>
+              </mat-card-actions>
+            </mat-card>
+          }
+        </div>
       }
-    </div>
-
-    <!-- No Results Message -->
-    @if(filteredEvents.length === 0) {
-    <div class="text-center py-12">
-      <mat-icon class="text-6xl text-gray-400 mb-4">search_off</mat-icon>
-      <h3 class="text-xl font-semibold text-gray-600 mb-2">No Events Found</h3>
-      <p class="text-gray-500">Try adjusting your filters or search criteria</p>
-    </div>
     }
   </div>
 </div>

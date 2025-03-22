@@ -685,8 +685,10 @@ export class VolunteerProfileComponent implements OnInit {
         console.log('Profile loaded:', profile);
         this.profile = profile;
         if (profile.profilePicture) {
-          const pictureUrl = this.volunteerService.getProfilePictureUrl(profile.profilePicture);
-          console.log('Profile picture URL:', pictureUrl);
+          // Add timestamp to prevent browser caching
+          const timestamp = new Date().getTime();
+          const pictureUrl = this.volunteerService.getProfilePictureUrl(profile.profilePicture) + '?t=' + timestamp;
+          console.log('Profile picture URL with timestamp:', pictureUrl);
           this.profilePictureUrl = this.sanitizer.bypassSecurityTrustUrl(pictureUrl);
           console.log('Sanitized URL:', this.profilePictureUrl);
         } else {
@@ -781,14 +783,26 @@ export class VolunteerProfileComponent implements OnInit {
         return;
       }
 
+      // Create a local preview of the image before uploading
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        // Create a temporary local preview while the image uploads
+        this.profilePictureUrl = this.sanitizer.bypassSecurityTrustUrl(e.target.result);
+      };
+      reader.readAsDataURL(file);
+
       this.loading = true;
       this.volunteerService.uploadProfilePicture(file).subscribe({
         next: (updatedProfile) => {
           this.profile = updatedProfile;
+          
+          // Force refresh the image by adding a timestamp to prevent caching
           if (updatedProfile.profilePicture) {
-            const pictureUrl = this.volunteerService.getProfilePictureUrl(updatedProfile.profilePicture);
+            const timestamp = new Date().getTime();
+            const pictureUrl = this.volunteerService.getProfilePictureUrl(updatedProfile.profilePicture) + '?t=' + timestamp;
             this.profilePictureUrl = this.sanitizer.bypassSecurityTrustUrl(pictureUrl);
           }
+          
           this.snackBar.open('Profile picture updated successfully', 'Close', {
             duration: 5000,
             horizontalPosition: 'end',

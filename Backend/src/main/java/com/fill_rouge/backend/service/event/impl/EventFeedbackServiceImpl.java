@@ -1,10 +1,12 @@
-package com.fill_rouge.backend.service.event;
+package com.fill_rouge.backend.service.event.impl;
 
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
 import com.fill_rouge.backend.repository.EventFeedbackRepository;
 import com.fill_rouge.backend.repository.EventRepository;
+import com.fill_rouge.backend.service.event.EventFeedbackService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -5,7 +5,7 @@ import {
   HttpHeaders,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { Observable, map, catchError, throwError, switchMap } from 'rxjs';
+import { Observable, map, catchError, throwError, switchMap, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   EventCategory,
@@ -134,17 +134,36 @@ export class EventService {
   }
 
   getEvents(page: number = 0, size: number = 10): Observable<Page<IEvent>> {
+    console.log(`Fetching events: ${this.apiUrl}?page=${page}&size=${size}`);
     return this.http
       .get<ApiResponse<IEvent[]>>(`${this.apiUrl}?page=${page}&size=${size}`, {
         headers: this.getHeaders(),
       })
       .pipe(
         map((response) => {
+          console.log('Raw API response:', response);
+          
+          if (!response.data || !Array.isArray(response.data)) {
+            console.error('Invalid response structure:', response);
+            return {
+              content: [],
+              totalElements: 0,
+              totalPages: 0,
+              size: size,
+              number: page,
+              first: true,
+              last: true,
+              empty: true,
+            };
+          }
+          
           const mappedEvents = response.data.map((event) => ({
             ...event,
             startDate: new Date(event.startDate),
             endDate: new Date(event.endDate),
           }));
+
+          console.log('Mapped events:', mappedEvents.length);
 
           return {
             content: mappedEvents,
@@ -277,60 +296,105 @@ export class EventService {
     });
   }
 
-  registerForEvent(eventId: string): Observable<IEvent> {
-    console.log(`Registering for event with ID: ${eventId}`);
-    return this.http
-      .post<ApiResponse<IEvent>>(
-        `${this.apiUrl}/${eventId}/register`,
-        {},
-        this.getHttpOptions()
-      )
-      .pipe(
-        map((response) => {
-          if (!response.success) {
-            throw new Error(
-              response.message || 'Failed to register for event'
-            );
-          }
-          return response.data;
-        }),
+  registerForEvent(eventId: string, registrationData?: IEventRegistrationRequest): Observable<any> {
+    const url = `${this.apiUrl}/${eventId}/register`;
+    const userId = this.authService.getCurrentUserId();
+    
+    // If no registration data is provided, create a minimal registration with just the user ID
+    if (!registrationData) {
+      const minimalRegistration: IEventRegistrationRequest = {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        termsAccepted: true,
+        userId: userId
+      };
+      return this.http.post<any>(url, minimalRegistration, this.getHttpOptions()).pipe(
         catchError((error) => {
-          console.error('Error registering for event:', error);
-          return throwError(
-            () => new Error('Failed to register for event. Please try again.')
-          );
+          this.handleError(error);
+          return throwError(() => error);
         })
       );
+    }
+    
+    // Otherwise use the provided registration data, ensuring userId is set
+    if (userId && (!registrationData.userId || registrationData.userId.trim() === '')) {
+      registrationData.userId = userId;
+    }
+    
+    return this.http.post<any>(url, registrationData, this.getHttpOptions()).pipe(
+      catchError((error) => {
+        this.handleError(error);
+        return throwError(() => error);
+      })
+    );
   }
 
-  registerWithDetails(
-    eventId: string,
-    registrationData: IEventRegistrationRequest
-  ): Observable<IEvent> {
-    console.log(`Registering for event with ID: ${eventId} with details:`, registrationData);
+  registerWithDetails(eventId: string, registrationData: IEventRegistrationRequest): Observable<any> {
+    const url = `${this.apiUrl}/${eventId}/register`;
+    const userId = this.authService.getCurrentUserId();
     
-    if (!registrationData.termsAccepted) {
-      return throwError(() => new Error('You must accept the terms and conditions'));
+    // Ensure user ID is set if authenticated
+    if (userId && (!registrationData.userId || registrationData.userId.trim() === '')) {
+      registrationData.userId = userId;
+    }
+    
+    return this.http.post<any>(url, registrationData, this.getHttpOptions()).pipe(
+      catchError((error) => {
+        this.handleError(error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  quickRegisterForEvent(eventId: string): Observable<any> {
+    // Get current user's information
+    const userId = this.authService.getCurrentUserId();
+    
+    if (!userId) {
+      this.snackBar.open('You must be logged in to register for events', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      return throwError(() => new Error('User not authenticated'));
+    }
+    
+    const minimalRegistration: IEventRegistrationRequest = {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNumber: '',
+      termsAccepted: true,
+      userId: userId
+    };
+    
+    return this.registerForEvent(eventId, minimalRegistration);
+  }
+
+  cancelRegistration(eventId: string): Observable<void> {
+    const userId = this.authService.getCurrentUserId();
+    if (!userId) {
+      return throwError(() => new Error('You must be logged in to cancel registration.'));
     }
     
     return this.http
-      .post<ApiResponse<IEvent>>(
-        `${this.apiUrl}/${eventId}/register`,
-        registrationData,
-        this.getHttpOptions()
-      )
+      .delete<ApiResponse<void>>(`${this.apiUrl}/${eventId}/register`, this.getHttpOptions())
       .pipe(
-        map((response) => {
-          if (!response.success) {
-            throw new Error(
-              response.message || 'Failed to register for event'
-            );
+        map(() => void 0),
+        catchError(error => {
+          console.error('Cancellation error:', error);
+          let errorMessage = 'Failed to cancel registration. Please try again.';
+          
+          if (error.status === 404) {
+            errorMessage = 'Registration not found.';
+          } else if (error.status === 403) {
+            errorMessage = 'You do not have permission to cancel this registration.';
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
           }
-          return response.data;
-        }),
-        catchError((error) => {
-          console.error('Error registering for event with details:', error);
-          const errorMessage = error.error?.message || 'Failed to register for event. Please try again.';
+          
+          this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
           return throwError(() => new Error(errorMessage));
         })
       );
@@ -412,6 +476,82 @@ export class EventService {
       .pipe(map((response) => this.mapToEvents(response.data)));
   }
 
+  // Get all events for admin
+  getAllEventsForAdmin(page = 0, size = 10): Observable<Page<IEvent>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http
+      .get<ApiResponse<IEvent[]>>(`${this.apiUrl}/admin/all`, { 
+        params,
+        headers: this.getHeaders()
+      })
+      .pipe(
+        map((response) => {
+          const mappedEvents = this.mapToEvents(response.data);
+          return {
+            content: mappedEvents,
+            totalElements: response.meta?.totalElements || mappedEvents.length,
+            totalPages: response.meta?.totalPages || 1,
+            size: response.meta?.size || size,
+            number: response.meta?.page || page,
+            first: response.meta?.page === 0,
+            last: response.meta?.page === (response.meta?.totalPages || 1) - 1,
+            empty: mappedEvents.length === 0
+          };
+        }),
+        catchError((error) => {
+          console.error('Error fetching admin events:', error);
+          this.snackBar.open('Error fetching events', 'Close', {
+            duration: 3000,
+          });
+          return throwError(() => error);
+        })
+      );
+  }
+
+  // Approve an event
+  approveEvent(eventId: string): Observable<IEvent> {
+    return this.http
+      .patch<ApiResponse<IEvent>>(`${this.apiUrl}/${eventId}/approve`, {}, {
+        headers: this.getHeaders()
+      })
+      .pipe(
+        map((response) => this.mapToEvent(response.data)),
+        catchError((error) => {
+          console.error('Error approving event:', error);
+          this.snackBar.open('Error approving event', 'Close', {
+            duration: 3000,
+          });
+          return throwError(() => error);
+        })
+      );
+  }
+
+  // Reject an event
+  rejectEvent(eventId: string, reason?: string): Observable<IEvent> {
+    let params = new HttpParams();
+    if (reason) {
+      params = params.set('reason', reason);
+    }
+    
+    return this.http
+      .patch<ApiResponse<IEvent>>(`${this.apiUrl}/${eventId}/reject`, {}, {
+        headers: this.getHeaders(),
+        params
+      })
+      .pipe(
+        map((response) => this.mapToEvent(response.data)),
+        catchError((error) => {
+          console.error('Error rejecting event:', error);
+          this.snackBar.open('Error rejecting event', 'Close', {
+            duration: 3000,
+          });
+          return throwError(() => error);
+        })
+      );
+  }
+
   // Search events
   searchEvents(query: string, page = 0, size = 10): Observable<IEvent[]> {
     const params = new HttpParams()
@@ -437,13 +577,6 @@ export class EventService {
         params,
       })
       .pipe(map((response) => this.mapToEvents(response.data)));
-  }
-
-  // Cancel registration
-  cancelRegistration(eventId: string): Observable<void> {
-    return this.http
-      .delete<ApiResponse<void>>(`${this.apiUrl}/${eventId}/register`)
-      .pipe(map((response) => void 0));
   }
 
   // Join waitlist
@@ -533,31 +666,26 @@ export class EventService {
   }
 
   // Helper method to map a single EventResponse to Event
-  private mapToEvent(event: any): IEvent {
-    if (!event) {
-      throw new Error('Event data is null');
-    }
-
+  mapToEvent(event: any): IEvent {
+    if (!event) return {} as IEvent;
+    
     return {
       ...event,
-      id: event._id || event.id,
-      organizationName: event.organizationName || 'Organization', // Default value if not provided
-      currentParticipants: event.registeredParticipants?.length || 0,
+      id: event.id || event._id,
       startDate: new Date(event.startDate),
       endDate: new Date(event.endDate),
-      createdAt: event.createdAt ? new Date(event.createdAt) : undefined,
-      updatedAt: event.updatedAt ? new Date(event.updatedAt) : undefined,
-      schedule: event.schedule || [],
-      isRegistered: event.isRegistered || false,
+      createdAt: new Date(event.createdAt),
+      status: event.status || EventStatus.DRAFT,
+      currentParticipants: event.currentParticipants || 0,
+      maxParticipants: event.maxParticipants || 0,
+      isRegistered: event.isRegistered || false
     };
   }
 
   // Helper method to map EventResponse[] to Event[]
   private mapToEvents(events: any[] | null): IEvent[] {
-    if (!events) {
-      return [];
-    }
-    return events.map((event) => this.mapToEvent(event));
+    if (!events) return [];
+    return events.map(event => this.mapToEvent(event));
   }
 
   // Helper method to convert Partial<IEvent> to EventRequest
@@ -695,5 +823,87 @@ export class EventService {
     });
 
     return throwError(() => ({ message: errorMessage, status: error.status }));
+  }
+
+  // Check if a user is registered for an event and retrieve their registration status
+  checkRegistrationStatus(eventId: string, userId: string): Observable<{ isRegistered: boolean; status: string }> {
+    return this.http
+      .get<ApiResponse<{ isRegistered: boolean; status: string }>>(
+        `${this.apiUrl}/${eventId}/registrations/status/${userId}`,
+        this.getHttpOptions()
+      )
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error checking registration status:', error);
+          // Return a default value to avoid breaking the UI
+          return of({ isRegistered: false, status: 'NOT_REGISTERED' });
+        })
+      );
+  }
+
+  // Check if a user is registered for an event (simplified boolean version)
+  isUserRegisteredForEvent(eventId: string, userId: string): Observable<boolean> {
+    return this.checkRegistrationStatus(eventId, userId).pipe(
+      map(response => response.isRegistered)
+    );
+  }
+
+  // Get public events (no authentication required)
+  getPublicEvents(page: number = 0, size: number = 10): Observable<Page<IEvent>> {
+    console.log(`Fetching public events: ${this.apiUrl}/public?page=${page}&size=${size}`);
+    
+    // Don't include authentication headers for public access
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+    
+    return this.http
+      .get<ApiResponse<IEvent[]>>(`${this.apiUrl}/public?page=${page}&size=${size}`, { headers })
+      .pipe(
+        map((response) => {
+          console.log('Raw public events API response:', response);
+          
+          if (!response.data || !Array.isArray(response.data)) {
+            console.error('Invalid public events response structure:', response);
+            return {
+              content: [],
+              totalElements: 0,
+              totalPages: 0,
+              size: size,
+              number: page,
+              first: true,
+              last: true,
+              empty: true,
+            };
+          }
+          
+          const mappedEvents = response.data.map((event) => ({
+            ...event,
+            startDate: new Date(event.startDate),
+            endDate: new Date(event.endDate),
+          }));
+
+          console.log('Mapped public events:', mappedEvents.length);
+
+          return {
+            content: mappedEvents,
+            totalElements: response.meta?.totalElements || mappedEvents.length,
+            totalPages: response.meta?.totalPages || 1,
+            size: response.meta?.size || size,
+            number: response.meta?.page || page,
+            first: page === 0,
+            last: page === (response.meta?.totalPages || 1) - 1,
+            empty: mappedEvents.length === 0,
+          };
+        }),
+        catchError((error) => {
+          console.error('Error fetching public events:', error);
+          return throwError(
+            () => new Error('Failed to fetch events. Please try again later.')
+          );
+        })
+      );
   }
 }

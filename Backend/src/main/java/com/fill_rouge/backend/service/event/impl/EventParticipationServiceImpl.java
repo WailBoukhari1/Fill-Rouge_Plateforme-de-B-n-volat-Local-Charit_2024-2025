@@ -63,6 +63,59 @@ public class EventParticipationServiceImpl implements EventParticipationService 
     }
 
     @Override
+    public EventParticipation registerForEventWithDetailsAndStatus(String volunteerId, String eventId, 
+                                                         String specialRequirements, String notes, String status) {
+        // Check if already registered
+        Optional<EventParticipation> existingRegistration = participationRepository.findByVolunteerIdAndEventId(volunteerId, eventId);
+        
+        if (existingRegistration.isPresent()) {
+            EventParticipation participation = existingRegistration.get();
+            
+            // Update with new details if provided
+            if (specialRequirements != null && !specialRequirements.isBlank()) {
+                participation.setSpecialRequirements(specialRequirements);
+            }
+            
+            if (notes != null && !notes.isBlank()) {
+                participation.setNotes(notes);
+            }
+            
+            // Update status if different
+            try {
+                EventParticipationStatus newStatus = EventParticipationStatus.valueOf(status);
+                if (participation.getStatus() != newStatus) {
+                    participation.setStatus(newStatus);
+                    participation.setUpdatedAt(LocalDateTime.now());
+                }
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid participation status: " + status);
+            }
+            
+            return participationRepository.save(participation);
+        }
+
+        EventParticipationStatus participationStatus;
+        try {
+            participationStatus = EventParticipationStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            // Default to REGISTERED if invalid status
+            participationStatus = EventParticipationStatus.REGISTERED;
+        }
+
+        EventParticipation participation = EventParticipation.builder()
+            .volunteerId(volunteerId)
+            .eventId(eventId)
+            .status(participationStatus)
+            .registeredAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .specialRequirements(specialRequirements)
+            .notes(notes)
+            .build();
+
+        return participationRepository.save(participation);
+    }
+
+    @Override
     public EventParticipation checkIn(String volunteerId, String eventId) {
         EventParticipation participation = participationRepository.findByVolunteerIdAndEventId(volunteerId, eventId)
             .orElseThrow(() -> new RuntimeException("Participation not found"));

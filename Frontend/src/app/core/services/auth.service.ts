@@ -111,8 +111,20 @@ export class AuthService {
   }
 
   register(request: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
+    // First validate that email is present and valid
+    if (!request.email || !request.email.trim()) {
+      return throwError(() => new Error('Email is required for registration'));
+    }
 
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, request).pipe(
+    // Normalize email to prevent null values
+    const normalizedRequest = {
+      ...request,
+      email: request.email.trim(),
+      firstName: request.firstName.trim(),
+      lastName: request.lastName.trim()
+    };
+
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/register`, normalizedRequest).pipe(
       tap(response => this.handleAuthResponse(response.data))
     );
   }

@@ -4,7 +4,7 @@ import { AuthGuard } from '../../core/guards/auth.guard';
 
 import { EVENTS_ROUTES } from './events/events.routes';
 import { ORGANIZATIONS_ROUTES } from './organizations/organizations.routes';
-import { AUTH_ROUTES } from './auth/auth.routes';
+import { AUTH_ROUTES } from '../auth/auth.routes';
 import { VOLUNTEER_ROUTES } from './volunteer/volunteer.routes';
 import { LEGAL_ROUTES } from './legal/legal.routes';
 

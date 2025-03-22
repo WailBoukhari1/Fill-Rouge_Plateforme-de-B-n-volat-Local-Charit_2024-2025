@@ -12,6 +12,7 @@ import com.fill_rouge.backend.domain.EventParticipation;
 public interface EventParticipationService {
     EventParticipation registerForEvent(String volunteerId, String eventId);
     EventParticipation registerForEventWithDetails(String volunteerId, String eventId, String specialRequirements, String notes);
+    EventParticipation registerForEventWithDetailsAndStatus(String volunteerId, String eventId, String specialRequirements, String notes, String status);
     EventParticipation checkIn(String volunteerId, String eventId);
     EventParticipation checkOut(String volunteerId, String eventId);
     EventParticipation submitFeedback(String volunteerId, String eventId, int rating, String feedback);

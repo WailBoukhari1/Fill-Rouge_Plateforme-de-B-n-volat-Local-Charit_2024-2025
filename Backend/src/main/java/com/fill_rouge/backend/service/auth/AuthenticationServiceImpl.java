@@ -348,9 +348,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .orElseGet(() -> {
                     VolunteerProfile newProfile = new VolunteerProfile();
                     newProfile.setUser(finalUser);
-                    newProfile.setFirstName(finalUser.getFirstName());
-                    newProfile.setLastName(finalUser.getLastName());
-                    newProfile.setEmail(finalUser.getEmail());
                     newProfile.setCreatedAt(LocalDateTime.now());
                     newProfile.setStatus("ACTIVE");
                     newProfile.setActive(true);
@@ -624,9 +621,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private void createVolunteerProfile(User user) {
         VolunteerProfile profile = new VolunteerProfile();
         profile.setUser(user);
-        profile.setFirstName(user.getFirstName());
-        profile.setLastName(user.getLastName());
-        profile.setEmail(user.getEmail());
         profile.setCreatedAt(LocalDateTime.now());
         profile.setUpdatedAt(LocalDateTime.now());
         profile.setStatus("ACTIVE");

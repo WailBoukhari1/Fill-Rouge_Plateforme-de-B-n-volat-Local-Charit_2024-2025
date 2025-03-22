@@ -2,6 +2,7 @@ package com.fill_rouge.backend.service.volunteer;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,11 +15,13 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.fill_rouge.backend.domain.Skill;
+import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.exception.ResourceNotFoundException;
 import com.fill_rouge.backend.exception.ValidationException;
+import com.fill_rouge.backend.repository.UserRepository;
 import com.fill_rouge.backend.repository.VolunteerProfileRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class VolunteerProfileServiceImpl implements VolunteerProfileService {
     private final VolunteerProfileRepository profileRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -38,12 +42,19 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         log.debug("Creating volunteer profile for volunteerId: {}", volunteerId);
         validateProfileRequest(request);
         
-        if (profileRepository.findByVolunteerId(volunteerId).isPresent()) {
+        if (profileRepository.findByUserId(volunteerId).isPresent()) {
             throw new ValidationException("Profile already exists for this volunteer");
         }
 
+        // Get the User entity reference
+        User user = userRepository.findById(volunteerId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + volunteerId));
+
         VolunteerProfile profile = new VolunteerProfile();
         profile.setId(volunteerId); // Use volunteerId as profile ID
+        profile.setUser(user); // Set the user reference
+    
+    
         updateProfileFromRequest(profile, request);
         profile.setCreatedAt(LocalDateTime.now());
         profile.setUpdatedAt(LocalDateTime.now());
@@ -130,6 +141,65 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         saveProfile(profile);
     }
 
+    @Override
+    public VolunteerProfileResponse updateVolunteerApprovalStatus(String volunteerId, String status, String reason) {
+        VolunteerProfile profile = getVolunteerProfile(volunteerId);
+        
+        if (profile == null) {
+            throw new ResourceNotFoundException("Volunteer profile not found with ID: " + volunteerId);
+        }
+        
+        // Validate the status
+        if (!Arrays.asList("PENDING", "APPROVED", "REJECTED").contains(status)) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        
+        // If rejecting, reason is required
+        if ("REJECTED".equals(status) && (reason == null || reason.trim().isEmpty())) {
+            throw new IllegalArgumentException("Rejection reason is required");
+        }
+        
+        profile.setApprovalStatus(status);
+        
+        if ("REJECTED".equals(status)) {
+            profile.setRejectionReason(reason);
+        } else {
+            profile.setRejectionReason(null);
+        }
+        
+        profile.setUpdatedAt(LocalDateTime.now());
+        profile = saveProfile(profile);
+        
+        return toVolunteerProfileResponse(profile);
+    }
+
+    @Override
+    public VolunteerProfileResponse updateVolunteerBanStatus(String volunteerId, boolean banned, String reason) {
+        VolunteerProfile profile = getVolunteerProfile(volunteerId);
+        
+        if (profile == null) {
+            throw new ResourceNotFoundException("Volunteer profile not found with ID: " + volunteerId);
+        }
+        
+        // If banning, reason is required
+        if (banned && (reason == null || reason.trim().isEmpty())) {
+            throw new IllegalArgumentException("Ban reason is required");
+        }
+        
+        profile.setBanned(banned);
+        
+        if (banned) {
+            profile.setBanReason(reason);
+        } else {
+            profile.setBanReason(null);
+        }
+        
+        profile.setUpdatedAt(LocalDateTime.now());
+        profile = saveProfile(profile);
+        
+        return toVolunteerProfileResponse(profile);
+    }
+
     // Helper methods
     private VolunteerProfile saveProfile(VolunteerProfile profile) {
         try {
@@ -171,7 +241,7 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
 
     @Override
     public VolunteerProfile getVolunteerProfile(@NonNull String volunteerId) {
-        return profileRepository.findByVolunteerId(volunteerId)
+        return profileRepository.findByUserId(volunteerId)
             .orElseThrow(() -> new ResourceNotFoundException("Volunteer profile not found"));
     }
 
@@ -237,9 +307,6 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
     private VolunteerProfileResponse toVolunteerProfileResponse(VolunteerProfile profile) {
         return VolunteerProfileResponse.builder()
             .id(profile.getId())
-            .firstName(profile.getFirstName())
-            .lastName(profile.getLastName())
-            .email(profile.getEmail())
             .phoneNumber(profile.getPhoneNumber())
             .address(profile.getAddress())
             .bio(profile.getBio())

@@ -17,6 +17,8 @@ import com.fill_rouge.backend.config.security.JwtConfig;
 @EnableConfigurationProperties({JwtConfig.class, FeatureConfig.class})
 public class BackendApplication {
     public static void main(String[] args) {
-        SpringApplication.run(BackendApplication.class, args);
+        SpringApplication application = new SpringApplication(BackendApplication.class);
+        application.setAllowBeanDefinitionOverriding(true);
+        application.run(args);
     }
 }

@@ -62,6 +62,7 @@ public class User implements UserDetails {
     private LocalDateTime passwordLastChanged;
     private List<String> previousPasswords = new ArrayList<>();
     private boolean questionnaireCompleted = false;
+    private VolunteerProfile volunteerProfile;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -107,4 +108,5 @@ public class User implements UserDetails {
     public boolean isAccountLocked() {
         return accountLockedUntil != null && LocalDateTime.now().isBefore(accountLockedUntil);
     }
+
 }

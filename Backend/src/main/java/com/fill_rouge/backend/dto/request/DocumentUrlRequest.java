@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DocumentUrlRequest {
     private String documentUrl;
+    private String documentType;
 }

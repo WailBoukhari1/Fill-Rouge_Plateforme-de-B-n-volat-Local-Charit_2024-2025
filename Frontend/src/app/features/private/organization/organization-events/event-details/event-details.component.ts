@@ -109,7 +109,7 @@ export class EventDetailsComponent implements OnInit, OnDestroy {
     if (!this.event?.id) return;
 
     this.loading = true;
-    this.eventService.registerForEvent(this.event.id)
+    this.eventService.quickRegisterForEvent(this.event.id)
       .pipe(
         retry(1),
         catchError(error => {
@@ -170,18 +170,17 @@ export class EventDetailsComponent implements OnInit, OnDestroy {
   getStatusClass(): string {
     if (!this.event) return '';
     
-    switch (this.event.status) {
-      case EventStatus.ACTIVE:
-        return 'status-active';
-      case EventStatus.COMPLETED:
-        return 'status-completed';
-      case EventStatus.CANCELLED:
-        return 'status-cancelled';
-      case EventStatus.PENDING:
-        return 'status-pending';
-      default:
-        return '';
-    }
+    const statusClassMap: Record<string, string> = {
+      'DRAFT': 'bg-gray-600 text-white',
+      'PENDING': 'bg-yellow-500 text-white',
+      'PUBLISHED': 'bg-blue-500 text-white',
+      'ACTIVE': 'bg-green-500 text-white',
+      'ONGOING': 'bg-indigo-500 text-white',
+      'COMPLETED': 'bg-purple-500 text-white',
+      'CANCELLED': 'bg-red-500 text-white'
+    };
+    
+    return statusClassMap[this.event.status] || 'bg-gray-600 text-white';
   }
 
   formatDate(date: Date | string | undefined | null): string {
@@ -198,25 +197,16 @@ export class EventDetailsComponent implements OnInit, OnDestroy {
   }
 
   getDifficultyColor(): string {
-    if (!this.event?.difficulty) return '';
-
-    switch (this.event.difficulty.toLowerCase()) {
-      case 'beginner':
-        return 'text-green-500';
-      case 'intermediate':
-        return 'text-yellow-500';
-      case 'advanced':
-        return 'text-red-500';
-      default:
-        return '';
-    }
-  }
-
-  handleImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    if (img) {
-      img.src = 'assets/images/default-event-banner.jpg';
-    }
+    if (!this.event || !this.event.difficulty) return 'text-gray-600';
+    
+    const difficultyClassMap: Record<string, string> = {
+      'BEGINNER': 'text-green-600',
+      'INTERMEDIATE': 'text-blue-600',
+      'ADVANCED': 'text-purple-600',
+      'EXPERT': 'text-red-600'
+    };
+    
+    return difficultyClassMap[this.event.difficulty.toUpperCase()] || 'text-gray-600';
   }
 
   loadEvents(): void {

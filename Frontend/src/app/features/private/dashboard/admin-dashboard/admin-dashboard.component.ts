@@ -3,8 +3,14 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { StatisticsService, AdminStatistics } from '../../../../core/services/statistics.service';
+import { Store } from '@ngrx/store';
+import { Subject, takeUntil } from 'rxjs';
 import * as echarts from 'echarts';
+
+import { AppState } from '../../../../store';
+import * as AdminActions from '../../../../store/admin/admin.actions';
+import * as AdminSelectors from '../../../../store/admin/admin.selectors';
+import { AdminStatistics } from '../../../../core/models/statistics.model';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -117,34 +123,53 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
   private distributionChartInstance: echarts.ECharts | null = null;
   private platformChartInstance: echarts.ECharts | null = null;
   private engagementChartInstance: echarts.ECharts | null = null;
+  private destroy$ = new Subject<void>();
 
-  constructor(private statisticsService: StatisticsService) {}
+  constructor(private store: Store<AppState>) {}
 
   ngOnInit(): void {
     this.loadStatistics();
+    
+    // Subscribe to the statistics from the store
+    this.store.select(AdminSelectors.selectAdminStatistics)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(stats => {
+        if (stats) {
+          this.stats = stats;
+          this.loading = false;
+          // Initialize charts after statistics are loaded
+          setTimeout(() => this.initializeCharts(), 0);
+        }
+      });
+      
+    // Subscribe to the loading state  
+    this.store.select(AdminSelectors.selectAdminLoading)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loading => {
+        this.loading = loading;
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    
+    // Dispose of chart instances
+    this.growthChartInstance?.dispose();
+    this.distributionChartInstance?.dispose();
+    this.platformChartInstance?.dispose();
+    this.engagementChartInstance?.dispose();
   }
 
   private loadStatistics(): void {
-    this.statisticsService.getAdminStatistics().subscribe({
-      next: (response) => {
-        if (!response.data) {
-          console.error('No data in response');
-          this.loading = false;
-          return;
-        }
-        this.stats = response.data;
-        this.loading = false;
-        this.initializeCharts();
-      },
-      error: (error: Error) => {
-        console.error('Error loading admin statistics:', error);
-        this.loading = false;
-      }
-    });
+    this.store.dispatch(AdminActions.loadAdminStatistics());
   }
 
   ngAfterViewInit(): void {
     // Charts will be initialized after data is loaded
+    if (this.stats) {
+      this.initializeCharts();
+    }
   }
 
   private initializeCharts(): void {
@@ -170,7 +195,7 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
         },
         xAxis: { 
           type: 'category',
-          data: this.stats.userGrowth.map(g => g.month),
+          data: this.stats.userGrowth.map(g => g.date),
           axisLabel: { rotate: 45 }
         },
         yAxis: { 
@@ -181,7 +206,7 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
           name: 'Users',
           type: 'line',
           smooth: true,
-          data: this.stats.userGrowth.map(g => g.users),
+          data: this.stats.userGrowth.map(g => g.value),
           itemStyle: { color: '#3B82F6' },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -190,6 +215,11 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
             ])
           }
         }]
+      });
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        this.growthChartInstance?.resize();
       });
     }
 
@@ -234,11 +264,16 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
           labelLine: {
             show: false
           },
-          data: Object.entries(this.stats.eventDistribution).map(([name, value]) => ({
+          data: Object.entries(this.stats.eventsByCategory).map(([name, value]) => ({
             name,
             value
           }))
         }]
+      });
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        this.distributionChartInstance?.resize();
       });
     }
 
@@ -262,20 +297,24 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
         },
         xAxis: { 
           type: 'category',
-          data: this.stats.platformGrowth.map(g => g.month),
+          data: this.stats.platformGrowth.map(g => g.date),
           axisLabel: { rotate: 45 }
         },
         yAxis: { 
           type: 'value',
-          name: 'Growth Rate (%)'
+          name: 'Growth %'
         },
         series: [{
           name: 'Growth',
-          type: 'line',
-          smooth: true,
-          data: this.stats.platformGrowth.map(g => g.growth),
+          type: 'bar',
+          data: this.stats.platformGrowth.map(g => g.value),
           itemStyle: { color: '#10B981' }
         }]
+      });
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        this.platformChartInstance?.resize();
       });
     }
 
@@ -299,35 +338,34 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
         },
         xAxis: { 
           type: 'category',
-          data: this.stats.userEngagement.map(e => e.month),
+          data: this.stats.userEngagement.map(g => g.date),
           axisLabel: { rotate: 45 }
         },
         yAxis: { 
           type: 'value',
-          name: 'Engagement Rate (%)'
+          name: 'Engagement %',
+          max: 100
         },
         series: [{
           name: 'Engagement',
-          type: 'bar',
-          data: this.stats.userEngagement.map(e => e.engagement),
-          itemStyle: { color: '#8B5CF6' }
+          type: 'line',
+          smooth: true,
+          data: this.stats.userEngagement.map(g => g.value),
+          itemStyle: { color: '#F59E0B' },
+          markLine: {
+            data: [{ 
+              type: 'average', 
+              name: 'Average',
+              lineStyle: { color: '#EF4444' }
+            }]
+          }
         }]
       });
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.growthChartInstance) {
-      this.growthChartInstance.dispose();
-    }
-    if (this.distributionChartInstance) {
-      this.distributionChartInstance.dispose();
-    }
-    if (this.platformChartInstance) {
-      this.platformChartInstance.dispose();
-    }
-    if (this.engagementChartInstance) {
-      this.engagementChartInstance.dispose();
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        this.engagementChartInstance?.resize();
+      });
     }
   }
 } 

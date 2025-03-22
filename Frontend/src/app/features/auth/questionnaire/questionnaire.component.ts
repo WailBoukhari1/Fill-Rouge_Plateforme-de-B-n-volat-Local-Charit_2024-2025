@@ -262,7 +262,7 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     
     this.isUpdatingValidity = true;
     try {
-    const role = this.roleFormGroup.get('type')?.value;
+      const role = this.roleFormGroup.get('type')?.value;
       const volunteerGroup = this.roleSpecificFormGroup.get('volunteer') as FormGroup;
       const organizationGroup = this.roleSpecificFormGroup.get('organization') as FormGroup;
 
@@ -270,10 +270,14 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
       this.clearAllValidators(volunteerGroup, organizationGroup);
 
       // Then apply validators based on role
-    if (role === 'ORGANIZATION') {
+      if (role === 'ORGANIZATION') {
         this.applyOrganizationValidators(organizationGroup);
+        // Make sure volunteer group doesn't have any validators
+        this.clearVolunteerGroupValidators(volunteerGroup);
       } else if (role === 'VOLUNTEER') {
         this.applyVolunteerValidators(volunteerGroup);
+        // Make sure organization group doesn't have any validators
+        this.clearOrganizationGroupValidators(organizationGroup);
       }
 
       // Update validity for all controls without triggering additional validation
@@ -403,27 +407,44 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     ]);
 
     const emergencyContactGroup = volunteerGroup.get('emergencyContact');
-    const isEmergencyAvailable = volunteerGroup.get('availableForEmergency')?.value;
+    const isEmergencyAvailable = volunteerGroup.get('availableForEmergency')?.value === true;
 
-    // Clear emergency contact validators first
-    emergencyContactGroup?.get('name')?.clearValidators();
-    emergencyContactGroup?.get('relationship')?.clearValidators();
-    emergencyContactGroup?.get('phone')?.clearValidators();
+    // Always reset emergency contact validators
+    if (emergencyContactGroup instanceof FormGroup) {
+      emergencyContactGroup.get('name')?.clearValidators();
+      emergencyContactGroup.get('relationship')?.clearValidators();
+      emergencyContactGroup.get('phone')?.clearValidators();
+    
+      // Reset values when not checked
+      if (!isEmergencyAvailable) {
+        emergencyContactGroup.get('name')?.setValue('');
+        emergencyContactGroup.get('phone')?.setValue('');
+        emergencyContactGroup.get('relationship')?.setValue('');
+        emergencyContactGroup.get('name')?.updateValueAndValidity({emitEvent: false});
+        emergencyContactGroup.get('phone')?.updateValueAndValidity({emitEvent: false});
+        emergencyContactGroup.get('relationship')?.updateValueAndValidity({emitEvent: false});
+      }
 
-    // Only apply validators if emergency contact is available
+      // Only apply validators if emergency contact is available
       if (isEmergencyAvailable) {
-      emergencyContactGroup?.get('name')?.setValidators([
-            Validators.required,
-            Validators.minLength(2),
-            Validators.maxLength(100),
-          ]);
-      emergencyContactGroup?.get('relationship')?.setValidators([
-        Validators.maxLength(50),
-      ]);
-      emergencyContactGroup?.get('phone')?.setValidators([
-            Validators.required,
-            Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/),
-          ]);
+        emergencyContactGroup.get('name')?.setValidators([
+              Validators.required,
+              Validators.minLength(2),
+              Validators.maxLength(100),
+            ]);
+        emergencyContactGroup.get('relationship')?.setValidators([
+          Validators.maxLength(50),
+        ]);
+        emergencyContactGroup.get('phone')?.setValidators([
+              Validators.required,
+              Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/),
+            ]);
+        
+        // Update validity after setting validators
+        emergencyContactGroup.get('name')?.updateValueAndValidity({emitEvent: false});
+        emergencyContactGroup.get('phone')?.updateValueAndValidity({emitEvent: false});
+        emergencyContactGroup.get('relationship')?.updateValueAndValidity({emitEvent: false});
+      }
     }
 
     // Update validity for all controls
@@ -658,34 +679,14 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
               tap(response => {
                 // Force update the auth state with the new token and user data
                 if (response.data) {
-                  const userData = {
-                    ...user,
-                    role: response.data.roles?.[0]?.replace('ROLE_', '') || user.role,
-                    questionnaireCompleted: true
-                  };
-                  
-                  // Update auth state
-                  this.store.dispatch(AuthActions.loginSuccess({
-                    user: userData,
-                    token: response.data.token,
-                    refreshToken: response.data.refreshToken,
-                    redirect: false
-                  }));
-
                   // Show success message
-              this.snackBar.open('Profile completed successfully!', 'Close', {
-                duration: 3000,
-                panelClass: ['success-snackbar'],
-              });
+                  this.snackBar.open('Profile completed successfully!', 'Close', {
+                    duration: 3000,
+                    panelClass: ['success-snackbar'],
+                  });
 
-                  // Navigate based on role
-                  if (userData.role === 'VOLUNTEER') {
-                    this.router.navigate(['/dashboard/volunteer']);
-                  } else if (userData.role === 'ORGANIZATION') {
-                    this.router.navigate(['/dashboard/organization']);
-                  } else {
-              this.router.navigate(['/dashboard']);
-                  }
+                  // Always navigate to the main dashboard regardless of role
+                  this.router.navigate(['/dashboard']);
                 }
               }),
               catchError(error => {
@@ -1076,9 +1077,15 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
     if (isEmergencyAvailable) {
       const emergencyContact = volunteerForm.get('emergencyContact');
       if (emergencyContact instanceof FormGroup) {
-      isEmergencyContactValid =
-          emergencyContact.get('name')?.valid === true &&
-          emergencyContact.get('phone')?.valid === true;
+        const nameControl = emergencyContact.get('name');
+        const phoneControl = emergencyContact.get('phone');
+        
+        // Check if both controls exist and are valid
+        isEmergencyContactValid = 
+          !!nameControl && 
+          !!phoneControl && 
+          nameControl.valid && 
+          phoneControl.valid;
       }
     }
 
@@ -1127,5 +1134,59 @@ export class QuestionnaireComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next(void 0);
     this.destroy$.complete();
+  }
+
+  private clearVolunteerGroupValidators(volunteerGroup: AbstractControl | null): void {
+    if (!(volunteerGroup instanceof FormGroup)) return;
+    
+    volunteerGroup.get('bio')?.clearValidators();
+    volunteerGroup.get('education')?.clearValidators();
+    volunteerGroup.get('experience')?.clearValidators();
+    volunteerGroup.get('specialNeeds')?.clearValidators();
+    
+    const emergencyContact = volunteerGroup.get('emergencyContact');
+    if (emergencyContact instanceof FormGroup) {
+      emergencyContact.get('name')?.clearValidators();
+      emergencyContact.get('relationship')?.clearValidators();
+      emergencyContact.get('phone')?.clearValidators();
+      
+      // Reset values
+      emergencyContact.get('name')?.setValue('');
+      emergencyContact.get('phone')?.setValue('');
+      emergencyContact.get('relationship')?.setValue('');
+      
+      // Update validity
+      emergencyContact.get('name')?.updateValueAndValidity({emitEvent: false});
+      emergencyContact.get('phone')?.updateValueAndValidity({emitEvent: false});
+      emergencyContact.get('relationship')?.updateValueAndValidity({emitEvent: false});
+    }
+  }
+  
+  private clearOrganizationGroupValidators(organizationGroup: AbstractControl | null): void {
+    if (!(organizationGroup instanceof FormGroup)) return;
+    
+    organizationGroup.get('type')?.clearValidators();
+    organizationGroup.get('name')?.clearValidators();
+    organizationGroup.get('description')?.clearValidators();
+    organizationGroup.get('missionStatement')?.clearValidators();
+    organizationGroup.get('website')?.clearValidators();
+    organizationGroup.get('registrationNumber')?.clearValidators();
+    organizationGroup.get('taxId')?.clearValidators();
+    organizationGroup.get('foundedYear')?.clearValidators();
+    organizationGroup.get('focusAreas')?.clearValidators();
+    
+    const socialMediaGroup = organizationGroup.get('socialMediaLinks');
+    if (socialMediaGroup instanceof FormGroup) {
+      socialMediaGroup.get('facebook')?.clearValidators();
+      socialMediaGroup.get('twitter')?.clearValidators();
+      socialMediaGroup.get('instagram')?.clearValidators();
+      socialMediaGroup.get('linkedin')?.clearValidators();
+      
+      // Update validity
+      socialMediaGroup.get('facebook')?.updateValueAndValidity({emitEvent: false});
+      socialMediaGroup.get('twitter')?.updateValueAndValidity({emitEvent: false});
+      socialMediaGroup.get('instagram')?.updateValueAndValidity({emitEvent: false});
+      socialMediaGroup.get('linkedin')?.updateValueAndValidity({emitEvent: false});
+    }
   }
 }

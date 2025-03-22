@@ -1,7 +1,6 @@
 package com.fill_rouge.backend.config;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +23,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import com.fill_rouge.backend.config.security.JwtAuthenticationFilter;
+import com.fill_rouge.backend.config.security.JwtConfig;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +35,7 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final JwtConfig jwtConfig;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

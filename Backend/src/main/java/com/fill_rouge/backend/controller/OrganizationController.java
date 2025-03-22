@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,6 +25,7 @@ import com.fill_rouge.backend.dto.request.DocumentUrlRequest;
 import com.fill_rouge.backend.dto.response.OrganizationResponse;
 import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.service.organization.OrganizationService;
+import com.fill_rouge.backend.constant.OrganizationStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -184,7 +186,7 @@ public class OrganizationController {
     public ResponseEntity<Void> addDocument(
             @PathVariable String organizationId,
             @RequestBody DocumentUrlRequest request) {
-        organizationService.addDocument(organizationId, request.getDocumentUrl());
+        organizationService.addDocument(organizationId, request.getDocumentUrl(), request.getDocumentType());
         return ResponseEntity.ok().build();
     }
 
@@ -298,5 +300,45 @@ public class OrganizationController {
             @RequestParam(required = false, defaultValue = "name") String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String sortOrder) {
         return ResponseEntity.ok(organizationService.getOrganizationVolunteers(organizationId, sortBy, sortOrder));
+    }
+
+    @PatchMapping("/{organizationId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Approve organization", description = "Approve an organization to create events")
+    @ApiResponse(responseCode = "200", description = "Organization approved successfully")
+    @ApiResponse(responseCode = "404", description = "Organization not found")
+    public ResponseEntity<OrganizationResponse> approveOrganization(@PathVariable String organizationId) {
+        return ResponseEntity.ok(organizationService.updateOrganizationStatus(organizationId, OrganizationStatus.APPROVED.name(), null));
+    }
+
+    @PatchMapping("/{organizationId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Reject organization", description = "Reject an organization from creating events")
+    @ApiResponse(responseCode = "200", description = "Organization rejected successfully")
+    @ApiResponse(responseCode = "404", description = "Organization not found")
+    public ResponseEntity<OrganizationResponse> rejectOrganization(
+            @PathVariable String organizationId,
+            @RequestParam String reason) {
+        return ResponseEntity.ok(organizationService.updateOrganizationStatus(organizationId, OrganizationStatus.REJECTED.name(), reason));
+    }
+
+    @PatchMapping("/{organizationId}/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Ban organization", description = "Ban an organization from the platform")
+    @ApiResponse(responseCode = "200", description = "Organization banned successfully")
+    @ApiResponse(responseCode = "404", description = "Organization not found")
+    public ResponseEntity<OrganizationResponse> banOrganization(
+            @PathVariable String organizationId,
+            @RequestParam String reason) {
+        return ResponseEntity.ok(organizationService.updateOrganizationBanStatus(organizationId, true, reason));
+    }
+
+    @PatchMapping("/{organizationId}/unban")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Unban organization", description = "Unban a previously banned organization")
+    @ApiResponse(responseCode = "200", description = "Organization unbanned successfully")
+    @ApiResponse(responseCode = "404", description = "Organization not found")
+    public ResponseEntity<OrganizationResponse> unbanOrganization(@PathVariable String organizationId) {
+        return ResponseEntity.ok(organizationService.updateOrganizationBanStatus(organizationId, false, null));
     }
 }

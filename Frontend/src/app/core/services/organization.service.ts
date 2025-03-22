@@ -1,398 +1,321 @@
 import { Injectable } from '@angular/core';
-import {
-  HttpClient,
-  HttpEvent,
-  HttpRequest,
-  HttpParams,
-  HttpHeaders,
-} from '@angular/common/http';
-import { Observable, map, catchError, throwError, tap, switchMap } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import {
-  Organization,
-  OrganizationType,
-  OrganizationCategory,
-  OrganizationDocument,
-  DocumentType,
-  OrganizationProfile,
-  OrganizationRequest,
-  OrganizationResponse,
-  SocialMediaLinks,
-  ApiResponse,
-} from '../models/organization.model';
-import { Page } from '../models/page.model';
-import { IEvent } from '../models/event.types';
-import { AuthService } from './auth.service';
+import { OrganizationProfile, ApiResponse } from '../models/organization.model';
 
-export interface PaginatedResponse<T> {
-  content: T[];
+export interface OrganizationResponse {
+  content: OrganizationProfile[];
   totalElements: number;
   totalPages: number;
   size: number;
   number: number;
 }
 
-export interface ImpactMetrics {
-  peopleServed: number;
-  fundsRaised: number;
-  projectsCompleted: number;
-}
-
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class OrganizationService {
   private apiUrl = `${environment.apiUrl}/organizations`;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(private http: HttpClient) { }
 
-  // For admin and management views that need full organization details
-  getOrganizationsDetailed(
-    page: number = 0,
-    size: number = 10
-  ): Observable<PaginatedResponse<Organization>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString())
-      .set('detailed', 'true');
-
-    return this.http.get<PaginatedResponse<Organization>>(this.apiUrl, {
-      params,
-    });
-  }
-
-  // For public views that only need profile information
-  getOrganizations(
-    page: number = 0,
-    size: number = 10
-  ): Observable<PaginatedResponse<OrganizationProfile>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-
-    return this.http.get<PaginatedResponse<OrganizationProfile>>(this.apiUrl, {
-      params,
-    });
-  }
-
-  // Get detailed organization information
-  getOrganizationDetailed(id: string): Observable<Organization> {
-    return this.http.get<Organization>(`${this.apiUrl}/${id}/detailed`);
-  }
-
-  // Get organization profile information
-  getOrganization(id: string): Observable<ApiResponse<OrganizationProfile>> {
-    console.log(`OrganizationService: Fetching organization with ID: ${id}, endpoint: ${this.apiUrl}/${id}`);
-    return this.http.get<ApiResponse<OrganizationProfile>>(
-      `${this.apiUrl}/${id}`
-    ).pipe(
-      tap(response => console.log('OrganizationService: getOrganization response:', response)),
-      catchError(error => {
-        console.error('OrganizationService: Error fetching organization:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  getOrganizationByUserId(userId: string): Observable<OrganizationProfile> {
-    console.log(`OrganizationService: Fetching organization by user ID: ${userId}, endpoint: ${this.apiUrl}/user/${userId}`);
-    return this.http.get<OrganizationProfile>(`${this.apiUrl}/user/${userId}`).pipe(
-      tap(response => console.log('OrganizationService: getOrganizationByUserId response:', response)),
-      catchError(error => {
-        console.error('OrganizationService: Error fetching organization by user ID:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  createOrganization(
-    request: OrganizationRequest
-  ): Observable<OrganizationProfile> {
-    return this.http.post<OrganizationResponse>(this.apiUrl, request);
-  }
-
-  updateOrganization(
-    id: string,
-    data: OrganizationRequest
-  ): Observable<{ data: OrganizationProfile }> {
-    // Get token from auth service
-    const token = this.authService.getToken();
-    
-    // Set headers with authorization
-    const headers = new HttpHeaders()
-      .set('Authorization', `Bearer ${token}`)
-      .set('Content-Type', 'application/json');
-    
-    // Log request details
-    console.log('Updating organization with ID:', id);
-    console.log('Using token:', token ? 'Token exists' : 'No token');
-    
-    // Make the update request directly
-    // No need to get current org first which causes the error
-    return this.http.put<{ data: OrganizationProfile }>(
-      `${this.apiUrl}/${id}`,
-      data,
-      { headers }
-    ).pipe(
-      tap(response => console.log('Update successful:', response)),
-      catchError(error => {
-        console.error('Error updating organization:', error);
-        // Handle specific error cases
-        if (error.status === 403) {
-          console.error('Authentication error - user may not have permission');
-        } else if (error.status === 400) {
-          console.error('Validation error:', error.error);
-        }
-        return throwError(() => error);
-      })
-    );
-  }
-
-  deleteOrganization(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
-  }
-
-  searchOrganizations(query: string): Observable<OrganizationProfile[]> {
-    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/search`, {
-      params: { query },
-    });
-  }
-
-  findByFocusAreas(areas: string[]): Observable<OrganizationProfile[]> {
-    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/focus-areas`, {
-      params: { areas: areas.join(',') },
-    });
-  }
-
-  findNearbyOrganizations(
-    latitude: number,
-    longitude: number,
-    radius: number
-  ): Observable<OrganizationProfile[]> {
-    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/nearby`, {
-      params: {
-        latitude: latitude.toString(),
-        longitude: longitude.toString(),
-        radius: radius.toString(),
-      },
-    });
-  }
-
-  findByCity(city: string): Observable<OrganizationProfile[]> {
-    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/city/${city}`);
-  }
-
-  findByCountry(country: string): Observable<OrganizationProfile[]> {
-    return this.http.get<OrganizationResponse[]>(
-      `${this.apiUrl}/country/${country}`
-    );
-  }
-
-  findByMinimumRating(minRating: number): Observable<OrganizationProfile[]> {
-    return this.http.get<OrganizationResponse[]>(`${this.apiUrl}/rating`, {
-      params: { minRating: minRating.toString() },
-    });
-  }
-
-  findAcceptingVolunteers(): Observable<OrganizationProfile[]> {
-    return this.http.get<OrganizationResponse[]>(
-      `${this.apiUrl}/accepting-volunteers`
-    );
-  }
-
-  verifyOrganization(id: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${id}/verify`, {});
-  }
-
-  addDocument(organizationId: string, documentId: string): Observable<void> {
-    return this.http.post<void>(
-      `${this.apiUrl}/${organizationId}/documents`,
-      { documentUrl: documentId }
-    );
-  }
-
-  removeDocument(id: string, documentUrl: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}/documents`, {
-      params: { documentUrl },
-    });
-  }
-
-  setAcceptingVolunteers(id: string, accepting: boolean): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/${id}/accepting-volunteers`, {
-      accepting,
-    });
-  }
-
-  // Suspend organization
-  suspendOrganization(id: string, reason: string): Observable<Organization> {
-    return this.http.post<Organization>(`${this.apiUrl}/${id}/suspend`, {
-      reason,
-    });
-  }
-
-  // Reactivate organization
-  reactivateOrganization(id: string): Observable<Organization> {
-    return this.http.post<Organization>(`${this.apiUrl}/${id}/reactivate`, {});
-  }
-
-  // Get organization events
-  getOrganizationEvents(
-    organizationId: string,
-    page: number = 0,
-    size: number = 10,
-    status?: string
-  ): Observable<Page<IEvent>> {
+  /**
+   * Get all organizations with pagination and search
+   */
+  getAllOrganizations(page: number, pageSize: number, search?: string): Observable<OrganizationResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
-      .set('size', size.toString());
-
-    if (status) {
-      params = params.set('status', status);
+      .set('pageSize', pageSize.toString());
+      
+    if (search) {
+      params = params.set('search', search);
     }
-
-    console.log('Making request with organizationId:', organizationId);
-    console.log('Current user ID:', this.authService.getCurrentUserId());
-
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.authService.getToken()}`,
-      'X-Organization-ID': organizationId,
-      'X-User-ID': this.authService.getCurrentUserId() || '',
-    });
-
-    return this.http
-      .get<ApiResponse<IEvent[]>>(
-        `${environment.apiUrl}/events/organization/${organizationId}`,
-        {
-          params,
-          headers,
-        }
-      )
+    
+    return this.http.get<OrganizationResponse>(this.apiUrl, { params })
       .pipe(
-        map((response) => {
-          console.log('Raw API response:', response);
-          // Map each event to ensure all required properties are present
-          const events = Array.isArray(response.data)
-            ? response.data.map((event) => ({
-                ...event,
-                _id: event.id || event._id,
-                currentParticipants: event.currentParticipants || 0,
-                registeredParticipants: event.registeredParticipants || [],
-                waitlistedParticipants: event.waitlistedParticipants || [],
-                startDate: event.startDate
-                  ? new Date(event.startDate)
-                  : new Date(),
-                endDate: event.endDate ? new Date(event.endDate) : new Date(),
-              }))
-            : [];
-
-          const meta = response.meta || {
-            page: 0,
-            size: events.length,
-            totalElements: events.length,
-            totalPages: 1,
-          };
-
-          return {
-            content: events,
-            totalElements: meta.totalElements,
-            totalPages: meta.totalPages,
-            size: meta.size,
-            number: meta.page,
-            first: meta.page === 0,
-            last: meta.page === meta.totalPages - 1,
-            empty: events.length === 0,
-          };
-        }),
-        catchError((error) => {
-          console.error('Error fetching events:', error);
+        catchError(error => {
+          console.error('Error fetching organizations:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Get pending organizations awaiting approval
+   */
+  getPendingOrganizations(page: number, pageSize: number): Observable<OrganizationResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString())
+      .set('status', 'PENDING');
+      
+    return this.http.get<OrganizationResponse>(this.apiUrl, { params })
+      .pipe(
+        catchError(error => {
+          console.error('Error fetching pending organizations:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Get organization by ID
+   */
+  getOrganizationById(id: string): Observable<OrganizationProfile> {
+    return this.http.get<OrganizationProfile>(`${this.apiUrl}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error(`Error fetching organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Create a new organization
+   */
+  createOrganization(organizationData: any): Observable<OrganizationProfile> {
+    return this.http.post<OrganizationProfile>(this.apiUrl, organizationData)
+      .pipe(
+        catchError(error => {
+          console.error('Error creating organization:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Update organization details
+   */
+  updateOrganization(id: string, organizationData: any): Observable<ApiResponse<OrganizationProfile>> {
+    return this.http.put<ApiResponse<OrganizationProfile>>(`${this.apiUrl}/${id}`, organizationData)
+      .pipe(
+        catchError(error => {
+          console.error(`Error updating organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Approve organization
+   */
+  approveOrganization(id: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/approve`, {})
+      .pipe(
+        catchError(error => {
+          console.error(`Error approving organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Reject organization with reason
+   */
+  rejectOrganization(id: string, reason: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/reject`, { reason })
+      .pipe(
+        catchError(error => {
+          console.error(`Error rejecting organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Ban organization with reason
+   */
+  banOrganization(id: string, reason: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/ban`, { reason })
+      .pipe(
+        catchError(error => {
+          console.error(`Error banning organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Unban organization
+   */
+  unbanOrganization(id: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/unban`, {})
+      .pipe(
+        catchError(error => {
+          console.error(`Error unbanning organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Delete organization
+   */
+  deleteOrganization(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error(`Error deleting organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Get organization events
+   */
+  getOrganizationEvents(id: string, page: number, pageSize: number): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+      
+    return this.http.get<any>(`${environment.apiUrl}/events/organization/${id}`, { params })
+      .pipe(
+        catchError(error => {
+          console.error(`Error fetching events for organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Get organization members
+   */
+  getOrganizationMembers(id: string, page: number, pageSize: number): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+      
+    return this.http.get<any>(`${this.apiUrl}/${id}/members`, { params })
+      .pipe(
+        catchError(error => {
+          console.error(`Error fetching members for organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Add member to organization
+   */
+  addOrganizationMember(organizationId: string, userId: string, role: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${organizationId}/members`, { userId, role })
+      .pipe(
+        catchError(error => {
+          console.error(`Error adding member to organization with id ${organizationId}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Remove member from organization
+   */
+  removeOrganizationMember(organizationId: string, userId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${organizationId}/members/${userId}`)
+      .pipe(
+        catchError(error => {
+          console.error(`Error removing member from organization with id ${organizationId}:`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+  
+  /**
+   * Update member role in organization
+   */
+  updateMemberRole(organizationId: string, userId: string, role: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${organizationId}/members/${userId}`, { role })
+      .pipe(
+        catchError(error => {
+          console.error(`Error updating member role in organization with id ${organizationId}:`, error);
           return throwError(() => error);
         })
       );
   }
 
-  // Get organization volunteers
-  getOrganizationVolunteers(
-    organizationId: string,
-    page: number = 0,
-    size: number = 10
-  ): Observable<any> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
-    return this.http.get<any>(`${this.apiUrl}/${organizationId}/volunteers`, {
-      params,
-    });
+  /**
+   * Upload organization logo
+   */
+  uploadLogo(organizationId: string, file: File | FormData): Observable<ApiResponse<OrganizationProfile>> {
+    let formData: FormData;
+    
+    if (!(file instanceof FormData)) {
+      formData = new FormData();
+      formData.append('file', file);
+    } else {
+      formData = file;
+    }
+    
+    return this.http.post<ApiResponse<OrganizationProfile>>(`${this.apiUrl}/${organizationId}/logo`, formData)
+      .pipe(
+        catchError(error => {
+          console.error(`Error uploading logo for organization with id ${organizationId}:`, error);
+          return throwError(() => error);
+        })
+      );
   }
 
-  // Upload organization logo
-  uploadLogo(
-    id: string,
-    file: File
-  ): Observable<{ data: OrganizationProfile }> {
-    const formData = new FormData();
-    formData.append('logo', file);
-    return this.http.post<{ data: OrganizationProfile }>(
-      `${this.apiUrl}/${id}/logo`,
-      formData
-    );
+  /**
+   * Get organization by ID (with data wrapper)
+   */
+  getOrganization(id: string | number): Observable<ApiResponse<OrganizationProfile>> {
+    return this.http.get<ApiResponse<OrganizationProfile>>(`${this.apiUrl}/${id}`)
+      .pipe(
+        catchError(error => {
+          console.error(`Error fetching organization with id ${id}:`, error);
+          return throwError(() => error);
+        })
+      );
   }
 
-  uploadProfilePicture(organizationId: string, formData: FormData): Observable<OrganizationResponse> {
-    console.log('Uploading profile picture for organization:', organizationId);
-    return this.http.post<OrganizationResponse>(
-      `${this.apiUrl}/${organizationId}/profile-picture`,
-      formData
-    ).pipe(
-      tap(response => console.log('Upload response:', response)),
-      catchError(error => {
-        console.error('Upload error:', error);
-        return throwError(() => error);
-      })
-    );
+  /**
+   * Get organization by user ID
+   */
+  getOrganizationByUserId(userId: string): Observable<ApiResponse<OrganizationProfile>> {
+    return this.http.get<ApiResponse<OrganizationProfile>>(`${this.apiUrl}/user/${userId}`)
+      .pipe(
+        catchError(error => {
+          console.error(`Error fetching organization for user id ${userId}:`, error);
+          return throwError(() => error);
+        })
+      );
   }
 
-  // Document management
-  uploadDocument(
-    id: string,
-    file: File,
-    type: DocumentType
-  ): Observable<{ data: OrganizationDocument }> {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('type', type);
-    return this.http.post<{ data: OrganizationDocument }>(
-      `${this.apiUrl}/${id}/documents`,
-      formData
-    );
+  /**
+   * Delete organization document
+   */
+  deleteDocument(organizationId: string, documentId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${organizationId}/documents/${documentId}`)
+      .pipe(
+        catchError(error => {
+          console.error(`Error deleting document ${documentId} for organization ${organizationId}:`, error);
+          return throwError(() => error);
+        })
+      );
   }
 
-  getDocuments(organizationId: string): Observable<OrganizationDocument[]> {
-    return this.http.get<OrganizationDocument[]>(
-      `${this.apiUrl}/${organizationId}/documents`
-    );
-  }
-
-  deleteDocument(id: string, documentId: string): Observable<void> {
-    return this.http.delete<void>(
-      `${this.apiUrl}/${id}/documents/${documentId}`
-    );
-  }
-
-  // Impact metrics
-  updateImpactMetrics(
-    organizationId: string,
-    metrics: Partial<ImpactMetrics>
-  ): Observable<Organization> {
-    return this.http.put<Organization>(
-      `${this.apiUrl}/${organizationId}/impact-metrics`,
-      metrics
-    );
-  }
-
-  getImpactMetrics(organizationId: string): Observable<ImpactMetrics> {
-    return this.http.get<ImpactMetrics>(
-      `${this.apiUrl}/${organizationId}/impact-metrics`
-    );
+  /**
+   * Upload organization profile picture
+   */
+  uploadProfilePicture(organizationId: string, file: File | FormData): Observable<ApiResponse<OrganizationProfile>> {
+    let formData: FormData;
+    
+    if (!(file instanceof FormData)) {
+      formData = new FormData();
+      formData.append('file', file);
+    } else {
+      formData = file;
+    }
+    
+    return this.http.post<ApiResponse<OrganizationProfile>>(`${this.apiUrl}/${organizationId}/profile-picture`, formData)
+      .pipe(
+        catchError(error => {
+          console.error(`Error uploading profile picture for organization with id ${organizationId}:`, error);
+          return throwError(() => error);
+        })
+      );
   }
 }

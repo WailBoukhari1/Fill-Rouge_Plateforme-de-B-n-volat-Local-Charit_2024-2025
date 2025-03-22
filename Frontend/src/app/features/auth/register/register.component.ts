@@ -185,7 +185,11 @@ export class RegisterComponent implements OnInit {
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [
+        Validators.required, 
+        Validators.email,
+        Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+      ]],
       password: ['', [
         Validators.required,
         Validators.minLength(8),
@@ -210,10 +214,17 @@ export class RegisterComponent implements OnInit {
     if (this.registerForm.valid) {
       const { firstName, lastName, email, password, confirmPassword } = this.registerForm.value;
       
+      // Extra validation before submitting
+      if (!email || email.trim() === '') {
+        this.registerForm.get('email')?.setErrors({ 'required': true });
+        this.registerForm.get('email')?.markAsTouched();
+        return;
+      }
+      
       this.store.dispatch(AuthActions.register({
-        firstName,
-        lastName,
-        email,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
         password,
         confirmPassword
       }));
