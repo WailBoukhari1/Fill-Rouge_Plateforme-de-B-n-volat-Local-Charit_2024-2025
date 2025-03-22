@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, mergeMap, of } from 'rxjs';
+import { catchError, map, mergeMap, of, switchMap } from 'rxjs';
 import { OrganizationService } from '../../core/services/organization.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UserService } from '../../core/services/user.service';
 import { StatisticsService } from '../../core/services/statistics.service';
 import * as OrganizationActions from './organization.actions';
 import { OrganizationType, OrganizationCategory, OrganizationSize, OrganizationRequest } from '../../core/models/organization.model';
@@ -21,33 +22,61 @@ export class OrganizationEffects {
         return this.organizationService
           .getOrganization(organizationId)
           .pipe(
-            map((response) =>
-              OrganizationActions.loadProfileSuccess({ 
-                profile: {
-                  id: response.data.id,
-                  name: response.data.name,
-                  type: response.data.type || '',
-                  description: response.data.description,
-                  missionStatement: response.data.mission,
-                  vision: response.data.vision,
-                  website: response.data.website,
-                  registrationNumber: response.data.registrationNumber,
-                  phoneNumber: response.data.phoneNumber,
-                  address: response.data.address,
-                  city: response.data.city,
-                  country: response.data.country,
-                  focusAreas: response.data.focusAreas,
-                  foundedYear: response.data.foundedYear,
-                  socialMedia: response.data.socialMediaLinks
-                } as Organization
-              })
-            ),
+            switchMap((response) => {
+              const organizationProfile = {
+                id: response.data.id,
+                userId: response.data.userId,
+                name: response.data.name,
+                type: response.data.type || '',
+                description: response.data.description,
+                missionStatement: response.data.mission,
+                vision: response.data.vision,
+                website: response.data.website,
+                registrationNumber: response.data.registrationNumber,
+                phoneNumber: response.data.phoneNumber,
+                address: response.data.address,
+                city: response.data.city,
+                province: response.data.province,
+                country: response.data.country,
+                postalCode: response.data.postalCode,
+                coordinates: response.data.coordinates,
+                focusAreas: response.data.focusAreas,
+                foundedYear: response.data.foundedYear,
+                socialMedia: response.data.socialMediaLinks,
+                category: response.data.category,
+                size: response.data.size,
+                documents: response.data.documents,
+                profilePicture: response.data.profilePicture
+              } as Organization;
+              
+              // Dispatch actions to load profile and user data
+              return [
+                OrganizationActions.loadProfileSuccess({ profile: organizationProfile }),
+                OrganizationActions.loadUserData({ userId: response.data.userId })
+              ];
+            }),
             catchError((error) =>
               of(
                 OrganizationActions.loadProfileFailure({ error: error.message })
               )
             )
           );
+      })
+    )
+  );
+
+  loadUserData$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(OrganizationActions.loadUserData),
+      mergeMap(({ userId }) => {
+        if (!userId) {
+          return of(OrganizationActions.loadUserDataFailure({ error: 'No user ID provided' }));
+        }
+        
+        return this.userService.getUserById(Number(userId)).pipe(
+          map(user => OrganizationActions.loadUserDataSuccess({ userData: user })),
+          catchError(error => of(OrganizationActions.loadUserDataFailure({ error: error.message })))
+        );
       })
     )
   );
@@ -122,6 +151,7 @@ export class OrganizationEffects {
     private actions$: Actions,
     private organizationService: OrganizationService,
     private authService: AuthService,
-    private statisticsService: StatisticsService
+    private statisticsService: StatisticsService,
+    private userService: UserService
   ) {}
 }

@@ -6,6 +6,23 @@
       <mat-spinner></mat-spinner>
     </div>
   } @else {
+    <!-- Profile Completion Alert -->
+    @if (!isProfileComplete) {
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <mat-icon class="text-yellow-400">warning</mat-icon>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-lg font-medium text-yellow-800">Your profile needs to be completed</h3>
+            <div class="mt-2 text-yellow-700">
+              <p>Please complete your organization profile to unlock all features of the platform. The fields marked with an asterisk (*) are required.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
     <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="space-y-6">
       <!-- Header Section with Profile Image -->
       <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
@@ -108,86 +125,154 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <mat-form-field class="w-full">
             <mat-label>Phone Number</mat-label>
-            <input matInput formControlName="phoneNumber" placeholder="+1234567890">
+            <input matInput formControlName="phoneNumber" placeholder="+212xxxxxxxxx" required>
+            <mat-hint>Moroccan format: +212 or 0 followed by 5-7 and 8 more digits</mat-hint>
+            <mat-error *ngIf="profileForm.get('phoneNumber')?.errors?.['required']">
+              Phone number is required
+            </mat-error>
             <mat-error *ngIf="profileForm.get('phoneNumber')?.errors?.['pattern']">
-              Please enter a valid phone number
+              Please enter a valid Moroccan phone number (e.g., +212612345678 or 0612345678)
             </mat-error>
           </mat-form-field>
 
           <mat-form-field class="w-full">
             <mat-label>Email</mat-label>
-            <input matInput formControlName="email" type="email">
+            <input matInput formControlName="email" type="email" readonly>
             <mat-hint>Email is managed through your account settings</mat-hint>
           </mat-form-field>
 
           <mat-form-field class="w-full">
             <mat-label>Website</mat-label>
             <input matInput formControlName="website" placeholder="https://www.example.com">
+            <mat-hint>Enter a valid URL (e.g., https://example.com)</mat-hint>
             <mat-error *ngIf="profileForm.get('website')?.errors?.['pattern']">
-              Please enter a valid website URL
+              Please enter a valid website URL format
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Location Section -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Location</h2>
+        <div class="mb-4">
+          <div class="flex items-center mb-2">
+            <h3 class="text-lg font-medium">Map</h3>
+            <span class="text-xs text-gray-500 ml-2">(select a location on the map to auto-fill address fields)</span>
+          </div>
+          <!-- Map Component -->
+          <div class="map-section h-80 mb-6">
+            <app-map
+              [coordinates]="getCoordinates()"
+              [zoom]="12"
+              [selectable]="true"
+              (locationSelected)="onLocationSelected($event)">
+            </app-map>
+          </div>
+
+          <!-- Address Fields -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <mat-form-field class="w-full">
+              <mat-label>Street Address</mat-label>
+              <input matInput formControlName="address" required>
+              <mat-error *ngIf="profileForm.get('address')?.errors?.['required']">
+                Street address is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>City</mat-label>
+              <input matInput formControlName="city" required>
+              <mat-error *ngIf="profileForm.get('city')?.errors?.['required']">
+                City is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Province/State</mat-label>
+              <input matInput formControlName="province" required>
+              <mat-error *ngIf="profileForm.get('province')?.errors?.['required']">
+                Province/State is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Country</mat-label>
+              <input matInput formControlName="country" required>
+              <mat-error *ngIf="profileForm.get('country')?.errors?.['required']">
+                Country is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Postal Code</mat-label>
+              <input matInput formControlName="postalCode">
+            </mat-form-field>
+          </div>
+
+          <!-- Hidden Coordinates Fields -->
+          <div class="hidden">
+            <input formControlName="coordinates">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission and Vision -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Mission & Vision</h2>
+        <div class="grid grid-cols-1 gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Mission Statement</mat-label>
+            <textarea matInput formControlName="mission" rows="3" required></textarea>
+            <mat-error *ngIf="profileForm.get('mission')?.errors?.['required']">
+              Mission statement is required
+            </mat-error>
+            <mat-error *ngIf="profileForm.get('mission')?.errors?.['minlength']">
+              Mission statement must be at least 20 characters
+            </mat-error>
+            <mat-error *ngIf="profileForm.get('mission')?.errors?.['maxlength']">
+              Mission statement cannot exceed 1000 characters
             </mat-error>
           </mat-form-field>
 
-          <!-- Location Section -->
-          <div class="md:col-span-2">
-            <h3 class="text-lg font-medium mb-4">Location</h3>
-            
-            <!-- Map Component -->
-            <div class="map-section">
-              <app-map
-                [coordinates]="getCoordinates()"
-                [zoom]="12"
-                [selectable]="true"
-                (locationSelected)="onLocationSelected($event)">
-              </app-map>
-            </div>
+          <mat-form-field class="w-full">
+            <mat-label>Vision</mat-label>
+            <textarea matInput formControlName="vision" rows="3"></textarea>
+            <mat-hint>Optional but recommended (max 1000 characters)</mat-hint>
+            <mat-error *ngIf="profileForm.get('vision')?.errors?.['maxlength']">
+              Vision cannot exceed 1000 characters
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
 
-            <!-- Full Address with Geocoding -->
-            <mat-form-field class="w-full">
-              <mat-label>Full Address</mat-label>
-              <input matInput formControlName="fullAddress" 
-                     placeholder="Enter your full address"
-                     (blur)="updateCoordinatesFromAddress(profileForm.get('fullAddress')?.value)">
-              <button mat-icon-button matSuffix
-                      type="button"
-                      (click)="getCurrentLocation()"
-                      matTooltip="Get Current Location">
-                <mat-icon>my_location</mat-icon>
-              </button>
-            </mat-form-field>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field class="w-full">
-                <mat-label>Street Address</mat-label>
-                <input matInput formControlName="address">
-              </mat-form-field>
-
-              <mat-form-field class="w-full">
-                <mat-label>City</mat-label>
-                <input matInput formControlName="city">
-              </mat-form-field>
-
-              <mat-form-field class="w-full">
-                <mat-label>Province/State</mat-label>
-                <input matInput formControlName="province">
-              </mat-form-field>
-
-              <mat-form-field class="w-full">
-                <mat-label>Country</mat-label>
-                <input matInput formControlName="country">
-              </mat-form-field>
-
-              <mat-form-field class="w-full">
-                <mat-label>Postal Code</mat-label>
-                <input matInput formControlName="postalCode">
-              </mat-form-field>
-            </div>
-
-            <!-- Hidden Coordinates Fields -->
-            <div class="hidden">
-              <input formControlName="coordinates">
-            </div>
-          </div>
+      <!-- Social Media Links -->
+      <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 class="text-xl font-semibold mb-4">Social Media</h2>
+        <div formGroupName="socialMediaLinks" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field class="w-full">
+            <mat-label>Facebook</mat-label>
+            <input matInput formControlName="facebook" placeholder="https://facebook.com/yourpage">
+            <mat-icon matPrefix class="mr-2 text-blue-500">facebook</mat-icon>
+          </mat-form-field>
+          
+          <mat-form-field class="w-full">
+            <mat-label>Twitter</mat-label>
+            <input matInput formControlName="twitter" placeholder="https://twitter.com/yourhandle">
+            <mat-icon matPrefix class="mr-2 text-blue-400">flutter_dash</mat-icon>
+          </mat-form-field>
+          
+          <mat-form-field class="w-full">
+            <mat-label>Instagram</mat-label>
+            <input matInput formControlName="instagram" placeholder="https://instagram.com/yourhandle">
+            <mat-icon matPrefix class="mr-2 text-pink-500">photo_camera</mat-icon>
+          </mat-form-field>
+          
+          <mat-form-field class="w-full">
+            <mat-label>LinkedIn</mat-label>
+            <input matInput formControlName="linkedin" placeholder="https://linkedin.com/company/yourcompany">
+            <mat-icon matPrefix class="mr-2 text-blue-700">work</mat-icon>
+          </mat-form-field>
         </div>
       </div>
 
@@ -329,12 +414,84 @@
           <button 
             type="submit" 
             mat-raised-button 
-            color="primary" 
+            [color]="!isProfileComplete ? 'accent' : 'primary'" 
             [disabled]="loading">
-            Save Changes
+            {{ !isProfileComplete ? 'Complete Profile' : 'Save Changes' }}
           </button>
         </div>
       </div>
+
+      <!-- Profile Completion Message -->
+      @if (!isProfileComplete) {
+        <div class="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-700">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <mat-icon class="text-blue-500">info</mat-icon>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-lg font-medium">Complete your profile to access all features</h3>
+              <p class="mt-2">Once you complete your profile, you'll be able to manage events, volunteers, and view reports.</p>
+              
+              <!-- Missing fields section -->
+              <div class="mt-3">
+                <h4 class="font-medium">Missing information:</h4>
+                <ul class="mt-1 list-disc pl-5">
+                  @if (profileForm.get('name')?.invalid) {
+                    <li>Organization Name</li>
+                  }
+                  @if (profileForm.get('description')?.invalid) {
+                    <li>Organization Description</li>
+                  }
+                  @if (profileForm.get('mission')?.invalid) {
+                    <li>Mission Statement</li>
+                  }
+                  @if (profileForm.get('phoneNumber')?.invalid) {
+                    <li>Phone Number</li>
+                  }
+                  @if (profileForm.get('address')?.invalid || profileForm.get('city')?.invalid || 
+                      profileForm.get('province')?.invalid || profileForm.get('country')?.invalid) {
+                    <li>Location/Address Information</li>
+                  }
+                  @if (profileForm.get('type')?.invalid) {
+                    <li>Organization Type</li>
+                  }
+                  @if (profileForm.get('category')?.invalid) {
+                    <li>Organization Category</li>
+                  }
+                  @if (profileForm.get('size')?.invalid) {
+                    <li>Organization Size</li>
+                  }
+                  @if (focusAreas.length === 0) {
+                    <li>Focus Areas (add at least one)</li>
+                  }
+                  @if (profileForm.get('registrationNumber')?.invalid) {
+                    <li>Registration Number</li>
+                  }
+                </ul>
+                <p class="mt-2 font-medium">Please complete all required fields marked with * to access other features.</p>
+                
+                <!-- Debug button to fill all fields with default values (development only) -->
+                <div class="mt-4 p-2 bg-gray-100 rounded-md border border-gray-300">
+                  <p class="text-sm text-gray-700 font-medium mb-2">Development Tool</p>
+                  <button
+                    type="button"
+                    mat-raised-button
+                    color="accent"
+                    (click)="fillRequiredFields()"
+                    class="w-full"
+                  >
+                    Auto-Complete Profile with Defaults (For Testing)
+                  </button>
+                  <p class="text-xs text-gray-500 mt-1">
+                    This button will fill all required fields with default values for testing purposes.
+                    Remove before deployment.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </form>
   }
 </div> 

@@ -7,6 +7,7 @@ export const initialState: OrganizationState = {
   statistics: null,
   loading: false,
   error: null,
+  userData: null
 };
 
 export const organizationReducer = createReducer(
@@ -24,6 +25,23 @@ export const organizationReducer = createReducer(
     loading: false,
   })),
   on(OrganizationActions.loadProfileFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false,
+  })),
+
+  // Load User Data
+  on(OrganizationActions.loadUserData, (state) => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+  on(OrganizationActions.loadUserDataSuccess, (state, { userData }) => ({
+    ...state,
+    userData,
+    loading: false,
+  })),
+  on(OrganizationActions.loadUserDataFailure, (state, { error }) => ({
     ...state,
     error,
     loading: false,

@@ -1,5 +1,6 @@
 import { createAction, props } from '@ngrx/store';
 import { Organization, OrganizationStats } from './organization.types';
+import { User } from '../../core/models/auth.models';
 
 export const loadProfile = createAction('[Organization] Load Profile');
 export const loadProfileSuccess = createAction(
@@ -8,6 +9,19 @@ export const loadProfileSuccess = createAction(
 );
 export const loadProfileFailure = createAction(
   '[Organization] Load Profile Failure',
+  props<{ error: string }>()
+);
+
+export const loadUserData = createAction(
+  '[Organization] Load User Data',
+  props<{ userId: string }>()
+);
+export const loadUserDataSuccess = createAction(
+  '[Organization] Load User Data Success',
+  props<{ userData: User }>()
+);
+export const loadUserDataFailure = createAction(
+  '[Organization] Load User Data Failure',
   props<{ error: string }>()
 );
 

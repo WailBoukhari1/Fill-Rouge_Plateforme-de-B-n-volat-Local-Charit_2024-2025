@@ -1,15 +1,20 @@
 import { Routes } from '@angular/router';
-import { OrganizationProfileComponent } from './organization-profile/organization-profile.component';
+import { OrganizationProfileCompletedGuard } from '../../../core/guards/organization-profile-completed.guard';
+import { OrganizationProfileResolver } from './organization-profile/resolvers/organization-profile.resolver';
 import { EventResolver } from './organization-events/resolvers/event.resolver';
-import { OrganizationReportComponent } from './organization-reports/organization-report.component';
 
 export const organizationRoutes: Routes = [
   {
     path: 'profile',
-    component: OrganizationProfileComponent,
+    loadComponent: () => import('./organization-profile/organization-profile.component')
+      .then(m => m.OrganizationProfileComponent),
+    resolve: {
+      profileData: OrganizationProfileResolver
+    }
   },
   {
     path: 'events',
+    canActivate: [OrganizationProfileCompletedGuard],
     children: [
       {
         path: '',
@@ -46,6 +51,7 @@ export const organizationRoutes: Routes = [
   },
   {
     path: 'volunteers',
+    canActivate: [OrganizationProfileCompletedGuard],
     loadComponent: () =>
       import(
         './organization-volunteers/organization-volunteers.component'
@@ -53,7 +59,10 @@ export const organizationRoutes: Routes = [
   },
   {
     path: 'reports',
-    component: OrganizationReportComponent,
+    canActivate: [OrganizationProfileCompletedGuard],
+    loadComponent: () =>
+      import('./organization-reports/organization-report.component')
+        .then((m) => m.OrganizationReportComponent),
   },
   {
     path: '',

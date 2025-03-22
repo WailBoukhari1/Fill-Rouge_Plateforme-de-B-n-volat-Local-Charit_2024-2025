@@ -6,7 +6,7 @@ import {
   HttpParams,
   HttpHeaders,
 } from '@angular/common/http';
-import { Observable, map, catchError, throwError, tap } from 'rxjs';
+import { Observable, map, catchError, throwError, tap, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Organization,
@@ -82,13 +82,27 @@ export class OrganizationService {
 
   // Get organization profile information
   getOrganization(id: string): Observable<ApiResponse<OrganizationProfile>> {
+    console.log(`OrganizationService: Fetching organization with ID: ${id}, endpoint: ${this.apiUrl}/${id}`);
     return this.http.get<ApiResponse<OrganizationProfile>>(
       `${this.apiUrl}/${id}`
+    ).pipe(
+      tap(response => console.log('OrganizationService: getOrganization response:', response)),
+      catchError(error => {
+        console.error('OrganizationService: Error fetching organization:', error);
+        return throwError(() => error);
+      })
     );
   }
 
   getOrganizationByUserId(userId: string): Observable<OrganizationProfile> {
-    return this.http.get<OrganizationProfile>(`${this.apiUrl}/user/${userId}`);
+    console.log(`OrganizationService: Fetching organization by user ID: ${userId}, endpoint: ${this.apiUrl}/user/${userId}`);
+    return this.http.get<OrganizationProfile>(`${this.apiUrl}/user/${userId}`).pipe(
+      tap(response => console.log('OrganizationService: getOrganizationByUserId response:', response)),
+      catchError(error => {
+        console.error('OrganizationService: Error fetching organization by user ID:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   createOrganization(
@@ -113,6 +127,8 @@ export class OrganizationService {
     console.log('Updating organization with ID:', id);
     console.log('Using token:', token ? 'Token exists' : 'No token');
     
+    // Make the update request directly
+    // No need to get current org first which causes the error
     return this.http.put<{ data: OrganizationProfile }>(
       `${this.apiUrl}/${id}`,
       data,

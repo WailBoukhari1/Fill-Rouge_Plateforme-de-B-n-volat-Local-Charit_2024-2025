@@ -11,6 +11,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { StatisticsService } from '../../../../core/services/statistics.service';
 import { take } from 'rxjs/operators';
 import { User } from '../../../../core/models/auth.models';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-organization-dashboard',
@@ -146,15 +147,18 @@ import { User } from '../../../../core/models/auth.models';
 export class OrganizationDashboardComponent implements OnInit {
   loading = false;
   stats: OrganizationStats | null = null;
+  currentUser: User | null = null;
 
   constructor(
     private organizationService: OrganizationService,
     private authService: AuthService,
-    private statisticsService: StatisticsService
+    private statisticsService: StatisticsService,
+    private router: Router
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadStats();
+    this.checkProfileCompletion();
   }
 
   private loadStats() {
@@ -214,6 +218,48 @@ export class OrganizationDashboardComponent implements OnInit {
       error: (error) => {
         console.error('Error loading organization stats:', error);
         this.loading = false;
+      }
+    });
+  }
+
+  private checkProfileCompletion(): void {
+    const organizationId = this.authService.getCurrentOrganizationId();
+    if (!organizationId) {
+      console.error('No organization ID available');
+      return;
+    }
+
+    this.organizationService.getOrganization(organizationId).subscribe({
+      next: (response) => {
+        if (!response.data) {
+          console.error('No organization data found');
+          return;
+        }
+
+        const profile = response.data;
+        // Check if all required fields are filled
+        const isProfileComplete = !!(
+          profile?.name &&
+          profile?.description &&
+          profile?.mission &&
+          profile?.phoneNumber &&
+          profile?.address &&
+          profile?.city &&
+          profile?.province &&
+          profile?.country &&
+          profile?.type &&
+          profile?.category &&
+          profile?.size &&
+          profile?.focusAreas?.length > 0
+        );
+
+        if (!isProfileComplete) {
+          console.log('Organization profile incomplete, redirecting to profile page');
+          this.router.navigate(['/organization/profile']);
+        }
+      },
+      error: (error) => {
+        console.error('Error checking organization profile:', error);
       }
     });
   }

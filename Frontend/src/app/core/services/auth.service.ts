@@ -595,6 +595,7 @@ export class AuthService {
     if (token) {
       try {
         const decoded = this.decodeToken(token);
+        console.log('AuthService: Full decoded token:', decoded);
         if (decoded.organization_id) {
           console.log('Found organization ID in token:', decoded.organization_id);
           localStorage.setItem('organizationId', decoded.organization_id);

@@ -6,6 +6,8 @@ import { User } from '../../../core/models/user.model';
 import { VolunteerDashboardComponent } from './volunteer-dashboard/volunteer-dashboard.component';
 import { OrganizationDashboardComponent } from './organization-dashboard/organization-dashboard.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
+import { Router } from '@angular/router';
+import { OrganizationService } from '../../../core/services/organization.service';
 
 type UserRole = 'VOLUNTEER' | 'ORGANIZATION' | 'ADMIN';
 
@@ -41,7 +43,11 @@ export class DashboardComponent implements OnInit {
   userRole: UserRole = 'VOLUNTEER';
   loading = true;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private organizationService: OrganizationService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadUserRole();
@@ -51,8 +57,55 @@ export class DashboardComponent implements OnInit {
     this.authService.currentUser$.subscribe((user: User | null) => {
       if (user) {
         this.userRole = user.role as UserRole;
+        
+        // If organization role, check profile completion
+        if (this.userRole === 'ORGANIZATION') {
+          this.checkOrganizationProfileCompletion();
+        }
       }
       this.loading = false;
+    });
+  }
+
+  private checkOrganizationProfileCompletion(): void {
+    const organizationId = this.authService.getCurrentOrganizationId();
+    if (!organizationId) {
+      console.error('No organization ID available');
+      return;
+    }
+
+    this.organizationService.getOrganization(organizationId).subscribe({
+      next: (response) => {
+        if (!response.data) {
+          console.error('No organization data found');
+          return;
+        }
+
+        const profile = response.data;
+        // Check if all required fields are filled
+        const isProfileComplete = !!(
+          profile?.name &&
+          profile?.description &&
+          profile?.mission &&
+          profile?.phoneNumber &&
+          profile?.address &&
+          profile?.city &&
+          profile?.province &&
+          profile?.country &&
+          profile?.type &&
+          profile?.category &&
+          profile?.size &&
+          profile?.focusAreas?.length > 0
+        );
+
+        if (!isProfileComplete) {
+          console.log('Organization profile incomplete, redirecting to profile page');
+          this.router.navigate(['/organization/profile']);
+        }
+      },
+      error: (error) => {
+        console.error('Error checking organization profile:', error);
+      }
     });
   }
 }

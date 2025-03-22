@@ -39,15 +39,16 @@ import {
 } from '../../../../core/models/organization.model';
 import { FileUploadComponent } from '../../../../shared/components/file-upload/file-upload.component';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { MapComponent, LocationData } from '../../../../shared/components/map/map.component';
+import { MapComponent, LocationData, Coordinates } from '../../../../shared/components/map/map.component';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { User } from '../../../../core/models/auth.models';
-import { Subject, takeUntil, throwError } from 'rxjs';
-import { finalize, switchMap, catchError } from 'rxjs/operators';
+import { Subject, takeUntil, throwError, take, catchError, of, map } from 'rxjs';
+import { finalize, switchMap } from 'rxjs/operators';
 import { HttpParams } from '@angular/common/http';
+import { OrganizationProfileData } from './resolvers/organization-profile.resolver';
 
 declare const L: any; // For Leaflet map
 
@@ -250,6 +251,7 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
   uploadProgress = 0;
   currentUser: User | null = null;
   private destroy$ = new Subject<void>();
+  isProfileComplete = false;
 
   organizationTypes = Object.values(OrganizationType);
   organizationCategories = Object.values(OrganizationCategory);
@@ -274,6 +276,9 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
   ];
   selectedFocusArea = '';
 
+  // Add marker property
+  private marker: any; // MapboxGL marker
+
   constructor(
     private fb: FormBuilder,
     private organizationService: OrganizationService,
@@ -281,22 +286,71 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private route: ActivatedRoute
   ) {
     this.profileForm = this.createForm();
-    // Subscribe to user data from auth service
-    this.authService.currentUser$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(user => {
-        this.currentUser = user;
-        if (user?.email && this.profileForm) {
-          this.profileForm.patchValue({ email: user.email });
-        }
-      });
   }
 
   ngOnInit(): void {
-    this.loadOrganizationProfile();
+    this.loading = true;
+    
+    // Expose component to window for debugging
+    (window as any).organizationProfileComponent = this;
+    console.log('Debug: Component exposed to window.organizationProfileComponent for console access');
+    
+    // Get data from resolver
+    this.route.data.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (data) => {
+        console.log('Organization Profile Component - Full route data:', data);
+        const profileData = data['profileData'] as OrganizationProfileData;
+        
+        console.log('Organization Profile Component - Profile data from resolver:', profileData);
+        
+        if (profileData) {
+          this.organization = profileData.organization;
+          this.currentUser = profileData.user;
+          
+          console.log('Organization Profile Component - Organization object after assignment:', this.organization);
+          
+          // Set focus areas from organization data
+          if (this.organization.focusAreas) {
+            this.focusAreas = [...this.organization.focusAreas];
+          }
+          
+          // Set documents from organization data
+          if (this.organization.documents && this.organization.documents.length > 0) {
+            // Here you would fetch the actual document details if needed
+            // For now just map the document IDs to dummy documents
+            this.documents = this.organization.documents.map(docId => ({
+              id: docId,
+              name: `Document ${docId}`,
+              type: DocumentType.OTHER,
+              url: docId,
+              uploadedAt: new Date()
+            }));
+          }
+
+          // Check if profile is complete
+          this.checkProfileCompleteness();
+          
+          // Initialize form with data
+          this.initForm();
+        }
+        
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading organization profile:', error);
+        this.snackBar.open('Failed to load organization profile', 'Close', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+        this.loading = false;
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -306,32 +360,29 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
 
   private createForm(): FormGroup {
     return this.fb.group({
-      name: ['', [Validators.required]],
-      description: ['', [Validators.required]],
-      mission: [''],
-      vision: [''],
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      description: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(2000)]],
+      mission: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(1000)]],
+      vision: ['', [Validators.maxLength(1000)]],
       website: ['', [
         Validators.pattern('^(https?:\\/\\/)?([\\w\\-])+\\.{1}([a-zA-Z]{2,63})([\/\\w-]*)*\\/?$')
       ]],
       email: [{ value: '', disabled: true }],
       phoneNumber: ['', [
-        Validators.pattern('^\\+?[1-9]\\d{1,14}$')
+        Validators.required,
+        Validators.pattern('^(?:\\+212|0)[5-7]\\d{8}$') // Moroccan phone number format
       ]],
-      address: [''],
-      city: [''],
-      province: [''],
-      country: [''],
+      address: ['', Validators.required],
+      city: ['', Validators.required],
+      province: ['', Validators.required],
+      country: ['', Validators.required],
       postalCode: [''],
       registrationNumber: ['', [Validators.required, Validators.pattern('^[A-Z0-9-]{5,20}$')]],
       type: ['', [Validators.required]],
       category: ['', [Validators.required]],
-      size: [''],
+      size: ['', [Validators.required]],
       foundedYear: ['', [Validators.min(1800), Validators.max(new Date().getFullYear())]],
-      coordinates: this.fb.array([
-        [''], // longitude
-        ['']  // latitude
-      ]),
-      fullAddress: [''], // This will be used for display
+      coordinates: [''], // Changed from FormArray to a string control
       socialMediaLinks: this.fb.group({
         facebook: [''],
         twitter: [''],
@@ -341,62 +392,131 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadOrganizationProfile(): void {
-    const userId = this.authService.getCurrentUserId();
-    if (!userId) {
-      this.loading = false;
+  private checkProfileCompleteness(): void {
+    if (!this.organization) {
+      this.isProfileComplete = false;
+      console.log('Component - No organization data, profile is incomplete');
       return;
     }
 
-    this.organizationService.getOrganizationByUserId(userId).subscribe({
-      next: (response) => {
-        this.organization = response;
-        this.focusAreas = response.focusAreas || [];
-        this.documents = (response.documents || []).map(url => ({
-          id: Date.now().toString(),
-          name: `Document ${Date.now()}`,
-          url: url,
-          type: DocumentType.OTHER,
-          uploadedAt: new Date()
-        }));
-        this.updateForm(response);
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading organization profile:', error);
-        this.snackBar.open('Error loading organization profile', 'Close', {
-          duration: 3000,
-        });
-        this.loading = false;
-      },
+    // Log the actual profile data we're checking
+    console.log('Component - Organization profile data to check:', {
+      id: this.organization?.id,
+      name: this.organization?.name,
+      description: this.organization?.description,
+      mission: this.organization?.mission,
+      phoneNumber: this.organization?.phoneNumber,
+      address: this.organization?.address,
+      city: this.organization?.city,
+      province: this.organization?.province,
+      country: this.organization?.country,
+      type: this.organization?.type,
+      category: this.organization?.category,
+      size: this.organization?.size,
+      focusAreasLength: this.organization?.focusAreas?.length,
+      registrationNumber: this.organization?.registrationNumber
     });
+
+    // Log field values types for debugging
+    console.log('Component - Field types:', {
+      id: typeof this.organization?.id,
+      name: typeof this.organization?.name,
+      description: typeof this.organization?.description,
+      mission: typeof this.organization?.mission,
+      phoneNumber: typeof this.organization?.phoneNumber,
+      address: typeof this.organization?.address,
+      city: typeof this.organization?.city,
+      province: typeof this.organization?.province,
+      country: typeof this.organization?.country,
+      type: typeof this.organization?.type,
+      category: typeof this.organization?.category,
+      size: typeof this.organization?.size,
+      focusAreas: Array.isArray(this.organization?.focusAreas) ? 'array' : typeof this.organization?.focusAreas,
+      registrationNumber: typeof this.organization?.registrationNumber
+    });
+
+    // Debug output of organization object type
+    console.log('Component - Organization data type:', Object.prototype.toString.call(this.organization));
+    // Safer check for Proxy that won't throw errors
+    console.log('Component - Is organization a proxy?', 
+      typeof Proxy !== 'undefined' && 
+      Proxy !== null && 
+      Proxy.constructor === Function && 
+      this.organization !== null && 
+      typeof this.organization === 'object' &&
+      Object.prototype.toString.call(this.organization).includes('Proxy'));
+    
+    // Use same criteria as the guard for consistency with more robust checks
+    this.isProfileComplete = !!(
+      this.organization.id && 
+      this.organization.name && this.organization.name.trim() !== '' &&
+      this.organization.description && this.organization.description.trim() !== '' &&
+      this.organization.mission && this.organization.mission.trim() !== '' &&
+      this.organization.phoneNumber && this.organization.phoneNumber.trim() !== '' &&
+      this.organization.address && this.organization.address.trim() !== '' &&
+      this.organization.city && this.organization.city.trim() !== '' &&
+      this.organization.province && this.organization.province.trim() !== '' &&
+      this.organization.country && this.organization.country.trim() !== '' &&
+      this.organization.type && this.organization.type.trim() !== '' &&
+      this.organization.category && this.organization.category.trim() !== '' &&
+      this.organization.size && this.organization.size.trim() !== '' &&
+      this.organization.focusAreas && Array.isArray(this.organization.focusAreas) && this.organization.focusAreas.length > 0 &&
+      this.organization.registrationNumber && this.organization.registrationNumber.trim() !== ''
+    );
+
+    // Log the status and any missing fields for debugging
+    console.log('Component - Profile complete status:', this.isProfileComplete);
+    if (!this.isProfileComplete) {
+      const missingFields = [];
+      if (!this.organization.id) missingFields.push('id');
+      if (!this.organization.name || this.organization.name.trim() === '') missingFields.push('name');
+      if (!this.organization.description || this.organization.description.trim() === '') missingFields.push('description');
+      if (!this.organization.mission || this.organization.mission.trim() === '') missingFields.push('mission');
+      if (!this.organization.phoneNumber || this.organization.phoneNumber.trim() === '') missingFields.push('phoneNumber');
+      if (!this.organization.address || this.organization.address.trim() === '') missingFields.push('address');
+      if (!this.organization.city || this.organization.city.trim() === '') missingFields.push('city');
+      if (!this.organization.province || this.organization.province.trim() === '') missingFields.push('province');
+      if (!this.organization.country || this.organization.country.trim() === '') missingFields.push('country');
+      if (!this.organization.type || this.organization.type.trim() === '') missingFields.push('type');
+      if (!this.organization.category || this.organization.category.trim() === '') missingFields.push('category');
+      if (!this.organization.size || this.organization.size.trim() === '') missingFields.push('size');
+      if (!this.organization.focusAreas || !Array.isArray(this.organization.focusAreas) || this.organization.focusAreas.length === 0) missingFields.push('focusAreas');
+      if (!this.organization.registrationNumber || this.organization.registrationNumber.trim() === '') missingFields.push('registrationNumber');
+      console.log('Component - Missing fields:', missingFields);
+    }
   }
 
-  private updateForm(organization: OrganizationProfile): void {
-    if (organization) {
-    this.profileForm.patchValue({
-        name: organization.name || '',
-        description: organization.description || '',
-        registrationNumber: organization.registrationNumber || '',
-        type: organization.type || '',
-        category: organization.category || '',
-        website: organization.website || '',
-        phoneNumber: organization.phoneNumber || '',
-        email: organization.email || '',
-        foundedYear: organization.foundedYear || null,
-        socialMediaLinks: organization.socialMediaLinks || [],
-        focusAreas: organization.focusAreas || [],
-        coordinates: organization.coordinates || []
-      });
-
-      // Update map marker if coordinates exist
-      if (organization.coordinates && organization.coordinates.length === 2) {
-        this.mapComponent?.updateCoordinates([
-          organization.coordinates[0],
-          organization.coordinates[1]
-        ]);
-      }
+  private initForm(): void {
+    if (!this.organization) {
+      return;
     }
+
+    this.profileForm = this.fb.group({
+      name: [this.organization.name || '', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      description: [this.organization.description || '', [Validators.required, Validators.minLength(20), Validators.maxLength(2000)]],
+      email: [{ value: this.currentUser?.email || '', disabled: true }],
+      phoneNumber: [this.organization.phoneNumber || '', [Validators.required, Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/)]],
+      website: [this.organization.website || '', [Validators.pattern(/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/)]],
+      address: [this.organization.address || '', Validators.required],
+      city: [this.organization.city || '', Validators.required],
+      province: [this.organization.province || '', Validators.required],
+      country: [this.organization.country || '', Validators.required],
+      postalCode: [this.organization.postalCode || ''],
+      coordinates: [this.organization.coordinates ? JSON.stringify(this.organization.coordinates) : ''],
+      type: [this.organization.type || '', Validators.required],
+      category: [this.organization.category || '', Validators.required],
+      size: [this.organization.size || '', Validators.required],
+      foundedYear: [this.organization.foundedYear || null, [Validators.min(1800), Validators.max(new Date().getFullYear())]],
+      registrationNumber: [this.organization.registrationNumber || '', [Validators.required, Validators.pattern(/^[A-Z0-9-]{5,20}$/)]],
+      mission: [this.organization.mission || '', [Validators.required, Validators.minLength(20), Validators.maxLength(1000)]],
+      vision: [this.organization.vision || '', [Validators.maxLength(1000)]],
+      socialMediaLinks: this.fb.group({
+        facebook: [this.organization.socialMediaLinks?.facebook || ''],
+        twitter: [this.organization.socialMediaLinks?.twitter || ''],
+        instagram: [this.organization.socialMediaLinks?.instagram || ''],
+        linkedin: [this.organization.socialMediaLinks?.linkedin || '']
+      })
+    });
   }
 
   private validateCoordinates(coordinates: number[]): boolean {
@@ -409,125 +529,222 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
-    if (this.organization?.id) {
-      this.loading = true;
-      const formValue = this.profileForm.getRawValue();
-
-      // Check if coordinates are valid
-      let coords: number[] = [];
-      if (formValue.coordinates && formValue.coordinates.length === 2) {
-        if (formValue.coordinates[0] && formValue.coordinates[1]) {
-          coords = [
-            parseFloat(formValue.coordinates[0]),
-            parseFloat(formValue.coordinates[1])
-          ];
-        }
-      }
-
-      // Create request object based on Organization.java requirements
-      const organizationData: any = {
-        // Required fields with @NotBlank validation
-        name: formValue.name || "Organization Name", // min 2, max 100 chars
-        description: formValue.description || "This organization description needs at least 20 characters to pass validation.", // min 20, max 2000 chars
-        mission: formValue.mission || "This mission statement has the required minimum 20 characters.", // min 20, max 1000 chars
-        address: formValue.address || "Default Address",
-        city: formValue.city || "Default City",
-        province: formValue.province || "Default Province", 
-        country: formValue.country || "Default Country",
-        type: formValue.type || "NGO",
-        category: formValue.category || "Charity",
-        size: formValue.size || "Medium",
-        
-        // Fields with regex pattern validation
-        phoneNumber: formValue.phoneNumber || "+212612345678", // Must match Moroccan format
-        registrationNumber: formValue.registrationNumber || "REG12345", // Must be 5-20 chars with A-Z, 0-9, -
-        
-        // Required non-empty collection
-        focusAreas: this.focusAreas?.length ? this.focusAreas : ["Education"],
-        
-        // Optional fields that need validation when present
-        website: formValue.website || undefined, // Has URL pattern validation
-        vision: formValue.vision || undefined, // Max 1000 chars
-        
-        // Coordinates for map validation
-        coordinates: coords.length === 2 ? coords : [0, 0],
-        
-        // Other optional fields
-        postalCode: formValue.postalCode || undefined,
-        foundedYear: formValue.foundedYear || undefined,
-        acceptingVolunteers: true // Default to true
-      };
-      
-      // Only add social media links if at least one exists
-      if (formValue.socialMediaLinks && (
-          formValue.socialMediaLinks.facebook || 
-          formValue.socialMediaLinks.twitter || 
-          formValue.socialMediaLinks.instagram || 
-          formValue.socialMediaLinks.linkedin
-      )) {
-        organizationData.socialMediaLinks = {
-          facebook: formValue.socialMediaLinks.facebook || undefined,
-          twitter: formValue.socialMediaLinks.twitter || undefined,
-          instagram: formValue.socialMediaLinks.instagram || undefined,
-          linkedin: formValue.socialMediaLinks.linkedin || undefined
-        };
-      }
-
-      // Clean up undefined values
-      Object.keys(organizationData).forEach(key => {
-        if (organizationData[key] === undefined) {
-          delete organizationData[key];
-        }
+    if (!this.organization?.id) {
+      this.snackBar.open('Organization ID is missing', 'Close', { duration: 3000 });
+      return;
+    }
+    
+    // Mark all form controls as touched to trigger validation
+    this.markFormGroupTouched(this.profileForm);
+    
+    if (this.profileForm.invalid) {
+      const errors = this.getFormValidationErrors();
+      this.snackBar.open(`Please fix the following errors: ${errors.join(', ')}`, 'Close', { 
+        duration: 5000,
+        panelClass: ['error-snackbar']
       });
+      return;
+    }
+    
+    this.loading = true;
+    const formValue = this.profileForm.getRawValue();
 
-      // Clean up social media links
-      if (organizationData.socialMediaLinks) {
-        Object.keys(organizationData.socialMediaLinks).forEach(key => {
-          if (organizationData.socialMediaLinks[key] === undefined) {
-            delete organizationData.socialMediaLinks[key];
-          }
-        });
-        
-        // Remove socialMediaLinks if empty
-        if (Object.keys(organizationData.socialMediaLinks).length === 0) {
-          delete organizationData.socialMediaLinks;
+    // Parse coordinates if present
+    let coordinates: number[] | undefined = undefined;
+    if (formValue.coordinates) {
+      try {
+        const coords = JSON.parse(formValue.coordinates);
+        if (Array.isArray(coords) && coords.length === 2 &&
+            !isNaN(parseFloat(coords[0])) && !isNaN(parseFloat(coords[1]))) {
+          coordinates = [parseFloat(coords[0]), parseFloat(coords[1])];
+        }
+      } catch (e) {
+        console.error('Error parsing coordinates:', e);
+      }
+    }
+    
+    // Build the request object with actual form data
+    const organizationData: OrganizationRequest = {
+      name: formValue.name,
+      description: formValue.description,
+      mission: formValue.mission,
+      address: formValue.address,
+      city: formValue.city,
+      province: formValue.province,
+      country: formValue.country,
+      type: formValue.type,
+      category: formValue.category,
+      size: formValue.size,
+      phoneNumber: formValue.phoneNumber,
+      registrationNumber: formValue.registrationNumber,
+      focusAreas: this.focusAreas,
+      coordinates: coordinates || [0, 0], // Default coordinates if none provided
+      postalCode: formValue.postalCode,
+      website: formValue.website,
+      vision: formValue.vision,
+      foundedYear: formValue.foundedYear
+    };
+    
+    // Add social media links if provided
+    const socialMediaLinks: Record<string, string> = {};
+    let hasSocialLinks = false;
+    
+    if (formValue.socialMediaLinks) {
+      for (const platform of ['facebook', 'twitter', 'instagram', 'linkedin']) {
+        const value = formValue.socialMediaLinks[platform];
+        if (value) {
+          socialMediaLinks[platform] = value;
+          hasSocialLinks = true;
         }
       }
+    }
+    
+    if (hasSocialLinks) {
+      organizationData.socialMediaLinks = socialMediaLinks;
+    }
+    
+    // Clean the request data by removing empty values
+    Object.keys(organizationData).forEach(key => {
+      const value = organizationData[key as keyof OrganizationRequest];
+      if (
+        value === undefined || 
+        value === '' || 
+        (Array.isArray(value) && value.length === 0) ||
+        (value !== null && typeof value === 'object' && Object.keys(value).length === 0)
+      ) {
+        delete organizationData[key as keyof OrganizationRequest];
+      }
+    });
+    
+    // Check for image information in the current organization object
+    // and preserve it in the update request to prevent loss
+    if (this.organization.profilePicture) {
+      organizationData.profilePicture = this.organization.profilePicture;
+    }
+    
+    if (this.organization.logo) {
+      organizationData.logo = this.organization.logo;
+    }
+    
+    console.log('Updating organization with request:', organizationData);
 
-      console.log('Updating organization with request:', organizationData);
-
-      this.organizationService
-        .updateOrganization(this.organization.id, organizationData)
-        .subscribe({
-          next: (response) => {
-            if (response.data) {
-              this.organization = response.data;
+    // Service now always preserves image IDs
+    this.organizationService
+      .updateOrganization(this.organization.id, organizationData)
+      .subscribe({
+        next: (response) => {
+          // Check for null/undefined response
+          if (response && response.data) {
+            this.organization = response.data;
+            
+            // Check profile completeness after update
+            this.checkProfileCompleteness();
+            console.log('Profile completeness after update:', this.isProfileComplete);
+            
+            // If profile is now complete, show specific success message
+            if (this.isProfileComplete) {
+              this.snackBar.open('Profile completed successfully! You can now access all features.', 'Close', {
+                duration: 5000,
+                panelClass: ['success-snackbar']
+              });
+            } else {
               this.snackBar.open('Profile updated successfully', 'Close', {
                 duration: 3000,
                 panelClass: ['success-snackbar']
               });
             }
-            this.loading = false;
-          },
-          error: (error) => {
-            console.error('Error updating organization profile:', error);
-            let errorMessage = 'Error updating organization profile';
-
-            if (error.error?.details) {
-              const details = Object.values(error.error.details).join(', ');
-              errorMessage = `Validation errors: ${details}`;
-            } else if (error.error?.message) {
-              errorMessage = error.error.message;
-            }
-            
-            this.snackBar.open(errorMessage, 'Close', {
-              duration: 5000,
-              panelClass: ['error-snackbar']
+          } else {
+            // Handle case where response exists but data is missing
+            console.warn('Update succeeded but response data is missing:', response);
+            this.snackBar.open('Profile updated successfully. Refreshing data...', 'Close', {
+              duration: 3000
             });
-            this.loading = false;
+            
+            // Load fresh data
+            this.loadOrganizationProfile();
           }
-        });
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error updating organization profile:', error);
+          let errorMessage = 'Error updating organization profile';
+
+          if (error.error?.details) {
+            const details = Object.values(error.error.details).join(', ');
+            errorMessage = `Validation errors: ${details}`;
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
+          } else if (error.message) {
+            // Extract message from JS Error object
+            errorMessage = `Error: ${error.message}`;
+          }
+          
+          this.snackBar.open(errorMessage, 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          this.loading = false;
+        }
+      });
+  }
+
+  // Debug function to quickly fill all required fields with default values
+  fillRequiredFields(): void {
+    if (!this.organization?.id) {
+      this.snackBar.open('Organization ID is missing', 'Close', { duration: 3000 });
+      return;
     }
+    
+    const DEFAULT_VALUE = 'Default value';
+    const organizationData: OrganizationRequest = {
+      name: this.organization.name || 'Organization Name',
+      description: this.organization.description || 'This is a default description that meets the minimum length requirements for testing.',
+      mission: this.organization.mission || 'This is a default mission statement that meets the minimum character requirements.',
+      phoneNumber: this.organization.phoneNumber || '+212612345678',
+      address: this.organization.address || 'Test Address',
+      city: this.organization.city || 'Test City',
+      province: this.organization.province || 'Test Province',
+      country: this.organization.country || 'Morocco',
+      type: this.organization.type || OrganizationType.NON_PROFIT,
+      category: this.organization.category || OrganizationCategory.HEALTH,
+      size: this.organization.size || OrganizationSize.SMALL,
+      focusAreas: this.organization.focusAreas && this.organization.focusAreas.length > 0 ? 
+        this.organization.focusAreas : ['Education'],
+      registrationNumber: this.organization.registrationNumber || 'TEST12345',
+      coordinates: this.organization.coordinates || [0, 0],
+      vision: this.organization.vision || 'Default vision statement',
+      postalCode: this.organization.postalCode || '10000'
+    };
+    
+    console.log('Debug - Using default values to complete profile:', organizationData);
+    
+    this.loading = true;
+    this.organizationService
+      .updateOrganization(this.organization.id, organizationData)
+      .subscribe({
+        next: (response) => {
+          if (response && response.data) {
+            this.organization = response.data;
+            this.checkProfileCompleteness();
+            this.initForm();
+            this.focusAreas = [...this.organization.focusAreas];
+            
+            this.snackBar.open('Default values applied successfully. Profile should now be complete.', 'Close', {
+              duration: 5000,
+              panelClass: ['success-snackbar']
+            });
+          }
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error applying default values:', error);
+          this.snackBar.open('Error applying default values', 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          this.loading = false;
+        }
+      });
   }
 
   private isValidCoordinate(value: any, min: number, max: number): boolean {
@@ -580,7 +797,7 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
 
   resetForm(): void {
     if (this.organization) {
-      this.updateForm(this.organization);
+      this.initForm();
     }
   }
 
@@ -942,147 +1159,279 @@ export class OrganizationProfileComponent implements OnInit, OnDestroy {
     return this.profileForm.get('coordinates')?.get([1]);
   }
 
-  getCurrentLocation() {
-    if (!navigator.geolocation) {
-      this.snackBar.open('Geolocation is not supported by your browser', 'Close', {
-        duration: 3000,
-        panelClass: ['error-snackbar']
-      });
-      return;
-    }
-
-    this.loading = true;
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-        await this.updateLocationFromCoordinates(latitude, longitude);
-        
-        this.loading = false;
-        this.snackBar.open('Location updated successfully', 'Close', {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
-      },
-      (error) => {
-        this.loading = false;
-        let errorMessage = 'Error getting location';
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Permission to access location was denied';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Request to get location timed out';
-            break;
-        }
-        this.snackBar.open(errorMessage, 'Close', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-          });
-        },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
-      }
-    );
-  }
-
-  private async updateLocationFromCoordinates(latitude: number, longitude: number): Promise<void> {
-    // Update form coordinates
-    const coordinates = this.profileForm.get('coordinates');
-    if (coordinates) {
-      coordinates.patchValue([longitude, latitude]);
-    }
-
-    // Update map marker using MapComponent
-    this.mapComponent.updateCoordinates([longitude, latitude]);
-
-    // Get address details
-    try {
-      const address = await this.reverseGeocode(latitude, longitude);
-      if (address) {
-        // Update form with address details
-        this.profileForm.patchValue({
-          fullAddress: address.display_name,
-          address: address.road || '',
-          city: address.city || address.town || address.village || '',
-          province: address.state || '',
-          country: address.country || '',
-          postalCode: address.postcode || ''
-        });
-      }
-    } catch (error) {
-      console.error('Error getting address details:', error);
-    }
-  }
-
-  private async reverseGeocode(lat: number, lon: number): Promise<any> {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
-      );
-      const data = await response.json();
-      return data.address ? { ...data.address, display_name: data.display_name } : null;
-    } catch (error) {
-      console.error('Reverse geocoding error:', error);
-      return null;
-    }
-  }
-
-  async updateCoordinatesFromAddress(address: string): Promise<void> {
-    if (!address) return;
+  // Get the coordinates from the form
+  public getCoordinates(): Coordinates | undefined {
+    const coordinatesStr = this.profileForm.get('coordinates')?.value;
+    if (!coordinatesStr) return undefined;
     
-    const coordinates = await this.geocodeAddress(address);
-    if (coordinates) {
-      const [longitude, latitude] = coordinates;
-      await this.updateLocationFromCoordinates(latitude, longitude);
-    }
-  }
-
-  // Add new methods for address handling
-  private async geocodeAddress(address: string): Promise<[number, number] | null> {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const { lat, lon } = data[0];
-        return [parseFloat(lon), parseFloat(lat)];
+      const coords = JSON.parse(coordinatesStr);
+      if (Array.isArray(coords) && coords.length === 2) {
+        return { lng: Number(coords[0]), lat: Number(coords[1]) };
       }
-      return null;
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      return null;
+      return undefined;
+    } catch (e) {
+      console.error('Error parsing coordinates:', e);
+      return undefined;
     }
   }
 
-  getLatitude(): number {
-    const coordinates = this.profileForm.get('coordinates')?.value;
-    return coordinates?.[1] || 0;
+  // Get the latitude coordinate
+  private getLatitude(): number | undefined {
+    const coords = this.getCoordinates();
+    return coords ? coords.lat : undefined;
   }
 
-  getLongitude(): number {
-    const coordinates = this.profileForm.get('coordinates')?.value;
-    return coordinates?.[0] || 0;
+  // Get the longitude coordinate
+  private getLongitude(): number | undefined {
+    const coords = this.getCoordinates();
+    return coords ? coords.lng : undefined;
   }
 
-  getCoordinates(): { lat: number; lng: number } | undefined {
-    const coordinates = this.profileForm.get('coordinates')?.value;
-    if (coordinates && coordinates.length === 2) {
-      return { lng: coordinates[0], lat: coordinates[1] };
+  // Update location form values from coordinates
+  updateLocationFromCoordinates(latitude: number, longitude: number): void {
+    // Update form coordinates
+    this.profileForm.patchValue({
+      coordinates: JSON.stringify([longitude, latitude])
+    });
+    
+    // Update map marker
+    if (this.marker) {
+      this.marker.setLngLat([longitude, latitude]);
     }
-    return undefined;
+    
+    // Show loading indicator for address lookup
+    this.loading = true;
+    
+    // Get address from coordinates
+    this.reverseGeocode(latitude, longitude).subscribe({
+      next: (address) => {
+        if (address && address.address) {
+          const addressData = address.address;
+          
+          // Extract address components
+          const street = [
+            addressData.road || addressData.street || '',
+            addressData.house_number || ''
+          ].filter(Boolean).join(' ').trim();
+          
+          const city = addressData.city || 
+                      addressData.town || 
+                      addressData.village || 
+                      addressData.suburb || 
+                      addressData.hamlet || 
+                      '';
+                      
+          const province = addressData.state || 
+                          addressData.county || 
+                          addressData.region || 
+                          '';
+                          
+          const country = addressData.country || '';
+          const postalCode = addressData.postcode || '';
+          
+          // Update form with address information
+        this.profileForm.patchValue({
+            address: street,
+            city: city,
+            province: province,
+            country: country,
+            postalCode: postalCode
+          });
+          
+          console.log('Address filled:', { street, city, province, country, postalCode });
+        } else {
+          console.warn('No address data found for coordinates:', latitude, longitude);
+          this.snackBar.open('Address information not available for this location', 'Close', {
+            duration: 3000
+          });
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error in reverse geocoding:', error);
+        this.snackBar.open('Error retrieving address information', 'Close', {
+          duration: 3000
+        });
+        this.loading = false;
+      }
+    });
   }
 
   onLocationSelected(event: LocationData): void {
     const coordinates = event.coordinates;
-    this.profileForm.patchValue({ coordinates });
-    this.mapComponent?.updateCoordinates(coordinates);
+    if (coordinates && coordinates.length === 2) {
+      const [longitude, latitude] = coordinates;
+      // Update the form and map
+      this.updateLocationFromCoordinates(latitude, longitude);
+    }
+  }
+
+  // Function to update address fields from a fully typed address
+  updateAddressFromFullAddress(fullAddress: string): void {
+    if (!fullAddress) return;
+    
+    this.updateCoordinatesFromAddress(fullAddress);
+  }
+
+  // Reverse geocode coordinates to address
+  private reverseGeocode(lat: number, lng: number) {
+    const url = `https://nominatim.openstreetmap.org/reverse`;
+    const params = new HttpParams()
+      .set('format', 'json')
+      .set('lat', lat.toString())
+      .set('lon', lng.toString())
+      .set('addressdetails', '1')
+      .set('zoom', '18')  // Higher zoom for more precise results
+      .set('accept-language', 'en');  // Force English results
+
+    return this.http.get<any>(url, { 
+      params,
+      headers: {
+        'User-Agent': 'LocalCharityApp'  // Identify the app
+      }
+    }).pipe(
+      take(1),
+      catchError(error => {
+        console.error('Error in reverse geocoding:', error);
+        return of(null);
+      })
+    );
+  }
+
+  updateCoordinatesFromAddress(address: string): void {
+    if (!address) return;
+    
+    // Show loading indicator
+    this.loading = true;
+    
+    this.geocodeAddress(address).subscribe({
+      next: (result) => {
+        if (result && result.coordinates) {
+          const [longitude, latitude] = result.coordinates;
+          
+          // If we also have address components, update them directly
+          if (result.address) {
+            const addressData = result.address;
+            
+            this.profileForm.patchValue({
+              coordinates: JSON.stringify([longitude, latitude]),
+              address: addressData.street || '',
+              city: addressData.city || '',
+              province: addressData.state || '',
+              country: addressData.country || '',
+              postalCode: addressData.postalCode || ''
+            });
+            
+            // Update the map marker
+            if (this.marker) {
+              this.marker.setLngLat([longitude, latitude]);
+            }
+          } else {
+            // If we only have coordinates, use reverse geocoding to get the address
+            this.updateLocationFromCoordinates(latitude, longitude);
+          }
+        } else {
+          this.snackBar.open('Could not find coordinates for this address', 'Close', {
+            duration: 3000
+          });
+          this.loading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Error converting address to coordinates:', error);
+        this.snackBar.open('Error geocoding address', 'Close', {
+          duration: 3000
+        });
+        this.loading = false;
+      }
+    });
+  }
+
+  private geocodeAddress(address: string) {
+    const url = `https://nominatim.openstreetmap.org/search`;
+    const params = new HttpParams()
+      .set('format', 'json')
+      .set('q', address)
+      .set('addressdetails', '1')
+      .set('limit', '1');
+
+    return this.http.get<any[]>(url, { 
+      params,
+      headers: {
+        'User-Agent': 'LocalCharityApp'  // Identify the app
+      }
+    }).pipe(
+      take(1),
+      map(data => {
+        if (data && data.length > 0) {
+          const result = data[0];
+          const { lat, lon, address: addressDetails } = result;
+          
+          // Create a structured result with both coordinates and address components
+          return {
+            coordinates: [parseFloat(lon), parseFloat(lat)] as [number, number],
+            address: addressDetails ? {
+              street: addressDetails.road || addressDetails.street || '',
+              city: addressDetails.city || addressDetails.town || addressDetails.village || '',
+              state: addressDetails.state || addressDetails.county || '',
+              country: addressDetails.country || '',
+              postalCode: addressDetails.postcode || ''
+            } : null
+          };
+        }
+        return null;
+      }),
+      catchError(error => {
+        console.error('Error in geocoding:', error);
+        return of(null);
+      })
+    );
+  }
+
+  loadOrganizationProfile(): void {
+    if (!this.organization?.id) return;
+    
+    this.loading = true;
+    this.organizationService.getOrganization(this.organization.id)
+      .subscribe({
+        next: (response) => {
+          if (response.data) {
+            // The service automatically preserves images
+            this.organization = response.data;
+            
+            // Reinitialize the form with updated data
+            this.initForm();
+            
+            // Update focus areas
+            if (this.organization.focusAreas) {
+              this.focusAreas = [...this.organization.focusAreas];
+            }
+            
+            // Update documents
+            if (this.organization.documents && this.organization.documents.length > 0) {
+              this.documents = this.organization.documents.map(docId => ({
+                id: docId,
+                name: `Document ${docId}`,
+                type: DocumentType.OTHER,
+                url: docId,
+                uploadedAt: new Date()
+              }));
+            }
+            
+            // Check if profile is complete
+            this.checkProfileCompleteness();
+          }
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading organization profile:', error);
+          this.snackBar.open('Failed to load organization profile', 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          this.loading = false;
+        }
+      });
   }
 }

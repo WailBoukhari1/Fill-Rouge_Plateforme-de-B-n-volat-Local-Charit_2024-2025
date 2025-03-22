@@ -1,33 +1,55 @@
+import { OrganizationProfile } from '../../core/models/organization.model';
+import { User } from '../../core/models/auth.models';
+
 export interface OrganizationState {
   profile: Organization | null;
   statistics: OrganizationStats | null;
   loading: boolean;
   error: string | null;
+  userData: User | null;
 }
 
 export interface Organization {
   id: string;
+  userId: string;
   name: string;
   type: string;
   description: string;
   missionStatement: string;
-  vision?: string;
+  vision: string;
   website?: string;
   registrationNumber?: string;
-  taxId?: string;
   phoneNumber: string;
-  email?: string;
   address: string;
   city: string;
+  province: string;
   country: string;
+  postalCode: string;
+  coordinates?: [number, number];
   focusAreas: string[];
-  foundedYear?: number;
-  socialMedia: {
+  socialMedia?: {
     facebook?: string;
     twitter?: string;
-    linkedin?: string;
     instagram?: string;
+    linkedin?: string;
   };
+  verified?: boolean;
+  documents?: string[];
+  rating?: number;
+  numberOfRatings?: number;
+  totalEventsHosted?: number;
+  activeVolunteers?: number;
+  totalVolunteerHours?: number;
+  impactScore?: number;
+  acceptingVolunteers?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  category?: string;
+  size?: string;
+  foundedYear?: number;
+  logo?: string;
+  profilePicture?: string;
+  imageId?: string;
 }
 
 export interface OrganizationStats {
@@ -46,3 +68,11 @@ export interface OrganizationStats {
     timestamp: Date;
   }>;
 }
+
+export const initialState: OrganizationState = {
+  profile: null,
+  statistics: null,
+  loading: false,
+  error: null,
+  userData: null
+};
