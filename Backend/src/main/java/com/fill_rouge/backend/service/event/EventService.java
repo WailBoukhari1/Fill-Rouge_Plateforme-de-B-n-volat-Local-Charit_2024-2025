@@ -11,8 +11,8 @@ import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
 import com.fill_rouge.backend.dto.request.EventRegistrationRequest;
 import com.fill_rouge.backend.dto.request.EventRequest;
-import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 import com.fill_rouge.backend.dto.response.EventResponse;
+import com.fill_rouge.backend.dto.response.EventStatisticsResponse;
 
 public interface EventService {
     // Core Event Operations
@@ -22,7 +22,12 @@ public interface EventService {
     Event getEventById(String eventId);
     Event updateEventStatus(String eventId, EventStatus status);
     Page<Event> getAllEvents(Pageable pageable);
+    Page<EventResponse> getAllEvents(Pageable pageable, boolean includeAll);
     Page<Event> getAllEventsForAdmin(Pageable pageable);
+    
+    // Admin Event Management
+    EventResponse approveEvent(String eventId);
+    EventResponse rejectEvent(String eventId, String reason);
     
     // Public Events (no authentication required)
     Page<Event> getPublicEvents(Pageable pageable);

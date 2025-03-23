@@ -42,7 +42,7 @@ export class ReportService {
 
   getOverviewStatistics(): Observable<OverviewStatistics> {
     console.log('Fetching overview statistics...');
-    return this.http.get<OverviewStatistics>(`${this.apiUrl}/overview`).pipe(
+    return this.http.get<OverviewStatistics>(`${this.apiUrl}/dashboard/overview`).pipe(
       map(response => {
         console.log('Received overview statistics:', response);
         // Ensure all numeric fields have default values

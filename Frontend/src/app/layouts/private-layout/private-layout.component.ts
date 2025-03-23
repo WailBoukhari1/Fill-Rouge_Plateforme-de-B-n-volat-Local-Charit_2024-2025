@@ -22,7 +22,6 @@ import { UserRole } from '../../core/models/auth.models';
     MatIconModule,
     MatListModule,
     MatMenuModule,
-    MatMenuModule,
   ],
   template: `
     <mat-sidenav-container class="h-screen">
@@ -52,10 +51,6 @@ import { UserRole } from '../../core/models/auth.models';
             <a mat-list-item routerLink="/admin/events" routerLinkActive="active">
               <mat-icon matListItemIcon>event_available</mat-icon>
               <span matListItemTitle>Events</span>
-            </a>
-            <a mat-list-item routerLink="/admin/reports" routerLinkActive="active">
-              <mat-icon matListItemIcon>assessment</mat-icon>
-              <span matListItemTitle>Reports</span>
             </a>
           }
 

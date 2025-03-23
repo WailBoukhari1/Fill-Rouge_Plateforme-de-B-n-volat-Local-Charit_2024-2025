@@ -114,4 +114,32 @@ public class Achievement {
         this.isActive = false;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void setTitle(String title) {
+        this.name = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setBadgeImageUrl(String badgeImageUrl) {
+        this.iconUrl = badgeImageUrl;
+    }
+
+    public void setPoints(int points) {
+        this.points = points;
+    }
+
+    public void setRequiredEvents(int requiredEvents) {
+        this.requiredEvents = requiredEvents;
+    }
+
+    public void setRequiredHours(int requiredHours) {
+        this.requiredHours = requiredHours;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
 } 

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { catchError, map, mergeMap, switchMap } from 'rxjs/operators';
+import { catchError, map, mergeMap, retry, switchMap } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import * as AdminActions from './admin.actions';
-import { StatisticsService } from '../../core/services/statistics.service';
+import { AdminService } from '../../core/services/admin.service';
 import { UserService } from '../../core/services/user.service';
 import { OrganizationService } from '../../core/services/organization.service';
 import { Organization, OrganizationStatus, VerificationStatus, OrganizationProfile, OrganizationType, OrganizationCategory, OrganizationSize, DocumentType } from '../../core/models/organization.model';
@@ -14,7 +14,7 @@ import { Organization, OrganizationStatus, VerificationStatus, OrganizationProfi
 export class AdminEffects {
   constructor(
     private actions$: Actions,
-    private statisticsService: StatisticsService,
+    private adminService: AdminService,
     private userService: UserService,
     private organizationService: OrganizationService,
     private snackBar: MatSnackBar
@@ -24,13 +24,15 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.loadAdminStatistics),
       switchMap(() =>
-        this.statisticsService.getAdminStatistics().pipe(
-          map(response => 
-            AdminActions.loadAdminStatisticsSuccess({ statistics: response.data })
+        this.adminService.getAdminStatistics().pipe(
+          retry(2),
+          map((statistics: any) => 
+            AdminActions.loadAdminStatisticsSuccess({ statistics })
           ),
           catchError(error => {
             this.showError('Failed to load statistics');
-            return of(AdminActions.loadAdminStatisticsFailure({ error: error.message }));
+            console.error('Statistics error:', error);
+            return of(AdminActions.loadAdminStatisticsFailure({ error: typeof error === 'string' ? error : 'Unknown error' }));
           })
         )
       )
@@ -41,16 +43,21 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.loadUsers),
       switchMap(({ page, size }) =>
-        this.userService.getUsers(page, size).pipe(
-          map(response => 
-            AdminActions.loadUsersSuccess({
-              users: response.content || [],
-              totalUsers: response.totalElements || 0
-            })
-          ),
+        this.adminService.getUsers(page, size).pipe(
+          retry(2),
+          map((response: any) => {
+            if (!response || !response.users) {
+              throw new Error('Invalid response format');
+            }
+            return AdminActions.loadUsersSuccess({
+              users: response.users,
+              totalUsers: response.totalUsers || 0
+            });
+          }),
           catchError(error => {
             this.showError('Failed to load users');
-            return of(AdminActions.loadUsersFailure({ error: error.message }));
+            console.error('Users error:', error);
+            return of(AdminActions.loadUsersFailure({ error: typeof error === 'string' ? error : error.message || 'Unknown error' }));
           })
         )
       )
@@ -61,14 +68,15 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.lockUserAccount),
       mergeMap(({ userId }) =>
-        this.userService.lockUserAccount(userId).pipe(
+        this.adminService.lockUserAccount(userId).pipe(
           map(() => {
             this.showSuccess('User account locked successfully');
             return AdminActions.lockUserAccountSuccess({ userId });
           }),
           catchError(error => {
             this.showError('Failed to lock user account');
-            return of(AdminActions.lockUserAccountFailure({ error: error.message }));
+            console.error('Lock user error:', error);
+            return of(AdminActions.lockUserAccountFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )
@@ -79,14 +87,15 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.unlockUserAccount),
       mergeMap(({ userId }) =>
-        this.userService.unlockUserAccount(userId).pipe(
+        this.adminService.unlockUserAccount(userId).pipe(
           map(() => {
             this.showSuccess('User account unlocked successfully');
             return AdminActions.unlockUserAccountSuccess({ userId });
           }),
           catchError(error => {
             this.showError('Failed to unlock user account');
-            return of(AdminActions.unlockUserAccountFailure({ error: error.message }));
+            console.error('Unlock user error:', error);
+            return of(AdminActions.unlockUserAccountFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )
@@ -97,14 +106,15 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.updateUserRole),
       mergeMap(({ userId, role }) =>
-        this.userService.updateUserRole(userId, role).pipe(
+        this.adminService.updateUserRole(userId, role).pipe(
           map(() => {
             this.showSuccess('User role updated successfully');
             return AdminActions.updateUserRoleSuccess({ userId, role });
           }),
           catchError(error => {
             this.showError('Failed to update user role');
-            return of(AdminActions.updateUserRoleFailure({ error: error.message }));
+            console.error('Update role error:', error);
+            return of(AdminActions.updateUserRoleFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )
@@ -115,14 +125,15 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.deleteUser),
       mergeMap(({ userId }) =>
-        this.userService.deleteUser(userId).pipe(
+        this.adminService.deleteUser(userId).pipe(
           map(() => {
             this.showSuccess('User deleted successfully');
             return AdminActions.deleteUserSuccess({ userId });
           }),
           catchError(error => {
             this.showError('Failed to delete user');
-            return of(AdminActions.deleteUserFailure({ error: error.message }));
+            console.error('Delete user error:', error);
+            return of(AdminActions.deleteUserFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )
@@ -133,18 +144,22 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.loadOrganizations),
       switchMap(({ page, size }) =>
-        this.organizationService.getAllOrganizations(page, size).pipe(
-          map(response => {
-            // Convert OrganizationProfile to Organization
-            const organizations: Organization[] = (response.content || []).map(org => this.convertToOrganization(org));
+        this.adminService.getOrganizations(page, size).pipe(
+          retry(2),
+          map((response: any) => {
+            console.log('Organizations response:', response);
+            if (!response || !response.organizations) {
+              throw new Error('Invalid response format');
+            }
             return AdminActions.loadOrganizationsSuccess({
-              organizations: organizations,
-              totalOrganizations: response.totalElements || 0
+              organizations: response.organizations,
+              totalOrganizations: response.totalOrganizations || 0
             });
           }),
           catchError(error => {
             this.showError('Failed to load organizations');
-            return of(AdminActions.loadOrganizationsFailure({ error: error.message }));
+            console.error('Organizations error:', error);
+            return of(AdminActions.loadOrganizationsFailure({ error: typeof error === 'string' ? error : error.message || 'Unknown error' }));
           })
         )
       )
@@ -155,14 +170,19 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.verifyOrganization),
       mergeMap(({ organizationId }) =>
-        this.organizationService.updateOrganization(organizationId, { verificationStatus: VerificationStatus.VERIFIED }).pipe(
-          map(() => {
+        this.adminService.verifyOrganization(organizationId).pipe(
+          map((response: any) => {
+            console.log('Verify organization response:', response);
             this.showSuccess('Organization verified successfully');
-            return AdminActions.verifyOrganizationSuccess({ organizationId });
+            return AdminActions.verifyOrganizationSuccess({ 
+              organizationId,
+              organization: response 
+            });
           }),
           catchError(error => {
             this.showError('Failed to verify organization');
-            return of(AdminActions.verifyOrganizationFailure({ error: error.message }));
+            console.error('Verify organization error:', error);
+            return of(AdminActions.verifyOrganizationFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )
@@ -173,14 +193,19 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.suspendOrganization),
       mergeMap(({ organizationId }) =>
-        this.organizationService.updateOrganization(organizationId, { status: OrganizationStatus.SUSPENDED }).pipe(
-          map(() => {
+        this.adminService.suspendOrganization(organizationId).pipe(
+          map((response: any) => {
+            console.log('Suspend organization response:', response);
             this.showSuccess('Organization suspended successfully');
-            return AdminActions.suspendOrganizationSuccess({ organizationId });
+            return AdminActions.suspendOrganizationSuccess({ 
+              organizationId,
+              organization: response 
+            });
           }),
           catchError(error => {
             this.showError('Failed to suspend organization');
-            return of(AdminActions.suspendOrganizationFailure({ error: error.message }));
+            console.error('Suspend organization error:', error);
+            return of(AdminActions.suspendOrganizationFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )
@@ -191,14 +216,19 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.reactivateOrganization),
       mergeMap(({ organizationId }) =>
-        this.organizationService.updateOrganization(organizationId, { status: OrganizationStatus.ACTIVE }).pipe(
-          map(() => {
+        this.adminService.reactivateOrganization(organizationId).pipe(
+          map((response: any) => {
+            console.log('Reactivate organization response:', response);
             this.showSuccess('Organization reactivated successfully');
-            return AdminActions.reactivateOrganizationSuccess({ organizationId });
+            return AdminActions.reactivateOrganizationSuccess({ 
+              organizationId,
+              organization: response 
+            });
           }),
           catchError(error => {
             this.showError('Failed to reactivate organization');
-            return of(AdminActions.reactivateOrganizationFailure({ error: error.message }));
+            console.error('Reactivate organization error:', error);
+            return of(AdminActions.reactivateOrganizationFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )
@@ -209,14 +239,15 @@ export class AdminEffects {
     this.actions$.pipe(
       ofType(AdminActions.deleteOrganization),
       mergeMap(({ organizationId }) =>
-        this.organizationService.deleteOrganization(organizationId).pipe(
+        this.adminService.deleteOrganization(organizationId).pipe(
           map(() => {
             this.showSuccess('Organization deleted successfully');
             return AdminActions.deleteOrganizationSuccess({ organizationId });
           }),
           catchError(error => {
             this.showError('Failed to delete organization');
-            return of(AdminActions.deleteOrganizationFailure({ error: error.message }));
+            console.error('Delete organization error:', error);
+            return of(AdminActions.deleteOrganizationFailure({ error: error.message || 'Unknown error' }));
           })
         )
       )

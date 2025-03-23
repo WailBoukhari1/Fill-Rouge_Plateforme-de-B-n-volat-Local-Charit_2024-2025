@@ -117,7 +117,7 @@ export const verifyOrganization = createAction(
 
 export const verifyOrganizationSuccess = createAction(
   '[Admin] Verify Organization Success',
-  props<{ organizationId: string }>()
+  props<{ organizationId: string; organization: Organization }>()
 );
 
 export const verifyOrganizationFailure = createAction(
@@ -132,7 +132,7 @@ export const suspendOrganization = createAction(
 
 export const suspendOrganizationSuccess = createAction(
   '[Admin] Suspend Organization Success',
-  props<{ organizationId: string }>()
+  props<{ organizationId: string; organization: Organization }>()
 );
 
 export const suspendOrganizationFailure = createAction(
@@ -147,7 +147,7 @@ export const reactivateOrganization = createAction(
 
 export const reactivateOrganizationSuccess = createAction(
   '[Admin] Reactivate Organization Success',
-  props<{ organizationId: string }>()
+  props<{ organizationId: string; organization: Organization }>()
 );
 
 export const reactivateOrganizationFailure = createAction(

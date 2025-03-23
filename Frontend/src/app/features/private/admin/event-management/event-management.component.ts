@@ -1,15 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterModule } from '@angular/router';
-import { EventService } from '../../../../core/services/event.service';
-import { IEvent, EventStatus } from '../../../../core/models/event.types';
+import { Store } from '@ngrx/store';
+import { Observable, Subject, takeUntil, of } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+import { AdminService } from '../../../../core/services/admin.service';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { EventDetailsDialogComponent } from '../../../../shared/components/event-details-dialog/event-details-dialog.component';
+import { EventStatusDialogComponent } from '../../../../shared/components/event-status-dialog/event-status-dialog.component';
+import { ImagePlaceholderService } from '../../../../shared/services/image-placeholder.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-event-management',
@@ -23,21 +33,32 @@ import { IEvent, EventStatus } from '../../../../core/models/event.types';
     MatCardModule,
     MatMenuModule,
     MatChipsModule,
+    MatProgressSpinnerModule,
     RouterModule
   ],
   template: `
     <div class="container mx-auto p-4">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Event Management</h1>
-        <button mat-raised-button color="primary" routerLink="create">
-          <mat-icon>add</mat-icon>
-          Create Event
-        </button>
       </div>
 
       <mat-card>
-        <div class="overflow-x-auto">
-          <table mat-table [dataSource]="events" class="w-full">
+        <div *ngIf="loading" class="flex justify-center p-4">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        
+        <div *ngIf="!loading" class="overflow-x-auto">
+          <table mat-table [dataSource]="dataSource" class="w-full">
+            <!-- Image Column -->
+            <ng-container matColumnDef="image">
+              <th mat-header-cell *matHeaderCellDef>Image</th>
+              <td mat-cell *matCellDef="let event">
+                <img [src]="getEventImageUrl(event)" 
+                     alt="Event image"
+                     class="w-10 h-10 rounded-full object-cover">
+              </td>
+            </ng-container>
+
             <!-- Title Column -->
             <ng-container matColumnDef="title">
               <th mat-header-cell *matHeaderCellDef>Title</th>
@@ -47,20 +68,16 @@ import { IEvent, EventStatus } from '../../../../core/models/event.types';
             <!-- Organization Column -->
             <ng-container matColumnDef="organization">
               <th mat-header-cell *matHeaderCellDef>Organization</th>
-              <td mat-cell *matCellDef="let event">{{event.organizationName}}</td>
+              <td mat-cell *matCellDef="let event">
+                {{event.organizationName || 'Organization ' + event.organizationId}}
+              </td>
             </ng-container>
 
             <!-- Date Column -->
             <ng-container matColumnDef="date">
               <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let event">{{event.date | date}}</td>
-            </ng-container>
-
-            <!-- Participants Column -->
-            <ng-container matColumnDef="participants">
-              <th mat-header-cell *matHeaderCellDef>Participants</th>
               <td mat-cell *matCellDef="let event">
-                {{event.registeredParticipants.size}}/{{event.maxParticipants}}
+                {{event.startDate | date:'medium'}}
               </td>
             </ng-container>
 
@@ -68,8 +85,8 @@ import { IEvent, EventStatus } from '../../../../core/models/event.types';
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef>Status</th>
               <td mat-cell *matCellDef="let event">
-                <mat-chip [color]="getStatusColor(event.status)">
-                  {{getStatusLabel(event.status)}}
+                <mat-chip [color]="getStatusColor(event.status)" [ngClass]="getStatusClass(event.status)">
+                  {{event.status}}
                 </mat-chip>
               </td>
             </ng-container>
@@ -82,26 +99,38 @@ import { IEvent, EventStatus } from '../../../../core/models/event.types';
                   <mat-icon>more_vert</mat-icon>
                 </button>
                 <mat-menu #menu="matMenu">
-                  <button mat-menu-item [routerLink]="[event.id]">
-                    <mat-icon>edit</mat-icon>
-                    <span>Edit</span>
-                  </button>
                   <button mat-menu-item (click)="viewDetails(event)">
                     <mat-icon>visibility</mat-icon>
                     <span>View Details</span>
                   </button>
-                  @if (event.status === 'PENDING') {
+                  <button mat-menu-item (click)="updateEventStatusDialog(event)">
+                    <mat-icon>update</mat-icon>
+                    <span>Update Status</span>
+                  </button>
+                  <ng-container *ngIf="event.status !== 'ACTIVE' && event.status !== 'APPROVED'">
                     <button mat-menu-item (click)="approveEvent(event)">
                       <mat-icon>check_circle</mat-icon>
                       <span>Approve</span>
                     </button>
-                  }
-                  @if (event.status !== 'CANCELLED') {
+                  </ng-container>
+                  <ng-container *ngIf="event.status !== 'PENDING'">
+                    <button mat-menu-item (click)="pendingEvent(event)">
+                      <mat-icon>pending</mat-icon>
+                      <span>Set as Pending</span>
+                    </button>
+                  </ng-container>
+                  <ng-container *ngIf="event.status !== 'REJECTED'">
+                    <button mat-menu-item (click)="rejectEvent(event)">
+                      <mat-icon>block</mat-icon>
+                      <span>Reject</span>
+                    </button>
+                  </ng-container>
+                  <ng-container *ngIf="event.status !== 'CANCELLED'">
                     <button mat-menu-item (click)="cancelEvent(event)">
                       <mat-icon>cancel</mat-icon>
                       <span>Cancel</span>
                     </button>
-                  }
+                  </ng-container>
                   <button mat-menu-item (click)="deleteEvent(event)" class="text-red-500">
                     <mat-icon class="text-red-500">delete</mat-icon>
                     <span>Delete</span>
@@ -115,8 +144,12 @@ import { IEvent, EventStatus } from '../../../../core/models/event.types';
           </table>
         </div>
 
+        <div *ngIf="error" class="p-4 text-red-600 text-center">
+          {{ error }}
+        </div>
+
         <mat-paginator
-          [length]="totalItems"
+          [length]="totalCount"
           [pageSize]="pageSize"
           [pageSizeOptions]="[5, 10, 25, 100]"
           (page)="onPageChange($event)">
@@ -125,118 +158,277 @@ import { IEvent, EventStatus } from '../../../../core/models/event.types';
     </div>
   `
 })
-export class EventManagementComponent implements OnInit {
-  events: IEvent[] = [];
-  displayedColumns: string[] = ['title', 'organization', 'date', 'participants', 'status', 'actions'];
-  totalItems = 0;
+export class EventManagementComponent implements OnInit, OnDestroy {
+  displayedColumns: string[] = ['image', 'title', 'organization', 'date', 'status', 'actions'];
+  dataSource = new MatTableDataSource<any>([]);
   pageSize = 10;
-  currentPage = 0;
+  pageIndex = 0;
+  totalCount = 0;
+  
   loading = false;
+  error: string | null = null;
+  private destroy$ = new Subject<void>();
 
-  constructor(private eventService: EventService) {}
+  constructor(
+    private adminService: AdminService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
+    private notificationService: NotificationService,
+    private imagePlaceholderService: ImagePlaceholderService
+  ) {}
 
   ngOnInit(): void {
     this.loadEvents();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadEvents(): void {
     this.loading = true;
-    this.eventService.getEvents(this.currentPage, this.pageSize).subscribe({
-      next: (response) => {
-        this.events = response.content;
-        this.totalItems = response.totalElements;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading events:', error);
-        this.loading = false;
-      }
-    });
+    this.error = null;
+    
+    this.adminService.getEvents(this.pageIndex, this.pageSize, true)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('Events loaded:', response);
+          this.dataSource.data = response.events || [];
+          this.totalCount = response.totalEvents || 0;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Error loading events:', err);
+          this.error = 'Failed to load events. Please try again.';
+          this.loading = false;
+        }
+      });
   }
 
   onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
+    this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.loadEvents();
   }
 
-  getStatusColor(status: EventStatus): string {
+  getStatusColor(status: string): string {
     switch (status) {
-      case EventStatus.DRAFT:
-        return 'basic';
-      case EventStatus.PENDING:
+      case 'ACTIVE':
+      case 'APPROVED':
+        return 'primary';
+      case 'PENDING':
         return 'accent';
-      case EventStatus.UPCOMING:
-      case EventStatus.ONGOING:
-        return 'primary';
-      case EventStatus.COMPLETED:
-        return 'primary';
-      case EventStatus.CANCELLED:
+      case 'REJECTED':
+      case 'CANCELLED':
         return 'warn';
       default:
         return '';
     }
   }
 
-  getStatusLabel(status: EventStatus): string {
+  getStatusClass(status: string): string {
     switch (status) {
-      case EventStatus.PENDING:
-        return 'Pending';
-      case EventStatus.APPROVED:
-        return 'Approved';
-      case EventStatus.CANCELLED:
-        return 'Cancelled';
-      case EventStatus.COMPLETED:
-        return 'Completed';
-      case EventStatus.DRAFT:
-        return 'Draft';
-      case EventStatus.UPCOMING:
-        return 'Upcoming';
-      case EventStatus.ONGOING:
-        return 'Ongoing';
-      case EventStatus.PUBLISHED:
-        return 'Published';
+      case 'ACTIVE':
+      case 'APPROVED':
+        return 'bg-green-100 text-green-800';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      case 'CANCELLED':
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'Unknown';
+        return '';
     }
   }
 
-  viewDetails(event: IEvent): void {
-    // Navigate to event details view
-  }
-
-  approveEvent(event: IEvent): void {
-    this.updateEventStatus(event, EventStatus.APPROVED);
-  }
-
-  cancelEvent(event: IEvent): void {
-    if (event._id) {
-      this.eventService.cancelEvent(event._id, 'Cancelled by admin').subscribe({
-        next: () => this.loadEvents(),
-        error: (error) => console.error('Error cancelling event:', error)
-      });
+  getEventImageUrl(event: any): string {
+    if (event && event.imageUrl) {
+      return event.imageUrl;
     }
+    if (event && (event as any).image) {
+      return (event as any).image;
+    }
+    return this.imagePlaceholderService.getEventPlaceholder();
   }
 
-  deleteEvent(event: IEvent): void {
-    if (event._id) {
-      this.eventService.deleteEvent(event._id).subscribe({
-        next: () => this.loadEvents(),
-        error: (error) => console.error('Error deleting event:', error)
-      });
-    }
+  viewDetails(event: any): void {
+    this.dialog.open(EventDetailsDialogComponent, {
+      width: '800px',
+      data: {
+        event: event,
+        isAdminView: true
+      }
+    });
   }
 
-  updateEventStatus(event: IEvent, newStatus: EventStatus): void {
-    if (event._id) {
-      this.eventService.updateEventStatus(event._id, newStatus).subscribe({
-        next: () => {
-          event.status = newStatus;
-        },
-        error: (error) => {
-          console.error('Error updating event status:', error);
-        }
-      });
-    }
+  approveEvent(event: any): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Approve Event',
+        message: `Are you sure you want to approve "${event.title}"?`,
+        confirmText: 'Approve',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.adminService.approveEvent(event.id)
+          .subscribe({
+            next: () => {
+              this.notificationService.success(`Event "${event.title}" has been approved.`);
+              this.loadEvents();
+            },
+            error: (err) => {
+              console.error('Error approving event:', err);
+              this.notificationService.error(`Failed to approve event: ${err.message || 'Unknown error'}`);
+            }
+          });
+      }
+    });
+  }
+
+  pendingEvent(event: any): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Set as Pending',
+        message: `Are you sure you want to set "${event.title}" as pending?`,
+        confirmText: 'Set as Pending',
+        cancelText: 'Cancel'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.adminService.updateEventStatus(event.id, 'PENDING')
+          .subscribe({
+            next: () => {
+              this.notificationService.success(`Event "${event.title}" has been set to pending.`);
+              this.loadEvents();
+            },
+            error: (err) => {
+              console.error('Error updating event status:', err);
+              this.notificationService.error(`Failed to update event status: ${err.message || 'Unknown error'}`);
+            }
+          });
+      }
+    });
+  }
+
+  rejectEvent(event: any): void {
+    const dialogRef = this.dialog.open(EventStatusDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Reject Event',
+        event: event,
+        status: 'REJECTED',
+        requireReason: true
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.adminService.rejectEvent(event.id, result.reason)
+          .subscribe({
+            next: () => {
+              this.notificationService.success(`Event "${event.title}" has been rejected.`);
+              this.loadEvents();
+            },
+            error: (err) => {
+              console.error('Error rejecting event:', err);
+              this.notificationService.error(`Failed to reject event: ${err.message || 'Unknown error'}`);
+            }
+          });
+      }
+    });
+  }
+
+  cancelEvent(event: any): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Cancel Event',
+        message: `Are you sure you want to cancel "${event.title}"?`,
+        confirmText: 'Cancel Event',
+        cancelText: 'Keep Active',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.adminService.updateEventStatus(event.id, 'CANCELLED')
+          .subscribe({
+            next: () => {
+              this.notificationService.success(`Event "${event.title}" has been cancelled.`);
+              this.loadEvents();
+            },
+            error: (err) => {
+              console.error('Error cancelling event:', err);
+              this.notificationService.error(`Failed to cancel event: ${err.message || 'Unknown error'}`);
+            }
+          });
+      }
+    });
+  }
+
+  deleteEvent(event: any): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Event',
+        message: `Are you sure you want to delete "${event.title}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.adminService.deleteEvent(event.id)
+          .subscribe({
+            next: () => {
+              this.notificationService.success(`Event "${event.title}" has been deleted.`);
+              this.loadEvents();
+            },
+            error: (err) => {
+              console.error('Error deleting event:', err);
+              this.notificationService.error(`Failed to delete event: ${err.message || 'Unknown error'}`);
+            }
+          });
+      }
+    });
+  }
+
+  updateEventStatusDialog(event: any): void {
+    const dialogRef = this.dialog.open(EventStatusDialogComponent, {
+      width: '500px',
+      data: { event }
+    });
+
+    dialogRef.afterClosed().subscribe(newStatus => {
+      if (newStatus) {
+        this.loading = true;
+        this.adminService.updateEventStatus(event.id, newStatus)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.notificationService.success(`Event "${event.title}" status changed to ${newStatus}`);
+              this.loadEvents();
+            },
+            error: (err) => {
+              console.error(`Error updating event status:`, err);
+              this.notificationService.error(`Failed to update event status. Please try again.`);
+              this.loading = false;
+            }
+          });
+      }
+    });
   }
 }

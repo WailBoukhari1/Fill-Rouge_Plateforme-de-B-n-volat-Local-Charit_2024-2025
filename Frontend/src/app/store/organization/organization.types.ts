@@ -59,8 +59,16 @@ export interface OrganizationStats {
   activeVolunteers: number;
   totalHours: number;
   averageRating: number;
+  averageEventRating?: number;
   impactScore: number;
   totalEventsHosted: number;
+  eventSuccessRate?: number;
+  volunteerRetentionRate?: number;
+  volunteerTrends?: Array<{
+    date: string;
+    value: number;
+  }>;
+  eventsByCategory?: Record<string, number>;
   recentActivity?: Array<{
     id: string;
     icon: string;

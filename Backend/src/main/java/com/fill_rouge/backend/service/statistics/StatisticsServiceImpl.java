@@ -1,5 +1,6 @@
 package com.fill_rouge.backend.service.statistics;
 
+import com.fill_rouge.backend.dto.response.AdminStatisticsResponse;
 import com.fill_rouge.backend.dto.response.StatisticsResponse;
 import com.fill_rouge.backend.constant.Role;
 import com.fill_rouge.backend.constant.EventStatus;
@@ -827,5 +828,123 @@ public class StatisticsServiceImpl implements StatisticsService {
             count = 0L;
         }
         return count;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminStatisticsResponse getAdminStatistics() {
+        log.info("Generating admin statistics dashboard");
+        
+        try {
+            long totalUsers = userRepository.count();
+            long totalOrganizations = organizationRepository.count();
+            long totalEvents = eventRepository.count();
+            long totalVolunteers = userRepository.countByRole(Role.VOLUNTEER);
+            long pendingOrganizations = organizationRepository.countByVerifiedFalse();
+            long activeEvents = eventRepository.countByStatus(EventStatus.ACTIVE.toString());
+            long completedEvents = eventRepository.countByStatus(EventStatus.COMPLETED.toString());
+            
+            Map<String, Long> usersByRole = Arrays.stream(Role.values())
+                .collect(Collectors.toMap(
+                    Role::name,
+                    role -> userRepository.countByRole(role)
+                ));
+            
+            Map<String, Long> organizationsByStatus = Map.of(
+                "PENDING", organizationRepository.countByVerifiedFalse(),
+                "VERIFIED", organizationRepository.countByVerifiedTrue()
+            );
+            
+            Map<String, Long> eventsByStatus = Arrays.stream(EventStatus.values())
+                .collect(Collectors.toMap(
+                    EventStatus::name,
+                    status -> eventRepository.countByStatus(status.toString())
+                ));
+            
+            List<CategoryCount> categoryCounts = eventRepository.countByCategory();
+            Map<String, Long> eventsByCategory = categoryCounts.stream()
+                .collect(Collectors.toMap(
+                    CategoryCount::getId,
+                    CategoryCount::getCount
+                ));
+            
+            // Get user registrations by month (last 12 months)
+            LocalDateTime startDate = LocalDateTime.now().minusMonths(11).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            Map<String, Long> userRegistrationsByMonth = getUserRegistrationsByMonth(startDate);
+            
+            // Get event creations by month (last 12 months)
+            Map<String, Long> eventCreationsByMonth = getEventCreationsByMonth(startDate);
+            
+            return AdminStatisticsResponse.builder()
+                .totalUsers(totalUsers)
+                .totalOrganizations(totalOrganizations)
+                .totalEvents(totalEvents)
+                .totalVolunteers(totalVolunteers)
+                .pendingOrganizations(pendingOrganizations)
+                .activeEvents(activeEvents)
+                .completedEvents(completedEvents)
+                .usersByRole(usersByRole)
+                .organizationsByStatus(organizationsByStatus)
+                .eventsByStatus(eventsByStatus)
+                .eventsByCategory(eventsByCategory)
+                .userRegistrationsByMonth(userRegistrationsByMonth)
+                .eventCreationsByMonth(eventCreationsByMonth)
+                .build();
+        } catch (Exception e) {
+            log.error("Error generating admin statistics dashboard", e);
+            throw new RuntimeException("Error generating admin statistics", e);
+        }
+    }
+
+    private Map<String, Long> getUserRegistrationsByMonth(LocalDateTime startDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        Map<String, Long> userRegistrationsByMonth = new LinkedHashMap<>();
+        
+        // Initialize all months with zero counts
+        LocalDateTime current = startDate;
+        while (current.isBefore(LocalDateTime.now()) || current.getMonth() == LocalDateTime.now().getMonth()) {
+            userRegistrationsByMonth.put(current.format(formatter), 0L);
+            current = current.plusMonths(1);
+        }
+        
+        // Since we don't have the specific repository method, we'll use a simplified approach
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            LocalDateTime createdAt = user.getCreatedAt();
+            if (createdAt != null && (createdAt.isAfter(startDate) || createdAt.isEqual(startDate))) {
+                String month = createdAt.format(formatter);
+                if (userRegistrationsByMonth.containsKey(month)) {
+                    userRegistrationsByMonth.put(month, userRegistrationsByMonth.get(month) + 1);
+                }
+            }
+        }
+        
+        return userRegistrationsByMonth;
+    }
+
+    private Map<String, Long> getEventCreationsByMonth(LocalDateTime startDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        Map<String, Long> eventCreationsByMonth = new LinkedHashMap<>();
+        
+        // Initialize all months with zero counts
+        LocalDateTime current = startDate;
+        while (current.isBefore(LocalDateTime.now()) || current.getMonth() == LocalDateTime.now().getMonth()) {
+            eventCreationsByMonth.put(current.format(formatter), 0L);
+            current = current.plusMonths(1);
+        }
+        
+        // Since we don't have the specific repository method, we'll use a simplified approach
+        List<Event> events = eventRepository.findAll();
+        for (Event event : events) {
+            LocalDateTime createdAt = event.getCreatedAt();
+            if (createdAt != null && (createdAt.isAfter(startDate) || createdAt.isEqual(startDate))) {
+                String month = createdAt.format(formatter);
+                if (eventCreationsByMonth.containsKey(month)) {
+                    eventCreationsByMonth.put(month, eventCreationsByMonth.get(month) + 1);
+                }
+            }
+        }
+        
+        return eventCreationsByMonth;
     }
 } 

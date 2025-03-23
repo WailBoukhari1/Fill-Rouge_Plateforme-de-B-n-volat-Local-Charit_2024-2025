@@ -1,6 +1,7 @@
 package com.fill_rouge.backend.domain;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -42,4 +43,41 @@ public class EventFeedback {
     @CreatedDate
     @Field("submitted_at")
     private LocalDateTime submittedAt;
+    
+    // Add missing fields needed for DatabaseSeeder
+    private List<String> skillsLearned;
+    
+    @Min(value = 1, message = "Impact rating must be between 1 and 5")
+    @Max(value = 5, message = "Impact rating must be between 1 and 5")
+    private int impactRating;
+    
+    @Min(value = 1, message = "Organization rating must be between 1 and 5")
+    @Max(value = 5, message = "Organization rating must be between 1 and 5")
+    private int organizationRating;
+    
+    private LocalDateTime submissionDate;
+    
+    private boolean anonymous;
+    
+    // Add missing setter methods
+    public void setSkillsLearned(List<String> skillsLearned) {
+        this.skillsLearned = skillsLearned;
+    }
+    
+    public void setImpactRating(int impactRating) {
+        this.impactRating = impactRating;
+    }
+    
+    public void setOrganizationRating(int organizationRating) {
+        this.organizationRating = organizationRating;
+    }
+    
+    public void setSubmissionDate(LocalDateTime submissionDate) {
+        this.submissionDate = submissionDate;
+        this.submittedAt = submissionDate; // Keep both fields in sync
+    }
+    
+    public void setAnonymous(boolean anonymous) {
+        this.anonymous = anonymous;
+    }
 } 

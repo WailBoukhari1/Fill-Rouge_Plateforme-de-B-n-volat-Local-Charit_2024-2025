@@ -1,17 +1,25 @@
 package com.fill_rouge.backend.service.user;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import com.fill_rouge.backend.constant.Role;
 import com.fill_rouge.backend.domain.User;
 
-/**
- * Service interface for managing users
- */
+
 public interface UserService {
     
-    /**
-     * Get a user by their ID
-     * 
-     * @param userId The user ID
-     * @return The user if found
-     */
+
     User getUserById(String userId);
+    
+    Page<User> getAllUsers(Pageable pageable);
+   
+    User updateUserRole(String userId, Role role);
+    
+    void lockUserAccount(String userId);
+ 
+    void unlockUserAccount(String userId);
+
+    void deleteUser(String userId);
+    Object getUserStatistics();
 } 

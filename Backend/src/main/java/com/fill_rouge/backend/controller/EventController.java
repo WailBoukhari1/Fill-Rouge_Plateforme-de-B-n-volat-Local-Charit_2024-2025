@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.security.Principal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -626,5 +627,44 @@ public class EventController {
                 .rating((int) request.getRating())
                 .comment(request.getComment())
                 .build();
+    }
+
+    /**
+     * Change event status
+     * @param eventId event id
+     * @param payload containing the new status
+     * @return updated event
+     */
+    @PatchMapping("/{eventId}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZATION')")
+    @Operation(summary = "Change event status", description = "Change the status of an event")
+    public ResponseEntity<ApiResponse<EventResponse>> changeEventStatus(
+            @PathVariable String eventId,
+            @RequestBody Map<String, String> payload,
+            Principal principal) {
+        
+        String statusStr = payload.get("status");
+        log.info("PATCH /events/{}/status with status: {} by user {}", eventId, statusStr, principal.getName());
+        
+        // Convert string status to EventStatus enum
+        try {
+            EventStatus status = EventStatus.valueOf(statusStr);
+            
+            // Update event status and return response
+            Event updatedEvent = eventService.updateEventStatus(eventId, status);
+            EventResponse eventResponse = eventService.getEventResponseById(updatedEvent.getId());
+            log.info("Event status updated to {}: {}", status, eventId);
+            
+            ApiResponse<EventResponse> response = ApiResponse.<EventResponse>builder()
+                .success(true)
+                .message("Event status updated successfully")
+                .data(eventResponse)
+                .build();
+                
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid event status: {}", statusStr, e);
+            throw new IllegalArgumentException("Invalid event status: " + statusStr);
+        }
     }
 }

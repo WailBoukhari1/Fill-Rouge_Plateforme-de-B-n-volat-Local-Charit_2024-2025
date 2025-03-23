@@ -1,0 +1,148 @@
+<div class="p-6 max-h-[80vh] overflow-y-auto">
+  <div class="flex justify-between items-start mb-4">
+    <h2 class="text-xl font-bold">{{ organization.name }}</h2>
+    <button mat-icon-button (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <img [src]="getLogoUrl()" 
+     alt="Organization logo"
+     class="w-full h-40 object-cover rounded-md mb-4">
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <h3 class="text-lg font-medium mb-2">Basic Information</h3>
+      <div class="mb-2" *ngIf="organization.registrationNumber">
+        <span class="font-semibold">Registration Number:</span> {{ organization.registrationNumber }}
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold">Verification Status:</span> 
+        <mat-chip [color]="organization.verified ? 'primary' : 'warn'">
+          {{ organization.verified ? 'Verified' : 'Pending' }}
+        </mat-chip>
+      </div>
+      <div class="mb-2" *ngIf="organization.type">
+        <span class="font-semibold">Type:</span> {{ organization.type }}
+      </div>
+      <div class="mb-2" *ngIf="organization.category">
+        <span class="font-semibold">Category:</span> {{ organization.category }}
+      </div>
+      <div class="mb-2" *ngIf="organization.size">
+        <span class="font-semibold">Size:</span> {{ organization.size }}
+      </div>
+      <div class="mb-2" *ngIf="organization.foundedYear">
+        <span class="font-semibold">Founded Year:</span> {{ organization.foundedYear }}
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-lg font-medium mb-2">Contact Information</h3>
+      <div class="mb-2" *ngIf="organization.email">
+        <span class="font-semibold">Email:</span> {{ organization.email }}
+      </div>
+      <div class="mb-2" *ngIf="organization.phoneNumber">
+        <span class="font-semibold">Phone:</span> {{ organization.phoneNumber }}
+      </div>
+      <div class="mb-2" *ngIf="organization.website">
+        <span class="font-semibold">Website:</span> 
+        <a [href]="organization.website" target="_blank" class="text-blue-500">{{ organization.website }}</a>
+      </div>
+      <div class="mb-2" *ngIf="organization.address">
+        <span class="font-semibold">Address:</span> {{ organization.address }}
+      </div>
+      <div class="mb-2" *ngIf="organization.city && organization.country">
+        <span class="font-semibold">Location:</span> {{ organization.city }}, {{ organization.country }}
+      </div>
+    </div>
+  </div>
+
+  <mat-divider class="my-4"></mat-divider>
+
+  <div class="mb-4">
+    <h3 class="text-lg font-medium mb-2">Organization Details</h3>
+    <div class="mb-2" *ngIf="organization.mission">
+      <span class="font-semibold">Mission:</span> {{ organization.mission }}
+    </div>
+    <div class="mb-2" *ngIf="organization.vision">
+      <span class="font-semibold">Vision:</span> {{ organization.vision }}
+    </div>
+    <div class="mb-2" *ngIf="organization.description">
+      <span class="font-semibold">Description:</span> {{ organization.description }}
+    </div>
+    <div class="mb-4" *ngIf="organization.focusAreas && organization.focusAreas.length">
+      <span class="font-semibold">Focus Areas:</span>
+      <div class="flex flex-wrap gap-2 mt-1">
+        <mat-chip *ngFor="let area of organization.focusAreas">{{ area }}</mat-chip>
+      </div>
+    </div>
+  </div>
+
+  <mat-divider class="my-4" *ngIf="organization.socialMediaLinks"></mat-divider>
+
+  <div class="mb-4" *ngIf="organization.socialMediaLinks">
+    <h3 class="text-lg font-medium mb-2">Social Media</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div *ngIf="organization.socialMediaLinks.facebook" class="flex items-center">
+        <mat-icon class="mr-2">facebook</mat-icon>
+        <a [href]="organization.socialMediaLinks.facebook" target="_blank" class="text-blue-500">
+          Facebook
+        </a>
+      </div>
+      <div *ngIf="organization.socialMediaLinks.twitter" class="flex items-center">
+        <mat-icon class="mr-2">twitter</mat-icon>
+        <a [href]="organization.socialMediaLinks.twitter" target="_blank" class="text-blue-500">
+          Twitter
+        </a>
+      </div>
+      <div *ngIf="organization.socialMediaLinks.instagram" class="flex items-center">
+        <mat-icon class="mr-2">instagram</mat-icon>
+        <a [href]="organization.socialMediaLinks.instagram" target="_blank" class="text-blue-500">
+          Instagram
+        </a>
+      </div>
+      <div *ngIf="organization.socialMediaLinks.linkedin" class="flex items-center">
+        <mat-icon class="mr-2">linkedin</mat-icon>
+        <a [href]="organization.socialMediaLinks.linkedin" target="_blank" class="text-blue-500">
+          LinkedIn
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <mat-divider class="my-4"></mat-divider>
+
+  <div class="mb-4">
+    <h3 class="text-lg font-medium mb-2">Statistics</h3>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="text-center" *ngIf="organization.rating !== undefined">
+        <div class="text-xl font-bold">{{ organization.rating?.toFixed(1) }}</div>
+        <div class="text-sm">Rating</div>
+      </div>
+      <div class="text-center" *ngIf="organization.numberOfRatings !== undefined">
+        <div class="text-xl font-bold">{{ organization.numberOfRatings }}</div>
+        <div class="text-sm">Number of Ratings</div>
+      </div>
+      <div class="text-center" *ngIf="organization.totalEventsHosted !== undefined">
+        <div class="text-xl font-bold">{{ organization.totalEventsHosted }}</div>
+        <div class="text-sm">Events Hosted</div>
+      </div>
+      <div class="text-center" *ngIf="organization.activeVolunteers !== undefined">
+        <div class="text-xl font-bold">{{ organization.activeVolunteers }}</div>
+        <div class="text-sm">Active Volunteers</div>
+      </div>
+      <div class="text-center" *ngIf="organization.totalVolunteerHours !== undefined">
+        <div class="text-xl font-bold">{{ organization.totalVolunteerHours }}</div>
+        <div class="text-sm">Volunteer Hours</div>
+      </div>
+      <div class="text-center" *ngIf="organization.impactScore !== undefined">
+        <div class="text-xl font-bold">{{ organization.impactScore?.toFixed(1) }}</div>
+        <div class="text-sm">Impact Score</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end mt-4">
+    <button mat-button (click)="close()">Close</button>
+  </div>
+</div> 

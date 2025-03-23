@@ -40,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setEmail("admin@localcharity.org");
             adminUser.setFirstName("Admin");
             adminUser.setLastName("User");
-            adminUser.setPassword(passwordEncoder.encode("Admin@123"));
+            adminUser.setPassword(passwordEncoder.encode("  "));
             adminUser.setRole(Role.ADMIN);
             adminUser.setEnabled(true);
             adminUser.setEmailVerified(true);

@@ -467,6 +467,18 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public Page<EventResponse> getAllEvents(Pageable pageable, boolean includeAll) {
+        log.info("Fetching events with pagination {} and includeAll={}", pageable, includeAll);
+        Page<Event> events;
+        if (includeAll) {
+            events = eventRepository.findAll(pageable);
+        } else {
+            events = eventRepository.findByStatus(EventStatus.ACTIVE, pageable);
+        }
+        return events.map(event -> eventMapper.toResponse(event, null));
+    }
+
+    @Override
     public Page<Event> getPublicEvents(Pageable pageable) {
         log.info("Fetching all public events with pagination {}", pageable);
         return eventRepository.findByStatusIn(
@@ -498,5 +510,26 @@ public class EventServiceImpl implements EventService {
         String organizationId = "default-org"; // Replace with actual logic to get current organization
         Event event = createEvent(request, organizationId);
         return eventMapper.toResponse(event, null);
+    }
+
+    @Override
+    public EventResponse approveEvent(String eventId) {
+        log.info("Approving event with ID: {}", eventId);
+        Event event = getEventById(eventId);
+        event.setStatus(EventStatus.ACTIVE);
+        event.setUpdatedAt(LocalDateTime.now());
+        Event updatedEvent = eventRepository.save(event);
+        return eventMapper.toResponse(updatedEvent, null);
+    }
+    
+    @Override
+    public EventResponse rejectEvent(String eventId, String reason) {
+        log.info("Rejecting event with ID: {} for reason: {}", eventId, reason);
+        Event event = getEventById(eventId);
+        event.setStatus(EventStatus.REJECTED);
+        // Store rejection reason if your Event entity has a field for it
+        event.setUpdatedAt(LocalDateTime.now());
+        Event updatedEvent = eventRepository.save(event);
+        return eventMapper.toResponse(updatedEvent, null);
     }
 } 

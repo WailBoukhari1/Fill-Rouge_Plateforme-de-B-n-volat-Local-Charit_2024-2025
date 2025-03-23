@@ -139,43 +139,34 @@ export const adminReducer = createReducer(
   })),
   
   // Verify Organization
-  on(AdminActions.verifyOrganizationSuccess, (state, { organizationId }) => {
-    const organization = state.organizations.entities[organizationId];
-    if (!organization) return state;
-    
+  on(AdminActions.verifyOrganizationSuccess, (state, { organizationId, organization }) => {
     return {
       ...state,
       organizations: organizationsAdapter.updateOne({
         id: organizationId,
-        changes: { verificationStatus: VerificationStatus.VERIFIED }
+        changes: organization
       }, state.organizations)
     };
   }),
   
   // Suspend Organization
-  on(AdminActions.suspendOrganizationSuccess, (state, { organizationId }) => {
-    const organization = state.organizations.entities[organizationId];
-    if (!organization) return state;
-    
+  on(AdminActions.suspendOrganizationSuccess, (state, { organizationId, organization }) => {
     return {
       ...state,
       organizations: organizationsAdapter.updateOne({
         id: organizationId,
-        changes: { status: OrganizationStatus.SUSPENDED }
+        changes: organization
       }, state.organizations)
     };
   }),
   
   // Reactivate Organization
-  on(AdminActions.reactivateOrganizationSuccess, (state, { organizationId }) => {
-    const organization = state.organizations.entities[organizationId];
-    if (!organization) return state;
-    
+  on(AdminActions.reactivateOrganizationSuccess, (state, { organizationId, organization }) => {
     return {
       ...state,
       organizations: organizationsAdapter.updateOne({
         id: organizationId,
-        changes: { status: OrganizationStatus.ACTIVE }
+        changes: organization
       }, state.organizations)
     };
   }),

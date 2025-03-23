@@ -34,13 +34,6 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getOrganizationStats(organizationId));
     }
 
-    @GetMapping("/admin")
-    @Operation(summary = "Get admin dashboard statistics")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<StatisticsResponse.AdminStats> getAdminStats() {
-        return ResponseEntity.ok(statisticsService.getAdminStats());
-    }
-
     @GetMapping("/current")
     @Operation(summary = "Get current user's statistics based on their role")
     public ResponseEntity<StatisticsResponse> getCurrentUserStats(

@@ -36,6 +36,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { Color, ScaleType, LegendPosition } from '@swimlane/ngx-charts';
+import { curveLinear } from 'd3-shape';
 
 @Component({
   selector: 'app-reports',
@@ -608,7 +609,7 @@ export class ReportsComponent implements OnInit {
     domain: ['#5AA454', '#A10A28', '#C7B42C', '#AAAAAA']
   };
   customColors: any[] = [];
-  curve = 'linear';
+  curve = curveLinear;
   activeEntries: any[] = [];
   referenceLines: any[] = [];
 
@@ -638,70 +639,42 @@ export class ReportsComponent implements OnInit {
 
   loadStatistics(): void {
     this.loading = true;
-    console.log('Loading statistics...');
     this.reportService.getOverviewStatistics().subscribe({
-      next: (stats) => {
-        console.log('Received statistics:', stats);
-        if (!stats) {
-          console.error('Received null or undefined statistics');
-          this.snackBar.open('Error: Received invalid statistics data', 'Close', { duration: 3000 });
-          this.loading = false;
-          return;
-        }
-
-        try {
-          console.log('Processing statistics data...');
-          this.stats = {
-            totalUsers: this.getValueOrDefault(stats.totalUsers, 0, 'totalUsers'),
-            userGrowthRate: this.getValueOrDefault(stats.userGrowthRate, 0, 'userGrowthRate'),
-            activeOrganizations: this.getValueOrDefault(stats.activeOrganizations, 0, 'activeOrganizations'),
-            organizationGrowthRate: this.getValueOrDefault(stats.organizationGrowthRate, 0, 'organizationGrowthRate'),
-            totalEvents: this.getValueOrDefault(stats.totalEvents, 0, 'totalEvents'),
-            eventGrowthRate: this.getValueOrDefault(stats.eventGrowthRate, 0, 'eventGrowthRate'),
-            totalVolunteerHours: this.getValueOrDefault(stats.totalVolunteerHours, 0, 'totalVolunteerHours'),
-            volunteerHoursGrowthRate: this.getValueOrDefault(stats.volunteerHoursGrowthRate, 0, 'volunteerHoursGrowthRate')
-          };
-          console.log('Successfully updated stats object:', this.stats);
-        } catch (error) {
-          console.error('Error processing statistics data:', error);
-          this.snackBar.open('Error processing statistics data', 'Close', { duration: 3000 });
-        }
+      next: (data) => {
+        this.stats = data;
         this.loading = false;
+        this.initializeChartData();
       },
       error: (error) => {
         console.error('Error loading statistics:', error);
-        let errorMessage = 'An error occurred while loading statistics';
-        
-        if (error.status === 404) {
-          errorMessage = 'Statistics data not found';
-        } else if (error.status === 403) {
-          errorMessage = 'Access denied to statistics data';
-        } else if (error.status === 500) {
-          errorMessage = 'Server error while loading statistics';
-        }
-        
-        console.log('Showing error message:', errorMessage);
-        this.snackBar.open(errorMessage, 'Close', { duration: 3000 });
         this.loading = false;
+        this.snackBar.open('Could not load statistics data. Please try again later or contact support.', 'Close', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+        
+        // Initialize with empty data to prevent chart errors
+        this.initializeEmptyChartData();
       }
     });
   }
 
-  private getValueOrDefault(value: any, defaultValue: number, fieldName: string): number {
-    if (value === null || value === undefined) {
-      console.warn(`${fieldName} is ${value}, using default value: ${defaultValue}`);
-      return defaultValue;
-    }
-    if (typeof value !== 'number') {
-      console.warn(`${fieldName} is not a number (${typeof value}), attempting to convert...`);
-      const converted = Number(value);
-      if (isNaN(converted)) {
-        console.warn(`Could not convert ${fieldName} to number, using default value: ${defaultValue}`);
-        return defaultValue;
+  // Initialize empty chart data to prevent rendering errors
+  initializeEmptyChartData(): void {
+    this.userGrowthData = [
+      {
+        name: 'Users',
+        series: [
+          { name: 'Jan', value: 0 },
+          { name: 'Feb', value: 0 },
+          { name: 'Mar', value: 0 }
+        ]
       }
-      return converted;
-    }
-    return value;
+    ];
+    
+    this.eventDistributionData = [
+      { name: 'No Data', value: 1 }
+    ];
   }
 
   loadUserActivity(): void {

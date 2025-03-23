@@ -184,12 +184,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadUsers();
     
-    // Subscribe to users from the store
+    // Subscribe to users from the store with takeUntil to avoid memory leaks
     this.store.select(AdminSelectors.selectAllUsers)
       .pipe(takeUntil(this.destroy$))
       .subscribe(users => {
-        // Update the data source with the users
-        this.dataSource.data = users || [];
+        if (users) {
+          this.dataSource.data = users;
+        }
       });
   }
 
@@ -199,7 +200,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   loadUsers(): void {
-    this.store.dispatch(AdminActions.loadUsers({ page: this.currentPage, size: this.pageSize }));
+    // Cancel any previous requests by unsubscribing
+    this.store.dispatch(AdminActions.loadUsers({ 
+      page: this.currentPage,
+      size: this.pageSize 
+    }));
   }
 
   onPageChange(event: PageEvent): void {

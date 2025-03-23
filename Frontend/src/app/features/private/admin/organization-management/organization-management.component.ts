@@ -17,6 +17,8 @@ import { OrganizationService } from '../../../../core/services/organization.serv
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { OrganizationDetailsDialogComponent } from '../../../../shared/components/organization-details-dialog/organization-details-dialog.component';
+import { ImagePlaceholderService } from '../../../../shared/services/image-placeholder.service';
 
 import * as AdminActions from '../../../../store/admin/admin.actions';
 import * as AdminSelectors from '../../../../store/admin/admin.selectors';
@@ -58,7 +60,7 @@ import { AppState } from '../../../../store';
             <ng-container matColumnDef="logo">
               <th mat-header-cell *matHeaderCellDef>Logo</th>
               <td mat-cell *matCellDef="let org">
-                <img [src]="org.logo || 'assets/images/default-org.png'" 
+                <img [src]="getLogoUrl(org)" 
                      alt="Organization logo"
                      class="w-10 h-10 rounded-full object-cover">
               </td>
@@ -70,19 +72,17 @@ import { AppState } from '../../../../store';
               <td mat-cell *matCellDef="let org">{{org.name}}</td>
             </ng-container>
 
-            <!-- Email Column -->
-            <ng-container matColumnDef="email">
-              <th mat-header-cell *matHeaderCellDef>Email</th>
-              <td mat-cell *matCellDef="let org">{{org.email}}</td>
+            <!-- Contact Column -->
+            <ng-container matColumnDef="contact">
+              <th mat-header-cell *matHeaderCellDef>Contact</th>
+              <td mat-cell *matCellDef="let org">{{org.phoneNumber}}</td>
             </ng-container>
 
-            <!-- Status Column -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
+            <!-- Location Column -->
+            <ng-container matColumnDef="location">
+              <th mat-header-cell *matHeaderCellDef>Location</th>
               <td mat-cell *matCellDef="let org">
-                <mat-chip [color]="getStatusColor(org.status)">
-                  {{org.status}}
-                </mat-chip>
+                {{org.city}}, {{org.country}}
               </td>
             </ng-container>
 
@@ -90,8 +90,8 @@ import { AppState } from '../../../../store';
             <ng-container matColumnDef="verification">
               <th mat-header-cell *matHeaderCellDef>Verification</th>
               <td mat-cell *matCellDef="let org">
-                <mat-chip [color]="org.verificationStatus === VerificationStatus.VERIFIED ? 'primary' : 'warn'">
-                  {{org.verificationStatus}}
+                <mat-chip [color]="org.verified ? 'primary' : 'warn'">
+                  {{org.verified ? 'Verified' : 'Pending'}}
                 </mat-chip>
               </td>
             </ng-container>
@@ -104,31 +104,24 @@ import { AppState } from '../../../../store';
                   <mat-icon>more_vert</mat-icon>
                 </button>
                 <mat-menu #menu="matMenu">
-                  <button mat-menu-item [routerLink]="[org.id]">
-                    <mat-icon>edit</mat-icon>
-                    <span>Edit</span>
-                  </button>
                   <button mat-menu-item (click)="viewDetails(org)">
                     <mat-icon>visibility</mat-icon>
                     <span>View Details</span>
                   </button>
-                  @if (org.verificationStatus === VerificationStatus.PENDING) {
+                  @if (!org.verified) {
                     <button mat-menu-item (click)="verifyOrganization(org)">
                       <mat-icon>verified</mat-icon>
                       <span>Verify</span>
                     </button>
                   }
-                  @if (org.status === OrganizationStatus.ACTIVE) {
-                    <button mat-menu-item (click)="suspendOrganization(org)">
-                      <mat-icon>block</mat-icon>
-                      <span>Suspend</span>
-                    </button>
-                  } @else if (org.status === OrganizationStatus.SUSPENDED) {
-                    <button mat-menu-item (click)="reactivateOrganization(org)">
-                      <mat-icon>restore</mat-icon>
-                      <span>Reactivate</span>
-                    </button>
-                  }
+                  <button mat-menu-item (click)="suspendOrganization(org)">
+                    <mat-icon>block</mat-icon>
+                    <span>Suspend</span>
+                  </button>
+                  <button mat-menu-item (click)="reactivateOrganization(org)">
+                    <mat-icon>restore</mat-icon>
+                    <span>Reactivate</span>
+                  </button>
                   <button mat-menu-item (click)="deleteOrganization(org)" class="text-red-500">
                     <mat-icon class="text-red-500">delete</mat-icon>
                     <span>Delete</span>
@@ -157,7 +150,7 @@ import { AppState } from '../../../../store';
   `
 })
 export class OrganizationManagementComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = ['logo', 'name', 'email', 'status', 'verification', 'actions'];
+  displayedColumns: string[] = ['logo', 'name', 'contact', 'location', 'verification', 'actions'];
   dataSource = new MatTableDataSource<Organization>([]);
   pageSize = 10;
   pageIndex = 0;
@@ -175,7 +168,8 @@ export class OrganizationManagementComponent implements OnInit, OnDestroy {
     private store: Store<AppState>,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private organizationService: OrganizationService
+    private organizationService: OrganizationService,
+    private imagePlaceholderService: ImagePlaceholderService
   ) {
     this.loading$ = this.store.select(AdminSelectors.selectAdminLoading);
     this.error$ = this.store.select(AdminSelectors.selectAdminError);
@@ -200,6 +194,7 @@ export class OrganizationManagementComponent implements OnInit, OnDestroy {
   }
 
   loadOrganizations(): void {
+    console.log('Loading organizations, page:', this.pageIndex, 'size:', this.pageSize);
     this.store.dispatch(AdminActions.loadOrganizations({ page: this.pageIndex, size: this.pageSize }));
   }
 
@@ -221,7 +216,11 @@ export class OrganizationManagementComponent implements OnInit, OnDestroy {
   }
 
   viewDetails(org: Organization): void {
-    // TODO: Implement view details
+    console.log('Opening details dialog for organization:', org);
+    const dialogRef = this.dialog.open(OrganizationDetailsDialogComponent, {
+      width: '600px',
+      data: org,
+    });
   }
 
   verifyOrganization(org: Organization): void {
@@ -295,5 +294,17 @@ export class OrganizationManagementComponent implements OnInit, OnDestroy {
         this.store.dispatch(AdminActions.deleteOrganization({ organizationId: org.id }));
       }
     });
+  }
+
+  getLogoUrl(organization: Organization): string {
+    // Check if the organization has a logo, otherwise return default
+    if (organization && organization.logoUrl) {
+      return organization.logoUrl;
+    }
+    // Use type assertion to access potential logo property
+    if (organization && (organization as any).logo) {
+      return (organization as any).logo;
+    }
+    return this.imagePlaceholderService.getOrganizationPlaceholder();
   }
 } 

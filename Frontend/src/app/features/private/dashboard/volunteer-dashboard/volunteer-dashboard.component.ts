@@ -1,137 +1,195 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { StatisticsService, VolunteerStatistics } from '../../../../core/services/statistics.service';
-import { AuthService } from '../../../../core/auth/auth.service';
-import { User } from '../../../../core/models/auth.models';
-import * as echarts from 'echarts';
-import { tap } from 'rxjs/operators';
+import { NgxChartsModule } from '@swimlane/ngx-charts';
+import { Store } from '@ngrx/store';
+import { Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../../../../core/services/auth.service';
+import { StatisticsService } from '../../../../core/services/statistics.service';
+import { MatTabsModule } from '@angular/material/tabs';
+import { VolunteerStatistics } from '../../../../core/models/statistics.model';
+import { curveLinear } from 'd3-shape';
 
 interface MonthlyParticipation {
-  month: string;
-  events: number;
+  name: string;
+  value: number;
 }
 
 interface HoursContribution {
-  date: string;
-  hours: number;
+  name: string;
+  value: number;
 }
 
 @Component({
   selector: 'app-volunteer-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    NgxChartsModule,
+    MatTabsModule
+  ],
   template: `
     <div class="container mx-auto p-4">
+      <h1 class="text-2xl font-bold mb-6">Volunteer Dashboard</h1>
+      
       @if (loading) {
         <div class="flex justify-center items-center h-64">
           <mat-spinner diameter="40"></mat-spinner>
         </div>
+      } @else if (error) {
+        <mat-card class="bg-red-50 border border-red-200 mb-6">
+          <mat-card-content class="p-4">
+            <div class="flex items-center">
+              <mat-icon class="text-red-500 mr-2">error</mat-icon>
+              <span>Failed to load statistics: {{error}}</span>
+            </div>
+            <div class="mt-2">
+              <button mat-button color="primary" (click)="loadStatistics()">
+                <mat-icon>refresh</mat-icon>
+                Retry
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
       } @else {
-        <!-- Volunteer Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <mat-card>
-            <mat-card-content>
-              <div class="text-lg font-semibold">Total Events</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.totalEventsParticipated || 0}}</div>
-              <div class="text-sm text-gray-500">
-                Active: {{stats?.activeEvents || 0}} | Completed: {{stats?.completedEvents || 0}}
+        <!-- Overview Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <mat-card class="shadow-md hover:shadow-lg transition-shadow">
+            <mat-card-content class="p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-gray-600 text-sm">Total Events</div>
+                  <div class="text-2xl font-bold text-blue-600">{{ stats?.totalEventsParticipated || 0 }}</div>
+                  <div class="text-xs text-gray-500 mt-1">Completed: {{ stats?.completedEvents || 0 }}</div>
+                </div>
+                <mat-icon class="text-blue-500 opacity-80 text-3xl">event</mat-icon>
               </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
-            <mat-card-content>
-              <div class="text-lg font-semibold">Volunteer Hours</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.totalVolunteerHours || 0}}</div>
-              <div class="text-sm text-gray-500">Total Hours Contributed</div>
+          <mat-card class="shadow-md hover:shadow-lg transition-shadow">
+            <mat-card-content class="p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-gray-600 text-sm">Volunteer Hours</div>
+                  <div class="text-2xl font-bold text-indigo-600">{{ stats?.totalVolunteerHours || 0 }}</div>
+                </div>
+                <mat-icon class="text-indigo-500 opacity-80 text-3xl">schedule</mat-icon>
+              </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
-            <mat-card-content>
-              <div class="text-lg font-semibold">Reliability Score</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.reliabilityScore || 0 | number:'1.1-1'}}</div>
-              <div class="text-sm text-gray-500">Based on Event Participation</div>
+          <mat-card class="shadow-md hover:shadow-lg transition-shadow">
+            <mat-card-content class="p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-gray-600 text-sm">Reliability Score</div>
+                  <div class="text-2xl font-bold text-green-600">{{ stats?.reliabilityScore?.toFixed(1) || 0 }}%</div>
+                </div>
+                <mat-icon class="text-green-500 opacity-80 text-3xl">verified</mat-icon>
+              </div>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
-            <mat-card-content>
-              <div class="text-lg font-semibold">Average Rating</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.averageEventRating || 0 | number:'1.1-1'}}</div>
-              <div class="text-sm text-gray-500">From Event Organizers</div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <!-- Impact Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <mat-card>
-            <mat-card-content>
-              <div class="text-lg font-semibold">Skills Endorsed</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.skillsEndorsements || 0}}</div>
-              <div class="text-sm text-gray-500">Total Endorsements</div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card>
-            <mat-card-content>
-              <div class="text-lg font-semibold">People Impacted</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.peopleImpacted || 0}}</div>
-              <div class="text-sm text-gray-500">Through Your Efforts</div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card>
-            <mat-card-content>
-              <div class="text-lg font-semibold">Organizations</div>
-              <div class="text-3xl font-bold text-primary">{{stats?.organizationsSupported || 0}}</div>
-              <div class="text-sm text-gray-500">Organizations Supported</div>
+          <mat-card class="shadow-md hover:shadow-lg transition-shadow">
+            <mat-card-content class="p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-gray-600 text-sm">Average Rating</div>
+                  <div class="text-2xl font-bold text-amber-600">{{ stats?.averageEventRating?.toFixed(1) || 0 }}/5</div>
+                </div>
+                <mat-icon class="text-amber-500 opacity-80 text-3xl">star</mat-icon>
+              </div>
             </mat-card-content>
           </mat-card>
         </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <mat-card>
+        <!-- Charts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <mat-card class="shadow-md">
             <mat-card-header>
-              <mat-card-title>Hours Contributed Over Time</mat-card-title>
+              <mat-card-title>Hours Contributed</mat-card-title>
             </mat-card-header>
-            <mat-card-content>
-              <div #hoursChart class="chart-container"></div>
+            <mat-card-content class="h-80">
+              <ngx-charts-area-chart
+                [results]="[{ name: 'Hours', series: hoursContributed }]"
+                [gradient]="true"
+                [xAxis]="true"
+                [yAxis]="true"
+                [showXAxisLabel]="true"
+                [showYAxisLabel]="true"
+                [xAxisLabel]="'Month'"
+                [yAxisLabel]="'Hours'"
+                [curve]="curve"
+                [legend]="false"
+                [autoScale]="true">
+              </ngx-charts-area-chart>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
+          <mat-card class="shadow-md">
             <mat-card-header>
               <mat-card-title>Events by Category</mat-card-title>
             </mat-card-header>
-            <mat-card-content>
-              <div #categoryChart class="chart-container"></div>
+            <mat-card-content class="h-80">
+              <ngx-charts-pie-chart
+                [results]="eventsByCategory"
+                [gradient]="true"
+                [labels]="true"
+                [doughnut]="true"
+                [legend]="true"
+                [arcWidth]="0.35"
+                [animations]="true">
+              </ngx-charts-pie-chart>
             </mat-card-content>
           </mat-card>
         </div>
 
-        <!-- Additional Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <mat-card>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <mat-card class="shadow-md">
             <mat-card-header>
               <mat-card-title>Skills Distribution</mat-card-title>
             </mat-card-header>
-            <mat-card-content>
-              <div #skillsChart class="chart-container"></div>
+            <mat-card-content class="h-80">
+              <ngx-charts-bar-horizontal
+                [results]="skillsDistribution"
+                [gradient]="true"
+                [xAxis]="true"
+                [yAxis]="true"
+                [showXAxisLabel]="true"
+                [showYAxisLabel]="true"
+                [xAxisLabel]="'Count'"
+                [yAxisLabel]="'Skill'"
+                [roundDomains]="true">
+              </ngx-charts-bar-horizontal>
             </mat-card-content>
           </mat-card>
 
-          <mat-card>
+          <mat-card class="shadow-md">
             <mat-card-header>
               <mat-card-title>Monthly Participation</mat-card-title>
             </mat-card-header>
-            <mat-card-content>
-              <div #participationChart class="chart-container"></div>
+            <mat-card-content class="h-80">
+              <ngx-charts-line-chart
+                [results]="[{ name: 'Events', series: monthlyParticipation }]"
+                [gradient]="true"
+                [xAxis]="true"
+                [yAxis]="true"
+                [showXAxisLabel]="true"
+                [showYAxisLabel]="true"
+                [xAxisLabel]="'Month'"
+                [yAxisLabel]="'Events'"
+                [curve]="curve"
+                [legend]="false"
+                [autoScale]="true">
+              </ngx-charts-line-chart>
             </mat-card-content>
           </mat-card>
         </div>
@@ -139,292 +197,98 @@ interface HoursContribution {
     </div>
   `,
   styles: [`
-    .chart-container {
-      height: 300px;
+    :host {
+      display: block;
       width: 100%;
+    }
+    mat-card {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    mat-card:hover {
+      transform: translateY(-2px);
+      transition: transform 0.2s ease-in-out;
     }
   `]
 })
-export class VolunteerDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('hoursChart') hoursChart!: ElementRef;
-  @ViewChild('categoryChart') categoryChart!: ElementRef;
-  @ViewChild('skillsChart') skillsChart!: ElementRef;
-  @ViewChild('participationChart') participationChart!: ElementRef;
-
-  stats: VolunteerStatistics | null = null;
+export class VolunteerDashboardComponent implements OnInit, OnDestroy {
   loading = true;
-  private hoursChartInstance: echarts.ECharts | null = null;
-  private categoryChartInstance: echarts.ECharts | null = null;
-  private skillsChartInstance: echarts.ECharts | null = null;
-  private participationChartInstance: echarts.ECharts | null = null;
+  error: string | null = null;
+  stats: VolunteerStatistics | null = null;
+  curve = curveLinear;
+  
+  hoursContributed: HoursContribution[] = [];
+  monthlyParticipation: MonthlyParticipation[] = [];
+  eventsByCategory: any[] = [];
+  skillsDistribution: any[] = [];
 
-  private statisticsService = inject(StatisticsService);
-  private authService = inject(AuthService);
+  private destroy$ = new Subject<void>();
 
-  constructor() {}
+  constructor(
+    private authService: AuthService,
+    private statisticsService: StatisticsService
+  ) {}
 
   ngOnInit(): void {
     this.loadStatistics();
   }
 
-  private loadStatistics(): void {
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  loadStatistics(): void {
     this.loading = true;
+    this.error = null;
     
-    // Try to get user ID from auth service
     const userId = this.authService.getCurrentUserId();
-    console.log('Attempting to load statistics for user ID:', userId);
-
     if (!userId) {
-      // Try to get user ID from localStorage as fallback
-      const userData = localStorage.getItem('user_data');
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          if (user.id) {
-            const parsedUserId = user.id.toString();
-            console.log('Got user ID from localStorage:', parsedUserId);
-            this.fetchStatistics(parsedUserId);
-            return;
-          }
-        } catch (error) {
-          console.error('Error parsing user data:', error);
-        }
-      }
-
-      console.error('No user ID available');
+      this.error = 'User not authenticated';
       this.loading = false;
       return;
     }
 
-    this.fetchStatistics(userId);
-  }
-
-  private fetchStatistics(userId: string): void {
-    if (!userId) {
-      console.error('Attempted to fetch statistics with no user ID');
-      this.loading = false;
-      return;
-    }
-
-    console.log('Fetching statistics for user:', userId);
-    this.statisticsService.getVolunteerStatistics(userId).subscribe({
-      next: (response) => {
-        if (!response.data) {
-          console.error('No data in response');
+    this.statisticsService.getVolunteerStatistics(userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.stats = response.data || null;
+          this.formatChartData();
           this.loading = false;
-          return;
+        },
+        error: (err) => {
+          this.error = err?.message || 'An error occurred while loading statistics';
+          this.loading = false;
         }
-        console.log('Received volunteer statistics:', response.data);
-        this.stats = response.data;
-        this.loading = false;
-        this.initializeCharts();
-      },
-      error: (error: Error) => {
-        console.error('Error loading volunteer statistics:', error);
-        this.loading = false;
-      }
-    });
+      });
   }
 
-  ngAfterViewInit(): void {
-    // Charts will be initialized after data is loaded
-  }
-
-  private initializeCharts(): void {
+  formatChartData(): void {
     if (!this.stats) return;
 
-    // Hours Chart
-    if (this.hoursChart?.nativeElement) {
-      this.hoursChartInstance = echarts.init(this.hoursChart.nativeElement);
-      const hoursData = this.stats.hoursContributed.map((h: { date: string; hours: number }) => h.hours);
-      this.hoursChartInstance.setOption({
-        title: { 
-          text: 'Hours Contributed Over Time',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'axis',
-          formatter: '{b}: {c} hours'
-        },
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis: { 
-          type: 'category',
-          data: this.stats.hoursContributed.map((h: { date: string }) => h.date),
-          axisLabel: { rotate: 45 }
-        },
-        yAxis: { 
-          type: 'value',
-          name: 'Hours'
-        },
-        series: [{
-          name: 'Hours',
-          type: 'line',
-          smooth: true,
-          data: hoursData,
-          itemStyle: { color: '#3B82F6' },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-              { offset: 1, color: 'rgba(59, 130, 246, 0.1)' }
-            ])
-          }
-        }]
-      });
-    }
+    // Format hours contributed
+    this.hoursContributed = (this.stats.hoursContributed || []).map(item => ({
+      name: item.date,
+      value: item.hours
+    }));
 
-    // Category Chart
-    if (this.categoryChart?.nativeElement) {
-      this.categoryChartInstance = echarts.init(this.categoryChart.nativeElement);
-      this.categoryChartInstance.setOption({
-        title: { 
-          text: 'Events by Category',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'item',
-          formatter: '{b}: {c} events ({d}%)'
-        },
-        legend: {
-          orient: 'vertical',
-          left: 'left',
-          top: 'middle'
-        },
-        series: [{
-          name: 'Events',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 10,
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
-            label: {
-              show: true,
-              fontSize: 20,
-              fontWeight: 'bold'
-            }
-          },
-          labelLine: {
-            show: false
-          },
-          data: Object.entries(this.stats.eventsByCategory).map(([name, value]) => ({
-            name,
-            value: value as number
-          }))
-        }]
-      });
-    }
+    // Format monthly participation
+    this.monthlyParticipation = (this.stats.monthlyParticipation || []).map(item => ({
+      name: item.month,
+      value: item.events
+    }));
 
-    // Skills Chart
-    if (this.skillsChart?.nativeElement) {
-      this.skillsChartInstance = echarts.init(this.skillsChart.nativeElement);
-      this.skillsChartInstance.setOption({
-        title: { 
-          text: 'Skills Distribution',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'item',
-          formatter: '{b}: {c} endorsements'
-        },
-        legend: {
-          orient: 'vertical',
-          left: 'left',
-          top: 'middle'
-        },
-        series: [{
-          name: 'Skills',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 10,
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
-            label: {
-              show: true,
-              fontSize: 20,
-              fontWeight: 'bold'
-            }
-          },
-          labelLine: {
-            show: false
-          },
-          data: Object.entries(this.stats.skillsDistribution).map(([name, value]) => ({
-            name,
-            value: value as number
-          }))
-        }]
-      });
-    }
+    // Format events by category
+    this.eventsByCategory = Object.entries(this.stats.eventsByCategory || {}).map(([name, value]) => ({
+      name,
+      value
+    }));
 
-    // Participation Chart
-    if (this.participationChart?.nativeElement) {
-      this.participationChartInstance = echarts.init(this.participationChart.nativeElement);
-      const participationData = this.stats.monthlyParticipation.map((p: { month: string; events: number }) => p.events);
-      this.participationChartInstance.setOption({
-        title: { 
-          text: 'Monthly Participation',
-          left: 'center'
-        },
-        tooltip: { 
-          trigger: 'axis',
-          formatter: '{b}: {c} events'
-        },
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis: { 
-          type: 'category',
-          data: this.stats.monthlyParticipation.map((p: { month: string }) => p.month),
-          axisLabel: { rotate: 45 }
-        },
-        yAxis: { 
-          type: 'value',
-          name: 'Events'
-        },
-        series: [{
-          name: 'Events',
-          type: 'bar',
-          data: participationData,
-          itemStyle: { color: '#10B981' }
-        }]
-      });
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.hoursChartInstance) {
-      this.hoursChartInstance.dispose();
-    }
-    if (this.categoryChartInstance) {
-      this.categoryChartInstance.dispose();
-    }
-    if (this.skillsChartInstance) {
-      this.skillsChartInstance.dispose();
-    }
-    if (this.participationChartInstance) {
-      this.participationChartInstance.dispose();
-    }
+    // Format skills distribution
+    this.skillsDistribution = Object.entries(this.stats.skillsDistribution || {})
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 7); // Show only top 7 skills
   }
 } 

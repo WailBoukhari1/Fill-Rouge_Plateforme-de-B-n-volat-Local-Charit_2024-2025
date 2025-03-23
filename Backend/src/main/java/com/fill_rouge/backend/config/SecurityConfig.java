@@ -26,11 +26,13 @@ import com.fill_rouge.backend.config.security.JwtAuthenticationFilter;
 import com.fill_rouge.backend.config.security.JwtConfig;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
@@ -39,11 +41,13 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        log.debug("Creating authentication manager");
         return config.getAuthenticationManager();
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
+        log.debug("Creating authentication provider");
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
@@ -52,26 +56,58 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        log.debug("Configuring security filter chain");
+        
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/files/**", "/files/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/public/**",
-                                "/v3/api-docs/**", "/swagger-ui/**",
-                                "/swagger-ui.html", "/auth/**",
-                                "/api/events/upcoming", "/api/events/registered", "/api/events/waitlist")
-                        .permitAll()
-                        .anyRequest().authenticated())
+                .cors(cors -> {
+                    log.debug("Configuring CORS in security");
+                    cors.configurationSource(corsConfigurationSource());
+                })
+                .csrf(csrf -> {
+                    log.debug("Disabling CSRF protection for API endpoints");
+                    csrf.disable();
+                })
+                .sessionManagement(session -> {
+                    log.debug("Setting session management to STATELESS");
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                })
+                .authorizeHttpRequests(authorize -> {
+                    log.debug("Configuring HTTP authorization rules");
+                    
+                    // Permit all static resource paths
+                    authorize.requestMatchers("/static/**", "/public/**", "/resources/**").permitAll();
+                    
+                    // Explicitly permit diagnostic endpoints for debugging
+                    authorize.requestMatchers("/api/diagnostic/**").permitAll();
+                    
+                    // Permit file access
+                    authorize.requestMatchers("/api/files/**", "/files/**").permitAll();
+                    
+                    // Permit auth endpoints and public APIs
+                    authorize.requestMatchers("/api/auth/**", "/api/public/**",
+                                            "/v3/api-docs/**", "/swagger-ui/**",
+                                            "/swagger-ui.html", "/auth/**").permitAll();
+                    
+                    // Permit specific event endpoints that are public
+                    authorize.requestMatchers("/api/events/upcoming", 
+                                            "/api/events/registered", 
+                                            "/api/events/waitlist").permitAll();
+                    
+                    // All other requests must be authenticated
+                    authorize.anyRequest().authenticated();
+                    
+                    log.debug("HTTP authorization rules configured");
+                })
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
+        log.info("Security filter chain configured successfully");
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        log.debug("Creating CORS configuration source");
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
@@ -92,11 +128,13 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+        log.debug("CORS configuration source created");
         return source;
     }
 
     @Bean
     public CorsFilter corsFilter() {
+        log.debug("Creating CORS filter");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
@@ -113,11 +151,13 @@ public class SecurityConfig {
         config.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID", "Content-Disposition"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH"));
         source.registerCorsConfiguration("/**", config);
+        log.debug("CORS filter created");
         return new CorsFilter(source);
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+        log.debug("Creating password encoder");
         return new BCryptPasswordEncoder();
     }
 }

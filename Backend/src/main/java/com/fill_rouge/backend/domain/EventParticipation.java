@@ -36,6 +36,9 @@ public class EventParticipation {
     @DBRef
     private Event event;
     
+    @DBRef
+    private VolunteerProfile volunteer;
+    
     @NotNull(message = "Participation status is required")
     private EventParticipationStatus status = EventParticipationStatus.REGISTERED;
     
@@ -48,7 +51,10 @@ public class EventParticipation {
     private LocalDateTime checkOutTime;
     private LocalDateTime registeredAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime registrationDate;
+    private LocalDateTime createdAt;
     private Integer hours;
+    private Long hoursContributed;
     private String specialRequirements;
     private String notes;
     
@@ -83,5 +89,25 @@ public class EventParticipation {
     
     public boolean hasSubmittedFeedback() {
         return rating != null && feedback != null;
+    }
+
+    public void setVolunteer(VolunteerProfile volunteer) {
+        this.volunteer = volunteer;
+    }
+
+    public void setRegistrationDate(LocalDateTime registrationDate) {
+        this.registrationDate = registrationDate;
+    }
+
+    public void setHoursContributed(long hoursContributed) {
+        this.hoursContributed = hoursContributed;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 } 

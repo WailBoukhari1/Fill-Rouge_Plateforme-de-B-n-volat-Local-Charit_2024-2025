@@ -20,7 +20,12 @@ export const {
   selectEntities: selectUserEntities,
   selectAll: selectAllUsers,
   selectTotal: selectTotalUsers
-} = usersAdapter.getSelectors(selectUserState);
+} = usersAdapter.getSelectors(
+  createSelector(selectAdminState, state => {
+    console.log('Users from store:', state.users);
+    return state.users;
+  })
+);
 
 export const selectSelectedUserId = createSelector(
   selectAdminState,
@@ -44,7 +49,12 @@ export const {
   selectEntities: selectOrganizationEntities,
   selectAll: selectAllOrganizations,
   selectTotal: selectTotalOrganizations
-} = organizationsAdapter.getSelectors(selectOrganizationState);
+} = organizationsAdapter.getSelectors(
+  createSelector(selectAdminState, state => {
+    console.log('Organizations from store:', state.organizations);
+    return state.organizations;
+  })
+);
 
 export const selectSelectedOrganizationId = createSelector(
   selectAdminState,
