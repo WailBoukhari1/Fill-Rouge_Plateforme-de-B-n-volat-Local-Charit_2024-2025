@@ -5,7 +5,7 @@ import {
   HttpHeaders,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { Observable, map, catchError, throwError, switchMap, of } from 'rxjs';
+import { Observable, map, catchError, throwError, switchMap, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   EventCategory,
@@ -27,7 +27,7 @@ import { AuthService } from './auth.service';
   providedIn: 'root',
 })
 export class EventService {
-  private readonly apiUrl = `${environment.apiUrl}/events`;
+  private apiUrl = `${environment.apiUrl}/events`;
 
   constructor(
     private http: HttpClient,
@@ -134,10 +134,16 @@ export class EventService {
   }
 
   getEvents(page: number = 0, size: number = 10): Observable<Page<IEvent>> {
-    console.log(`Fetching events: ${this.apiUrl}?page=${page}&size=${size}`);
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+      
+    console.log(`Fetching events: ${this.apiUrl} with params:`, params.toString());
     return this.http
-      .get<ApiResponse<IEvent[]>>(`${this.apiUrl}?page=${page}&size=${size}`, {
+      .get<ApiResponse<IEvent[]>>(`${this.apiUrl}`, {
+        params,
         headers: this.getHeaders(),
+        withCredentials: environment.cors.withCredentials
       })
       .pipe(
         map((response) => {
@@ -185,26 +191,27 @@ export class EventService {
       );
   }
 
+  /**
+   * Get an event by its ID with real-time status updates
+   */
   getEventById(id: string): Observable<IEvent> {
-    console.log('Getting event with ID:', id);
-    console.log('Headers:', this.getHeaders().keys());
-
-    return this.http
-      .get<ApiResponse<IEvent>>(`${this.apiUrl}/${id}`, {
-        headers: this.getHeaders(),
-      })
-      .pipe(
-        map((response) => {
-          console.log('Raw response:', response);
-          if (!response.success) {
-            throw new Error(
-              response.message || 'Failed to fetch event details'
-            );
-          }
+    console.log(`[EventService] Getting event with ID: ${id}`);
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map((response: any) => {
+        if (response && response.success) {
+          console.log(`[EventService] Event retrieved with real-time status: ${response.data.status}`);
           return response.data;
-        }),
-        catchError(this.handleError.bind(this))
-      );
+        } else if (response && !response.success) {
+          throw new Error(response.message || 'Error retrieving event');
+        } else {
+          return response;
+        }
+      }),
+      catchError(error => {
+        console.error(`[EventService] Error getting event:`, error);
+        return throwError(() => new Error(`Error getting event: ${error.message || 'Unknown error'}`));
+      })
+    );
   }
 
   createEvent(event: Partial<IEvent>): Observable<IEvent> {
@@ -290,10 +297,32 @@ export class EventService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  updateEventStatus(eventId: string, status: EventStatus): Observable<IEvent> {
-    return this.http.patch<IEvent>(`${this.apiUrl}/${eventId}/status`, {
-      status,
-    });
+  /**
+   * Update the status of an event
+   * @param eventId Event ID
+   * @param status New status
+   * @returns Observable of the updated event
+   */
+  updateEventStatus(eventId: string, status: EventStatus): Observable<any> {
+    console.log(`[EventService] Updating event status for event ${eventId} to ${status}`);
+    return this.http.patch(`${this.apiUrl}/events/${eventId}/status`, { status })
+      .pipe(
+        tap((response: any) => console.log(`[EventService] Event status updated:`, response)),
+        catchError(error => {
+          console.error(`[EventService] Error updating event status:`, error);
+          return throwError(() => new Error(`Error updating event status: ${error.message || 'Unknown error'}`));
+        })
+      );
+  }
+
+  /**
+   * Cancel an event (organization only)
+   * @param eventId Event ID 
+   * @returns Observable of the updated event
+   */
+  cancelEvent(eventId: string): Observable<any> {
+    console.log(`[EventService] Cancelling event ${eventId}`);
+    return this.updateEventStatus(eventId, EventStatus.CANCELLED);
   }
 
   registerForEvent(eventId: string, registrationData?: IEventRegistrationRequest): Observable<any> {
@@ -429,10 +458,6 @@ export class EventService {
         }),
         catchError(this.handleError.bind(this))
       );
-  }
-
-  cancelEvent(id: string, reason: string): Observable<IEvent> {
-    return this.http.patch<IEvent>(`${this.apiUrl}/${id}/cancel`, { reason });
   }
 
   getEventParticipants(eventId: string): Observable<string[]> {
@@ -905,5 +930,78 @@ export class EventService {
           );
         })
       );
+  }
+
+  // Get event status display name and color
+  getEventStatusInfo(status: EventStatus | string): { displayName: string; color: string; icon: string } {
+    // Ensure the status is a string value
+    const statusStr = typeof status === 'string' ? status : (status as EventStatus);
+    
+    const statusMap: Record<string, { displayName: string; color: string; icon: string }> = {
+      [EventStatus.DRAFT]: { displayName: 'Draft', color: 'gray', icon: 'edit' },
+      [EventStatus.PENDING]: { displayName: 'Pending Approval', color: 'yellow', icon: 'hourglass_empty' },
+      [EventStatus.APPROVED]: { displayName: 'Approved', color: 'teal', icon: 'check_circle' },
+      [EventStatus.ACTIVE]: { displayName: 'Active', color: 'blue', icon: 'event_available' },
+      [EventStatus.ONGOING]: { displayName: 'In Progress', color: 'green', icon: 'directions_run' },
+      [EventStatus.COMPLETED]: { displayName: 'Completed', color: 'purple', icon: 'done_all' },
+      [EventStatus.CANCELLED]: { displayName: 'Cancelled', color: 'red', icon: 'cancel' },
+      [EventStatus.REJECTED]: { displayName: 'Rejected', color: 'red', icon: 'block' },
+      [EventStatus.PUBLISHED]: { displayName: 'Published', color: 'blue', icon: 'publish' },
+      [EventStatus.FULL]: { displayName: 'Full', color: 'orange', icon: 'people_alt' },
+      [EventStatus.UPCOMING]: { displayName: 'Upcoming', color: 'teal', icon: 'event' },
+    };
+
+    return statusMap[statusStr] || { displayName: 'Unknown', color: 'gray', icon: 'help' };
+  }
+
+  // Helper method to determine if event registration is open
+  canRegisterForEvent(event: IEvent): boolean {
+    if (!event) return false;
+    
+    const now = new Date();
+    const eventStartDate = new Date(event.startDate);
+    
+    // Can register if:
+    // 1. Event is active
+    // 2. Event hasn't started yet
+    // 3. Event is not full
+    return (
+      event.status === EventStatus.ACTIVE &&
+      eventStartDate > now &&
+      event.currentParticipants < event.maxParticipants
+    );
+  }
+
+  // Helper method to determine if the event is currently happening
+  isEventOngoing(event: IEvent): boolean {
+    if (!event) return false;
+    
+    const now = new Date();
+    const eventStartDate = new Date(event.startDate);
+    const eventEndDate = new Date(event.endDate);
+    
+    return (
+      now >= eventStartDate &&
+      now <= eventEndDate &&
+      event.status !== EventStatus.CANCELLED
+    );
+  }
+
+  // Helper method to determine if the event has ended
+  isEventCompleted(event: IEvent): boolean {
+    if (!event) return false;
+    
+    const now = new Date();
+    const eventEndDate = new Date(event.endDate);
+    
+    return now > eventEndDate;
+  }
+
+  /**
+   * Refresh event status in real-time
+   * Use this to manually refresh an event's status
+   */
+  refreshEventStatus(eventId: string): Observable<IEvent> {
+    return this.getEventById(eventId);
   }
 }

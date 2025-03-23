@@ -3,12 +3,13 @@ import { AuthGuard } from '../../core/guards/auth.guard';
 import { QuestionnaireCompletedGuard } from '../auth/guards/questionnaire-completed.guard';
 import { PrivateLayoutComponent } from '../../layouts/private-layout/private-layout.component';
 import { RoleGuard } from '../../core/guards/role.guard';
+import { EmailVerificationGuard } from '../../core/guards/email-verification.guard';
 
 export const PRIVATE_ROUTES: Routes = [
   {
     path: '',
     component: PrivateLayoutComponent,
-    canActivate: [AuthGuard, QuestionnaireCompletedGuard],
+    canActivate: [AuthGuard, EmailVerificationGuard, QuestionnaireCompletedGuard],
     children: [
       {
         path: 'dashboard',

@@ -1,5 +1,6 @@
 package com.fill_rouge.backend.mapper;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,7 +15,7 @@ import com.fill_rouge.backend.dto.request.OrganizationRequest;
 import com.fill_rouge.backend.dto.response.OrganizationResponse;
 
 @Mapper(componentModel = "spring", imports = {
-        HashSet.class }, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+        HashSet.class, ArrayList.class }, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface OrganizationMapper {
 
     @Mapping(target = "id", ignore = true)
@@ -28,13 +29,13 @@ public interface OrganizationMapper {
     @Mapping(target = "activeVolunteers", constant = "0")
     @Mapping(target = "totalVolunteerHours", constant = "0")
     @Mapping(target = "impactScore", constant = "0.0")
-    @Mapping(target = "documents", expression = "java(new ArrayList<>())")
+    @Mapping(target = "documents", expression = "java(request.getDocuments() != null ? new ArrayList<>(request.getDocuments()) : new ArrayList<>())")
     @Mapping(target = "focusAreas", expression = "java(new HashSet<>(request.getFocusAreas()))")
     Organization toEntity(OrganizationRequest request);
 
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "focusAreas", expression = "java(new HashSet<>(organization.getFocusAreas()))")
-    @Mapping(target = "documents", expression = "java(new ArrayList<>(organization.getDocuments()))")
+    @Mapping(target = "documents", expression = "java(organization.getDocuments() != null ? new ArrayList<>(organization.getDocuments()) : new ArrayList<>())")
     OrganizationResponse toResponse(Organization organization);
 
     @Mapping(target = "id", ignore = true)
@@ -49,7 +50,7 @@ public interface OrganizationMapper {
     @Mapping(target = "activeVolunteers", ignore = true)
     @Mapping(target = "totalVolunteerHours", ignore = true)
     @Mapping(target = "impactScore", ignore = true)
-    @Mapping(target = "documents", expression = "java(new ArrayList<>(request.getDocuments()))")
+    @Mapping(target = "documents", expression = "java(request.getDocuments() != null ? new ArrayList<>(request.getDocuments()) : new ArrayList<>())")
     @Mapping(target = "focusAreas", expression = "java(new HashSet<>(request.getFocusAreas()))")
     void updateEntity(OrganizationRequest request, @MappingTarget Organization organization);
 

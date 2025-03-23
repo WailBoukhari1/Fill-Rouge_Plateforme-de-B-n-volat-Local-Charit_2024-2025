@@ -46,7 +46,7 @@ export const AUTH_ROUTES: Routes = [
         path: 'verify-email',
         loadComponent: () => import('./verify-email/verify-email.component').then(m => m.VerifyEmailComponent),
         title: 'Verify Email',
-        canActivate: [UnverifiedEmailGuard],
+        canActivate: [AuthGuard, UnverifiedEmailGuard],
         data: { layout: 'auth' }
       },
       {

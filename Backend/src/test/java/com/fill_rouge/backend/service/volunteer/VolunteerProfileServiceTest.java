@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.fill_rouge.backend.domain.Skill;
 import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.domain.VolunteerProfile;
 import com.fill_rouge.backend.dto.request.VolunteerProfileRequest;
@@ -51,8 +52,26 @@ class VolunteerProfileServiceTest {
         testUser.setId(volunteerId);
         
         testProfile = new VolunteerProfile();
-        testProfile.setId("profile123");
+        testProfile.setId(volunteerId);
+        testProfile.setUser(testUser);
         testProfile.setBio("Test bio");
+        testProfile.setPhoneNumber("1234567890");
+        testProfile.setCity("Test City");
+        testProfile.setCountry("Test Country");
+        
+        // Create a skill
+        Skill skill = new Skill();
+        skill.setName("Test Skill");
+        testProfile.setSkills(Collections.singletonList(skill));
+        
+        testProfile.setInterests(new HashSet<>(Collections.singletonList("Test Interest")));
+        testProfile.setAvailableDays(new HashSet<>(Collections.singletonList("Monday")));
+        
+        // Set emergency contact
+        VolunteerProfile.EmergencyContact emergencyContact = new VolunteerProfile.EmergencyContact();
+        emergencyContact.setName("Emergency Contact");
+        emergencyContact.setPhone("9876543210");
+        testProfile.setEmergencyContact(emergencyContact);
     }
 
     @Test
@@ -163,8 +182,9 @@ class VolunteerProfileServiceTest {
         // Assert
         assertNotNull(results);
         assertEquals(1, results.size());
-        assertEquals("Test", results.get(0).getFirstName());
-        assertEquals("Volunteer", results.get(0).getLastName());
+        assertEquals(testProfile.getId(), results.get(0).getId());
+        assertEquals(testProfile.getBio(), results.get(0).getBio());
+        assertEquals(testProfile.getCity(), results.get(0).getCity());
     }
 
     @Test

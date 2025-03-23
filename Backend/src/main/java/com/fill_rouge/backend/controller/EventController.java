@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -113,20 +114,35 @@ public class EventController {
     
     @GetMapping("/{eventId}")
     @Operation(summary = "Get event details", description = "Get detailed information about an event")
-    public ResponseEntity<ApiResponse<EventResponse>> getEvent(
+    public ResponseEntity<ApiResponse<EventResponse>> getEventById(
             @PathVariable String eventId,
             @RequestHeader(value = "X-User-ID", required = false) String userId) {
         Event event = eventService.getEventById(eventId);
-        return ResponseEntity.ok(ApiResponse.success(eventMapper.toResponse(event, userId)));
+        EventResponse response = eventMapper.toResponse(event, userId);
+        
+        // Status is already up-to-date from the event
+        
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
     
     @GetMapping("/organization/{organizationId}")
     @Operation(summary = "Get organization events", description = "Get all events for a specific organization")
-    public ResponseEntity<ApiResponse<List<EventResponse>>> getEventsByOrganization(
+    public ResponseEntity<ApiResponse<Page<EventResponse>>> getEventsByOrganization(
             @PathVariable String organizationId,
             @RequestHeader(value = "X-User-ID", required = false) String userId,
             @PageableDefault(size = 10) Pageable pageable) {
-        return createPagedResponse(eventService.getEventsByOrganization(organizationId, pageable), userId);
+        
+        // Get events with auto-updated statuses
+        Page<Event> eventsPage = eventService.getEventsByOrganization(
+                organizationId, 
+                pageable
+        );
+        
+        // Map to responses (statuses already updated)
+        Page<EventResponse> responsePage = eventsPage.map(event -> eventMapper.toResponse(event, userId));
+        
+        log.info("Found {} events for organization {}", responsePage.getContent().size(), organizationId);
+        return ResponseEntity.ok(ApiResponse.success(responsePage));
     }
     
     @GetMapping("/search")
@@ -386,7 +402,8 @@ public class EventController {
     public ResponseEntity<ApiResponse<EventResponse>> cancelEvent(
             @PathVariable String eventId,
             @RequestHeader("X-User-ID") String userId) {
-        Event event = eventService.updateEventStatus(eventId, EventStatus.FULL);
+        log.info("Cancelling event with ID: {}", eventId);
+        Event event = eventService.updateEventStatus(eventId, EventStatus.CANCELLED);
         return ResponseEntity.ok(ApiResponse.success(
             eventMapper.toResponse(event, userId),
             "Event cancelled successfully"

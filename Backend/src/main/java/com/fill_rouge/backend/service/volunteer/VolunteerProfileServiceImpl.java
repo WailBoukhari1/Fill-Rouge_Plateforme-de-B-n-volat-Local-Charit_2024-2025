@@ -300,8 +300,8 @@ public class VolunteerProfileServiceImpl implements VolunteerProfileService {
         String lowercaseQuery = query.toLowerCase();
         return profile.getSkills().stream().anyMatch(skill -> skill.getName().toLowerCase().contains(lowercaseQuery)) ||
                profile.getInterests().stream().anyMatch(interest -> interest.toLowerCase().contains(lowercaseQuery)) ||
-               profile.getCity().toLowerCase().contains(lowercaseQuery) ||
-               profile.getCountry().toLowerCase().contains(lowercaseQuery);
+               (profile.getCity() != null && profile.getCity().toLowerCase().contains(lowercaseQuery)) ||
+               (profile.getCountry() != null && profile.getCountry().toLowerCase().contains(lowercaseQuery));
     }
 
     private VolunteerProfileResponse toVolunteerProfileResponse(VolunteerProfile profile) {

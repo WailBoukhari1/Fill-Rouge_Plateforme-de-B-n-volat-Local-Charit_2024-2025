@@ -1,98 +1,115 @@
 package com.fill_rouge.backend.controller;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.fill_rouge.backend.service.event.EventService;
+import com.fill_rouge.backend.service.event.impl.EventSchedulerService;
 
-import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * Diagnostic controller to help debug routing issues
- * This can be removed in production
+ * Controller for diagnostic operations.
+ * These endpoints should be secured and only accessible to administrators in production.
  */
 @RestController
-@RequestMapping("/diagnostic")
-@RequiredArgsConstructor
+@RequestMapping("/diagnostics")
 @Slf4j
-@Tag(name = "Diagnostics", description = "Application diagnostic endpoints")
 public class DiagnosticController {
-
+    
     @Autowired
     private ApplicationContext context;
+    
+    @Autowired
+    private EventService eventService;
+    
+    @Autowired
+    private EventSchedulerService schedulerService;
 
     @GetMapping("/routes")
-    @Operation(summary = "Get all registered routes in the application")
-    public ResponseEntity<Map<String, String>> getAllRoutes() {
-        log.info("Fetching all registered routes");
+    public ResponseEntity<Map<String, Object>> getRoutes() {
+        RequestMappingHandlerMapping mapping = context.getBean(RequestMappingHandlerMapping.class);
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = mapping.getHandlerMethods();
         
-        RequestMappingHandlerMapping requestMappingHandlerMapping = context.getBean(RequestMappingHandlerMapping.class);
-        Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
+        Map<String, Map<String, String>> routeInfo = new TreeMap<>();
         
-        // Convert to a more readable format
-        Map<String, String> routes = new TreeMap<>();
         handlerMethods.forEach((key, value) -> {
-            // Get the patterns (URLs)
-            String patterns = key.getPathPatternsCondition().getPatterns()
-                    .stream()
-                    .map(p -> p.toString())
-                    .collect(Collectors.joining(", "));
+            String className = value.getBeanType().getSimpleName();
+            String methodName = value.getMethod().getName();
             
             // Get the HTTP methods
-            String methods = key.getMethodsCondition().getMethods()
-                    .stream()
-                    .map(m -> m.toString())
+            String httpMethods = key.getMethodsCondition().getMethods().stream()
+                    .map(Object::toString)
                     .collect(Collectors.joining(", "));
             
-            // Get the controller class and method
-            String controllerMethod = value.getBeanType().getSimpleName() + "." + value.getMethod().getName();
+            // Get the paths
+            String paths = key.getPatternsCondition().getPatterns().toString();
             
-            routes.put(patterns + " [" + methods + "]", controllerMethod);
+            Map<String, String> info = new HashMap<>();
+            info.put("method", httpMethods);
+            info.put("path", paths);
+            info.put("handler", methodName);
+            
+            routeInfo.put(className + ": " + methodName, info);
         });
         
-        log.info("Found {} registered routes", routes.size());
-        return ResponseEntity.ok(routes);
+        Map<String, Object> info = new HashMap<>();
+        info.put("routes", routeInfo);
+        info.put("count", routeInfo.size());
+        
+        return ResponseEntity.ok(info);
+    }
+
+    /**
+     * Simple health check endpoint
+     */
+    @GetMapping("/ping")
+    public ResponseEntity<Map<String, Object>> ping() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "UP");
+        response.put("timestamp", LocalDateTime.now().toString());
+        return ResponseEntity.ok(response);
     }
     
-    @GetMapping("/request-info")
-    @Operation(summary = "Get diagnostic information about the current request")
-    public ResponseEntity<Map<String, String>> getRequestInfo(HttpServletRequest request) {
-        log.info("Fetching diagnostic information for request: {}", request.getRequestURL());
+    /**
+     * Trigger the event status scheduler manually for testing purposes
+     */
+    @PostMapping("/trigger-event-status-update")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> triggerEventStatusUpdates() {
+        log.info("Manual trigger for event status updates");
         
-        Map<String, String> info = new HashMap<>();
-        info.put("RequestURL", request.getRequestURL().toString());
-        info.put("RequestURI", request.getRequestURI());
-        info.put("ContextPath", request.getContextPath());
-        info.put("ServletPath", request.getServletPath());
-        info.put("PathInfo", request.getPathInfo());
-        info.put("QueryString", request.getQueryString());
-        info.put("Method", request.getMethod());
-        info.put("RemoteAddr", request.getRemoteAddr());
-        info.put("ServerName", request.getServerName());
-        info.put("ServerPort", String.valueOf(request.getServerPort()));
-        
-        // Add headers
-        Map<String, String> headers = new HashMap<>();
-        request.getHeaderNames().asIterator().forEachRemaining(
-            headerName -> headers.put(headerName, request.getHeader(headerName))
-        );
-        info.put("Headers", headers.toString());
-        
-        log.info("Request info collected");
-        return ResponseEntity.ok(info);
+        try {
+            schedulerService.scheduleEventStatusUpdates();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "SUCCESS");
+            response.put("message", "Event status updates triggered successfully");
+            response.put("timestamp", LocalDateTime.now().toString());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error triggering event status updates: {}", e.getMessage(), e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "ERROR");
+            response.put("message", "Failed to trigger event status updates: " + e.getMessage());
+            response.put("timestamp", LocalDateTime.now().toString());
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 } 

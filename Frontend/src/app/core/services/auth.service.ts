@@ -60,9 +60,17 @@ export class AuthService {
     return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, request).pipe(
       tap(response => {
         console.log('Login response:', response);
+        if (!response) {
+          console.error('No response received from server');
+          throw new Error('No response received from server');
+        }
         if (!response.data) {
           console.error('No data in response:', response);
-          throw new Error('Invalid response format');
+          throw new Error('Invalid response format: No data received');
+        }
+        if (!response.data.token) {
+          console.error('No token in response data:', response.data);
+          throw new Error('Invalid response format: No token received');
         }
         this.handleAuthResponse(response.data);
       }),
@@ -352,103 +360,122 @@ export class AuthService {
   }
 
   private handleAuthResponse(response: AuthResponse): void {
+    if (!response) {
+      console.error('handleAuthResponse: No response provided');
+      throw new Error('No response provided');
+    }
+
     if (!response.token) {
+      console.error('handleAuthResponse: No token in response:', response);
       throw new Error('No token in response');
     }
 
-    const decodedToken = this.decodeToken(response.token);
-    const userRole = this.extractRoleFromToken(decodedToken);
+    try {
+      const decodedToken = this.decodeToken(response.token);
+      const userRole = this.extractRoleFromToken(decodedToken);
 
-    if (!userRole) {
-      throw new Error('No role found in token');
-    }
+      if (!userRole) {
+        console.error('handleAuthResponse: No role found in token:', decodedToken);
+        throw new Error('No role found in token');
+      }
 
-    // Store tokens
-    localStorage.setItem(this.tokenKey, response.token);
-    if (response.refreshToken) {
-      localStorage.setItem('refreshToken', response.refreshToken);
-    }
+      // Store tokens
+      localStorage.setItem(this.tokenKey, response.token);
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }
 
-    // Store user ID
-    if (response.userId) {
-      localStorage.setItem('userId', response.userId);
-    }
+      // Store user ID
+      if (response.userId) {
+        localStorage.setItem('userId', response.userId);
+      }
 
-    // Store organization ID if available in token
-    if (decodedToken.organization_id) {
-      console.log('Storing organization ID from token:', decodedToken.organization_id);
-      localStorage.setItem('organizationId', decodedToken.organization_id);
-    } else if (userRole === 'ORGANIZATION' && response.userId) {
-      // Fallback to fetching organization ID if not in token
-      console.log('Fetching organization ID for user:', response.userId);
-      this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/user/${response.userId}`)
-        .subscribe({
-          next: (orgResponse) => {
-            if (orgResponse.data?.id) {
-              console.log('Storing organization ID:', orgResponse.data.id);
-              localStorage.setItem('organizationId', orgResponse.data.id);
-            } else if (orgResponse.data?._id) {
-              console.log('Storing organization _id:', orgResponse.data._id);
-              localStorage.setItem('organizationId', orgResponse.data._id);
-            } else {
-              // If no direct ID found, try to find the organization by userId
-              this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/search?userId=${response.userId}`)
-                .subscribe({
-                  next: (searchResponse) => {
-                    if (searchResponse.data?.id) {
-                      console.log('Found organization ID through search:', searchResponse.data.id);
-                      localStorage.setItem('organizationId', searchResponse.data.id);
-                    } else if (searchResponse.data?._id) {
-                      console.log('Found organization _id through search:', searchResponse.data._id);
-                      localStorage.setItem('organizationId', searchResponse.data._id);
-                    } else {
-                      console.error('No organization found for user:', response.userId);
-                      this.snackBar.open('Error: Organization not found for user', 'Close', { duration: 5000 });
+      // Store organization ID if available in token
+      if (decodedToken.organization_id) {
+        console.log('Storing organization ID from token:', decodedToken.organization_id);
+        localStorage.setItem('organizationId', decodedToken.organization_id);
+      } else {
+        // Fallback to fetching organization ID if not in token
+        console.log('Fetching organization ID for user:', response.userId);
+        this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/user/${response.userId}`)
+          .subscribe({
+            next: (orgResponse) => {
+              if (orgResponse.data?.id) {
+                console.log('Storing organization ID:', orgResponse.data.id);
+                localStorage.setItem('organizationId', orgResponse.data.id);
+              } else if (orgResponse.data?._id) {
+                console.log('Storing organization _id:', orgResponse.data._id);
+                localStorage.setItem('organizationId', orgResponse.data._id);
+              } else {
+                // If no direct ID found, try to find the organization by userId
+                this.http.get<ApiResponse<any>>(`${environment.apiUrl}/organizations/search?userId=${response.userId}`)
+                  .subscribe({
+                    next: (searchResponse) => {
+                      if (searchResponse.data?.id) {
+                        console.log('Found organization ID through search:', searchResponse.data.id);
+                        localStorage.setItem('organizationId', searchResponse.data.id);
+                      } else if (searchResponse.data?._id) {
+                        console.log('Found organization _id through search:', searchResponse.data._id);
+                        localStorage.setItem('organizationId', searchResponse.data._id);
+                      } else {
+                        console.error('No organization found for user:', response.userId);
+                        this.snackBar.open('Error: Organization not found for user', 'Close', { duration: 5000 });
+                      }
+                    },
+                    error: (searchError) => {
+                      console.error('Error searching for organization:', searchError);
+                      this.snackBar.open('Error finding organization details', 'Close', { duration: 5000 });
                     }
-                  },
-                  error: (searchError) => {
-                    console.error('Error searching for organization:', searchError);
-                    this.snackBar.open('Error finding organization details', 'Close', { duration: 5000 });
-                  }
-                });
+                  });
+              }
+            },
+            error: (error) => {
+              console.error('Error fetching organization ID:', error);
+              this.snackBar.open('Error fetching organization details', 'Close', { duration: 5000 });
             }
-          },
-          error: (error) => {
-            console.error('Error fetching organization ID:', error);
-            this.snackBar.open('Error fetching organization details', 'Close', { duration: 5000 });
-          }
-        });
+          });
+      }
+
+      // Create user object
+      const user: User = {
+        id: response.userId || '',
+        email: response.email,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        role: userRole as UserRole,
+        roles: [userRole],
+        emailVerified: response.emailVerified || false,
+        twoFactorEnabled: response.twoFactorEnabled || false,
+        accountLocked: response.accountLocked || false,
+        accountExpired: response.accountExpired || false,
+        credentialsExpired: response.credentialsExpired || false,
+        profilePicture: response.profilePicture,
+        lastLoginIp: response.lastLoginIp,
+        lastLoginAt: response.lastLoginAt,
+        questionnaireCompleted: response.questionnaireCompleted || false
+      };
+
+      // Store user data
+      localStorage.setItem(this.userKey, JSON.stringify(user));
+
+      // Update auth state
+      this.store.dispatch(AuthActions.loginSuccess({
+        user,
+        token: response.token,
+        refreshToken: response.refreshToken || '',
+        redirect: true
+      }));
+
+      console.log('Auth response handled successfully:', {
+        userId: user.id,
+        role: user.role,
+        email: user.email
+      });
+    } catch (error) {
+      console.error('Error handling auth response:', error);
+      this.clearStorage();
+      throw error;
     }
-
-    // Create user object
-    const user: User = {
-      id: response.userId || '',
-      email: response.email,
-      firstName: response.firstName,
-      lastName: response.lastName,
-      role: userRole as UserRole,
-      roles: [userRole],
-      emailVerified: response.emailVerified || false,
-      twoFactorEnabled: response.twoFactorEnabled || false,
-      accountLocked: response.accountLocked || false,
-      accountExpired: response.accountExpired || false,
-      credentialsExpired: response.credentialsExpired || false,
-      profilePicture: response.profilePicture,
-      lastLoginIp: response.lastLoginIp,
-      lastLoginAt: response.lastLoginAt,
-      questionnaireCompleted: response.questionnaireCompleted || false
-    };
-
-    // Store user data
-    localStorage.setItem(this.userKey, JSON.stringify(user));
-
-    // Update auth state
-    this.store.dispatch(AuthActions.loginSuccess({
-      user,
-      token: response.token,
-      refreshToken: response.refreshToken || '',
-      redirect: true
-    }));
   }
 
   private isTokenExpired(decodedToken: DecodedToken): boolean {

@@ -100,6 +100,12 @@ export class AuthEffects {
             // Check for specific error types
             if (errorMessage.includes('Bad credentials')) {
               errorMessage = 'Invalid email or password. Please try again.';
+            } else if (errorMessage.includes('locked') && errorMessage.includes('verify your email')) {
+              // Handle unverified email case
+              this.router.navigate(['/auth/verify-email'], {
+                queryParams: { email: action.email }
+              });
+              errorMessage = 'Please verify your email before logging in. Check your inbox for the verification link.';
             } else if (errorMessage.includes('locked')) {
               errorMessage = 'Your account is locked. Please contact support.';
             } else if (errorMessage.includes('disabled')) {

@@ -8,6 +8,8 @@ export enum EventStatus {
   CANCELLED = 'CANCELLED',
   PUBLISHED = 'PUBLISHED',
   UPCOMING = 'UPCOMING',
+  REJECTED = 'REJECTED',
+  FULL = 'FULL',
 }
 
 export enum EventCategory {

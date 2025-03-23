@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-03-23T11:09:54+0000",
+    date = "2025-03-23T17:28:09+0000",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.41.0.z20250213-2037, environment: Java 21.0.6 (Eclipse Adoptium)"
 )
 @Component
@@ -62,7 +62,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organization.activeVolunteers( 0 );
         organization.totalVolunteerHours( 0 );
         organization.impactScore( 0.0 );
-        organization.documents( new ArrayList<>() );
+        organization.documents( request.getDocuments() != null ? new ArrayList<>(request.getDocuments()) : new ArrayList<>() );
         organization.focusAreas( new HashSet<>(request.getFocusAreas()) );
 
         return organization.build();
@@ -114,7 +114,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
         organizationResponse.website( organization.getWebsite() );
 
         organizationResponse.focusAreas( new HashSet<>(organization.getFocusAreas()) );
-        organizationResponse.documents( new ArrayList<>(organization.getDocuments()) );
+        organizationResponse.documents( organization.getDocuments() != null ? new ArrayList<>(organization.getDocuments()) : new ArrayList<>() );
 
         return organizationResponse.build();
     }
@@ -191,7 +191,7 @@ public class OrganizationMapperImpl implements OrganizationMapper {
             organization.setWebsite( request.getWebsite() );
         }
 
-        organization.setDocuments( new ArrayList<>(request.getDocuments()) );
+        organization.setDocuments( request.getDocuments() != null ? new ArrayList<>(request.getDocuments()) : new ArrayList<>() );
         organization.setFocusAreas( new HashSet<>(request.getFocusAreas()) );
     }
 

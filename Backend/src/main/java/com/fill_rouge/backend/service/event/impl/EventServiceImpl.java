@@ -1,6 +1,7 @@
 package com.fill_rouge.backend.service.event.impl;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,8 +90,19 @@ public class EventServiceImpl implements EventService {
                 throw new IllegalArgumentException("End date must be after start date");
             }
             
+            // Save original status
+            EventStatus originalStatus = event.getStatus();
+            
             // Use the mapper to update all fields consistently
             eventMapper.updateEntity(request, event);
+            
+            // If status was ACTIVE or PENDING, recalculate based on dates
+            if (EventStatus.ACTIVE.equals(originalStatus) || EventStatus.PENDING.equals(originalStatus)) {
+                event.setStatus(determineEventStatus(event));
+            } else {
+                // Keep the original status for events that were cancelled, rejected, etc.
+                event.setStatus(originalStatus);
+            }
             
             // Set the updated timestamp
             event.setUpdatedAt(LocalDateTime.now());
@@ -413,8 +425,12 @@ public class EventServiceImpl implements EventService {
     @Override
     public Page<Event> getEventsByOrganization(String organizationId, Pageable pageable) {
         log.info("Fetching events for organization {} with pagination {}", organizationId, pageable);
-        List<Event> events = eventRepository.findByOrganizationId(organizationId, pageable);
-        return new PageImpl<>(events, pageable, events.size());
+        List<Event> eventsList = eventRepository.findByOrganizationId(organizationId, pageable);
+        
+        // Update statuses for all retrieved events
+        eventsList.forEach(this::updateEventStatusIfNeeded);
+        
+        return new PageImpl<>(eventsList, pageable, eventsList.size());
     }
 
     @Override
@@ -433,8 +449,59 @@ public class EventServiceImpl implements EventService {
     @Override
     public Event getEventById(String eventId) {
         log.info("Fetching event with ID {}", eventId);
-        return eventRepository.findById(eventId)
-            .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
+        
+        // Check and update status instantly based on current time
+        updateEventStatusIfNeeded(event);
+        
+        return event;
+    }
+
+    /**
+     * Check and update event status if needed based on current time and participants
+     * This method instantly updates status without waiting for scheduled tasks
+     */
+    private void updateEventStatusIfNeeded(Event event) {
+        boolean statusChanged = false;
+        LocalDateTime now = LocalDateTime.now();
+        EventStatus currentStatus = event.getStatus();
+        
+        // Check if ACTIVE event should be ONGOING (started)
+        if (currentStatus == EventStatus.ACTIVE && now.isAfter(event.getStartDate())) {
+            log.info("Instant status update: Event {} changing from ACTIVE to ONGOING", event.getId());
+            event.setStatus(EventStatus.ONGOING);
+            statusChanged = true;
+        }
+        
+        // Check if ONGOING event should be COMPLETED (ended)
+        if (currentStatus == EventStatus.ONGOING && now.isAfter(event.getEndDate())) {
+            log.info("Instant status update: Event {} changing from ONGOING to COMPLETED", event.getId());
+            event.setStatus(EventStatus.COMPLETED);
+            statusChanged = true;
+        }
+        
+        // Check if ACTIVE event should be FULL
+        if (currentStatus == EventStatus.ACTIVE && 
+            event.getRegisteredParticipants().size() >= event.getMaxParticipants()) {
+            log.info("Instant status update: Event {} changing from ACTIVE to FULL", event.getId());
+            event.setStatus(EventStatus.FULL);
+            statusChanged = true;
+        }
+        
+        // Check if FULL event should be ACTIVE (cancellations)
+        if (currentStatus == EventStatus.FULL && 
+            event.getRegisteredParticipants().size() < event.getMaxParticipants()) {
+            log.info("Instant status update: Event {} changing from FULL back to ACTIVE", event.getId());
+            event.setStatus(EventStatus.ACTIVE);
+            statusChanged = true;
+        }
+        
+        // Save if status was changed
+        if (statusChanged) {
+            event.setUpdatedAt(LocalDateTime.now());
+            eventRepository.save(event);
+        }
     }
 
     @Override
@@ -442,7 +509,20 @@ public class EventServiceImpl implements EventService {
         log.info("Creating new event for organization {}", organizationId);
         Event event = eventMapper.toEntity(request);
         event.setOrganizationId(organizationId);
-        event.setStatus(EventStatus.PENDING);
+        
+        // Set status based on the request, defaulting to PENDING if not specified
+        if (event.getStatus() == null) {
+            log.info("No status specified in the request, defaulting to PENDING");
+            event.setStatus(EventStatus.PENDING);
+        } else {
+            log.info("Using status from request: {}", event.getStatus());
+            // Only allow DRAFT or PENDING for new events
+            if (!event.getStatus().equals(EventStatus.DRAFT) && !event.getStatus().equals(EventStatus.PENDING)) {
+                log.warn("Invalid initial status: {}, defaulting to PENDING", event.getStatus());
+                event.setStatus(EventStatus.PENDING);
+            }
+        }
+        
         event.setCreatedAt(LocalDateTime.now());
         event.setUpdatedAt(LocalDateTime.now());
         return eventRepository.save(event);
@@ -450,8 +530,13 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<Event> getAllEvents(Pageable pageable) {
-        log.info("Fetching all active events with pagination {}", pageable);
-        return eventRepository.findByStatus(EventStatus.ACTIVE, pageable);
+        log.info("Fetching all events with pagination {}", pageable);
+        Page<Event> events = eventRepository.findAll(pageable);
+        
+        // Update statuses for all retrieved events
+        events.getContent().forEach(this::updateEventStatusIfNeeded);
+        
+        return events;
     }
 
     @Override
@@ -482,7 +567,7 @@ public class EventServiceImpl implements EventService {
     public Page<Event> getPublicEvents(Pageable pageable) {
         log.info("Fetching all public events with pagination {}", pageable);
         return eventRepository.findByStatusIn(
-            List.of(EventStatus.ACTIVE, EventStatus.ONGOING, EventStatus.SCHEDULED), 
+            List.of(EventStatus.ACTIVE, EventStatus.ONGOING), 
             pageable
         );
     }
@@ -516,6 +601,12 @@ public class EventServiceImpl implements EventService {
     public EventResponse approveEvent(String eventId) {
         log.info("Approving event with ID: {}", eventId);
         Event event = getEventById(eventId);
+        
+        // Only allow approval of PENDING events
+        if (!EventStatus.PENDING.equals(event.getStatus())) {
+            throw new IllegalStateException("Only PENDING events can be approved. Current status: " + event.getStatus());
+        }
+        
         event.setStatus(EventStatus.ACTIVE);
         event.setUpdatedAt(LocalDateTime.now());
         Event updatedEvent = eventRepository.save(event);
@@ -524,12 +615,120 @@ public class EventServiceImpl implements EventService {
     
     @Override
     public EventResponse rejectEvent(String eventId, String reason) {
-        log.info("Rejecting event with ID: {} for reason: {}", eventId, reason);
+        log.info("Rejecting event with id: {}, reason: {}", eventId, reason);
         Event event = getEventById(eventId);
+        
+        // Only allow rejection of PENDING events
+        if (!EventStatus.PENDING.equals(event.getStatus())) {
+            throw new IllegalStateException("Only PENDING events can be rejected. Current status: " + event.getStatus());
+        }
+        
         event.setStatus(EventStatus.REJECTED);
-        // Store rejection reason if your Event entity has a field for it
         event.setUpdatedAt(LocalDateTime.now());
-        Event updatedEvent = eventRepository.save(event);
-        return eventMapper.toResponse(updatedEvent, null);
+        Event savedEvent = eventRepository.save(event);
+        return eventMapper.toResponse(savedEvent, null);
+    }
+
+    /**
+     * Determines the appropriate event status based on its current state and dates
+     * @param event The event to evaluate
+     * @return The appropriate EventStatus
+     */
+    private EventStatus determineEventStatus(Event event) {
+        LocalDateTime now = LocalDateTime.now();
+        EventStatus currentStatus = event.getStatus();
+        
+        // If event is explicitly cancelled or rejected, keep that status
+        if (EventStatus.CANCELLED.equals(currentStatus) || EventStatus.REJECTED.equals(currentStatus)) {
+            return currentStatus;
+        }
+
+        // If event is approved (ACTIVE) but hasn't started yet
+        if (EventStatus.ACTIVE.equals(currentStatus) && event.getStartDate().isAfter(now)) {
+            return EventStatus.ACTIVE;
+        }
+        
+        // If event is currently happening
+        if ((EventStatus.ACTIVE.equals(currentStatus) || EventStatus.ONGOING.equals(currentStatus)) 
+                && now.isAfter(event.getStartDate()) && now.isBefore(event.getEndDate())) {
+            return EventStatus.ONGOING;
+        }
+        
+        // If event has ended
+        if (now.isAfter(event.getEndDate()) && !EventStatus.COMPLETED.equals(currentStatus)) {
+            return EventStatus.COMPLETED;
+        }
+        
+        // If event is at max capacity
+        if (EventStatus.ACTIVE.equals(currentStatus) 
+                && event.getRegisteredParticipants().size() >= event.getMaxParticipants()) {
+            return EventStatus.FULL;
+        }
+        
+        // Default: keep current status
+        return currentStatus;
+    }
+
+    /**
+     * Updates the status of events based on their date and time
+     * This should be called by a scheduled task
+     */
+    @Override
+    @Transactional
+    public void updateEventStatuses() {
+        log.info("Updating event statuses automatically");
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 1. Update ACTIVE events to ONGOING once they've started
+        List<Event> activeEvents = eventRepository.findByStatusAndStartDateBefore(
+                EventStatus.ACTIVE.toString(), now);
+        for (Event event : activeEvents) {
+            log.info("Updating event {} status from ACTIVE to ONGOING", event.getId());
+            event.setStatus(EventStatus.ONGOING);
+            event.setUpdatedAt(LocalDateTime.now());
+            eventRepository.save(event);
+        }
+        
+        // 2. Update ONGOING events to COMPLETED once they've ended
+        List<Event> ongoingEvents = eventRepository.findByStatusAndEndDateBefore(
+                EventStatus.ONGOING.toString(), now);
+        for (Event event : ongoingEvents) {
+            log.info("Updating event {} status from ONGOING to COMPLETED", event.getId());
+            event.setStatus(EventStatus.COMPLETED);
+            event.setUpdatedAt(LocalDateTime.now());
+            eventRepository.save(event);
+        }
+        
+        // 3. Mark ACTIVE events as FULL if they've reached maximum capacity
+        Page<Event> activePage = eventRepository.findByStatus(EventStatus.ACTIVE, Pageable.unpaged());
+        List<Event> allActiveEvents = activePage.getContent();
+        for (Event event : allActiveEvents) {
+            if (event.getRegisteredParticipants().size() >= event.getMaxParticipants()) {
+                log.info("Updating event {} status from ACTIVE to FULL", event.getId());
+                event.setStatus(EventStatus.FULL);
+                event.setUpdatedAt(LocalDateTime.now());
+                eventRepository.save(event);
+            }
+        }
+        
+        // 4. Check FULL events that had cancellations and are no longer full
+        Page<Event> fullPage = eventRepository.findByStatus(EventStatus.FULL, Pageable.unpaged());
+        List<Event> fullEvents = fullPage.getContent();
+        for (Event event : fullEvents) {
+            if (event.getRegisteredParticipants().size() < event.getMaxParticipants()) {
+                log.info("Updating event {} status from FULL back to ACTIVE", event.getId());
+                event.setStatus(EventStatus.ACTIVE);
+                event.setUpdatedAt(LocalDateTime.now());
+                eventRepository.save(event);
+            }
+        }
+        
+        // 5. Update events that were PENDING for too long (optional warning)
+        List<Event> pendingEvents = eventRepository.findByStatusAndStartDateBefore(
+                EventStatus.PENDING.toString(), now.plusDays(1));
+        for (Event event : pendingEvents) {
+            log.warn("Event {} is PENDING but start date is approaching in less than 24 hours", event.getId());
+            // No automatic approval - admin must manually approve
+        }
     }
 } 

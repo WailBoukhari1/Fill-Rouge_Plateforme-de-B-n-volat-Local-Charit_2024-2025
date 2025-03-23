@@ -45,9 +45,9 @@
       <div class="bg-white shadow-xl rounded-lg overflow-hidden">
         <!-- Event Header -->
         <div class="relative">
-          <img src="assets/images/default-event-banner.jpg" 
-               [alt]="event.title"
-               class="w-full h-80 object-cover">
+          <img [src]="event.bannerImage || 'https://placehold.co/1200x400/1a237e/ffffff?text=No+Image+Available'" 
+          [alt]="event.title"
+          class="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105">
           <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-black/80"></div>
           <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
             <div class="flex justify-between items-end">
@@ -63,7 +63,7 @@
                     {{ event.currentParticipants }}/{{ event.maxParticipants }} participants
                   </span>
                 </div>
-                <h1 class="text-4xl font-bold">{{ event.title }}</h1>
+                <h1 class="text-4xl font-bold text-white">{{ event.title }}</h1>
                 <p class="text-lg text-gray-200 max-w-2xl">{{ event.description.slice(0, 150) }}...</p>
               </div>
               <div class="flex space-x-3" *ngIf="isOrganizer">

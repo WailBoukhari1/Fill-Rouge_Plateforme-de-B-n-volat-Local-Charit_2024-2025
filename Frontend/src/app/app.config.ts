@@ -5,6 +5,7 @@ import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { NgChartsConfiguration } from 'ng2-charts';
 
 import { routes } from './app.routes';
 import { AuthEffects } from './store/auth/auth.effects';
@@ -54,6 +55,11 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: initializeApp,
       deps: [AuthService],
+      multi: true
+    },
+    {
+      provide: NgChartsConfiguration,
+      useValue: { generateColors: false },
       multi: true
     }
   ]

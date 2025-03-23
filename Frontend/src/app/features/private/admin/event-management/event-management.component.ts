@@ -15,11 +15,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { AdminService } from '../../../../core/services/admin.service';
+import { EventService } from '../../../../core/services/event.service';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EventDetailsDialogComponent } from '../../../../shared/components/event-details-dialog/event-details-dialog.component';
 import { EventStatusDialogComponent } from '../../../../shared/components/event-status-dialog/event-status-dialog.component';
 import { ImagePlaceholderService } from '../../../../shared/services/image-placeholder.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { EventStatus } from '../../../../core/models/event.types';
 
 @Component({
   selector: 'app-event-management',
@@ -62,40 +64,51 @@ import { NotificationService } from '../../../../core/services/notification.serv
             <!-- Title Column -->
             <ng-container matColumnDef="title">
               <th mat-header-cell *matHeaderCellDef>Title</th>
-              <td mat-cell *matCellDef="let event">{{event.title}}</td>
+              <td mat-cell *matCellDef="let event" class="py-3">
+                {{ event.title }}
+              </td>
             </ng-container>
 
             <!-- Organization Column -->
             <ng-container matColumnDef="organization">
               <th mat-header-cell *matHeaderCellDef>Organization</th>
-              <td mat-cell *matCellDef="let event">
-                {{event.organizationName || 'Organization ' + event.organizationId}}
+              <td mat-cell *matCellDef="let event" class="py-3">
+                {{ event.organizationName || 'N/A' }}
               </td>
             </ng-container>
 
             <!-- Date Column -->
             <ng-container matColumnDef="date">
               <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let event">
-                {{event.startDate | date:'medium'}}
+              <td mat-cell *matCellDef="let event" class="py-3">
+                {{ event.startDate | date: 'MMM d, y' }}
               </td>
             </ng-container>
 
             <!-- Status Column -->
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let event">
-                <mat-chip [color]="getStatusColor(event.status)" [ngClass]="getStatusClass(event.status)">
-                  {{event.status}}
+              <td mat-cell *matCellDef="let event" class="py-3">
+                <mat-chip [color]="getStatusInfo(event.status).color" selected>
+                  <mat-icon>{{ getStatusInfo(event.status).icon }}</mat-icon>
+                  {{ getStatusInfo(event.status).displayName }}
                 </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Participants Column -->
+            <ng-container matColumnDef="participants">
+              <th mat-header-cell *matHeaderCellDef>Participants</th>
+              <td mat-cell *matCellDef="let event" class="py-3">
+                {{ event.currentParticipants || 0 }}/{{ event.maxParticipants || 0 }}
               </td>
             </ng-container>
 
             <!-- Actions Column -->
             <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>Actions</th>
-              <td mat-cell *matCellDef="let event">
-                <button mat-icon-button [matMenuTriggerFor]="menu">
+              <th mat-header-cell *matHeaderCellDef class="w-1/5">Actions</th>
+              <td mat-cell *matCellDef="let event" class="py-3">
+                <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Event actions">
                   <mat-icon>more_vert</mat-icon>
                 </button>
                 <mat-menu #menu="matMenu">
@@ -103,36 +116,56 @@ import { NotificationService } from '../../../../core/services/notification.serv
                     <mat-icon>visibility</mat-icon>
                     <span>View Details</span>
                   </button>
-                  <button mat-menu-item (click)="updateEventStatusDialog(event)">
-                    <mat-icon>update</mat-icon>
-                    <span>Update Status</span>
-                  </button>
-                  <ng-container *ngIf="event.status !== 'ACTIVE' && event.status !== 'APPROVED'">
+                  
+                  <div *ngIf="event.status === 'PENDING'">
                     <button mat-menu-item (click)="approveEvent(event)">
                       <mat-icon>check_circle</mat-icon>
                       <span>Approve</span>
                     </button>
-                  </ng-container>
-                  <ng-container *ngIf="event.status !== 'PENDING'">
-                    <button mat-menu-item (click)="pendingEvent(event)">
-                      <mat-icon>pending</mat-icon>
-                      <span>Set as Pending</span>
-                    </button>
-                  </ng-container>
-                  <ng-container *ngIf="event.status !== 'REJECTED'">
                     <button mat-menu-item (click)="rejectEvent(event)">
-                      <mat-icon>block</mat-icon>
+                      <mat-icon>cancel</mat-icon>
                       <span>Reject</span>
                     </button>
-                  </ng-container>
-                  <ng-container *ngIf="event.status !== 'CANCELLED'">
-                    <button mat-menu-item (click)="cancelEvent(event)">
-                      <mat-icon>cancel</mat-icon>
-                      <span>Cancel</span>
+                  </div>
+                  
+                  <div *ngIf="event.status === 'ACTIVE' || event.status === 'FULL'">
+                    <button mat-menu-item (click)="changeStatus(event, 'PENDING')">
+                      <mat-icon>pending</mat-icon>
+                      <span>Set to Pending</span>
                     </button>
-                  </ng-container>
-                  <button mat-menu-item (click)="deleteEvent(event)" class="text-red-500">
-                    <mat-icon class="text-red-500">delete</mat-icon>
+                    <button mat-menu-item (click)="changeStatus(event, 'CANCELLED')">
+                      <mat-icon>cancel</mat-icon>
+                      <span>Cancel Event</span>
+                    </button>
+                  </div>
+                  
+                  <div *ngIf="event.status === 'ONGOING'">
+                    <button mat-menu-item (click)="changeStatus(event, 'COMPLETED')">
+                      <mat-icon>done_all</mat-icon>
+                      <span>Mark as Completed</span>
+                    </button>
+                    <button mat-menu-item (click)="changeStatus(event, 'CANCELLED')">
+                      <mat-icon>cancel</mat-icon>
+                      <span>Cancel Event</span>
+                    </button>
+                  </div>
+                  
+                  <div *ngIf="event.status === 'CANCELLED'">
+                    <button mat-menu-item (click)="changeStatus(event, 'ACTIVE')">
+                      <mat-icon>restore</mat-icon>
+                      <span>Restore Event</span>
+                    </button>
+                  </div>
+                  
+                  <div *ngIf="event.status === 'REJECTED'">
+                    <button mat-menu-item (click)="approveEvent(event)">
+                      <mat-icon>check_circle</mat-icon>
+                      <span>Approve Now</span>
+                    </button>
+                  </div>
+                  
+                  <button mat-menu-item (click)="deleteEvent(event)" class="text-red-600">
+                    <mat-icon class="text-red-600">delete</mat-icon>
                     <span>Delete</span>
                   </button>
                 </mat-menu>
@@ -152,6 +185,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
           [length]="totalCount"
           [pageSize]="pageSize"
           [pageSizeOptions]="[5, 10, 25, 100]"
+          [pageIndex]="pageIndex"
           (page)="onPageChange($event)">
         </mat-paginator>
       </mat-card>
@@ -159,7 +193,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
   `
 })
 export class EventManagementComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = ['image', 'title', 'organization', 'date', 'status', 'actions'];
+  displayedColumns: string[] = ['image', 'title', 'organization', 'date', 'status', 'participants', 'actions'];
   dataSource = new MatTableDataSource<any>([]);
   pageSize = 10;
   pageIndex = 0;
@@ -174,7 +208,8 @@ export class EventManagementComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private notificationService: NotificationService,
-    private imagePlaceholderService: ImagePlaceholderService
+    private imagePlaceholderService: ImagePlaceholderService,
+    private eventService: EventService
   ) {}
 
   ngOnInit(): void {
@@ -213,35 +248,8 @@ export class EventManagementComponent implements OnInit, OnDestroy {
     this.loadEvents();
   }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'ACTIVE':
-      case 'APPROVED':
-        return 'primary';
-      case 'PENDING':
-        return 'accent';
-      case 'REJECTED':
-      case 'CANCELLED':
-        return 'warn';
-      default:
-        return '';
-    }
-  }
-
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'ACTIVE':
-      case 'APPROVED':
-        return 'bg-green-100 text-green-800';
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800';
-      case 'CANCELLED':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return '';
-    }
+  getStatusInfo(status: EventStatus | string) {
+    return this.eventService.getEventStatusInfo(status);
   }
 
   getEventImageUrl(event: any): string {
@@ -292,34 +300,6 @@ export class EventManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  pendingEvent(event: any): void {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Set as Pending',
-        message: `Are you sure you want to set "${event.title}" as pending?`,
-        confirmText: 'Set as Pending',
-        cancelText: 'Cancel'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.adminService.updateEventStatus(event.id, 'PENDING')
-          .subscribe({
-            next: () => {
-              this.notificationService.success(`Event "${event.title}" has been set to pending.`);
-              this.loadEvents();
-            },
-            error: (err) => {
-              console.error('Error updating event status:', err);
-              this.notificationService.error(`Failed to update event status: ${err.message || 'Unknown error'}`);
-            }
-          });
-      }
-    });
-  }
-
   rejectEvent(event: any): void {
     const dialogRef = this.dialog.open(EventStatusDialogComponent, {
       width: '400px',
@@ -348,29 +328,28 @@ export class EventManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  cancelEvent(event: any): void {
+  changeStatus(event: any, newStatus: string): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
-        title: 'Cancel Event',
-        message: `Are you sure you want to cancel "${event.title}"?`,
-        confirmText: 'Cancel Event',
-        cancelText: 'Keep Active',
-        color: 'warn'
+        title: 'Update Event Status',
+        message: `Are you sure you want to update "${event.title}" to "${newStatus}"?`,
+        confirmText: 'Update',
+        cancelText: 'Cancel'
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.adminService.updateEventStatus(event.id, 'CANCELLED')
+        this.adminService.updateEventStatus(event.id, newStatus)
           .subscribe({
             next: () => {
-              this.notificationService.success(`Event "${event.title}" has been cancelled.`);
+              this.notificationService.success(`Event "${event.title}" status changed to ${newStatus}`);
               this.loadEvents();
             },
             error: (err) => {
-              console.error('Error cancelling event:', err);
-              this.notificationService.error(`Failed to cancel event: ${err.message || 'Unknown error'}`);
+              console.error('Error updating event status:', err);
+              this.notificationService.error(`Failed to update event status: ${err.message || 'Unknown error'}`);
             }
           });
       }
@@ -400,32 +379,6 @@ export class EventManagementComponent implements OnInit, OnDestroy {
             error: (err) => {
               console.error('Error deleting event:', err);
               this.notificationService.error(`Failed to delete event: ${err.message || 'Unknown error'}`);
-            }
-          });
-      }
-    });
-  }
-
-  updateEventStatusDialog(event: any): void {
-    const dialogRef = this.dialog.open(EventStatusDialogComponent, {
-      width: '500px',
-      data: { event }
-    });
-
-    dialogRef.afterClosed().subscribe(newStatus => {
-      if (newStatus) {
-        this.loading = true;
-        this.adminService.updateEventStatus(event.id, newStatus)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.notificationService.success(`Event "${event.title}" status changed to ${newStatus}`);
-              this.loadEvents();
-            },
-            error: (err) => {
-              console.error(`Error updating event status:`, err);
-              this.notificationService.error(`Failed to update event status. Please try again.`);
-              this.loading = false;
             }
           });
       }

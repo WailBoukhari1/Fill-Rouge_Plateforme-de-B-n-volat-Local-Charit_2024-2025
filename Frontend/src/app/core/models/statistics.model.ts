@@ -128,28 +128,31 @@ export interface OrganizationStatistics {
 
 export interface AdminStatistics {
   totalUsers: number;
-  totalVolunteers: number;
   totalOrganizations: number;
   totalEvents: number;
-  totalVolunteerHours: number;
-  activeUsers: number;
-  activeOrganizations: number;
-  totalPeopleImpacted: number;
-  totalEventCategories: number;
-  platformEngagementRate: number;
-  verifiedOrganizations: number;
-  pendingVerifications: number;
-  activeEvents: number;
-  completedEvents: number;
-  canceledEvents: number;
-  totalResources: number;
-  averageVolunteerHoursPerEvent: number;
-  userGrowth: TimeSeriesData[];
-  eventGrowth: TimeSeriesData[];
-  eventsByCategory: { [key: string]: number };
-  platformGrowth: TimeSeriesData[];
-  userEngagement: TimeSeriesData[];
-  averageVolunteersPerEvent: number;
-  volunteerRetentionRate: number;
-  volunteersByLocation: { [key: string]: number };
+  totalVolunteers: number;
+  pendingOrganizations: number;
+  usersByRole: {
+    ADMIN: number;
+    ORGANIZATION: number;
+    VOLUNTEER: number;
+    UNASSIGNED: number;
+  };
+  organizationsByStatus: {
+    PENDING: number;
+    VERIFIED: number;
+  };
+  eventsByStatus: {
+    ACTIVE: number;
+    COMPLETED: number;
+    CANCELLED: number;
+    ONGOING: number;
+    PENDING: number;
+    SCHEDULED: number;
+    FULL: number;
+    REJECTED: number;
+  };
+  eventsByCategory: Record<string, number>;
+  userGrowth: Record<string, number>;
+  eventGrowth: Record<string, number>;
 }

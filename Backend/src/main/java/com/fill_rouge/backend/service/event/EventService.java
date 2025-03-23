@@ -64,4 +64,7 @@ public interface EventService {
     List<EventResponse> getUpcomingEvents();
     EventResponse getEventResponseById(String id);
     EventResponse createEvent(EventRequest eventRequest);
+
+    // Event status automation
+    void updateEventStatuses();
 }

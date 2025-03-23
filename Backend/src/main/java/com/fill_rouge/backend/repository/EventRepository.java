@@ -79,7 +79,8 @@ public interface EventRepository extends MongoRepository<Event, String> {
     Long countByStatusAndEndDateBefore(String status, LocalDateTime date);
     
     @Aggregation(pipeline = {
-        "{ $group: { _id: '$category', count: { $sum: 1 } } }"
+        "{ $group: { _id: '$category', count: { $sum: 1 } } }",
+        "{ $project: { id: '$_id', count: 1, _id: 0 } }"
     })
     List<CategoryCount> countByCategory();
     
@@ -93,4 +94,11 @@ public interface EventRepository extends MongoRepository<Event, String> {
     
     @Query("{'status': ?0}")
     Long countByStatus(String status);
+    
+    // Methods for automatic status updates
+    @Query("{'status': ?0, 'startDate': {$lt: ?1}}")
+    List<Event> findByStatusAndStartDateBefore(String status, LocalDateTime date);
+    
+    @Query("{'status': ?0, 'endDate': {$lt: ?1}}")
+    List<Event> findByStatusAndEndDateBefore(String status, LocalDateTime date);
 }

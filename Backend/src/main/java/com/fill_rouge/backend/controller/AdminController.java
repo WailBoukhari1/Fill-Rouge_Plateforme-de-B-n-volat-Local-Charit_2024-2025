@@ -258,27 +258,35 @@ public class AdminController {
         logger.info("PATCH /admin/events/{}/status with status: {}", eventId, statusStr);
         
         EventResponse event = null;
-        if (statusStr.equals("ACTIVE") || statusStr.equals("APPROVED")) {
-            event = eventService.approveEvent(eventId);
-            logger.info("Event approved: {}", eventId);
-        } else if (statusStr.equals("REJECTED")) {
-            String reason = payload.getOrDefault("reason", "");
-            event = eventService.rejectEvent(eventId, reason);
-            logger.info("Event rejected: {}", eventId);
-        } else {
+        
+        try {
             // Convert string status to EventStatus enum
-            try {
-                com.fill_rouge.backend.constant.EventStatus status = com.fill_rouge.backend.constant.EventStatus.valueOf(statusStr);
-                // Get event and convert to EventResponse using mapper
+            com.fill_rouge.backend.constant.EventStatus status = com.fill_rouge.backend.constant.EventStatus.valueOf(statusStr);
+            
+            // Use appropriate service methods based on the requested status
+            if (status == com.fill_rouge.backend.constant.EventStatus.ACTIVE) {
+                event = eventService.approveEvent(eventId);
+                logger.info("Event approved: {}", eventId);
+            } else if (status == com.fill_rouge.backend.constant.EventStatus.REJECTED) {
+                String reason = payload.getOrDefault("reason", "");
+                event = eventService.rejectEvent(eventId, reason);
+                logger.info("Event rejected: {}", eventId);
+            } else if ("DRAFT".equals(status.name())) {
+                // For draft status, use the generic updateEventStatus method
+                Event updatedEvent = eventService.updateEventStatus(eventId, status);
+                event = eventService.getEventResponseById(updatedEvent.getId());
+                logger.info("Event set to draft: {}", eventId);
+            } else {
+                // For other statuses, use the generic updateEventStatus method
                 Event updatedEvent = eventService.updateEventStatus(eventId, status);
                 event = eventService.getEventResponseById(updatedEvent.getId());
                 logger.info("Event status updated to {}: {}", status, eventId);
-            } catch (IllegalArgumentException e) {
-                logger.error("Invalid event status: {}", statusStr, e);
-                throw new IllegalArgumentException("Invalid event status: " + statusStr);
             }
+            
+            return ResponseEntity.ok(event);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid event status: {}", statusStr, e);
+            throw new IllegalArgumentException("Invalid event status: " + statusStr);
         }
-        
-        return ResponseEntity.ok(event);
     }
 } 

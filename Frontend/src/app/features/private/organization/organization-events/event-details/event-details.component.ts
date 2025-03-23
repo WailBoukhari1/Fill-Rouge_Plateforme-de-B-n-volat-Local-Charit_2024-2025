@@ -20,7 +20,6 @@ import { ApiResponse } from '@core/models/api-response.model';
 @Component({
   selector: 'app-event-details',
   templateUrl: './event-details.component.html',
-  styleUrls: ['./event-details.component.scss'],
   standalone: true,
   imports: [
     CommonModule,

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
@@ -13,8 +13,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { BehaviorSubject } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { BehaviorSubject, interval, Subscription } from 'rxjs';
+import { finalize, switchMap, tap } from 'rxjs/operators';
 
 import { IEvent } from '../../../../../core/models/event.types';
 import { EventService } from '../../../../../core/services/event.service';
@@ -62,7 +62,7 @@ interface ApiResponse<T> {
     MatFormFieldModule,
   ],
 })
-export class OrganizationEventsComponent implements OnInit {
+export class OrganizationEventsComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = [
     'title',
     'category',
@@ -86,6 +86,10 @@ export class OrganizationEventsComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
+  // Add refresh interval in milliseconds (30 seconds)
+  private readonly REFRESH_INTERVAL = 30000;
+  private autoRefreshSubscription?: Subscription;
+
   constructor(
     private eventService: EventService,
     private organizationService: OrganizationService,
@@ -101,6 +105,7 @@ export class OrganizationEventsComponent implements OnInit {
   ngOnInit(): void {
     if (this.organizationId) {
       this.loadEvents();
+      this.setupAutoRefresh();
     } else {
       this.error$.next('Organization ID not found');
     }
@@ -109,6 +114,95 @@ export class OrganizationEventsComponent implements OnInit {
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+  }
+
+  ngOnDestroy(): void {
+    // Clean up the subscription when component is destroyed
+    if (this.autoRefreshSubscription) {
+      this.autoRefreshSubscription.unsubscribe();
+    }
+  }
+
+  private setupAutoRefresh(): void {
+    // Auto-refresh events every REFRESH_INTERVAL
+    this.autoRefreshSubscription = interval(this.REFRESH_INTERVAL)
+      .pipe(
+        tap(() => console.log('Auto-refreshing events with updated statuses')),
+        switchMap(() => {
+          if (this.organizationId) {
+            return this.organizationService.getOrganizationEvents(
+              this.organizationId,
+              this.pageIndex,
+              this.pageSize
+            );
+          }
+          throw new Error('No organization ID available');
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          console.log('Auto-refresh events response:', response);
+          this.processEventsResponse(response);
+        },
+        error: (error) => {
+          console.error('Error during auto-refresh:', error);
+          // Don't show error to user during auto-refresh
+        }
+      });
+  }
+  
+  // Extract the processing logic to be reused by both manual and auto refresh
+  private processEventsResponse(response: any): void {
+    let eventsData: any;
+    
+    if (response && response.success && Array.isArray(response.data)) {
+      eventsData = {
+        content: response.data.map((event: any) => this.normalizeEventData(event)),
+        totalElements: response.data.length,
+        size: this.pageSize,
+        number: this.pageIndex
+      };
+    } else if (response && response.success && response.data && Array.isArray(response.data.content)) {
+      eventsData = {
+        ...response.data,
+        content: response.data.content.map((event: any) => this.normalizeEventData(event))
+      };
+    } else if (response && Array.isArray(response.content)) {
+      eventsData = {
+        ...response,
+        content: response.content.map((event: any) => this.normalizeEventData(event))
+      };
+    } else if (response && response.success && !response.data) {
+      eventsData = {
+        content: [],
+        totalElements: 0,
+        size: this.pageSize,
+        number: this.pageIndex
+      };
+    } else if (Array.isArray(response)) {
+      eventsData = {
+        content: response.map((event: any) => this.normalizeEventData(event)),
+        totalElements: response.length,
+        size: this.pageSize,
+        number: this.pageIndex
+      };
+    } else {
+      console.error('Invalid response format:', response);
+      return;
+    }
+    
+    if (!eventsData.content || eventsData.content.length === 0) {
+      console.log('No events found in the response');
+      return;
+    }
+    
+    this.dataSource.data = eventsData.content;
+    
+    if (this.paginator) {
+      this.paginator.length = eventsData.totalElements;
+      this.paginator.pageSize = eventsData.size;
+      this.paginator.pageIndex = eventsData.number;
+    }
   }
 
   loadEvents(page = 0): void {
@@ -132,72 +226,7 @@ export class OrganizationEventsComponent implements OnInit {
       .subscribe({
         next: (response: any) => {
           console.log('Events response:', response);
-          
-          // Handle wrapped API response format 
-          let eventsData: any;
-          
-          if (response && response.success && Array.isArray(response.data)) {
-            console.log('Processing response as direct array in data property');
-            // Direct array response (unwrapped data array)
-            eventsData = {
-              content: response.data.map((event: any) => this.normalizeEventData(event)),
-              totalElements: response.data.length,
-              size: this.pageSize,
-              number: page
-            };
-          } else if (response && response.success && response.data && Array.isArray(response.data.content)) {
-            console.log('Processing response as paginated data inside data property');
-            // Paginated response inside data property
-            eventsData = {
-              ...response.data,
-              content: response.data.content.map((event: any) => this.normalizeEventData(event))
-            };
-          } else if (response && Array.isArray(response.content)) {
-            console.log('Processing response as direct paginated response');
-            // Direct paginated response
-            eventsData = {
-              ...response,
-              content: response.content.map((event: any) => this.normalizeEventData(event))
-            };
-          } else if (response && response.success && !response.data) {
-            console.log('Response success but empty data');
-            // Empty data but successful response
-            eventsData = {
-              content: [],
-              totalElements: 0,
-              size: this.pageSize,
-              number: page
-            };
-          } else if (Array.isArray(response)) {
-            console.log('Processing response as direct array');
-            // Direct array response
-            eventsData = {
-              content: response.map((event: any) => this.normalizeEventData(event)),
-              totalElements: response.length,
-              size: this.pageSize,
-              number: page
-            };
-          } else {
-            console.error('Invalid response format:', response);
-            this.error$.next('No events found');
-            return;
-          }
-          
-          console.log('Processed events data:', eventsData);
-          
-          if (!eventsData.content || eventsData.content.length === 0) {
-            console.log('No events found in the response');
-            this.error$.next('No events found for this organization');
-          }
-          
-          this.dataSource.data = eventsData.content;
-          console.log('Updated dataSource.data:', this.dataSource.data);
-          
-          if (this.paginator) {
-            this.paginator.length = eventsData.totalElements;
-            this.paginator.pageSize = eventsData.size;
-            this.paginator.pageIndex = eventsData.number;
-          }
+          this.processEventsResponse(response);
         },
         error: (error: any) => {
           console.error('Error loading events:', error);
@@ -257,6 +286,8 @@ export class OrganizationEventsComponent implements OnInit {
       [EventStatus.APPROVED]: 'text-green-700 bg-green-100',
       [EventStatus.ACTIVE]: 'text-blue-700 bg-blue-100',
       [EventStatus.UPCOMING]: 'text-teal-700 bg-teal-100',
+      [EventStatus.REJECTED]: 'text-red-700 bg-red-100',
+      [EventStatus.FULL]: 'text-orange-700 bg-orange-100'
     };
     return colorClasses[status] || colorClasses[EventStatus.DRAFT];
   }
@@ -339,7 +370,8 @@ export class OrganizationEventsComponent implements OnInit {
   }
 
   cancelEvent(event: IEvent): void {
-    if (!event._id) {
+    const eventId = event._id || event.id;
+    if (!eventId) {
       console.error('Event ID is missing');
       return;
     }
@@ -356,19 +388,20 @@ export class OrganizationEventsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.eventService
-          .updateEventStatus(event._id!, EventStatus.CANCELLED)
-          .subscribe({
-            next: () => {
-              this.loadEvents();
-            },
-            error: (error) => {
-              console.error('Error cancelling event:', error);
-              this.snackBar.open('Error cancelling event', 'Close', {
-                duration: 3000,
-              });
-            },
-          });
+        this.eventService.cancelEvent(eventId).subscribe({
+          next: () => {
+            this.loadEvents();
+            this.snackBar.open('Event cancelled successfully', 'Close', {
+              duration: 3000,
+            });
+          },
+          error: (error) => {
+            console.error('Error cancelling event:', error);
+            this.snackBar.open('Error cancelling event', 'Close', {
+              duration: 3000,
+            });
+          },
+        });
       }
     });
   }
@@ -428,8 +461,8 @@ export class OrganizationEventsComponent implements OnInit {
   }
 
   private getNextStatus(currentStatus: EventStatus): EventStatus | null {
-    const statusFlow = {
-      [EventStatus.DRAFT]: EventStatus.PUBLISHED,
+    const statusFlow: Record<EventStatus, EventStatus | null> = {
+      [EventStatus.DRAFT]: EventStatus.PENDING,
       [EventStatus.PUBLISHED]: EventStatus.ONGOING,
       [EventStatus.ONGOING]: EventStatus.COMPLETED,
       [EventStatus.COMPLETED]: null,
@@ -438,7 +471,10 @@ export class OrganizationEventsComponent implements OnInit {
       [EventStatus.APPROVED]: EventStatus.ACTIVE,
       [EventStatus.ACTIVE]: EventStatus.ONGOING,
       [EventStatus.UPCOMING]: EventStatus.ACTIVE,
+      [EventStatus.REJECTED]: EventStatus.PENDING,
+      [EventStatus.FULL]: EventStatus.ACTIVE
     };
+
     return statusFlow[currentStatus] || null;
   }
 
@@ -656,5 +692,53 @@ export class OrganizationEventsComponent implements OnInit {
       // Show current in the middle with 2 on each side
       return current - 2 + position;
     }
+  }
+
+  // Add a method to determine if the event is a draft
+  isDraftEvent(event: IEvent): boolean {
+    return event.status === EventStatus.DRAFT;
+  }
+
+  // Add a method to submit a draft event for approval
+  submitDraftForApproval(event: IEvent): void {
+    const eventId = event.id || event._id;
+    if (!eventId) {
+      console.error('Event ID is missing');
+      this.snackBar.open('Cannot submit event: Invalid event ID', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Submit Event for Approval',
+        message: `Are you sure you want to submit "${event.title}" for approval? Once submitted, the event will be reviewed by administrators.`,
+        confirmText: 'Submit',
+        cancelText: 'Cancel',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.eventService
+          .updateEventStatus(eventId, EventStatus.PENDING)
+          .subscribe({
+            next: () => {
+              this.loadEvents();
+              this.snackBar.open('Event submitted for approval', 'Close', {
+                duration: 3000,
+              });
+            },
+            error: (error) => {
+              console.error('Error submitting event for approval:', error);
+              this.snackBar.open('Error submitting event for approval', 'Close', {
+                duration: 3000,
+              });
+            },
+          });
+      }
+    });
   }
 }

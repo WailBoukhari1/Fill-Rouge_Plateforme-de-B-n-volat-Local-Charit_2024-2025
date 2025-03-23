@@ -1,0 +1,170 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl mx-auto">
+  <!-- Header Section -->
+  <div class="text-center mb-12">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">Organization Report</h1>
+    <p class="text-xl text-gray-600">View and analyze your organization's performance metrics</p>
+  </div>
+
+  <!-- Date Range Selection -->
+  <div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
+    <form [formGroup]="dateForm" class="flex flex-wrap items-end gap-4">
+      <div class="flex-1 min-w-[200px]">
+        <mat-form-field class="w-full">
+          <mat-label>Start Date</mat-label>
+          <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="flex-1 min-w-[200px]">
+        <mat-form-field class="w-full">
+          <mat-label>End Date</mat-label>
+          <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <button mat-flat-button 
+              color="primary" 
+              (click)="loadReport()" 
+              [disabled]="loading"
+              class="h-[56px] bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+        <mat-icon class="mr-2">refresh</mat-icon>
+        Update Report
+      </button>
+    </form>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="flex flex-col items-center justify-center py-16 bg-white rounded-2xl shadow-sm">
+      <mat-spinner diameter="48" class="text-blue-600"></mat-spinner>
+      <p class="mt-4 text-gray-600 text-lg">Generating your report...</p>
+    </div>
+  }
+
+  <!-- Report Content -->
+  @if (reportData && !loading) {
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-1">
+        <div class="flex items-center space-x-4">
+          <div class="p-3 bg-blue-50 rounded-xl">
+            <mat-icon class="text-blue-600 text-2xl">event</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-3xl font-bold text-gray-900">{{reportData.totalEventsHosted}}</h3>
+            <p class="text-gray-600">Total Events</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-1">
+        <div class="flex items-center space-x-4">
+          <div class="p-3 bg-green-50 rounded-xl">
+            <mat-icon class="text-green-600 text-2xl">people</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-3xl font-bold text-gray-900">{{reportData.totalVolunteersEngaged}}</h3>
+            <p class="text-gray-600">Total Volunteers</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-1">
+        <div class="flex items-center space-x-4">
+          <div class="p-3 bg-purple-50 rounded-xl">
+            <mat-icon class="text-purple-600 text-2xl">schedule</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-3xl font-bold text-gray-900">{{reportData.totalVolunteerHours}}</h3>
+            <p class="text-gray-600">Volunteer Hours</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-1">
+        <div class="flex items-center space-x-4">
+          <div class="p-3 bg-yellow-50 rounded-xl">
+            <mat-icon class="text-yellow-600 text-2xl">star</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-3xl font-bold text-gray-900">{{reportData.averageEventRating | number:'1.1-1'}}</h3>
+            <p class="text-gray-600">Average Rating</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <!-- Events by Category Chart -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-6">Events by Category</h2>
+        @if (eventsByCategoryData.length > 0) {
+          <div class="h-[400px] flex items-center justify-center">
+            <ngx-charts-pie-chart
+              [results]="eventsByCategoryData"
+              [scheme]="colorScheme"
+              [legend]="true"
+              [labels]="true"
+              [doughnut]="true"
+              [gradient]="true"
+              [legendPosition]="legendPosition"
+              [animations]="true"
+              [tooltipDisabled]="false"
+              [view]="[400, 300]">
+            </ngx-charts-pie-chart>
+          </div>
+        } @else {
+          <div class="flex flex-col items-center justify-center h-[400px] text-gray-500">
+            <mat-icon class="text-6xl mb-4">event_busy</mat-icon>
+            <p class="text-lg">No events found for the selected period</p>
+          </div>
+        }
+      </div>
+
+      <!-- Most Requested Skills -->
+      @if (reportData.mostRequestedSkills.length) {
+        <div class="bg-white rounded-2xl p-6 shadow-sm">
+          <h2 class="text-2xl font-semibold text-gray-900 mb-6">Most Requested Skills</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @for (skill of reportData.mostRequestedSkills; track skill) {
+              <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                <mat-icon class="text-green-500">check_circle</mat-icon>
+                <span class="text-gray-700 font-medium">{{skill}}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Export Section -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6">Download Report</h2>
+      <div class="flex flex-wrap gap-4">
+        <button mat-flat-button 
+                color="primary" 
+                (click)="exportReport('PDF')" 
+                [disabled]="loading"
+                class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span>Export as PDF</span>
+        </button>
+        <button mat-flat-button 
+                color="primary" 
+                (click)="exportReport('EXCEL')" 
+                [disabled]="loading"
+                class="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
+          <mat-icon>table_chart</mat-icon>
+          <span>Export as Excel</span>
+        </button>
+      </div>
+    </div>
+  }
+</div>
+</div>

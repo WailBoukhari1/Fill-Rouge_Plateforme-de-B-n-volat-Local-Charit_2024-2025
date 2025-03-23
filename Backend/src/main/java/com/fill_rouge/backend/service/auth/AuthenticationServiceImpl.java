@@ -121,7 +121,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // Check if email is verified
             if (!user.isEmailVerified()) {
                 logger.warn("Email not verified for user: {}", request.getEmail());
-                throw new DisabledException("Please verify your email before logging in.");
+                return AuthResponse.createErrorResponse(
+                    "Please verify your email before logging in. Check your inbox for the verification link. If you haven't received it, you can request a new one at /auth/resend-verification."
+                );
             }
 
             try {

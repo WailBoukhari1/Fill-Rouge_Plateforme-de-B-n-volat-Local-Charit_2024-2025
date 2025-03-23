@@ -50,12 +50,7 @@ export const ADMIN_ROUTES: Routes = [
           import('./volunteer-management/volunteer-approval.component').then(c => c.VolunteerApprovalComponent),
         title: 'Volunteer Approval'
       },
-      {
-        path: 'organization-approval',
-        loadComponent: () => 
-          import('./organization-management/organization-approval.component').then(c => c.OrganizationApprovalComponent),
-        title: 'Organization Approval'
-      },
+
       {
         path: 'event-approval',
         loadComponent: () => 

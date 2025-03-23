@@ -13,6 +13,7 @@ import { Store } from '@ngrx/store';
 import { Observable, Subject, takeUntil } from 'rxjs';
 
 import { Organization, OrganizationStatus, VerificationStatus } from '../../../../core/models/organization.model';
+import { EventStatus } from '../../../../core/models/event.model';
 import { OrganizationService } from '../../../../core/services/organization.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
@@ -40,114 +41,247 @@ import { AppState } from '../../../../store';
     RouterModule
   ],
   template: `
-    <div class="container mx-auto p-4">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Organization Management</h1>
-        <button mat-raised-button color="primary" routerLink="create">
-          <mat-icon>add</mat-icon>
-          Add Organization
-        </button>
-      </div>
-
-      <mat-card>
-        <div *ngIf="loading$ | async" class="flex justify-center p-4">
-          <mat-spinner diameter="40"></mat-spinner>
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Organization Management</h1>
+            <p class="mt-2 text-gray-600 text-lg">Manage and monitor all organizations in the platform</p>
+          </div>
+          <button mat-raised-button 
+                  color="primary" 
+                  routerLink="create"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2">
+            <mat-icon class="text-xl">add</mat-icon>
+            <span class="font-medium">Add Organization</span>
+          </button>
         </div>
-        
-        <div *ngIf="!(loading$ | async)" class="overflow-x-auto">
-          <table mat-table [dataSource]="dataSource" class="w-full">
-            <!-- Logo Column -->
-            <ng-container matColumnDef="logo">
-              <th mat-header-cell *matHeaderCellDef>Logo</th>
-              <td mat-cell *matCellDef="let org">
-                <img [src]="getLogoUrl(org)" 
-                     alt="Organization logo"
-                     class="w-10 h-10 rounded-full object-cover">
-              </td>
-            </ng-container>
 
-            <!-- Name Column -->
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Name</th>
-              <td mat-cell *matCellDef="let org">{{org.name}}</td>
-            </ng-container>
+        <!-- Main Content -->
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+          <!-- Loading State -->
+          <div *ngIf="loading$ | async" class="flex justify-center items-center py-16">
+            <mat-spinner diameter="48" class="text-blue-600"></mat-spinner>
+          </div>
 
-            <!-- Contact Column -->
-            <ng-container matColumnDef="contact">
-              <th mat-header-cell *matHeaderCellDef>Contact</th>
-              <td mat-cell *matCellDef="let org">{{org.phoneNumber}}</td>
-            </ng-container>
+          <!-- Error State -->
+          <div *ngIf="error$ | async as error" class="p-6 text-center">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-6 inline-flex flex-col items-center">
+              <mat-icon class="text-red-500 text-4xl mb-4">error_outline</mat-icon>
+              <p class="text-red-600 text-lg">{{ error }}</p>
+            </div>
+          </div>
 
-            <!-- Location Column -->
-            <ng-container matColumnDef="location">
-              <th mat-header-cell *matHeaderCellDef>Location</th>
-              <td mat-cell *matCellDef="let org">
-                {{org.city}}, {{org.country}}
-              </td>
-            </ng-container>
+          <!-- Table -->
+          <div *ngIf="!(loading$ | async)" class="overflow-x-auto">
+            <table mat-table [dataSource]="dataSource" class="w-full">
+              <!-- Logo Column -->
+              <ng-container matColumnDef="logo">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Logo</th>
+                <td mat-cell *matCellDef="let org" class="px-6 py-4">
+                  <img [src]="getLogoUrl(org)" 
+                       alt="Organization logo"
+                       class="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100">
+                </td>
+              </ng-container>
 
-            <!-- Verification Column -->
-            <ng-container matColumnDef="verification">
-              <th mat-header-cell *matHeaderCellDef>Verification</th>
-              <td mat-cell *matCellDef="let org">
-                <mat-chip [color]="org.verified ? 'primary' : 'warn'">
-                  {{org.verified ? 'Verified' : 'Pending'}}
-                </mat-chip>
-              </td>
-            </ng-container>
+              <!-- Name Column -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Name</th>
+                <td mat-cell *matCellDef="let org" class="px-6 py-4">
+                  <div class="font-medium text-gray-900">{{org.name}}</div>
+                  <div class="text-sm text-gray-500">{{org.email}}</div>
+                </td>
+              </ng-container>
 
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>Actions</th>
-              <td mat-cell *matCellDef="let org">
-                <button mat-icon-button [matMenuTriggerFor]="menu">
-                  <mat-icon>more_vert</mat-icon>
-                </button>
-                <mat-menu #menu="matMenu">
-                  <button mat-menu-item (click)="viewDetails(org)">
-                    <mat-icon>visibility</mat-icon>
-                    <span>View Details</span>
+              <!-- Contact Column -->
+              <ng-container matColumnDef="contact">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Contact</th>
+                <td mat-cell *matCellDef="let org" class="px-6 py-4">
+                  <div class="flex items-center text-gray-600">
+                    <mat-icon class="text-gray-400 mr-2">phone</mat-icon>
+                    {{org.phoneNumber}}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Location Column -->
+              <ng-container matColumnDef="location">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Location</th>
+                <td mat-cell *matCellDef="let org" class="px-6 py-4">
+                  <div class="flex items-center text-gray-600">
+                    <mat-icon class="text-gray-400 mr-2">location_on</mat-icon>
+                    {{org.city}}, {{org.country}}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Verification Column -->
+              <ng-container matColumnDef="verification">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Verification</th>
+                <td mat-cell *matCellDef="let org" class="px-6 py-4">
+                  <mat-chip [color]="org.verified ? 'primary' : 'warn'"
+                           class="font-medium">
+                    {{org.verified ? 'Verified' : 'Pending'}}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Actions</th>
+                <td mat-cell *matCellDef="let org" class="px-6 py-4">
+                  <button mat-icon-button 
+                          [matMenuTriggerFor]="menu"
+                          class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                    <mat-icon>more_vert</mat-icon>
                   </button>
-                  @if (!org.verified) {
-                    <button mat-menu-item (click)="verifyOrganization(org)">
-                      <mat-icon>verified</mat-icon>
-                      <span>Verify</span>
+                  <mat-menu #menu="matMenu" class="rounded-xl shadow-lg">
+                    <button mat-menu-item (click)="viewDetails(org)" class="hover:bg-gray-50">
+                      <mat-icon class="text-gray-500">visibility</mat-icon>
+                      <span class="ml-2">View Details</span>
                     </button>
-                  }
-                  <button mat-menu-item (click)="suspendOrganization(org)">
-                    <mat-icon>block</mat-icon>
-                    <span>Suspend</span>
-                  </button>
-                  <button mat-menu-item (click)="reactivateOrganization(org)">
-                    <mat-icon>restore</mat-icon>
-                    <span>Reactivate</span>
-                  </button>
-                  <button mat-menu-item (click)="deleteOrganization(org)" class="text-red-500">
-                    <mat-icon class="text-red-500">delete</mat-icon>
-                    <span>Delete</span>
-                  </button>
-                </mat-menu>
-              </td>
-            </ng-container>
+                    @if (!org.verified) {
+                      <button mat-menu-item (click)="verifyOrganization(org)" class="hover:bg-gray-50">
+                        <mat-icon class="text-green-500">verified</mat-icon>
+                        <span class="ml-2">Verify</span>
+                      </button>
+                    }
+                    <button mat-menu-item (click)="suspendOrganization(org)" class="hover:bg-gray-50">
+                      <mat-icon class="text-yellow-500">block</mat-icon>
+                      <span class="ml-2">Suspend</span>
+                    </button>
+                    <button mat-menu-item (click)="reactivateOrganization(org)" class="hover:bg-gray-50">
+                      <mat-icon class="text-blue-500">restore</mat-icon>
+                      <span class="ml-2">Reactivate</span>
+                    </button>
+                    <button mat-menu-item (click)="deleteOrganization(org)" class="hover:bg-gray-50">
+                      <mat-icon class="text-red-500">delete</mat-icon>
+                      <span class="ml-2 text-red-500">Delete</span>
+                    </button>
+                  </mat-menu>
+                </td>
+              </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                  class="hover:bg-gray-50 transition-colors duration-200"></tr>
+            </table>
+          </div>
+
+          <!-- Paginator -->
+          <mat-paginator
+            [length]="totalCount$ | async"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[5, 10, 25, 100]"
+            (page)="onPageChange($event)"
+            class="border-t border-gray-200">
+          </mat-paginator>
         </div>
-
-        <div *ngIf="error$ | async as error" class="p-4 text-red-600 text-center">
-          {{ error }}
-        </div>
-
-        <mat-paginator
-          [length]="totalCount$ | async"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="[5, 10, 25, 100]"
-          (page)="onPageChange($event)">
-        </mat-paginator>
-      </mat-card>
+      </div>
     </div>
-  `
+  `,
+  styles: [`
+    :host {
+      display: block;
+    }
+
+    ::ng-deep .mat-mdc-table {
+      background: transparent;
+    }
+
+    ::ng-deep .mat-mdc-row {
+      min-height: 64px;
+    }
+
+    ::ng-deep .mat-mdc-cell {
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    ::ng-deep .mat-mdc-header-cell {
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    ::ng-deep .mat-mdc-menu-panel {
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    ::ng-deep .mat-mdc-menu-item {
+      height: 48px;
+      line-height: 48px;
+      padding: 0 16px;
+    }
+
+    ::ng-deep .mat-mdc-menu-item .mat-icon {
+      margin-right: 8px;
+    }
+
+    ::ng-deep .mat-mdc-paginator {
+      background: transparent;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    ::ng-deep .mat-mdc-paginator-container {
+      min-height: 56px;
+      padding: 0 16px;
+    }
+
+    ::ng-deep .mat-mdc-paginator-range-label {
+      color: #6b7280;
+    }
+
+    ::ng-deep .mat-mdc-paginator-navigation-next,
+    ::ng-deep .mat-mdc-paginator-navigation-previous {
+      color: #3b82f6;
+    }
+
+    ::ng-deep .mat-mdc-paginator-navigation-next:hover,
+    ::ng-deep .mat-mdc-paginator-navigation-previous:hover {
+      background-color: #f3f4f6;
+    }
+
+    ::ng-deep .mat-mdc-paginator-page-size {
+      margin-right: 16px;
+    }
+
+    ::ng-deep .mat-mdc-paginator-page-size-label {
+      color: #6b7280;
+    }
+
+    ::ng-deep .mat-mdc-paginator-page-size-select {
+      margin: 0 8px;
+    }
+
+    ::ng-deep .mat-mdc-paginator-page-size-option {
+      color: #374151;
+    }
+
+    ::ng-deep .mat-mdc-paginator-page-size-option:hover {
+      background-color: #f3f4f6;
+    }
+
+    ::ng-deep .mat-mdc-paginator-page-size-option.mat-mdc-selected {
+      color: #3b82f6;
+    }
+
+    ::ng-deep .mat-mdc-paginator-range-actions {
+      margin-left: 16px;
+    }
+
+    ::ng-deep .mat-mdc-paginator-range-actions button {
+      color: #3b82f6;
+    }
+
+    ::ng-deep .mat-mdc-paginator-range-actions button:hover {
+      background-color: #f3f4f6;
+    }
+
+    ::ng-deep .mat-mdc-paginator-range-actions button:disabled {
+      color: #9ca3af;
+    }
+  `]
 })
 export class OrganizationManagementComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = ['logo', 'name', 'contact', 'location', 'verification', 'actions'];
@@ -163,6 +297,7 @@ export class OrganizationManagementComponent implements OnInit, OnDestroy {
   // Make enums available in the template
   OrganizationStatus = OrganizationStatus;
   VerificationStatus = VerificationStatus;
+  EventStatus = EventStatus;
 
   constructor(
     private store: Store<AppState>,
@@ -173,7 +308,7 @@ export class OrganizationManagementComponent implements OnInit, OnDestroy {
   ) {
     this.loading$ = this.store.select(AdminSelectors.selectAdminLoading);
     this.error$ = this.store.select(AdminSelectors.selectAdminError);
-    this.totalCount$ = this.store.select(AdminSelectors.selectTotalOrganizations);
+    this.totalCount$ = this.store.select(AdminSelectors.selectTotalOrganizationsCount);
   }
 
   ngOnInit(): void {
@@ -306,5 +441,13 @@ export class OrganizationManagementComponent implements OnInit, OnDestroy {
       return (organization as any).logo;
     }
     return this.imagePlaceholderService.getOrganizationPlaceholder();
+  }
+
+  canApproveEvent(event: any): boolean {
+    return event.status === EventStatus.PENDING;
+  }
+
+  canRejectEvent(event: any): boolean {
+    return event.status === EventStatus.PENDING;
   }
 } 

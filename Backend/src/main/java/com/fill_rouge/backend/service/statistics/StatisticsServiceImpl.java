@@ -143,9 +143,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         long completedEvents = events.stream()
             .filter(e -> e.getStatus() == EventStatus.COMPLETED && e.getEndDate().isBefore(now))
             .count();
-        long upcomingEvents = events.stream()
-            .filter(e -> e.getStatus() == EventStatus.SCHEDULED && e.getStartDate().isAfter(now))
-            .count();
+
 
         // Calculate volunteer metrics
         long totalVolunteers = participations.stream()
@@ -178,7 +176,6 @@ public class StatisticsServiceImpl implements StatisticsService {
             .totalEvents(totalEvents)
             .activeEvents(activeEvents)
             .completedEvents(completedEvents)
-            .upcomingEvents(upcomingEvents)
             .totalVolunteers(totalVolunteers)
             .activeVolunteers(activeVolunteers)
             .averageVolunteersPerEvent(avgVolunteersPerEvent)
@@ -271,7 +268,35 @@ public class StatisticsServiceImpl implements StatisticsService {
             
             // Get event categories count
             log.debug("[AdminStats:{}] Getting events by category", requestId);
-            Map<String, Long> eventsByCategory = getEventsByCategory();
+            List<CategoryCount> categoryCounts = null;
+            try {
+                categoryCounts = eventRepository.countByCategory();
+                log.debug("[AdminStats:{}] Raw category counts: {}", requestId, categoryCounts);
+            } catch (Exception e) {
+                log.error("[AdminStats:{}] Error getting category counts: {}", requestId, e.getMessage(), e);
+                categoryCounts = new ArrayList<>();
+            }
+            
+            Map<String, Long> eventsByCategory = new HashMap<>();
+            if (categoryCounts != null) {
+                log.debug("[AdminStats:{}] Processing {} category counts", requestId, categoryCounts.size());
+                for (CategoryCount cat : categoryCounts) {
+                    try {
+                        if (cat != null) {
+                            String id = cat.getId();
+                            Long count = cat.getCount();
+                            log.debug("[AdminStats:{}] Category: {}, Count: {}", requestId, id, count);
+                            if (id != null && count != null) {
+                                eventsByCategory.put(id, count);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("[AdminStats:{}] Error processing category count: {}", requestId, e.getMessage(), e);
+                    }
+                }
+            }
+            log.debug("[AdminStats:{}] Final events by category: {}", requestId, eventsByCategory);
+            
             long totalEventCategories = eventsByCategory.size();
             log.debug("[AdminStats:{}] Total event categories: {}", requestId, totalEventCategories);
             
@@ -460,8 +485,15 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     // Helper methods for calculations
     private long calculateTotalVolunteerHours() {
-        Long hours = participationRepository.sumTotalHours();
-        return hours != null ? hours : 0L;
+        try {
+            return participationRepository.findAll().stream()
+                .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
+                .mapToLong(p -> p.getHours() != null ? p.getHours() : 0L)
+                .sum();
+        } catch (Exception e) {
+            log.warn("Error calculating total volunteer hours: {}", e.getMessage());
+            return 0L;
+        }
     }
 
     private List<StatisticsResponse.TimeSeriesData> getUserGrowthData(LocalDateTime start, LocalDateTime end) {
@@ -489,29 +521,6 @@ public class StatisticsServiceImpl implements StatisticsService {
         } catch (Exception e) {
             log.warn("Error getting event growth data: {}", e.getMessage());
             return createMockTimeSeriesData("events");
-        }
-    }
-
-    private Map<String, Long> getEventsByCategory() {
-        try {
-            List<CategoryCount> categories = eventRepository.countByCategory();
-            Map<String, Long> result = new HashMap<>();
-            
-            if (categories != null) {
-                for (CategoryCount cat : categories) {
-                    if (cat != null && cat.getId() != null) {
-                        result.put(cat.getId(), cat.getCount() != null ? cat.getCount() : 0L);
-                    }
-                }
-                log.debug("Event categories: {}", result);
-            } else {
-                log.debug("No event categories found");
-            }
-            
-            return result;
-        } catch (Exception e) {
-            log.error("Error getting events by category: {}", e.getMessage(), e);
-            return new HashMap<>();
         }
     }
 
@@ -841,8 +850,12 @@ public class StatisticsServiceImpl implements StatisticsService {
             long totalEvents = eventRepository.count();
             long totalVolunteers = userRepository.countByRole(Role.VOLUNTEER);
             long pendingOrganizations = organizationRepository.countByVerifiedFalse();
-            long activeEvents = eventRepository.countByStatus(EventStatus.ACTIVE.toString());
-            long completedEvents = eventRepository.countByStatus(EventStatus.COMPLETED.toString());
+            
+            // Add null checks for event status counts
+            Long activeEventsCount = eventRepository.countByStatus(EventStatus.ACTIVE.toString());
+            Long completedEventsCount = eventRepository.countByStatus(EventStatus.COMPLETED.toString());
+            long activeEvents = activeEventsCount != null ? activeEventsCount : 0;
+            long completedEvents = completedEventsCount != null ? completedEventsCount : 0;
             
             Map<String, Long> usersByRole = Arrays.stream(Role.values())
                 .collect(Collectors.toMap(
@@ -858,15 +871,23 @@ public class StatisticsServiceImpl implements StatisticsService {
             Map<String, Long> eventsByStatus = Arrays.stream(EventStatus.values())
                 .collect(Collectors.toMap(
                     EventStatus::name,
-                    status -> eventRepository.countByStatus(status.toString())
+                    status -> {
+                        Long count = eventRepository.countByStatus(status.toString());
+                        return count != null ? count : 0L;
+                    },
+                    (existing, replacement) -> existing,
+                    HashMap::new
                 ));
             
             List<CategoryCount> categoryCounts = eventRepository.countByCategory();
-            Map<String, Long> eventsByCategory = categoryCounts.stream()
+            Map<String, Long> eventsByCategory = categoryCounts != null ? categoryCounts.stream()
+                .filter(cat -> cat != null && cat.getId() != null && cat.getCount() != null)
                 .collect(Collectors.toMap(
                     CategoryCount::getId,
-                    CategoryCount::getCount
-                ));
+                    CategoryCount::getCount,
+                    (existing, replacement) -> existing,
+                    HashMap::new
+                )) : new HashMap<>();
             
             // Get user registrations by month (last 12 months)
             LocalDateTime startDate = LocalDateTime.now().minusMonths(11).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);

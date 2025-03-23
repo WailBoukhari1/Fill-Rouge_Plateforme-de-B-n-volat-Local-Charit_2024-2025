@@ -52,349 +52,62 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     ReactiveFormsModule,
     NgxChartsModule,
   ],
-  template: `
-    <div class="container">
-      <!-- Header Section -->
-      <header class="header">
-        <h1 class="title">Organization Report</h1>
-        <p class="subtitle">View and analyze your organization's performance</p>
-      </header>
-
-      <!-- Date Range Selection -->
-      <div class="card date-range-card">
-        <form [formGroup]="dateForm" class="date-form">
-          <mat-form-field >
-            <mat-label>Start Date</mat-label>
-            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
-            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-            <mat-datepicker #startPicker></mat-datepicker>
-          </mat-form-field>
-
-          <mat-form-field >
-            <mat-label>End Date</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
-            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-            <mat-datepicker #endPicker></mat-datepicker>
-          </mat-form-field>
-
-          <button mat-flat-button color="primary" (click)="loadReport()" [disabled]="loading">
-            <mat-icon>refresh</mat-icon>
-            Update Report
-          </button>
-        </form>
-      </div>
-
-      <!-- Loading State -->
-      @if (loading) {
-        <div class="loading-container">
-          <mat-spinner diameter="40"></mat-spinner>
-          <p>Generating your report...</p>
-        </div>
-      }
-
-      <!-- Report Content -->
-      @if (reportData && !loading) {
-        <!-- Key Metrics -->
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <mat-icon class="metric-icon">event</mat-icon>
-            <div class="metric-content">
-              <h3 class="metric-value">{{reportData.totalEventsHosted}}</h3>
-              <p class="metric-label">Total Events</p>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <mat-icon class="metric-icon">people</mat-icon>
-            <div class="metric-content">
-              <h3 class="metric-value">{{reportData.totalVolunteersEngaged}}</h3>
-              <p class="metric-label">Total Volunteers</p>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <mat-icon class="metric-icon">schedule</mat-icon>
-            <div class="metric-content">
-              <h3 class="metric-value">{{reportData.totalVolunteerHours}}</h3>
-              <p class="metric-label">Volunteer Hours</p>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <mat-icon class="metric-icon">star</mat-icon>
-            <div class="metric-content">
-              <h3 class="metric-value">{{reportData.averageEventRating | number:'1.1-1'}}</h3>
-              <p class="metric-label">Average Rating</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts Section -->
-        <div class="charts-section">
-          <!-- Events by Category Chart -->
-          <div class="card chart-card">
-            <h2 class="chart-title">Events by Category</h2>
-            @if (eventsByCategoryData.length > 0) {
-              <div class="chart-container">
-                <ngx-charts-pie-chart
-                  [results]="eventsByCategoryData"
-                  [scheme]="colorScheme"
-                  [legend]="true"
-                  [labels]="true"
-                  [doughnut]="true"
-                  [gradient]="true"
-                  [legendPosition]="legendPosition"
-                  [animations]="true"
-                  [tooltipDisabled]="false"
-                  [view]="[400, 300]">
-                </ngx-charts-pie-chart>
-              </div>
-            } @else {
-              <div class="no-data">
-                <mat-icon>event_busy</mat-icon>
-                <p>No events found for the selected period</p>
-              </div>
-            }
-          </div>
-
-          <!-- Most Requested Skills -->
-          @if (reportData.mostRequestedSkills.length) {
-            <div class="card skills-card">
-              <h2 class="chart-title">Most Requested Skills</h2>
-              <div class="skills-grid">
-                @for (skill of reportData.mostRequestedSkills; track skill) {
-                  <div class="skill-item">
-                    <mat-icon>check_circle</mat-icon>
-                    <span>{{skill}}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
-        <!-- Export Section -->
-        <div class="card export-card">
-          <h2 class="section-title">Download Report</h2>
-          <div class="export-buttons">
-            <button mat-flat-button color="primary" (click)="exportReport('PDF')" [disabled]="loading">
-              <mat-icon>picture_as_pdf</mat-icon>
-              Export as PDF
-            </button>
-            <button mat-flat-button color="primary" (click)="exportReport('EXCEL')" [disabled]="loading">
-              <mat-icon>table_chart</mat-icon>
-              Export as Excel
-            </button>
-          </div>
-        </div>
-      }
-    </div>
-  `,
+    templateUrl: './organization-report.component.html',
+  
   styles: [`
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem;
+    :host {
+      display: block;
     }
 
-    .header {
-      margin-bottom: 2rem;
-      text-align: center;
+    ::ng-deep .mat-mdc-form-field {
+      width: 100%;
     }
 
-    .title {
-      font-size: 2rem;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin: 0;
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
     }
 
-    .subtitle {
-      color: #666;
-      margin: 0.5rem 0 0;
+    ::ng-deep .mat-mdc-form-field-infix {
+      padding: 12px 16px;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
     }
 
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+    ::ng-deep .mat-mdc-form-field-focus-overlay {
+      background-color: transparent;
     }
 
-    .date-range-card {
-      margin-bottom: 2rem;
+    ::ng-deep .mat-mdc-form-field:hover .mat-mdc-form-field-focus-overlay {
+      opacity: 0.04;
     }
 
-    .date-form {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      align-items: center;
+    ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-form-field-focus-overlay {
+      opacity: 0.12;
     }
 
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 3rem;
-      gap: 1rem;
-      color: #666;
+    ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-form-field-infix {
+      border-color: #3b82f6;
     }
 
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
+    ::ng-deep .mat-mdc-form-field-label {
+      color: #6b7280;
     }
 
-    .metric-card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      transition: transform 0.2s ease;
+    ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-form-field-label {
+      color: #3b82f6;
     }
 
-    .metric-card:hover {
-      transform: translateY(-2px);
+    ::ng-deep .mat-mdc-button {
+      text-transform: none;
+      font-weight: 500;
     }
 
-    .metric-icon {
-      font-size: 2rem;
-      height: 2rem;
-      width: 2rem;
-      color: #2196f3;
+    ::ng-deep .mat-mdc-raised-button {
+      box-shadow: none !important;
     }
 
-    .metric-content {
-      flex: 1;
-    }
-
-    .metric-value {
-      font-size: 1.75rem;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin: 0;
-    }
-
-    .metric-label {
-      color: #666;
-      margin: 0.25rem 0 0;
-      font-size: 0.875rem;
-    }
-
-    .charts-section {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .chart-card, .skills-card {
-      min-height: 400px;
-    }
-
-    .chart-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin: 0 0 1.5rem;
-    }
-
-    .chart-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: calc(100% - 3rem);
-    }
-
-    .no-data {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: calc(100% - 3rem);
-      color: #666;
-      text-align: center;
-    }
-
-    .no-data mat-icon {
-      font-size: 3rem;
-      height: 3rem;
-      width: 3rem;
-      margin-bottom: 1rem;
-      color: #999;
-    }
-
-    .skills-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-    }
-
-    .skill-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem;
-      background: #f5f5f5;
-      border-radius: 8px;
-      font-size: 0.875rem;
-    }
-
-    .skill-item mat-icon {
-      color: #4caf50;
-      font-size: 1.25rem;
-    }
-
-    .export-card {
-      text-align: center;
-    }
-
-    .section-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin: 0 0 1rem;
-    }
-
-    .export-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        padding: 1rem;
-      }
-
-      .title {
-        font-size: 1.5rem;
-      }
-
-      .metrics-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      }
-
-      .charts-section {
-        grid-template-columns: 1fr;
-      }
-
-      .export-buttons {
-        flex-direction: column;
-      }
-
-      .export-buttons button {
-        width: 100%;
-      }
+    ::ng-deep .mat-mdc-raised-button:hover {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
     }
   `]
 })
