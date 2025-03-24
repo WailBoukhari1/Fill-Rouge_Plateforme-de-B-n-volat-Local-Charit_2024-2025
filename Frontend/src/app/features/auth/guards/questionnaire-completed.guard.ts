@@ -27,12 +27,18 @@ export class QuestionnaireCompletedGuard implements CanActivate {
           return true;
         }
 
+        // Check if user is on the questionnaire page
+        const currentUrl = this.router.url;
+        if (currentUrl.includes('/auth/questionnaire')) {
+          return true;
+        }
+
         if (!user.questionnaireCompleted) {
           // If questionnaire is not completed, redirect to questionnaire page
           return this.router.createUrlTree(['/auth/questionnaire']);
         }
 
-        // Allow access to protected routes if questionnaire is completed
+        // If questionnaire is completed, allow access
         return true;
       })
     );

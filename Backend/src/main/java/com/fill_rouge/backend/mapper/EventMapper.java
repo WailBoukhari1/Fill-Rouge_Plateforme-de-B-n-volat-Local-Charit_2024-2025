@@ -28,7 +28,6 @@ public interface EventMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", expression = "java(LocalDateTime.now())")
     @Mapping(target = "updatedAt", expression = "java(LocalDateTime.now())")
-    @Mapping(target = "status", ignore = true)
     @Mapping(target = "registeredParticipants", ignore = true)
     @Mapping(target = "averageRating", ignore = true)
     @Mapping(target = "numberOfRatings", ignore = true)
@@ -49,6 +48,7 @@ public interface EventMapper {
     @Mapping(target = "bannerImage", source = "bannerImage")
     @Mapping(target = "organization", ignore = true)
     @Mapping(target = "participations", ignore = true)
+    @Mapping(target = "status", source = "status")
     Event toEntity(EventRequest request);
 
     @Named("toResponse")
@@ -73,11 +73,10 @@ public interface EventMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "updatedAt", expression = "java(LocalDateTime.now())")
     @Mapping(target = "registeredParticipants", ignore = true)
     @Mapping(target = "averageRating", ignore = true)
     @Mapping(target = "numberOfRatings", ignore = true)
-    @Mapping(target = "updatedAt", expression = "java(LocalDateTime.now())")
     @Mapping(target = "coordinates", source = "coordinates")
     @Mapping(target = "waitlistEnabled", source = "waitlistEnabled")
     @Mapping(target = "maxWaitlistSize", source = "maxWaitlistSize")
@@ -95,6 +94,7 @@ public interface EventMapper {
     @Mapping(target = "bannerImage", source = "bannerImage")
     @Mapping(target = "organization", ignore = true)
     @Mapping(target = "participations", ignore = true)
+    @Mapping(target = "status", source = "status")
     void updateEntity(EventRequest request, @MappingTarget Event event);
 
     @IterableMapping(qualifiedByName = "toResponse")

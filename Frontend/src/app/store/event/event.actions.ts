@@ -1,13 +1,13 @@
-import { createAction, props } from '@ngrx/store';
-import { IEvent, IEventFeedback, IEventFilters, IEventRegistration, EventStatus, IEventStats } from '../../core/models/event.types';
-import { Page } from '../../core/models/page.model';
-import { createEffect } from '@ngrx/effects';
-import { ofType } from '@ngrx/effects';
-import { switchMap, map, catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
-import { EventService } from '../../core/services/event.service';
 import { Injectable } from '@angular/core';
-import { Actions } from '@ngrx/effects';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { of } from 'rxjs';
+import { map, switchMap, catchError } from 'rxjs/operators';
+import { createAction, props } from '@ngrx/store';
+import { EventService } from '../../core/services/event.service';
+import { IEvent, EventCategory, EventStatus } from '../../core/models/event.types';
+import { Page } from '../../core/models/page.model';
+import { EventRequest } from '../../core/models/event-request.model';
+import { IEventFeedback, IEventFilters, IEventRegistration, IEventStats } from '../../core/models/event.types';
 
 @Injectable()
 export class EventEffects {
@@ -19,12 +19,42 @@ export class EventEffects {
   updateEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(updateEvent),
-      switchMap(({ id, event }) =>
-        this.eventService.updateEvent(id, event).pipe(
+      switchMap(({ id, event }) => {
+        const userId = localStorage.getItem('userId') || '';
+        const eventRequest: EventRequest = {
+          userId,
+          organizationId: event.organizationId || '',
+          title: event.title || '',
+          description: event.description || '',
+          location: event.location || '',
+          startDate: event.startDate || new Date(),
+          endDate: event.endDate || new Date(),
+          maxParticipants: event.maxParticipants || 0,
+          category: event.category as EventCategory || EventCategory.OTHER,
+          status: event.status as EventStatus,
+          coordinates: event.coordinates,
+          contactPerson: event.contactPerson,
+          contactEmail: event.contactEmail,
+          contactPhone: event.contactPhone,
+          waitlistEnabled: event.waitlistEnabled,
+          maxWaitlistSize: event.maxWaitlistSize,
+          requiredSkills: event.requiredSkills,
+          isVirtual: event.isVirtual,
+          requiresApproval: event.requiresApproval,
+          difficulty: event.difficulty,
+          tags: event.tags,
+          minimumAge: event.minimumAge,
+          requiresBackground: event.requiresBackground,
+          isSpecialEvent: event.isSpecialEvent,
+          pointsAwarded: event.pointsAwarded,
+          durationHours: event.durationHours
+        };
+        
+        return this.eventService.updateEvent(id, eventRequest).pipe(
           map(updatedEvent => updateEventSuccess({ event: updatedEvent })),
           catchError(error => of(updateEventFailure({ error })))
-        )
-      )
+        );
+      })
     )
   );
 }
@@ -91,7 +121,7 @@ export const submitEventFeedbackFailure = createAction(
 
 export const updateEventStatus = createAction(
   '[Event] Update Event Status',
-  props<{ id: string; status: EventStatus }>()
+  props<{ eventId: string; status: EventStatus }>()
 );
 
 export const updateEventStatusSuccess = createAction(
@@ -290,5 +320,35 @@ export const registerForEventWithDetailsSuccess = createAction(
 
 export const registerForEventWithDetailsFailure = createAction(
   '[Event] Register for Event With Details Failure',
+  props<{ error: any }>()
+);
+
+export const approveEvent = createAction(
+  '[Event] Approve Event',
+  props<{ eventId: string }>()
+);
+
+export const approveEventSuccess = createAction(
+  '[Event] Approve Event Success',
+  props<{ event: IEvent }>()
+);
+
+export const approveEventFailure = createAction(
+  '[Event] Approve Event Failure',
+  props<{ error: any }>()
+);
+
+export const rejectEvent = createAction(
+  '[Event] Reject Event',
+  props<{ eventId: string; reason: string }>()
+);
+
+export const rejectEventSuccess = createAction(
+  '[Event] Reject Event Success',
+  props<{ event: IEvent }>()
+);
+
+export const rejectEventFailure = createAction(
+  '[Event] Reject Event Failure',
   props<{ error: any }>()
 ); 

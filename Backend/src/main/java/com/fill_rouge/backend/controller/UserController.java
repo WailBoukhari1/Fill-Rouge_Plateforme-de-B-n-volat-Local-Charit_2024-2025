@@ -18,15 +18,24 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Users", description = "User management APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final UserService userService;
@@ -54,6 +63,10 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all users with pagination (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Users retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
+    })
     public ResponseEntity<Page<User>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -84,6 +97,10 @@ public class UserController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or authentication.principal.id == #id")
     @Operation(summary = "Get user by ID (Admin or user themselves)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
+    })
     public ResponseEntity<ApiResponse<User>> getUserById(@PathVariable String id, HttpServletRequest request) {
         log.info("** UserController.getUserById: Received request from {} for user ID: {}", 
                  request.getRemoteAddr(), id);
@@ -101,6 +118,10 @@ public class UserController {
 
     @GetMapping("/profile")
     @Operation(summary = "Get current user profile")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User profile retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+    })
     public ResponseEntity<ApiResponse<User>> getCurrentUserProfile(
             @AuthenticationPrincipal User user,
             HttpServletRequest request) {
@@ -125,6 +146,12 @@ public class UserController {
     @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user role (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User role updated successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
+    })
     public ResponseEntity<ApiResponse<User>> updateUserRole(
             @PathVariable String id,
             @RequestBody RoleUpdateRequest request,
@@ -147,6 +174,12 @@ public class UserController {
     @PostMapping("/{id}/lock")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lock user account (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User account locked successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
+    })
     public ResponseEntity<ApiResponse<Void>> lockUserAccount(
             @PathVariable String id,
             HttpServletRequest request) {
@@ -168,6 +201,12 @@ public class UserController {
     @PostMapping("/{id}/unlock")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Unlock user account (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User account unlocked successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
+    })
     public ResponseEntity<ApiResponse<Void>> unlockUserAccount(
             @PathVariable String id,
             HttpServletRequest request) {
@@ -189,6 +228,11 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete user (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "User deleted successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
+    })
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @PathVariable String id,
             HttpServletRequest request) {
@@ -200,7 +244,7 @@ public class UserController {
             userService.deleteUser(id);
             log.info("** Successfully deleted user: {}", id);
             
-            return ResponseEntity.ok(ApiResponse.success(null, "User deleted successfully"));
+            return ResponseEntity.noContent().build();
         } catch (Exception e) {
             log.error("** Error in deleteUser: {}", e.getMessage(), e);
             throw e;
@@ -210,6 +254,10 @@ public class UserController {
     @GetMapping("/stats")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get user statistics (Admin only)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User statistics retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
+    })
     public ResponseEntity<ApiResponse<Object>> getUserStats(HttpServletRequest request) {
         log.info("** UserController.getUserStats: Received request from {} for user statistics", 
                  request.getRemoteAddr());

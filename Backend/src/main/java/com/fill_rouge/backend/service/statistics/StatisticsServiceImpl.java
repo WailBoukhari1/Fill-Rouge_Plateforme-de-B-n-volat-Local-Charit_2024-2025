@@ -63,64 +63,128 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     @Transactional(readOnly = true)
-    public StatisticsResponse.VolunteerStats getVolunteerStats(String volunteerId) {
+    public StatisticsResponse.VolunteerStats getVolunteerStats(String userId) {
         LocalDateTime now = LocalDateTime.now();
         
-        // Verify the volunteer exists
-        volunteerProfileRepository.findByVolunteerId(volunteerId)
-            .orElseThrow(() -> new ResourceNotFoundException("Volunteer profile not found for ID: " + volunteerId));
-        
-        // Get all participations for the volunteer using the full ObjectId
-        List<EventParticipation> participations = participationRepository.findByVolunteerId(volunteerId);
-        
-        // Calculate basic metrics
-        long totalEventsParticipated = participations.size();
-        long activeEvents = participations.stream()
-            .filter(p -> p.getEvent().getStatus() == EventStatus.ACTIVE && 
-                        p.getEvent().getEndDate().isAfter(now))
-            .count();
-        long completedEvents = participations.stream()
-            .filter(p -> p.getEvent().getStatus() == EventStatus.COMPLETED && 
-                        p.getEvent().getEndDate().isBefore(now))
-            .count();
-        long totalVolunteerHours = participations.stream()
-            .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED)
-            .mapToLong(EventParticipation::getHours)
-            .sum();
-
-        // Calculate performance metrics
-        double reliabilityScore = calculateReliabilityScore(participations);
-        double avgEventRating = calculateAverageRating(participations);
-        long skillsEndorsements = calculateSkillsEndorsements(volunteerId);
-        
-        // Get time series data
-        List<StatisticsResponse.TimeSeriesData> hoursContributed = getHoursContributedByMonth(participations);
-        List<StatisticsResponse.TimeSeriesData> eventsParticipation = getEventsParticipationByMonth(participations);
-        Map<String, Long> eventsByCategory = getEventsByCategory(participations);
-        
-        // Calculate impact metrics
-        long peopleImpacted = calculatePeopleImpacted(participations);
-        long organizationsSupported = participations.stream()
-            .map(p -> p.getEvent().getOrganizationId())
-            .distinct()
-            .count();
-        Map<String, Long> impactByCategory = calculateImpactByCategory(participations);
-
-        return StatisticsResponse.VolunteerStats.builder()
-            .totalEventsParticipated(totalEventsParticipated)
-            .activeEvents(activeEvents)
-            .completedEvents(completedEvents)
-            .totalVolunteerHours(totalVolunteerHours)
-            .reliabilityScore(reliabilityScore)
-            .averageEventRating(avgEventRating)
-            .skillsEndorsements(skillsEndorsements)
-            .hoursContributed(hoursContributed)
-            .eventsParticipation(eventsParticipation)
-            .eventsByCategory(eventsByCategory)
-            .peopleImpacted(peopleImpacted)
-            .organizationsSupported(organizationsSupported)
-            .impactByCategory(impactByCategory)
-            .build();
+        try {
+            // Find the volunteer profile by userId 
+            VolunteerProfile volunteerProfile = volunteerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Volunteer profile not found for user ID: " + userId));
+            
+            // Use the profile ID as the volunteerId for participation queries
+            String volunteerId = volunteerProfile.getId();
+            log.info("Found volunteer profile with ID: {} for user ID: {}", volunteerId, userId);
+            
+            // Get all participations that match either the volunteerId or userId
+            List<EventParticipation> participations = new ArrayList<>();
+            
+            // First try to get participation by volunteerId
+            List<EventParticipation> participationsByVolunteerId = participationRepository.findByVolunteerId(volunteerId);
+            log.info("Found {} participations by volunteer ID: {}", participationsByVolunteerId.size(), volunteerId);
+            participations.addAll(participationsByVolunteerId);
+            
+            // Then also try to get participation by userId
+            List<EventParticipation> participationsByUserId = participationRepository.findByVolunteerId(userId);
+            log.info("Found {} participations by user ID: {}", participationsByUserId.size(), userId);
+            participations.addAll(participationsByUserId);
+            
+            // Remove duplicates if any
+            Set<String> processedIds = new HashSet<>();
+            List<EventParticipation> uniqueParticipations = new ArrayList<>();
+            for (EventParticipation p : participations) {
+                if (p.getId() != null && !processedIds.contains(p.getId())) {
+                    processedIds.add(p.getId());
+                    uniqueParticipations.add(p);
+                }
+            }
+            
+            log.info("Total unique participations after deduplication: {}", uniqueParticipations.size());
+            
+            // Filter out participations with null events to prevent NullPointerException
+            List<EventParticipation> validParticipations = uniqueParticipations.stream()
+                .filter(p -> p.getEvent() != null)
+                .collect(Collectors.toList());
+            log.info("Valid participations (with non-null events): {}", validParticipations.size());
+            
+            // Calculate statistics by status
+            long registeredEvents = validParticipations.stream()
+                .filter(p -> p.getStatus() == EventParticipationStatus.REGISTERED)
+                .count();
+            
+            // Calculate basic metrics
+            long totalEventsParticipated = validParticipations.size();
+            long activeEvents = validParticipations.stream()
+                .filter(p -> p.getEvent() != null && 
+                          p.getEvent().getStatus() == EventStatus.ACTIVE && 
+                          p.getEvent().getEndDate() != null &&
+                          p.getEvent().getEndDate().isAfter(now))
+                .count();
+            long completedEvents = validParticipations.stream()
+                .filter(p -> p.getEvent() != null && 
+                          p.getEvent().getStatus() == EventStatus.COMPLETED && 
+                          p.getEvent().getEndDate() != null &&
+                          p.getEvent().getEndDate().isBefore(now))
+                .count();
+            long totalVolunteerHours = validParticipations.stream()
+                .filter(p -> p.getStatus() == EventParticipationStatus.COMPLETED && p.getHours() != null)
+                .mapToLong(EventParticipation::getHours)
+                .sum();
+    
+            // Calculate performance metrics
+            double reliabilityScore = calculateReliabilityScore(validParticipations);
+            double avgEventRating = calculateAverageRating(validParticipations);
+            long skillsEndorsements = calculateSkillsEndorsements(userId);
+            
+            // Get time series data
+            List<StatisticsResponse.TimeSeriesData> hoursContributed = getHoursContributedByMonth(validParticipations);
+            List<StatisticsResponse.TimeSeriesData> eventsParticipation = getEventsParticipationByMonth(validParticipations);
+            Map<String, Long> eventsByCategory = getEventsByCategory(validParticipations);
+            
+            // Calculate impact metrics
+            long peopleImpacted = calculatePeopleImpacted(validParticipations);
+            long organizationsSupported = validParticipations.stream()
+                .filter(p -> p.getEvent() != null && p.getEvent().getOrganizationId() != null)
+                .map(p -> p.getEvent().getOrganizationId())
+                .distinct()
+                .count();
+            Map<String, Long> impactByCategory = calculateImpactByCategory(validParticipations);
+    
+            return StatisticsResponse.VolunteerStats.builder()
+                .totalEventsParticipated(totalEventsParticipated)
+                .activeEvents(activeEvents)
+                .completedEvents(completedEvents)
+                .registeredEvents(registeredEvents)
+                .totalVolunteerHours(totalVolunteerHours)
+                .reliabilityScore(reliabilityScore)
+                .averageEventRating(avgEventRating)
+                .skillsEndorsements(skillsEndorsements)
+                .hoursContributed(hoursContributed)
+                .eventsParticipation(eventsParticipation)
+                .eventsByCategory(eventsByCategory)
+                .peopleImpacted(peopleImpacted)
+                .organizationsSupported(organizationsSupported)
+                .impactByCategory(impactByCategory)
+                .build();
+        } catch (Exception e) {
+            // Log the error but return an empty stats object to avoid breaking the application
+            log.error("Error calculating volunteer statistics for userId: {}, error: {}", userId, e.getMessage(), e);
+            return StatisticsResponse.VolunteerStats.builder()
+                .totalEventsParticipated(0)
+                .activeEvents(0)
+                .completedEvents(0)
+                .registeredEvents(0)
+                .totalVolunteerHours(0)
+                .reliabilityScore(0)
+                .averageEventRating(0)
+                .skillsEndorsements(0)
+                .hoursContributed(new ArrayList<>())
+                .eventsParticipation(new ArrayList<>())
+                .eventsByCategory(new HashMap<>())
+                .peopleImpacted(0)
+                .organizationsSupported(0)
+                .impactByCategory(new HashMap<>())
+                .build();
+        }
     }
 
     @Override
@@ -800,7 +864,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         String statusStr = eventStatus.name();
         Long count = 0L;
         try {
-            count = eventRepository.countByStatus(statusStr);
+            count = eventRepository.countEventsByStatus(statusStr);
             if (count == null) count = 0L;
             log.debug("[AdminStats:{}] Events with status {}: {}", requestId, statusStr, count);
         } catch (Exception e) {
@@ -824,9 +888,9 @@ public class StatisticsServiceImpl implements StatisticsService {
         Long count = 0L;
         try {
             if (endDateAfter) {
-                count = eventRepository.countByStatusAndEndDateAfter(statusStr, date);
+                count = eventRepository.countEventsByStatusAndEndDateAfter(statusStr, date);
             } else {
-                count = eventRepository.countByStatusAndEndDateBefore(statusStr, date);
+                count = eventRepository.countEventsByStatusAndEndDateBefore(statusStr, date);
             }
             if (count == null) count = 0L;
             log.debug("[AdminStats:{}] Events with status {} and endDate {}: {}", 
@@ -851,11 +915,23 @@ public class StatisticsServiceImpl implements StatisticsService {
             long totalVolunteers = userRepository.countByRole(Role.VOLUNTEER);
             long pendingOrganizations = organizationRepository.countByVerifiedFalse();
             
-            // Add null checks for event status counts
-            Long activeEventsCount = eventRepository.countByStatus(EventStatus.ACTIVE.toString());
-            Long completedEventsCount = eventRepository.countByStatus(EventStatus.COMPLETED.toString());
-            long activeEvents = activeEventsCount != null ? activeEventsCount : 0;
-            long completedEvents = completedEventsCount != null ? completedEventsCount : 0;
+            // More robust handling of event status counts with better error handling
+            long activeEvents = 0;
+            long completedEvents = 0;
+            
+            try {
+                Long activeEventsCount = eventRepository.countEventsByStatus(EventStatus.ACTIVE.toString());
+                activeEvents = activeEventsCount != null ? activeEventsCount : 0;
+            } catch (Exception e) {
+                log.warn("Error counting ACTIVE events: {}", e.getMessage());
+            }
+            
+            try {
+                Long completedEventsCount = eventRepository.countEventsByStatus(EventStatus.COMPLETED.toString());
+                completedEvents = completedEventsCount != null ? completedEventsCount : 0;
+            } catch (Exception e) {
+                log.warn("Error counting COMPLETED events: {}", e.getMessage());
+            }
             
             Map<String, Long> usersByRole = Arrays.stream(Role.values())
                 .collect(Collectors.toMap(
@@ -868,26 +944,36 @@ public class StatisticsServiceImpl implements StatisticsService {
                 "VERIFIED", organizationRepository.countByVerifiedTrue()
             );
             
-            Map<String, Long> eventsByStatus = Arrays.stream(EventStatus.values())
-                .collect(Collectors.toMap(
-                    EventStatus::name,
-                    status -> {
-                        Long count = eventRepository.countByStatus(status.toString());
-                        return count != null ? count : 0L;
-                    },
-                    (existing, replacement) -> existing,
-                    HashMap::new
-                ));
+            // Create a map for event statuses with more robust error handling
+            Map<String, Long> eventsByStatus = new HashMap<>();
+            for (EventStatus status : EventStatus.values()) {
+                try {
+                    Long count = eventRepository.countEventsByStatus(status.toString());
+                    eventsByStatus.put(status.name(), count != null ? count : 0L);
+                } catch (Exception e) {
+                    log.warn("Error counting events with status {}: {}", status, e.getMessage());
+                    eventsByStatus.put(status.name(), 0L);
+                }
+            }
             
-            List<CategoryCount> categoryCounts = eventRepository.countByCategory();
-            Map<String, Long> eventsByCategory = categoryCounts != null ? categoryCounts.stream()
-                .filter(cat -> cat != null && cat.getId() != null && cat.getCount() != null)
-                .collect(Collectors.toMap(
-                    CategoryCount::getId,
-                    CategoryCount::getCount,
-                    (existing, replacement) -> existing,
-                    HashMap::new
-                )) : new HashMap<>();
+            List<CategoryCount> categoryCounts = null;
+            Map<String, Long> eventsByCategory = new HashMap<>();
+            
+            try {
+                categoryCounts = eventRepository.countByCategory();
+                if (categoryCounts != null) {
+                    eventsByCategory = categoryCounts.stream()
+                        .filter(cat -> cat != null && cat.getId() != null && cat.getCount() != null)
+                        .collect(Collectors.toMap(
+                            CategoryCount::getId,
+                            CategoryCount::getCount,
+                            (existing, replacement) -> existing,
+                            HashMap::new
+                        ));
+                }
+            } catch (Exception e) {
+                log.warn("Error counting events by category: {}", e.getMessage());
+            }
             
             // Get user registrations by month (last 12 months)
             LocalDateTime startDate = LocalDateTime.now().minusMonths(11).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);

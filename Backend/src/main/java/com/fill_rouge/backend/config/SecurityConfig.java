@@ -120,7 +120,9 @@ public class SecurityConfig {
                 "Access-Control-Request-Method",
                 "Access-Control-Request-Headers",
                 "X-User-ID",
-                "X-Organization-ID"
+                "X-Organization-ID",
+                "user-id",
+                "organization-id"
         ));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID", "Content-Disposition"));
         configuration.setAllowCredentials(true);
@@ -146,7 +148,9 @@ public class SecurityConfig {
                 "Authorization",
                 "X-Requested-With",
                 "X-User-ID",
-                "X-Organization-ID"
+                "X-Organization-ID",
+                "user-id",
+                "organization-id"
         ));
         config.setExposedHeaders(Arrays.asList("Authorization", "X-User-ID", "Content-Disposition"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH"));

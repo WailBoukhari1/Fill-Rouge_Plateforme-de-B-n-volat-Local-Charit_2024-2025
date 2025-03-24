@@ -6,7 +6,8 @@ import { map, mergeMap, catchError, withLatestFrom, tap, finalize, switchMap } f
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { EventService } from '../../core/services/event.service';
-import { EventStatus, IEvent, IEventFeedback, IEventRegistration, IEventRegistrationRequest } from '../../core/models/event.types';
+import { EventCategory, EventStatus, IEvent, IEventFeedback, IEventRegistration, IEventRegistrationRequest } from '../../core/models/event.types';
+import { EventRequest } from '../../core/models/event-request.model';
 import { Event } from '../../core/models/event.model';
 import { Page } from '../../core/models/page.model';
 import * as EventActions from './event.actions';
@@ -83,12 +84,42 @@ export class EventEffects {
   createEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.createEvent),
-      mergeMap(action =>
-        this.eventService.createEvent(action.event).pipe(
+      mergeMap(action => {
+        const userId = localStorage.getItem('userId');
+        const eventRequest: EventRequest = {
+          userId: userId || '',
+          organizationId: action.event.organizationId || '',
+          title: action.event.title || '',
+          description: action.event.description || '',
+          location: action.event.location || '',
+          startDate: action.event.startDate || new Date(),
+          endDate: action.event.endDate || new Date(),
+          maxParticipants: action.event.maxParticipants || 0,
+          category: action.event.category as EventCategory || EventCategory.OTHER,
+          status: action.event.status === undefined ? EventStatus.PENDING : (action.event.status as EventStatus),
+          coordinates: action.event.coordinates,
+          contactPerson: action.event.contactPerson,
+          contactEmail: action.event.contactEmail,
+          contactPhone: action.event.contactPhone,
+          waitlistEnabled: action.event.waitlistEnabled,
+          maxWaitlistSize: action.event.maxWaitlistSize,
+          requiredSkills: action.event.requiredSkills,
+          isVirtual: action.event.isVirtual,
+          requiresApproval: action.event.requiresApproval,
+          difficulty: action.event.difficulty,
+          tags: action.event.tags,
+          minimumAge: action.event.minimumAge,
+          requiresBackground: action.event.requiresBackground,
+          isSpecialEvent: action.event.isSpecialEvent,
+          pointsAwarded: action.event.pointsAwarded,
+          durationHours: action.event.durationHours
+        };
+        
+        return this.eventService.createEvent(eventRequest).pipe(
           map(event => EventActions.createEventSuccess({ event })),
           catchError(error => of(EventActions.createEventFailure({ error })))
-        )
-      )
+        );
+      })
     )
   );
 
@@ -106,12 +137,42 @@ export class EventEffects {
   updateEvent$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.updateEvent),
-      mergeMap(action =>
-        this.eventService.updateEvent(action.id, action.event).pipe(
+      mergeMap(action => {
+        const userId = localStorage.getItem('userId');
+        const eventRequest: EventRequest = {
+          userId: userId || '',
+          organizationId: action.event.organizationId || '',
+          title: action.event.title || '',
+          description: action.event.description || '',
+          location: action.event.location || '',
+          startDate: action.event.startDate || new Date(),
+          endDate: action.event.endDate || new Date(),
+          maxParticipants: action.event.maxParticipants || 0,
+          category: action.event.category as EventCategory || EventCategory.OTHER,
+          status: action.event.status === undefined ? EventStatus.PENDING : (action.event.status as EventStatus),
+          coordinates: action.event.coordinates,
+          contactPerson: action.event.contactPerson,
+          contactEmail: action.event.contactEmail,
+          contactPhone: action.event.contactPhone,
+          waitlistEnabled: action.event.waitlistEnabled,
+          maxWaitlistSize: action.event.maxWaitlistSize,
+          requiredSkills: action.event.requiredSkills,
+          isVirtual: action.event.isVirtual,
+          requiresApproval: action.event.requiresApproval,
+          difficulty: action.event.difficulty,
+          tags: action.event.tags,
+          minimumAge: action.event.minimumAge,
+          requiresBackground: action.event.requiresBackground,
+          isSpecialEvent: action.event.isSpecialEvent,
+          pointsAwarded: action.event.pointsAwarded,
+          durationHours: action.event.durationHours
+        };
+        
+        return this.eventService.updateEvent(action.id, eventRequest).pipe(
           map(event => EventActions.updateEventSuccess({ event })),
           catchError(error => of(EventActions.updateEventFailure({ error })))
-        )
-      )
+        );
+      })
     )
   );
 
@@ -173,7 +234,7 @@ export class EventEffects {
               startDate: new Date(eventData.startDate),
               endDate: new Date(eventData.endDate),
               createdAt: new Date(eventData.createdAt),
-              status: eventData.status || EventStatus.DRAFT,
+              status: eventData.status || EventStatus.PENDING,
               title: eventData.title || '',
               description: eventData.description || '',
               location: eventData.location || '',
@@ -228,7 +289,7 @@ export class EventEffects {
               startDate: new Date(eventData.startDate),
               endDate: new Date(eventData.endDate),
               createdAt: new Date(eventData.createdAt),
-              status: eventData.status || EventStatus.DRAFT,
+              status: eventData.status || EventStatus.PENDING,
               title: eventData.title || '',
               description: eventData.description || '',
               location: eventData.location || '',
@@ -276,9 +337,9 @@ export class EventEffects {
   updateEventStatus$ = createEffect(() =>
     this.actions$.pipe(
       ofType(EventActions.updateEventStatus),
-      mergeMap(action =>
-        this.eventService.updateEventStatus(action.id, action.status).pipe(
-          map(event => EventActions.updateEventStatusSuccess({ event })),
+      mergeMap(({ eventId, status }) =>
+        this.eventService.updateEventStatus(eventId, status).pipe(
+          map((response: IEvent) => EventActions.updateEventStatusSuccess({ event: response })),
           catchError(error => of(EventActions.updateEventStatusFailure({ error })))
         )
       )
@@ -471,6 +532,88 @@ export class EventEffects {
       }),
       map(() => EventActions.setLoading({ loading: false }))
     )
+  );
+
+  // Event Status Effects
+  approveEvent$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.approveEvent),
+      mergeMap(({ eventId }) =>
+        this.eventService.approveEvent(eventId).pipe(
+          map((response: IEvent) => EventActions.approveEventSuccess({ event: response })),
+          catchError(error => of(EventActions.approveEventFailure({ error })))
+        )
+      )
+    )
+  );
+
+  rejectEvent$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(EventActions.rejectEvent),
+      mergeMap(({ eventId, reason }) =>
+        this.eventService.rejectEvent(eventId, reason).pipe(
+          map((response: IEvent) => EventActions.rejectEventSuccess({ event: response })),
+          catchError(error => of(EventActions.rejectEventFailure({ error })))
+        )
+      )
+    )
+  );
+
+  // Success notifications
+  approveEventSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(EventActions.approveEventSuccess),
+        tap(() => {
+          this.snackBar.open('Event approved successfully', 'Close', { duration: 3000 });
+        })
+      ),
+    { dispatch: false }
+  );
+
+  rejectEventSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(EventActions.rejectEventSuccess),
+        tap(() => {
+          this.snackBar.open('Event rejected successfully', 'Close', { duration: 3000 });
+        })
+      ),
+    { dispatch: false }
+  );
+
+  // Error notifications
+  approveEventFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(EventActions.approveEventFailure),
+        tap(({ error }) => {
+          this.snackBar.open('Error approving event: ' + error.message, 'Close', { duration: 5000 });
+        })
+      ),
+    { dispatch: false }
+  );
+
+  rejectEventFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(EventActions.rejectEventFailure),
+        tap(({ error }) => {
+          this.snackBar.open('Error rejecting event: ' + error.message, 'Close', { duration: 5000 });
+        })
+      ),
+    { dispatch: false }
+  );
+
+  updateEventStatusFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(EventActions.updateEventStatusFailure),
+        tap(({ error }) => {
+          this.snackBar.open('Error updating event status: ' + error.message, 'Close', { duration: 5000 });
+        })
+      ),
+    { dispatch: false }
   );
 
   constructor(

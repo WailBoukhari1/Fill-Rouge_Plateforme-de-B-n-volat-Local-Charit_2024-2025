@@ -277,7 +277,7 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
 
   private getStatusColorClasses(status: EventStatus): string {
     const colorClasses: Record<EventStatus, string> = {
-      [EventStatus.DRAFT]: 'text-gray-700 bg-gray-100',
+      // [EventStatus.DRAFT]: 'text-gray-700 bg-gray-100',
       [EventStatus.PUBLISHED]: 'text-blue-700 bg-blue-100',
       [EventStatus.ONGOING]: 'text-green-700 bg-green-100',
       [EventStatus.COMPLETED]: 'text-purple-700 bg-purple-100',
@@ -289,37 +289,50 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
       [EventStatus.REJECTED]: 'text-red-700 bg-red-100',
       [EventStatus.FULL]: 'text-orange-700 bg-orange-100'
     };
-    return colorClasses[status] || colorClasses[EventStatus.DRAFT];
+    return colorClasses[status] || colorClasses[EventStatus.PENDING];
   }
 
-  updateStatus(event: IEvent): void {
-    const nextStatus = this.getNextStatus(event.status);
-    if (!nextStatus) {
-      this.snackBar.open('No valid status transition available', 'Close', {
+  updateStatus(event: IEvent, newStatus: EventStatus): void {
+    const eventId = event._id || event.id;
+    if (!eventId) {
+      console.error('Event ID is missing');
+      this.snackBar.open('Cannot update event: Invalid event ID', 'Close', {
         duration: 3000,
       });
       return;
     }
 
+    const statusLabels: Record<EventStatus, string> = {
+      [EventStatus.PENDING]: 'Pending',
+      [EventStatus.APPROVED]: 'Approved',
+      [EventStatus.ACTIVE]: 'Active',
+      [EventStatus.ONGOING]: 'Ongoing',
+      [EventStatus.COMPLETED]: 'Completed',
+      [EventStatus.CANCELLED]: 'Cancelled',
+      [EventStatus.REJECTED]: 'Rejected',
+      [EventStatus.FULL]: 'Full',
+      [EventStatus.UPCOMING]: 'Upcoming',
+      [EventStatus.PUBLISHED]: 'Published'
+    };
+
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
-        title: 'Update Event Status',
-        message: `Are you sure you want to update the status of "${
-          event.title
-        }" from ${this.formatStatus(event.status)} to ${this.formatStatus(
-          nextStatus
-        )}?`,
+        title: `Update Event Status`,
+        message: `Are you sure you want to update "${event.title}" from ${statusLabels[event.status]} to ${statusLabels[newStatus]}?`,
         confirmText: 'Update',
         cancelText: 'Cancel',
       },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result && event._id) {
-        this.eventService.updateEventStatus(event._id, nextStatus).subscribe({
+      if (result) {
+        this.eventService.updateEventStatus(eventId, newStatus).subscribe({
           next: () => {
             this.loadEvents();
+            this.snackBar.open(`Event status updated to ${statusLabels[newStatus]}`, 'Close', {
+              duration: 3000,
+            });
           },
           error: (error) => {
             console.error('Error updating event status:', error);
@@ -462,7 +475,7 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
 
   private getNextStatus(currentStatus: EventStatus): EventStatus | null {
     const statusFlow: Record<EventStatus, EventStatus | null> = {
-      [EventStatus.DRAFT]: EventStatus.PENDING,
+      // [EventStatus.DRAFT]: EventStatus.PENDING,
       [EventStatus.PUBLISHED]: EventStatus.ONGOING,
       [EventStatus.ONGOING]: EventStatus.COMPLETED,
       [EventStatus.COMPLETED]: null,
@@ -576,7 +589,7 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
       location: event.location || 'No location specified',
       maxParticipants: typeof event.maxParticipants === 'number' ? event.maxParticipants : 0,
       currentParticipants: typeof event.currentParticipants === 'number' ? event.currentParticipants : 0,
-      status: event.status || EventStatus.DRAFT,
+      status: event.status || EventStatus.PENDING,
       organizationId: event.organizationId || this.organizationId || '',
       contactPerson: event.contactPerson || '',
       contactEmail: event.contactEmail || '',
@@ -604,7 +617,7 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
       location: 'No location specified',
       maxParticipants: 0,
       currentParticipants: 0,
-      status: EventStatus.DRAFT,
+      status: EventStatus.PENDING,
       organizationId: this.organizationId || '',
       organizationName: '',
       requiresBackground: false,
@@ -643,7 +656,7 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
   // Generate mock events for testing
   private generateMockEvents(): IEvent[] {
     const categories = ['ENVIRONMENT', 'EDUCATION', 'HEALTH', 'SOCIAL_SERVICES', 'OTHER'];
-    const statuses = [EventStatus.DRAFT, EventStatus.PUBLISHED, EventStatus.ONGOING, EventStatus.COMPLETED, EventStatus.CANCELLED];
+    const statuses = [EventStatus.PENDING, EventStatus.PUBLISHED, EventStatus.ONGOING, EventStatus.COMPLETED, EventStatus.CANCELLED];
     
     return Array(5).fill(0).map((_, i) => ({
       ...this.createEmptyEvent(),
@@ -694,51 +707,8 @@ export class OrganizationEventsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Add a method to determine if the event is a draft
+  // Add a method to check if an event is in PENDING status
   isDraftEvent(event: IEvent): boolean {
-    return event.status === EventStatus.DRAFT;
-  }
-
-  // Add a method to submit a draft event for approval
-  submitDraftForApproval(event: IEvent): void {
-    const eventId = event.id || event._id;
-    if (!eventId) {
-      console.error('Event ID is missing');
-      this.snackBar.open('Cannot submit event: Invalid event ID', 'Close', {
-        duration: 3000,
-      });
-      return;
-    }
-
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Submit Event for Approval',
-        message: `Are you sure you want to submit "${event.title}" for approval? Once submitted, the event will be reviewed by administrators.`,
-        confirmText: 'Submit',
-        cancelText: 'Cancel',
-      },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.eventService
-          .updateEventStatus(eventId, EventStatus.PENDING)
-          .subscribe({
-            next: () => {
-              this.loadEvents();
-              this.snackBar.open('Event submitted for approval', 'Close', {
-                duration: 3000,
-              });
-            },
-            error: (error) => {
-              console.error('Error submitting event for approval:', error);
-              this.snackBar.open('Error submitting event for approval', 'Close', {
-                duration: 3000,
-              });
-            },
-          });
-      }
-    });
+    return event.status === EventStatus.PENDING;
   }
 }

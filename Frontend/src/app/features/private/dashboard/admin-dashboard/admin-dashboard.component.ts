@@ -8,6 +8,8 @@ import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatButtonModule } from '@angular/material/button';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -18,7 +20,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     NgxChartsModule,
     MatCardModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatButtonModule
   ],
   template: `
     <div class="p-6 bg-gray-50 min-h-screen">
@@ -227,6 +230,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 export class AdminDashboardComponent implements OnInit {
   loading = false;
   statistics: AdminStatistics | null = null;
+  error: string | null = null;
 
   // Chart Data
   usersByRoleData: any[] = [];
@@ -239,7 +243,13 @@ export class AdminDashboardComponent implements OnInit {
   constructor(private adminService: AdminService) {}
 
   ngOnInit(): void {
+    this.loadStatistics();
+  }
+
+  loadStatistics(): void {
     this.loading = true;
+    this.error = null;
+    
     this.adminService.getAdminStatistics().subscribe({
       next: (response: any) => {
         console.log('Raw API Response:', response);
@@ -249,7 +259,58 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading admin statistics:', error);
+        
+        let errorDetail = '';
+        if (error instanceof HttpErrorResponse && error.status === 500) {
+          // Use more specific error message for the /api/admin/statistics endpoint
+          errorDetail = 'The statistics service is currently unavailable.';
+          
+          // Log additional debug information for developers
+          const userId = localStorage.getItem('userId');
+          if (userId) {
+            console.log(`User ID attempting to access statistics: ${userId}`);
+          }
+        } else {
+          errorDetail = `Server returned: ${error.status} ${error.statusText}`;
+        }
+        
+        this.error = `Unable to load dashboard statistics. ${errorDetail}`;
         this.loading = false;
+        
+        // Provide empty statistics to avoid null reference errors
+        this.statistics = {
+          totalUsers: 0,
+          totalOrganizations: 0,
+          totalEvents: 0,
+          totalVolunteers: 0,
+          pendingOrganizations: 0,
+          usersByRole: {
+            ADMIN: 0,
+            ORGANIZATION: 0,
+            VOLUNTEER: 0,
+            UNASSIGNED: 0
+          },
+          organizationsByStatus: {
+            PENDING: 0,
+            VERIFIED: 0
+          },
+          eventsByStatus: {
+            ACTIVE: 0,
+            COMPLETED: 0,
+            CANCELLED: 0,
+            ONGOING: 0,
+            PENDING: 0,
+            SCHEDULED: 0,
+            FULL: 0,
+            REJECTED: 0
+          },
+          eventsByCategory: {},
+          userGrowth: {},
+          eventGrowth: {}
+        };
+        
+        // Initialize empty chart data
+        this.prepareChartData();
       }
     });
   }

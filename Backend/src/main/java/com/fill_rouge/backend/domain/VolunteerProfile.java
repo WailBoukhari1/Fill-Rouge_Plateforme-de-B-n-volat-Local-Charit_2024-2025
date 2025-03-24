@@ -9,13 +9,11 @@ import java.util.Set;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -63,7 +61,7 @@ public class VolunteerProfile {
 
     // Status Fields for Approval System
     @Builder.Default
-    private String approvalStatus = "PENDING"; // PENDING, APPROVED, REJECTED
+    private String approvalStatus = "APPROVED"; // PENDING, APPROVED, REJECTED
     
     private String rejectionReason;
     

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.DayOfWeek;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -212,20 +213,32 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
 
     @Override
     public VolunteerStatsResponse getVolunteerStatistics(String volunteerId) {
+        // Add null safety checks when filtering events
         List<Event> allEvents = eventRepository.findEventsByParticipant(volunteerId);
+        
+        // Filter out any null events for safety
+        allEvents = allEvents.stream()
+            .filter(event -> event != null)
+            .collect(Collectors.toList());
+            
         List<Event> completedEvents = allEvents.stream()
-            .filter(event -> EventStatus.COMPLETED.equals(event.getStatus()))
+            .filter(event -> event.getStatus() != null && EventStatus.COMPLETED.equals(event.getStatus()))
             .collect(Collectors.toList());
+            
         List<Event> upcomingEvents = allEvents.stream()
-            .filter(event -> EventStatus.ACTIVE.equals(event.getStatus()) && 
-                           event.getStartDate().isAfter(LocalDateTime.now()))
+            .filter(event -> event.getStatus() != null && 
+                   EventStatus.ACTIVE.equals(event.getStatus()) && 
+                   event.getStartDate() != null &&
+                   event.getStartDate().isAfter(LocalDateTime.now()))
             .collect(Collectors.toList());
+            
         List<Event> canceledEvents = allEvents.stream()
-            .filter(event -> EventStatus.FULL.equals(event.getStatus()))
+            .filter(event -> event.getStatus() != null && EventStatus.FULL.equals(event.getStatus()))
             .collect(Collectors.toList());
 
-        // Calculate total hours
+        // Calculate total hours with null safety
         int totalHours = completedEvents.stream()
+            .filter(event -> event != null && event.getStartDate() != null && event.getEndDate() != null)
             .mapToInt(this::calculateEventHours)
             .sum();
 
@@ -233,15 +246,17 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
         double avgHoursPerEvent = completedEvents.isEmpty() ? 0 :
             (double) totalHours / completedEvents.size();
 
-        // Calculate hours by month
+        // Calculate hours by month with null safety
         Map<String, Integer> hoursByMonth = completedEvents.stream()
+            .filter(event -> event.getStartDate() != null)
             .collect(Collectors.groupingBy(
                 event -> event.getStartDate().getMonth().toString(),
                 Collectors.summingInt(this::calculateEventHours)
             ));
 
-        // Calculate events by category
+        // Calculate events by category with null safety
         Map<String, Integer> eventsByCategory = completedEvents.stream()
+            .filter(event -> event.getCategory() != null)
             .collect(Collectors.groupingBy(
                 event -> event.getCategory().toString(),
                 Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
@@ -261,22 +276,27 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
         double participationGrowthRate = calculateParticipationGrowthRate(volunteerId);
         double hoursGrowthRate = calculateHoursGrowthRate(volunteerId);
 
-        // Build response
+        // Calculate organizations worked with
+        int organizationsWorkedWith = calculateOrganizationsWorkedWith(allEvents);
+
+        // Calculate participation by day of week
+        Map<String, Integer> participationByDay = calculateParticipationByDay(allEvents);
+
         return VolunteerStatsResponse.builder()
-            .totalEventsAttended(completedEvents.size())
-            .upcomingEvents(upcomingEvents.size())
+            .totalEventsAttended(allEvents.size())
             .completedEvents(completedEvents.size())
+            .upcomingEvents(upcomingEvents.size())
             .canceledEvents(canceledEvents.size())
-            .eventsByCategory(eventsByCategory)
             .totalHoursVolunteered(totalHours)
             .averageHoursPerEvent(avgHoursPerEvent)
             .hoursByMonth(hoursByMonth)
+            .eventsByCategory(eventsByCategory)
             .averageRating(averageRating)
             .reliabilityScore(reliabilityScore)
             .participationGrowthRate(participationGrowthRate)
             .hoursGrowthRate(hoursGrowthRate)
-            .organizationsWorkedWith(calculateOrganizationsWorkedWith(completedEvents))
-            .participationByDay(calculateParticipationByDay(completedEvents))
+            .organizationsWorkedWith(organizationsWorkedWith)
+            .participationByDay(participationByDay)
             .build();
     }
 
@@ -302,11 +322,17 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     }
 
     private int calculateEventHours(Event event) {
-        if (event.getStartDate() == null || event.getEndDate() == null) {
+        if (event == null || event.getStartDate() == null || event.getEndDate() == null) {
             return 0;
         }
-        Duration duration = Duration.between(event.getStartDate(), event.getEndDate());
-        return Math.toIntExact(duration.toHours());
+        
+        try {
+            long hours = java.time.Duration.between(event.getStartDate(), event.getEndDate()).toHours();
+            return (int) Math.max(hours, 0);
+        } catch (Exception e) {
+            // Log exception and return 0 for safety
+            return 0;
+        }
     }
 
     private double calculateOverallSuccessRate() {
@@ -526,15 +552,24 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
     }
 
     private int calculateReliabilityScore(String volunteerId, List<Event> events) {
-        if (events.isEmpty()) {
+        if (events == null || events.isEmpty()) {
             return 100;
         }
 
-        int totalEvents = events.size();
-        int completedEvents = (int) events.stream()
+        // Filter out events with null status
+        List<Event> validEvents = events.stream()
+            .filter(event -> event != null && event.getStatus() != null)
+            .collect(Collectors.toList());
+            
+        if (validEvents.isEmpty()) {
+            return 100;
+        }
+
+        int totalEvents = validEvents.size();
+        int completedEvents = (int) validEvents.stream()
             .filter(event -> EventStatus.COMPLETED.equals(event.getStatus()))
             .count();
-        int canceledEvents = (int) events.stream()
+        int canceledEvents = (int) validEvents.stream()
             .filter(event -> EventStatus.FULL.equals(event.getStatus()))
             .count();
 
@@ -556,24 +591,55 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
         List<Event> recentEvents = eventRepository.findEventsByParticipantAndDateRange(
             volunteerId, sixMonthsAgo, LocalDateTime.now());
 
+        if (recentEvents == null || recentEvents.isEmpty()) {
+            return 0.0;
+        }
+
+        // Filter out null events
+        recentEvents = recentEvents.stream()
+            .filter(event -> event != null && event.getStartDate() != null)
+            .collect(Collectors.toList());
+            
         if (recentEvents.isEmpty()) {
             return 0.0;
         }
 
-        // Split events into two 3-month periods
-        LocalDateTime midPoint = sixMonthsAgo.plusMonths(3);
-        long firstPeriodCount = recentEvents.stream()
-            .filter(event -> event.getStartDate().isBefore(midPoint))
-            .count();
-        long secondPeriodCount = recentEvents.stream()
-            .filter(event -> event.getStartDate().isAfter(midPoint))
-            .count();
-
-        if (firstPeriodCount == 0) {
-            return secondPeriodCount > 0 ? 1.0 : 0.0;
+        // Group events by month
+        Map<Integer, Integer> eventsByMonth = new HashMap<>();
+        for (Event event : recentEvents) {
+            try {
+                int month = event.getStartDate().getMonthValue();
+                eventsByMonth.put(month, eventsByMonth.getOrDefault(month, 0) + 1);
+            } catch (Exception e) {
+                // Skip events with date issues
+            }
         }
 
-        return ((double) secondPeriodCount - firstPeriodCount) / firstPeriodCount;
+        if (eventsByMonth.size() <= 1) {
+            return 0.0;
+        }
+
+        // Calculate average monthly growth
+        List<Integer> months = new ArrayList<>(eventsByMonth.keySet());
+        months.sort(Integer::compare);
+
+        double growth = 0.0;
+        double count = 0.0;
+        for (int i = 1; i < months.size(); i++) {
+            int prevMonth = months.get(i - 1);
+            int currMonth = months.get(i);
+            
+            int prevEvents = eventsByMonth.get(prevMonth);
+            int currEvents = eventsByMonth.get(currMonth);
+            
+            if (prevEvents > 0) {
+                double monthGrowth = (double)(currEvents - prevEvents) / prevEvents;
+                growth += monthGrowth;
+                count++;
+            }
+        }
+
+        return count > 0 ? growth / count : 0.0;
     }
 
     private double calculateHoursGrowthRate(String volunteerId) {
@@ -581,39 +647,87 @@ public class EventStatisticsServiceImpl implements EventStatisticsService {
         List<Event> recentEvents = eventRepository.findEventsByParticipantAndDateRange(
             volunteerId, sixMonthsAgo, LocalDateTime.now());
 
+        if (recentEvents == null || recentEvents.isEmpty()) {
+            return 0.0;
+        }
+        
+        // Filter out null events
+        recentEvents = recentEvents.stream()
+            .filter(event -> event != null && event.getStartDate() != null && event.getEndDate() != null)
+            .collect(Collectors.toList());
+            
         if (recentEvents.isEmpty()) {
             return 0.0;
         }
 
-        LocalDateTime midPoint = sixMonthsAgo.plusMonths(3);
-        int firstPeriodHours = recentEvents.stream()
-            .filter(event -> event.getStartDate().isBefore(midPoint))
-            .mapToInt(this::calculateEventHours)
-            .sum();
-        int secondPeriodHours = recentEvents.stream()
-            .filter(event -> event.getStartDate().isAfter(midPoint))
-            .mapToInt(this::calculateEventHours)
-            .sum();
-
-        if (firstPeriodHours == 0) {
-            return secondPeriodHours > 0 ? 1.0 : 0.0;
+        // Group hours by month
+        Map<Integer, Integer> hoursByMonth = new HashMap<>();
+        for (Event event : recentEvents) {
+            try {
+                int month = event.getStartDate().getMonthValue();
+                int hours = calculateEventHours(event);
+                hoursByMonth.put(month, hoursByMonth.getOrDefault(month, 0) + hours);
+            } catch (Exception e) {
+                // Skip events with date issues
+            }
         }
 
-        return ((double) secondPeriodHours - firstPeriodHours) / firstPeriodHours;
+        if (hoursByMonth.size() <= 1) {
+            return 0.0;
+        }
+
+        // Calculate average monthly growth
+        List<Integer> months = new ArrayList<>(hoursByMonth.keySet());
+        months.sort(Integer::compare);
+
+        double growth = 0.0;
+        double count = 0.0;
+        for (int i = 1; i < months.size(); i++) {
+            int prevMonth = months.get(i - 1);
+            int currMonth = months.get(i);
+            
+            int prevHours = hoursByMonth.get(prevMonth);
+            int currHours = hoursByMonth.get(currMonth);
+            
+            if (prevHours > 0) {
+                double monthGrowth = (double)(currHours - prevHours) / prevHours;
+                growth += monthGrowth;
+                count++;
+            }
+        }
+
+        return count > 0 ? growth / count : 0.0;
     }
 
     private int calculateOrganizationsWorkedWith(List<Event> events) {
+        if (events == null || events.isEmpty()) {
+            return 0;
+        }
+        
         return (int) events.stream()
+            .filter(event -> event != null && event.getOrganizationId() != null && !event.getOrganizationId().isEmpty())
             .map(Event::getOrganizationId)
             .distinct()
             .count();
     }
 
     private Map<String, Integer> calculateParticipationByDay(List<Event> events) {
-        return events.stream()
-            .collect(Collectors.groupingBy(
-                event -> event.getStartDate().getDayOfWeek().toString(),
-                Collectors.collectingAndThen(Collectors.counting(), Long::intValue)
-            ));
+        if (events == null || events.isEmpty()) {
+            return new HashMap<>();
+        }
+        
+        Map<String, Integer> participationByDay = new HashMap<>();
+        for (DayOfWeek day : DayOfWeek.values()) {
+            participationByDay.put(day.toString(), 0);
+        }
+        
+        events.stream()
+            .filter(event -> event != null && event.getStartDate() != null)
+            .forEach(event -> {
+                String dayOfWeek = event.getStartDate().getDayOfWeek().toString();
+                participationByDay.put(dayOfWeek, participationByDay.getOrDefault(dayOfWeek, 0) + 1);
+            });
+            
+        return participationByDay;
     }
 } 

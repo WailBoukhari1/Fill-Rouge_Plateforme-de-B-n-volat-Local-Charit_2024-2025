@@ -183,16 +183,16 @@
                   </svg>
                 </button>
                 @if (isOrganizer()) {
-                @if (isDraftEvent(event)) {
-                <button 
+                @if (event.status === EventStatus.PENDING) {
+                <!-- <button 
                   class="text-green-600 hover:text-green-900"
-                  title="Submit for Approval"
+                  title="Submit For Approval"
                   (click)="submitDraftForApproval(event)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </button>
+                </button> -->
                 }
                 <button 
                   class="text-yellow-600 hover:text-yellow-900"
@@ -311,7 +311,7 @@
   </div>
   }
 </div>
-
 <mat-error *ngIf="error$ | async as error" class="mt-4 text-center">
   {{ error }}
 </mat-error>
+

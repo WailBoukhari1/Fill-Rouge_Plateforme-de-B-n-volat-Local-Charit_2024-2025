@@ -102,7 +102,7 @@ export class CreateEventComponent implements OnInit {
         ],
       ],
       category: ['', Validators.required],
-      status: [EventStatus.DRAFT],
+      status: [EventStatus.PENDING],
     });
 
     // Location Form
@@ -310,9 +310,9 @@ export class CreateEventComponent implements OnInit {
       this.store.dispatch(EventActions.createEvent({ event }));
       
       // Show appropriate message based on status
-      const statusMessage = event.status === 'DRAFT' 
-        ? 'Event saved as draft' 
-        : 'Event submitted for approval';
+      const statusMessage = event.status === EventStatus.PENDING 
+        ? 'Event submitted for approval' 
+        : 'Event saved';
       
       this.snackBar.open(statusMessage, 'Close', {
         duration: 5000,

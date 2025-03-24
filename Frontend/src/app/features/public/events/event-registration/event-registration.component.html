@@ -109,53 +109,30 @@
             </div>
           }
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>First Name</mat-label>
-              <input matInput formControlName="firstName" placeholder="Enter your first name" required readonly>
-              <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">account_circle</mat-icon>
-              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
-              <mat-error *ngIf="registrationForm.get('firstName')?.hasError('required')">
-                First name is required
-              </mat-error>
-            </mat-form-field>
-            
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Last Name</mat-label>
-              <input matInput formControlName="lastName" placeholder="Enter your last name" required readonly>
-              <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">account_circle</mat-icon>
-              <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
-              <mat-error *ngIf="registrationForm.get('lastName')?.hasError('required')">
-                Last name is required
-              </mat-error>
-            </mat-form-field>
-          </div>
-          
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Email</mat-label>
-            <input matInput formControlName="email" placeholder="Enter your email" required type="email" readonly>
-            <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">email</mat-icon>
-            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
-            <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">
-              Email is required
-            </mat-error>
-            <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">
-              Please enter a valid email address
-            </mat-error>
-          </mat-form-field>
-          
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Phone Number</mat-label>
-            <input matInput formControlName="phoneNumber" placeholder="Enter your phone number" required readonly>
-            <mat-icon matSuffix class="text-gray-400" matTooltip="Auto-filled from your profile" *ngIf="isUserLoggedIn">phone</mat-icon>
-            <mat-hint *ngIf="isUserLoggedIn">Auto-filled from your profile (readonly)</mat-hint>
-            <mat-error *ngIf="registrationForm.get('phoneNumber')?.hasError('required')">
-              Phone number is required
-            </mat-error>
-            <mat-error *ngIf="registrationForm.get('phoneNumber')?.hasError('pattern')">
-              Please enter a valid phone number
-            </mat-error>
-          </mat-form-field>
+          <!-- User information display (replacing the individual fields) -->
+          @if (isUserLoggedIn && currentUser) {
+            <div class="bg-blue-50 p-4 rounded-lg mb-4">
+              <h3 class="text-lg font-medium mb-2 text-blue-800">Your Profile Information</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="flex items-center">
+                  <mat-icon class="text-blue-500 mr-2">person</mat-icon>
+                  <div>
+                    <p class="text-sm text-gray-500">Full Name</p>
+                    <p class="font-medium">{{currentUser.firstName}} {{currentUser.lastName}}</p>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <mat-icon class="text-blue-500 mr-2">email</mat-icon>
+                  <div>
+                    <p class="text-sm text-gray-500">Email</p>
+                    <p class="font-medium">{{currentUser.email}}</p>
+                  </div>
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">Your profile information will be used for registration</p>
+            </div>
+          }
+  
           
           <!-- Only show additional fields for authenticated users -->
           @if (isUserLoggedIn) {
@@ -178,18 +155,41 @@
               </mat-error>
             </div>
             
-            <div class="flex justify-center mt-6">
-              <button mat-raised-button color="primary" type="submit" class="px-6 text-white" [disabled]="isRegistering || registrationForm.invalid">
-                @if (event && event.currentParticipants >= event.maxParticipants && event.waitlistEnabled) {
-                  Join Waitlist
+            <!-- Event capacity section -->
+            <div class="event-capacity mb-4">
+              <h3 class="text-lg font-semibold mb-2">Event Capacity</h3>
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-gray-500">people</mat-icon>
+                <span class="text-sm">
+                  {{ event?.currentParticipants || 0 }} / {{ event?.maxParticipants || 0 }} participants
+                </span>
+                
+                <!-- Event full message -->
+                @if (event && event.currentParticipants >= event.maxParticipants) {
+                  <span class="text-red-600 text-xs ml-2">
+                    <mat-icon class="text-red-600 text-sm">warning</mat-icon>
+                    Event is full
+                  </span>
                 } @else {
-                  Register
+                  <span class="text-green-600 text-xs ml-2">
+                    <mat-icon class="text-green-600 text-sm">check_circle</mat-icon>
+                    Spots available
+                  </span>
                 }
-                @if (isRegistering) {
-                  <mat-spinner diameter="20" class="ml-2"></mat-spinner>
-                }
-              </button>
+              </div>
             </div>
+            
+            <!-- Submit button -->
+            <button 
+              mat-raised-button 
+              color="primary" 
+              type="submit"
+              class="mt-4 w-full"
+              [disabled]="registrationForm.invalid || isSubmitting || eventIsFull"
+            >
+              <mat-spinner *ngIf="isSubmitting" [diameter]="24" class="mr-2"></mat-spinner>
+              <span>Register for Event</span>
+            </button>
           }
         </form>
       </div>
@@ -203,45 +203,46 @@
           <h2 class="text-xl md:text-2xl font-semibold mb-2 text-center">Registration Complete!</h2>
           <p class="mb-6">Thank you for registering for this event.</p>
           
-          <!-- Registration Status Banner -->
-          @if (event?.requiresApproval || registrationData?.status) {
-            <div [ngClass]="{'mb-6 p-4 rounded-md': true, 
-                'bg-yellow-50': registrationData?.status === 'PENDING' || registrationData?.status === 'WAITLISTED' || event?.requiresApproval, 
-                'bg-green-50': registrationData?.status === 'APPROVED',
-                'bg-red-50': registrationData?.status === 'REJECTED'}">
-              <p [ngClass]="{'flex items-center': true, 
-                  'text-yellow-700': registrationData?.status === 'PENDING' || registrationData?.status === 'WAITLISTED' || event?.requiresApproval,
-                  'text-green-700': registrationData?.status === 'APPROVED',
-                  'text-red-700': registrationData?.status === 'REJECTED'}">
-                <mat-icon class="align-middle mr-2" 
-                  [ngClass]="{
-                    'text-yellow-600': registrationData?.status === 'PENDING' || registrationData?.status === 'WAITLISTED' || event?.requiresApproval,
-                    'text-green-600': registrationData?.status === 'APPROVED',
-                    'text-red-600': registrationData?.status === 'REJECTED'
-                  }">
-                  @if (registrationData?.status === 'APPROVED') {
-                    check_circle
-                  } @else if (registrationData?.status === 'REJECTED') {
-                    cancel
-                  } @else {
-                    info
-                  }
-                </mat-icon>
-                
-                @if (registrationData?.status === 'PENDING') {
-                  Your registration is pending approval from the organizer.
-                } @else if (registrationData?.status === 'WAITLISTED') {
-                  You are currently on the waitlist for this event.
-                } @else if (registrationData?.status === 'APPROVED') {
-                  Your registration has been approved! We look forward to seeing you at the event.
-                } @else if (registrationData?.status === 'REJECTED') {
-                  Your registration request was not approved for this event.
-                } @else if (event?.requiresApproval) {
-                  This event requires approval from the organizer. You will be notified once your registration is approved.
-                }
-              </p>
-            </div>
-          }
+          <!-- Registration status section -->
+          <div *ngIf="registrationSuccess" 
+            class="registration-status mt-8 p-4 rounded-lg border"
+            [ngClass]="{
+              'bg-green-50 border-green-200': registrationData?.status === 'APPROVED',
+              'bg-yellow-50': registrationData?.status === 'PENDING' || event?.requiresApproval,
+              'bg-red-50': registrationData?.status === 'REJECTED'
+            }"
+          >
+            <h3 class="text-lg font-semibold mb-2"
+              [ngClass]="{
+                'text-green-700': registrationData?.status === 'APPROVED',
+                'text-yellow-700': registrationData?.status === 'PENDING' || event?.requiresApproval,
+                'text-red-700': registrationData?.status === 'REJECTED'
+              }"
+            >
+              Registration Status: 
+              <span
+                [ngClass]="{
+                  'text-green-600': registrationData?.status === 'APPROVED',
+                  'text-yellow-600': registrationData?.status === 'PENDING' || event?.requiresApproval,
+                  'text-red-600': registrationData?.status === 'REJECTED'
+                }"
+              >
+                <ng-container *ngIf="registrationData?.status === 'APPROVED'">approved</ng-container>
+                <ng-container *ngIf="registrationData?.status === 'PENDING' || !registrationData?.status">pending</ng-container>
+                <ng-container *ngIf="registrationData?.status === 'REJECTED'">rejected</ng-container>
+              </span>
+            </h3>
+            
+            <p class="text-gray-700">
+              @if (registrationData?.status === 'APPROVED') {
+                You are registered for this event. Please check your email for confirmation details.
+              } @else if (registrationData?.status === 'PENDING' || !registrationData?.status) {
+                Your registration is pending approval. We'll notify you once it's approved.
+              } @else if (registrationData?.status === 'REJECTED') {
+                Your registration was not approved. Please contact the organizer for more information.
+              }
+            </p>
+          </div>
           
           <!-- Display Registration Information -->
           <div class="bg-gray-50 p-4 rounded-md text-left mb-6">
@@ -260,7 +261,8 @@
               
               <div class="space-y-1">
                 <p class="text-sm text-gray-500">Phone Number</p>
-                <p class="font-medium">{{registrationData?.phoneNumber}}</p>
+                <p class="font-medium" *ngIf="registrationData?.phoneNumber">{{registrationData?.phoneNumber}}</p>
+                <p class="text-gray-400 italic" *ngIf="!registrationData?.phoneNumber">Not provided</p>
               </div>
               
               @if (registrationData?.specialRequirements) {
@@ -291,4 +293,11 @@
       </div>
     }
   }
+
+  <!-- Event full message -->
+  <div *ngIf="eventIsFull" class="event-full-message">
+    <mat-icon color="warn">warning</mat-icon>
+    <h3>This event has reached maximum capacity</h3>
+    <p>Registration is now closed. Please check other upcoming events.</p>
+  </div>
 </div> 

@@ -17,6 +17,7 @@ import {
   IEventStats,
   IEventRegistrationRequest,
 } from '../models/event.types';
+import { EventRequest } from '../models/event-request.model';
 import { ApiResponse } from '../models/api-response.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -214,83 +215,25 @@ export class EventService {
     );
   }
 
-  createEvent(event: Partial<IEvent>): Observable<IEvent> {
-    if (!this.validateEventData(event)) {
-      return throwError(() => new Error('Invalid event data'));
+  createEvent(event: EventRequest): Observable<IEvent> {
+    let headers = this.getHeaders();
+    
+    if (event.organizationId) {
+      headers = headers.set('X-Organization-ID', event.organizationId);
     }
-
-    const organizationId = this.authService.getCurrentOrganizationId();
-    if (!organizationId) {
-      return throwError(() => new Error('Organization ID not found'));
-    }
-
-    const eventData = this.toEventRequest(event);
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'X-Organization-ID': organizationId,
-      'X-User-ID': this.authService.getCurrentUserId() || '',
-    });
-
-    return this.http
-      .post<ApiResponse<IEvent>>(`${this.apiUrl}`, eventData, { headers })
-      .pipe(
-        map((response) => response.data),
-        catchError((error) => {
-          console.error('Error creating event:', error);
-          let message = 'Error creating event. Please try again.';
-          if (error.status === 400) {
-            message = 'Invalid event data. Please check all required fields.';
-          }
-          this.snackBar.open(message, 'Close', { duration: 5000 });
-          return throwError(() => error);
-        })
-      );
+    
+    return this.http.post<IEvent>(this.apiUrl, event, { headers });
   }
 
-  updateEvent(id: string, event: Partial<IEvent>): Observable<IEvent> {
-    if (!this.validateEventData(event)) {
-      return throwError(() => new Error('Invalid event data'));
+  updateEvent(eventId: string, event: EventRequest): Observable<IEvent> {
+    let headers = this.getHeaders();
+    
+    // Only add the organization ID if it exists
+    if (event.organizationId) {
+      headers = headers.set('X-Organization-ID', event.organizationId);
     }
-
-    const eventData = this.toEventRequest(event);
-    console.log('Updating event with data:', eventData);
-
-    return this.http
-      .put<ApiResponse<IEvent>>(
-        `${this.apiUrl}/${id}`,
-        eventData,
-        this.getHttpOptions()
-      )
-      .pipe(
-        map((response) => {
-          console.log('Update response:', response);
-          if (!response.data) {
-            throw new Error('No data received from server');
-          }
-          const mappedEvent = this.mapToEvent(response.data);
-          console.log('Mapped event:', mappedEvent);
-          return mappedEvent;
-        }),
-        catchError((error) => {
-          console.error('Error updating event:', error);
-          let message = 'Error updating event. Please try again.';
-
-          if (error.status === 400) {
-            message = 'Invalid event data. Please check all required fields.';
-          } else if (error.status === 404) {
-            message = 'Event not found.';
-          } else if (error.status === 403) {
-            message = 'You do not have permission to update this event.';
-          } else if (error.status === 409) {
-            message = 'Event dates conflict with existing events.';
-          } else if (error.status === 422) {
-            message = error.error?.message || 'Invalid event data format.';
-          }
-
-          this.snackBar.open(message, 'Close', { duration: 5000 });
-          return throwError(() => error);
-        })
-      );
+    
+    return this.http.put<IEvent>(`${this.apiUrl}/${eventId}`, event, { headers });
   }
 
   deleteEvent(id: string): Observable<void> {
@@ -303,16 +246,9 @@ export class EventService {
    * @param status New status
    * @returns Observable of the updated event
    */
-  updateEventStatus(eventId: string, status: EventStatus): Observable<any> {
+  updateEventStatus(eventId: string, status: EventStatus): Observable<IEvent> {
     console.log(`[EventService] Updating event status for event ${eventId} to ${status}`);
-    return this.http.patch(`${this.apiUrl}/events/${eventId}/status`, { status })
-      .pipe(
-        tap((response: any) => console.log(`[EventService] Event status updated:`, response)),
-        catchError(error => {
-          console.error(`[EventService] Error updating event status:`, error);
-          return throwError(() => new Error(`Error updating event status: ${error.message || 'Unknown error'}`));
-        })
-      );
+    return this.http.patch<IEvent>(`${this.apiUrl}/${eventId}/status`, { status });
   }
 
   /**
@@ -700,7 +636,7 @@ export class EventService {
       startDate: new Date(event.startDate),
       endDate: new Date(event.endDate),
       createdAt: new Date(event.createdAt),
-      status: event.status || EventStatus.DRAFT,
+      status: event.status || EventStatus.PENDING,
       currentParticipants: event.currentParticipants || 0,
       maxParticipants: event.maxParticipants || 0,
       isRegistered: event.isRegistered || false
@@ -755,7 +691,8 @@ export class EventService {
       contactEmail: event.contactEmail || '',
       contactPhone: event.contactPhone || '',
       organizationId: event.organizationId || this.validateOrganizationId(),
-      status: event.status || EventStatus.PENDING,
+      // Preserve the original status
+      status: event.status,
       // Preserve these fields if they exist
       registeredParticipants: event.registeredParticipants || [],
       waitlistedParticipants: event.waitlistedParticipants || [],
@@ -938,7 +875,6 @@ export class EventService {
     const statusStr = typeof status === 'string' ? status : (status as EventStatus);
     
     const statusMap: Record<string, { displayName: string; color: string; icon: string }> = {
-      [EventStatus.DRAFT]: { displayName: 'Draft', color: 'gray', icon: 'edit' },
       [EventStatus.PENDING]: { displayName: 'Pending Approval', color: 'yellow', icon: 'hourglass_empty' },
       [EventStatus.APPROVED]: { displayName: 'Approved', color: 'teal', icon: 'check_circle' },
       [EventStatus.ACTIVE]: { displayName: 'Active', color: 'blue', icon: 'event_available' },
@@ -1003,5 +939,60 @@ export class EventService {
    */
   refreshEventStatus(eventId: string): Observable<IEvent> {
     return this.getEventById(eventId);
+  }
+
+  /**
+   * Automatically update event status based on current time
+   * @param event The event to check
+   * @returns Updated event status if changed, or original status if unchanged
+   */
+  autoUpdateEventStatus(event: IEvent): EventStatus {
+    if (!event) return EventStatus.PENDING;
+    
+    const now = new Date();
+    const startDate = new Date(event.startDate);
+    const endDate = new Date(event.endDate);
+    
+    // Skip events that are already in terminal states
+    if (
+      event.status === EventStatus.COMPLETED ||
+      event.status === EventStatus.CANCELLED ||
+      event.status === EventStatus.REJECTED
+    ) {
+      return event.status;
+    }
+    
+    // Auto-determine status based on time
+    if (now > endDate) {
+      return EventStatus.COMPLETED;
+    } else if (now >= startDate && now <= endDate) {
+      return EventStatus.ONGOING;
+    } else if (event.status === EventStatus.APPROVED && startDate > now) {
+      return EventStatus.UPCOMING;
+    } else if (event.currentParticipants >= event.maxParticipants) {
+      return EventStatus.FULL;
+    }
+    
+    return event.status;
+  }
+  
+  /**
+   * Apply automatic status updates to events based on time
+   * @param events Array of events to update
+   * @returns Updated events array
+   */
+  applyAutomaticStatusUpdates(events: IEvent[]): IEvent[] {
+    if (!events || !Array.isArray(events)) return [];
+    
+    return events.map(event => {
+      const newStatus = this.autoUpdateEventStatus(event);
+      
+      if (newStatus !== event.status) {
+        // Only create a new object if status changed
+        return { ...event, status: newStatus };
+      }
+      
+      return event;
+    });
   }
 }

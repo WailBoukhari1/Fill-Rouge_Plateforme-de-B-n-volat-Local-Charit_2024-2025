@@ -391,6 +391,25 @@ export class EventListComponent implements OnInit {
           console.log('Public events loaded:', this.events.length, 'total:', this.totalEvents);
           this.applyFilters();
           console.log('After applying filters:', this.filteredEvents.length);
+
+          // Apply automatic status updates based on start/end dates
+          const updatedEvents = this.eventService.applyAutomaticStatusUpdates(this.events);
+          
+          this.events = updatedEvents;
+          this.totalEvents = response.totalElements;
+          this.isLoading = false;
+          
+          // If any statuses were updated, process them on the server
+          updatedEvents.forEach(event => {
+            if (event.status !== response.content.find(e => e.id === event.id)?.status) {
+              this.eventService.updateEventStatus(event.id!, event.status)
+                .pipe(catchError(error => {
+                  console.error('Error updating event status:', error);
+                  return of(null);
+                }))
+                .subscribe();
+            }
+          });
         },
         error: (error) => {
           console.error('Error loading public events:', error);
@@ -591,18 +610,20 @@ export class EventListComponent implements OnInit {
   }
 
   getStatusColor(status: EventStatus): string {
-    const statusColors: { [key in EventStatus]?: string } = {
-      [EventStatus.UPCOMING]: 'primary',
-      [EventStatus.ONGOING]: 'accent',
-      [EventStatus.COMPLETED]: 'basic',
-      [EventStatus.CANCELLED]: 'warn',
-      [EventStatus.DRAFT]: 'basic',
-      [EventStatus.PENDING]: 'accent',
-      [EventStatus.APPROVED]: 'primary',
-      [EventStatus.ACTIVE]: 'primary',
-      [EventStatus.PUBLISHED]: 'primary',
+    const statusColors: Record<string, string> = {
+      [EventStatus.PENDING]: 'yellow',
+      [EventStatus.APPROVED]: 'teal',
+      [EventStatus.ACTIVE]: 'blue',
+      [EventStatus.ONGOING]: 'green',
+      [EventStatus.COMPLETED]: 'purple',
+      [EventStatus.CANCELLED]: 'red',
+      [EventStatus.REJECTED]: 'red',
+      [EventStatus.PUBLISHED]: 'blue',
+      [EventStatus.FULL]: 'orange',
+      [EventStatus.UPCOMING]: 'teal'
     };
-    return statusColors[status] || 'basic';
+
+    return statusColors[status] || 'gray';
   }
 
   getDurationHours(startDate: Date, endDate: Date): number {
@@ -679,16 +700,14 @@ export class EventListComponent implements OnInit {
       return;
     }
 
-    if (event.status === EventStatus.DRAFT) {
-      this.updateEventStatus(event, EventStatus.PENDING);
-    } else if (event.status === EventStatus.PENDING) {
+    if (event.status === EventStatus.PENDING) {
       this.updateEventStatus(event, EventStatus.APPROVED);
     } else if (event.status === EventStatus.APPROVED) {
       this.updateEventStatus(event, EventStatus.ACTIVE);
     } else if (event.status === EventStatus.ACTIVE) {
       this.updateEventStatus(event, EventStatus.COMPLETED);
     } else if (event.status === EventStatus.COMPLETED) {
-      this.updateEventStatus(event, EventStatus.DRAFT);
+      this.updateEventStatus(event, EventStatus.PENDING);
     }
   }
 
@@ -711,20 +730,29 @@ export class EventListComponent implements OnInit {
   }
 
   getStatusClass(status: EventStatus): string {
-    switch (status) {
-      case EventStatus.ACTIVE:
-      case EventStatus.ONGOING:
-      case EventStatus.UPCOMING:
-        return 'bg-green-100 text-green-800';
-      case EventStatus.PENDING:
-      case EventStatus.DRAFT:
-        return 'bg-yellow-100 text-yellow-800';
-      case EventStatus.COMPLETED:
-        return 'bg-blue-100 text-blue-800';
-      case EventStatus.CANCELLED:
-        return 'bg-red-100 text-red-800';
-      default:
-        return '';
-    }
+    const statusClasses: Record<string, string> = {
+      [EventStatus.PENDING]: 'bg-yellow-100 text-yellow-800',
+      [EventStatus.APPROVED]: 'bg-teal-100 text-teal-800',
+      [EventStatus.ACTIVE]: 'bg-blue-100 text-blue-800',
+      [EventStatus.ONGOING]: 'bg-green-100 text-green-800',
+      [EventStatus.COMPLETED]: 'bg-purple-100 text-purple-800',
+      [EventStatus.CANCELLED]: 'bg-red-100 text-red-800',
+      [EventStatus.REJECTED]: 'bg-red-100 text-red-800',
+      [EventStatus.PUBLISHED]: 'bg-blue-100 text-blue-800',
+      [EventStatus.FULL]: 'bg-orange-100 text-orange-800',
+      [EventStatus.UPCOMING]: 'bg-teal-100 text-teal-800'
+    };
+    
+    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+  }
+
+  canPublishEvent(event: IEvent): boolean {
+    // Can publish if pending or approved
+    return event.status === EventStatus.PENDING || event.status === EventStatus.APPROVED;
+  }
+
+  publishEvent(event: IEvent): void {
+    if (!event.id) return;
+    this.updateEventStatus(event, EventStatus.PUBLISHED);
   }
 }

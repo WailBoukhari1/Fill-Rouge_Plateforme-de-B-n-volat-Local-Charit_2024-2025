@@ -6,7 +6,7 @@ import {
   HttpParams,
 } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
 import { ApiResponse } from '../models/api-response.model';
@@ -246,30 +246,37 @@ export class VolunteerService {
     return this.http.put<VolunteerProfile>(`${this.apiUrl}/profile`, profile, { headers });
   }
 
-  getStatistics(): Observable<VolunteerStatistics> {
-    return this.http
-      .get<ApiResponse<VolunteerStatistics>>(`${this.apiUrl}/statistics`)
-      .pipe(
-        map((response) => response.data),
-        catchError(() =>
-          of({
-            totalEventsAttended: 0,
-            upcomingEvents: 0,
-            completedEvents: 0,
-            canceledEvents: 0,
-            eventsByCategory: {},
-            totalHoursVolunteered: 0,
-            averageHoursPerEvent: 0,
-            hoursByMonth: {},
-            averageRating: 0,
-            reliabilityScore: 0,
-            organizationsWorkedWith: 0,
-            participationGrowthRate: 0,
-            hoursGrowthRate: 0,
-            participationByDay: {},
-          })
-        )
-      );
+  /** Get volunteer statistics */
+  getStatistics(): Observable<any> {
+    // Get the user ID from the auth service
+    const userId = this.authService.getCurrentUserId();
+    
+    console.log(`Fetching statistics for userId: ${userId}`);
+    
+    // Call the correct endpoint with the user ID
+    return this.http.get<any>(`${this.apiUrl}/stats/volunteer/${userId}`).pipe(
+      tap(stats => console.log('Volunteer statistics retrieved successfully:', stats)),
+      catchError(error => {
+        console.error('Error fetching volunteer statistics:', error);
+        // Return a default empty stats object instead of throwing an error
+        return of({
+          totalEventsParticipated: 0,
+          activeEvents: 0,
+          completedEvents: 0,
+          registeredEvents: 0,
+          totalVolunteerHours: 0,
+          reliabilityScore: 0,
+          averageEventRating: 0,
+          skillsEndorsements: 0,
+          hoursContributed: [],
+          eventsParticipation: [],
+          eventsByCategory: {},
+          peopleImpacted: 0,
+          organizationsSupported: 0,
+          impactByCategory: {}
+        });
+      })
+    );
   }
 
   getVolunteerHours(): Observable<VolunteerHours[]> {
@@ -690,14 +697,29 @@ export class VolunteerService {
 
   // Ensure valid volunteer profile with proper defaults
   ensureValidVolunteerProfile(profile: any): VolunteerProfile {
+    console.log('Processing volunteer profile from API:', profile);
+    
+    // Check if phone number exists
+    if (!profile.phoneNumber || profile.phoneNumber === '') {
+      console.log('Phone number missing from volunteer profile');
+    } else {
+      console.log('Phone number found in volunteer profile:', profile.phoneNumber);
+    }
+    
+    // Check all possible sources for phone number
+    if (profile.user && profile.user.phoneNumber) {
+      console.log('Found phone number in user object:', profile.user.phoneNumber);
+    }
+    
     // Note: firstName, lastName, and email come exclusively from User entity
     // Email is not stored in VolunteerProfile table to avoid duplication
-    return {
+    const processedProfile = {
       ...profile,
-      firstName: profile.firstName || '', // From User entity 
-      lastName: profile.lastName || '',   // From User entity
-      email: profile.email || '',         // From User entity - not stored in VolunteerProfile
-      phoneNumber: profile.phoneNumber || '',
+      id: profile.id || profile._id || '',
+      firstName: profile.firstName || profile.user?.firstName || '', // From User entity 
+      lastName: profile.lastName || profile.user?.lastName || '',   // From User entity
+      email: profile.email || profile.user?.email || '',         // From User entity - not stored in VolunteerProfile
+      phoneNumber: profile.phoneNumber || profile.user?.phoneNumber || '',  // Try user object as fallback
       address: profile.address || '',
       city: profile.city || '',
       country: profile.country || '',
@@ -712,5 +734,8 @@ export class VolunteerService {
       availableDays: profile.availableDays || [],
       notificationPreferences: profile.notificationPreferences || []
     } as VolunteerProfile;
+    
+    console.log('Processed volunteer profile:', processedProfile);
+    return processedProfile;
   }
 }

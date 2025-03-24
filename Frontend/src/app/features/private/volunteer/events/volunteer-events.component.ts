@@ -79,7 +79,7 @@ import { EventRegistrationDialogComponent } from './event-registration-dialog.co
           </div>
         </mat-tab>
 
-        <mat-tab label="Waitlisted">
+        <!-- <mat-tab label="Waitlisted">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             @for (event of waitlistedEvents; track event._id) {
               <mat-card>
@@ -116,7 +116,7 @@ import { EventRegistrationDialogComponent } from './event-registration-dialog.co
               </mat-card>
             }
           </div>
-        </mat-tab>
+        </mat-tab> -->
       </mat-tab-group>
     </div>
   `
@@ -249,8 +249,6 @@ export class VolunteerEventsComponent implements OnInit, OnDestroy {
         return 'warn';
       case EventStatus.APPROVED:
         return 'accent';
-      case EventStatus.DRAFT:
-        return 'basic';
       case EventStatus.UPCOMING:
         return 'accent';
       case EventStatus.ONGOING:

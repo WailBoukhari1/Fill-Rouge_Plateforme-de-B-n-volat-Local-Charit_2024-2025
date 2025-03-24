@@ -11,11 +11,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, takeUntil, retry, catchError, throwError, finalize } from 'rxjs';
 import { EventService } from '@core/services/event.service';
-import { IEvent, EventStatus } from '@core/models/event.model';
+import { IEvent } from '@core/models/event.model';
 import { AuthService } from '@core/services/auth.service';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Page } from '@core/models/page.model';
 import { ApiResponse } from '@core/models/api-response.model';
+import { EventStatus } from '../../../../../core/models/event.types';
 
 @Component({
   selector: 'app-event-details',

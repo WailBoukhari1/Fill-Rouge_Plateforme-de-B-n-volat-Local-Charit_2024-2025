@@ -31,11 +31,6 @@ export const VOLUNTEER_ROUTES: Routes = [
         canActivate: [AuthGuard]
       },
       {
-        path: 'waitlist',
-        loadComponent: () => import('./waitlist/volunteer-waitlist.component').then(m => m.VolunteerWaitlistComponent),
-        canActivate: [AuthGuard]
-      },
-      {
         path: 'feedback/:eventId',
         loadComponent: () => import('./feedback/volunteer-feedback.component').then(m => m.VolunteerFeedbackComponent),
         canActivate: [AuthGuard]

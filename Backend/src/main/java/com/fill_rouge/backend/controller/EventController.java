@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.security.Principal;
 
+import org.apache.catalina.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
@@ -43,32 +52,34 @@ import com.fill_rouge.backend.mapper.EventMapper;
 import com.fill_rouge.backend.service.event.EventFeedbackService;
 import com.fill_rouge.backend.service.event.EventParticipationService;
 import com.fill_rouge.backend.service.event.EventService;
+import com.fill_rouge.backend.service.user.UserService;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/events")
 @RequiredArgsConstructor
 @Tag(name = "Event Management", description = "APIs for managing events and feedback")
+@SecurityRequirement(name = "bearerAuth")
 public class EventController {
     
     private final EventService eventService;
     private final EventFeedbackService feedbackService;
     private final EventMapper eventMapper;
     private final EventParticipationService participationService;
+    private final UserService userService;
     
     private static final Logger log = LoggerFactory.getLogger(EventController.class);
     
     @PostMapping
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Create a new event", description = "Create a new event for an organization")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Event created successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Organization role required")
+    })
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(
             @Valid @RequestBody EventRequest eventRequest,
             @RequestHeader("X-Organization-ID") String organizationId,
@@ -83,6 +94,12 @@ public class EventController {
     @PutMapping("/{eventId}")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Update an event", description = "Update an existing event's details")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Event updated successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Organization role required"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Event not found")
+    })
     public ResponseEntity<ApiResponse<EventResponse>> updateEvent(
             @PathVariable String eventId,
             @Valid @RequestBody EventRequest eventRequest,
@@ -97,6 +114,11 @@ public class EventController {
     @DeleteMapping("/{eventId}")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Delete an event", description = "Delete an existing event")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Event deleted successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Organization role required"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Event not found")
+    })
     public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable String eventId) {
         eventService.deleteEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(null, "Event deleted successfully"));
@@ -104,6 +126,9 @@ public class EventController {
     
     @GetMapping("/public")
     @Operation(summary = "Get public events", description = "Get all publicly viewable events without authentication")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Events retrieved successfully")
+    })
     public ResponseEntity<ApiResponse<List<EventResponse>>> getPublicEvents(
             @PageableDefault(size = 10) Pageable pageable) {
         log.info("Fetching public events with pagination: {}", pageable);
@@ -114,6 +139,10 @@ public class EventController {
     
     @GetMapping("/{eventId}")
     @Operation(summary = "Get event details", description = "Get detailed information about an event")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Event details retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Event not found")
+    })
     public ResponseEntity<ApiResponse<EventResponse>> getEventById(
             @PathVariable String eventId,
             @RequestHeader(value = "X-User-ID", required = false) String userId) {
@@ -212,15 +241,9 @@ public class EventController {
             );
         }
         
-        String email = registrationRequest.getEmail();
-        if (email == null || email.isEmpty()) {
-            return ResponseEntity.badRequest().body(
-                ApiResponse.error("Email is required", HttpStatus.BAD_REQUEST)
-            );
-        }
-        
         try {
-            Event event = eventService.registerParticipantWithDetails(eventId, email, registrationRequest);
+            // For users with userId, we'll retrieve their profile data in the service layer
+            Event event = eventService.registerParticipantWithDetails(eventId, null, registrationRequest);
             return ResponseEntity.ok(ApiResponse.success(
                 eventMapper.toResponse(event, registrationRequest.getUserId()),
                 "Successfully registered for event"
@@ -577,7 +600,7 @@ public class EventController {
         // Register the participant in the event with details
         Event event = eventService.registerParticipantWithDetails(
             eventId, 
-            registrationRequest.getEmail(),
+            null,
             registrationRequest
         );
         

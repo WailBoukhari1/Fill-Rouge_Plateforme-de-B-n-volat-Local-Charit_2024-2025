@@ -98,6 +98,7 @@ public class StatisticsResponse {
         private long totalEventsParticipated;
         private long activeEvents;
         private long completedEvents;
+        private long registeredEvents;
         private long totalVolunteerHours;
         
         // Performance Metrics

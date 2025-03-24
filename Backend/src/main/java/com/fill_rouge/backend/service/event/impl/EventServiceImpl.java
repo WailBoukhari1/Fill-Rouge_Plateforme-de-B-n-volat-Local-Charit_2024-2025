@@ -15,6 +15,8 @@ import com.fill_rouge.backend.constant.EventCategory;
 import com.fill_rouge.backend.constant.EventStatus;
 import com.fill_rouge.backend.domain.Event;
 import com.fill_rouge.backend.domain.EventFeedback;
+import com.fill_rouge.backend.domain.VolunteerProfile;
+import com.fill_rouge.backend.domain.User;
 import com.fill_rouge.backend.dto.request.EventRegistrationRequest;
 import com.fill_rouge.backend.dto.request.EventRequest;
 import com.fill_rouge.backend.dto.response.EventResponse;
@@ -26,6 +28,7 @@ import com.fill_rouge.backend.repository.EventRepository;
 import com.fill_rouge.backend.service.event.EventParticipationService;
 import com.fill_rouge.backend.service.event.EventService;
 import com.fill_rouge.backend.service.user.UserService;
+import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ public class EventServiceImpl implements EventService {
     private final UserService userService;
     private final EventMapper eventMapper;
     private final EventParticipationService participationService;
+    private final VolunteerProfileService volunteerProfileService;
 
     @Override
     public List<Event> getEventsByParticipant(String userId) {
@@ -303,6 +307,26 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("Terms and conditions must be accepted");
         }
         
+        // If userId is provided, retrieve user information from database
+        if (registrationData.getUserId() != null && !registrationData.getUserId().isEmpty()) {
+            try {
+                User user = userService.getUserById(registrationData.getUserId());
+                // If email is null, use the user's email
+                if (email == null || email.isEmpty()) {
+                    email = user.getEmail();
+                    log.info("Using email from user profile: {}", email);
+                }
+            } catch (Exception e) {
+                log.error("Error retrieving user data: {}", e.getMessage());
+                if (email == null) {
+                    throw new IllegalArgumentException("Email is required for registration");
+                }
+            }
+        } else if (email == null || email.isEmpty()) {
+            // For guest registrations, email is required
+            throw new IllegalArgumentException("Email is required for guest registration");
+        }
+        
         Event event = eventRepository.findById(eventId)
             .orElseThrow(() -> new ResourceNotFoundException("Event not found with ID: " + eventId));
             
@@ -374,7 +398,7 @@ public class EventServiceImpl implements EventService {
                             eventId, 
                             registrationData.getSpecialRequirements(),
                             registrationData.getNotes(),
-                            "APPROVED"
+                            "REGISTERED"
                         );
                     } catch (Exception e) {
                         // Rollback changes if participation registration fails
@@ -467,37 +491,26 @@ public class EventServiceImpl implements EventService {
         LocalDateTime now = LocalDateTime.now();
         EventStatus currentStatus = event.getStatus();
         
+        // Don't update status for PENDING or REJECTED events
+        if (EventStatus.PENDING.equals(currentStatus) || 
+            EventStatus.REJECTED.equals(currentStatus)) {
+            return;
+        }
+        
         // Check if ACTIVE event should be ONGOING (started)
-        if (currentStatus == EventStatus.ACTIVE && now.isAfter(event.getStartDate())) {
+        if (EventStatus.ACTIVE.equals(currentStatus) && now.isAfter(event.getStartDate())) {
             log.info("Instant status update: Event {} changing from ACTIVE to ONGOING", event.getId());
             event.setStatus(EventStatus.ONGOING);
             statusChanged = true;
         }
         
         // Check if ONGOING event should be COMPLETED (ended)
-        if (currentStatus == EventStatus.ONGOING && now.isAfter(event.getEndDate())) {
+        if (EventStatus.ONGOING.equals(currentStatus) && now.isAfter(event.getEndDate())) {
             log.info("Instant status update: Event {} changing from ONGOING to COMPLETED", event.getId());
             event.setStatus(EventStatus.COMPLETED);
             statusChanged = true;
         }
         
-        // Check if ACTIVE event should be FULL
-        if (currentStatus == EventStatus.ACTIVE && 
-            event.getRegisteredParticipants().size() >= event.getMaxParticipants()) {
-            log.info("Instant status update: Event {} changing from ACTIVE to FULL", event.getId());
-            event.setStatus(EventStatus.FULL);
-            statusChanged = true;
-        }
-        
-        // Check if FULL event should be ACTIVE (cancellations)
-        if (currentStatus == EventStatus.FULL && 
-            event.getRegisteredParticipants().size() < event.getMaxParticipants()) {
-            log.info("Instant status update: Event {} changing from FULL back to ACTIVE", event.getId());
-            event.setStatus(EventStatus.ACTIVE);
-            statusChanged = true;
-        }
-        
-        // Save if status was changed
         if (statusChanged) {
             event.setUpdatedAt(LocalDateTime.now());
             eventRepository.save(event);
@@ -510,14 +523,14 @@ public class EventServiceImpl implements EventService {
         Event event = eventMapper.toEntity(request);
         event.setOrganizationId(organizationId);
         
-        // Set status based on the request, defaulting to PENDING if not specified
+        // Set status based on the request
         if (event.getStatus() == null) {
             log.info("No status specified in the request, defaulting to PENDING");
             event.setStatus(EventStatus.PENDING);
         } else {
             log.info("Using status from request: {}", event.getStatus());
-            // Only allow DRAFT or PENDING for new events
-            if (!event.getStatus().equals(EventStatus.DRAFT) && !event.getStatus().equals(EventStatus.PENDING)) {
+            // Only allow PENDING as initial status
+            if (!event.getStatus().equals(EventStatus.PENDING)) {
                 log.warn("Invalid initial status: {}, defaulting to PENDING", event.getStatus());
                 event.setStatus(EventStatus.PENDING);
             }
@@ -602,9 +615,9 @@ public class EventServiceImpl implements EventService {
         log.info("Approving event with ID: {}", eventId);
         Event event = getEventById(eventId);
         
-        // Only allow approval of PENDING events
-        if (!EventStatus.PENDING.equals(event.getStatus())) {
-            throw new IllegalStateException("Only PENDING events can be approved. Current status: " + event.getStatus());
+        // Only allow approval of PENDING or REJECTED events
+        if (!EventStatus.PENDING.equals(event.getStatus()) && !EventStatus.REJECTED.equals(event.getStatus())) {
+            throw new IllegalStateException("Only PENDING or REJECTED events can be approved. Current status: " + event.getStatus());
         }
         
         event.setStatus(EventStatus.ACTIVE);
@@ -730,5 +743,12 @@ public class EventServiceImpl implements EventService {
             log.warn("Event {} is PENDING but start date is approaching in less than 24 hours", event.getId());
             // No automatic approval - admin must manually approve
         }
+    }
+
+    /**
+     * Helper method to check if a string is null or empty
+     */
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.trim().isEmpty();
     }
 } 

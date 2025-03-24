@@ -134,13 +134,13 @@ export const eventReducer = createReducer(
     error
   })),
 
-  // Update Event Status
-  on(EventActions.updateEventStatus, state => ({
+  // Approve Event
+  on(EventActions.approveEvent, state => ({
     ...state,
     loading: true,
     error: null
   })),
-  on(EventActions.updateEventStatusSuccess, (state, { event }) => ({
+  on(EventActions.approveEventSuccess, (state, { event }) => ({
     ...state,
     events: {
       ...state.events,
@@ -150,7 +150,29 @@ export const eventReducer = createReducer(
     loading: false,
     error: null
   })),
-  on(EventActions.updateEventStatusFailure, (state, { error }) => ({
+  on(EventActions.approveEventFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  // Reject Event
+  on(EventActions.rejectEvent, state => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(EventActions.rejectEventSuccess, (state, { event }) => ({
+    ...state,
+    events: {
+      ...state.events,
+      content: state.events.content.map(e => e._id === event._id ? event : e)
+    },
+    selectedEvent: state.selectedEvent?._id === event._id ? event : state.selectedEvent,
+    loading: false,
+    error: null
+  })),
+  on(EventActions.rejectEventFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
@@ -239,6 +261,28 @@ export const eventReducer = createReducer(
     error: null
   })),
   on(EventActions.registerForEventWithDetailsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  // Update Event Status
+  on(EventActions.updateEventStatus, state => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+  on(EventActions.updateEventStatusSuccess, (state, { event }) => ({
+    ...state,
+    events: {
+      ...state.events,
+      content: state.events.content.map(e => e._id === event._id ? event : e)
+    },
+    selectedEvent: state.selectedEvent?._id === event._id ? event : state.selectedEvent,
+    loading: false,
+    error: null
+  })),
+  on(EventActions.updateEventStatusFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error

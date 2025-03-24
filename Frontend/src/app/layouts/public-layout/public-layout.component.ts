@@ -39,14 +39,14 @@ import { AuthService } from '../../core/services/auth.service';
              class="text-gray-600 hover:text-primary-600">
             Events
           </a>
-          <a routerLink="/organizations" routerLinkActive="text-primary-600"
+          <!-- <a routerLink="/organizations" routerLinkActive="text-primary-600"
              class="text-gray-600 hover:text-primary-600">
             Organizations
           </a>
           <a routerLink="/about" routerLinkActive="text-primary-600"
              class="text-gray-600 hover:text-primary-600">
             About
-          </a>
+          </a> -->
         </nav>
 
         <!-- Auth Buttons -->
@@ -95,14 +95,14 @@ import { AuthService } from '../../core/services/auth.service';
             <mat-icon>event</mat-icon>
             <span>Events</span>
           </a>
-          <a mat-menu-item routerLink="/organizations">
+          <!-- <a mat-menu-item routerLink="/organizations">
             <mat-icon>business</mat-icon>
             <span>Organizations</span>
           </a>
           <a mat-menu-item routerLink="/about">
             <mat-icon>info</mat-icon>
             <span>About</span>
-          </a>
+          </a> -->
         </mat-menu>
       </div>
     </mat-toolbar>

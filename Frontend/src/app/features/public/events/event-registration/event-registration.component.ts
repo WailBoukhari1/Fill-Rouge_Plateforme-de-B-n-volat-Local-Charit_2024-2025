@@ -72,6 +72,7 @@ export class EventRegistrationComponent implements OnInit {
   registrationData: ExtendedRegistrationData | null = null;
   isQuickRegistration: boolean = false;
   processingQuickRegistration: boolean = false;
+  eventIsFull: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -87,6 +88,12 @@ export class EventRegistrationComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.setupForm();
+    this.fetchEvent();
+    this.checkAuthStatus();
+  }
+
+  private setupForm(): void {
     this.eventId = this.route.snapshot.paramMap.get('id');
     this.isUserLoggedIn = this.authService.isLoggedIn();
     
@@ -101,162 +108,109 @@ export class EventRegistrationComponent implements OnInit {
       this.loading = false;
       return;
     }
+  }
+
+  private fetchEvent(): void {
+    if (!this.eventId) return;
     
-    this.loadEventAndUserData();
-  }
-
-  private loadEventAndUserData(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID not found.';
-      this.loading = false;
-      return;
-    }
-
-    this.eventService.getEventById(this.eventId).pipe(
-      tap(event => {
-        console.log('Event data loaded:', event);
+    this.loading = true;
+    this.eventService.getEventById(this.eventId).subscribe({
+      next: (event) => {
         this.event = event;
-        
-        // Check if the user is already registered
-        if (event.isRegistered) {
-            this.isRegistered = true;
-          this.registrationSuccess = true;
-            this.createRegistrationDataFromEvent(event);
-        }
-      }),
-      switchMap(event => {
-        if (this.isUserLoggedIn) {
-          console.log('Decoded token:', this.authService.getDecodedToken());
-          
-          // Directly use getCurrentUserProfile instead of getUserById
-          return this.userService.getCurrentUserProfile().pipe(
-              tap(user => {
-              console.log('User profile loaded successfully:', user);
-                this.currentUser = user;
-                
-                // Populate form with user data
-                this.populateFormWithUserData(user);
-                
-              // Handle quick registration if needed
-                if (this.isQuickRegistration && this.currentUser && !this.isRegistered) {
-                  this.processingQuickRegistration = true;
-                  if (this.validateUserDataForQuickRegistration(user)) {
-                    // Directly submit with user data instead of just populating the form
-                    this.performQuickRegistration(user);
-                  } else {
-                    // If user data is incomplete, show a message and let them fill the form
-                    this.processingQuickRegistration = false;
-                    this.snackBar.open('Your profile information is incomplete. Please fill in the required details.', 'Close', {
-                      duration: 5000
-                    });
-                  }
-                }
-              }),
-              catchError(error => {
-              console.error('Error loading user profile:', error);
-              // Create dummy user with information from auth token
-              const token = this.authService.getDecodedToken();
-              if (token && token.sub) {
-                const partialUser = {
-                  id: token.user_id || this.authService.getCurrentUserId(),
-                  email: token.sub,
-                  firstName: token.first_name || '',
-                  lastName: token.last_name || '',
-                  phoneNumber: '',
-                  roles: token.role ? [token.role.replace('ROLE_', '')] : []
-                } as User;
-                
-                this.currentUser = partialUser;
-                this.populateFormWithUserData(partialUser);
-                
-                // Show warning but still allow registration
-                this.snackBar.open('Could not load your complete profile. Some fields may need to be filled manually.', 'Close', { 
-                  duration: 5000,
-                  panelClass: ['warning-snackbar']
-                });
-              } else {
-                // If we can't get any user data at all
-                if (this.isQuickRegistration) {
-                  this.snackBar.open('Failed to load your profile information for quick registration', 'Close', { 
-                    duration: 5000,
-                    panelClass: ['error-snackbar']
-                  });
-                  this.processingQuickRegistration = false;
-                }
-                }
-                return of(null);
-              })
-            );
-        } else if (this.isQuickRegistration) {
-          // User is not logged in but quick registration was requested
-          this.snackBar.open('Please log in to use quick registration', 'Close', { duration: 5000 });
-          this.router.navigate(['/auth/login'], { 
-            queryParams: { redirectUrl: `/events/${this.eventId}/register?quick=true` } 
-          });
-        }
-        return of(null);
-      }),
-      catchError(error => {
-        console.error('Error loading event:', error);
-        this.error = 'Failed to load event details. Please try again later.';
-        this.processingQuickRegistration = false;
-        return of(null);
-      }),
-      finalize(() => {
         this.loading = false;
-      })
-    ).subscribe();
-  }
-
-  private createRegistrationForm(): FormGroup {
-    return this.fb.group({
-      firstName: [{value: '', disabled: true}, Validators.required],
-      lastName: [{value: '', disabled: true}, Validators.required],
-      email: [{value: '', disabled: true}, [Validators.required, Validators.email]],
-      phoneNumber: [{value: '', disabled: true}, [Validators.required, Validators.pattern(/^(?:\+212|0)[5-7]\d{8}$/)]],
-      specialRequirements: [''],
-      notes: [''],
-      termsAccepted: [false, Validators.requiredTrue]
+        this.updateFormWithEventDetails();
+        this.checkEventCapacity(); // Check if event is full
+        this.checkRegistrationStatus();
+      },
+      error: (error) => {
+        console.error('Error fetching event:', error);
+        this.loading = false;
+        this.snackBar.open('Error loading event details', 'Close', { duration: 3000 });
+      }
     });
   }
-  
-  private populateFormWithUserData(user: User): void {
-    if (user && this.isUserLoggedIn) {
-      // Use patchValue to update form values without affecting the disabled state
-        this.registrationForm.patchValue({
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          email: user.email || '',
-          phoneNumber: user.phoneNumber || '',
-          // Auto-accept terms for quick registration
-          termsAccepted: this.isQuickRegistration
-        });
-        
-      // Keep the contact info fields disabled (readonly)
-        this.registrationForm.get('firstName')?.disable();
-        this.registrationForm.get('lastName')?.disable();
-        this.registrationForm.get('email')?.disable();
-        this.registrationForm.get('phoneNumber')?.disable();
-      
-      // Log the form state for debugging
-      console.log('Form after populating user data:', {
-        formValues: this.registrationForm.getRawValue(),
-        firstName: {
-          value: this.registrationForm.get('firstName')?.value,
-          disabled: this.registrationForm.get('firstName')?.disabled
+
+  private checkAuthStatus(): void {
+    this.isUserLoggedIn = this.authService.isLoggedIn();
+    if (!this.isUserLoggedIn) {
+      this.router.navigate(['/auth/login'], { 
+        queryParams: { redirectUrl: `/events/${this.eventId}/register` } 
+      });
+    }
+  }
+
+  private updateFormWithEventDetails(): void {
+    if (this.event) {
+      this.isRegistered = this.event.isRegistered || false;
+      this.registrationSuccess = this.event.isRegistered || false;
+      if (this.event.isRegistered) {
+        this.createRegistrationDataFromEvent(this.event);
+      }
+    }
+  }
+
+  private checkEventCapacity(): void {
+    if (!this.event) return;
+    
+    this.eventIsFull = this.event.currentParticipants >= this.event.maxParticipants;
+    
+    if (this.eventIsFull) {
+      this.snackBar.open(
+        'This event has reached maximum capacity. Registration is now closed.',
+        'Close',
+        { duration: 5000, panelClass: ['warning-snackbar'] }
+      );
+    }
+  }
+
+  private checkRegistrationStatus(): void {
+    if (this.event && this.isUserLoggedIn) {
+      this.volunteerService.getVolunteerProfile().subscribe({
+        next: (volunteerProfile) => {
+          if (!volunteerProfile) {
+            this.snackBar.open(
+              'You need to create a volunteer profile before registering for events.',
+              'Close',
+              { duration: 5000, panelClass: ['warning-snackbar'] }
+            );
+            return;
+          } else if (volunteerProfile.approvalStatus !== 'APPROVED') {
+            this.snackBar.open(
+              'Your volunteer profile is not approved yet. Please wait for admin approval before registering for events.',
+              'Close',
+              { duration: 5000, panelClass: ['warning-snackbar'] }
+            );
+            return;
+          } else if (volunteerProfile.banned) {
+            this.snackBar.open(
+              'Your account has been banned. You cannot register for events.',
+              'Close',
+              { duration: 5000, panelClass: ['error-snackbar'] }
+            );
+            return;
+          }
+          
+          // If the volunteer is approved, proceed with registration
+          this.proceedWithRegistration();
+        },
+        error: (error) => {
+          console.error('Error checking volunteer status:', error);
+          this.snackBar.open(
+            'Could not verify your volunteer status. Please try again later.',
+            'Close',
+            { duration: 5000, panelClass: ['error-snackbar'] }
+          );
         }
       });
     }
   }
-  
-  // Validate if the user data is complete enough for quick registration
-  private validateUserDataForQuickRegistration(user: User): boolean {
-    return Boolean(
-      user.firstName && 
-      user.lastName && 
-      user.email && 
-      user.phoneNumber
-    );
+
+  private createRegistrationForm(): FormGroup {
+    return this.fb.group({
+      specialRequirements: [''],
+      notes: [''],
+      termsAccepted: [false, Validators.requiredTrue]
+    });
   }
   
   // Validate if the form is complete enough for quick registration
@@ -294,12 +248,14 @@ export class EventRegistrationComponent implements OnInit {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || '',
-      phoneNumber: user.phoneNumber || '',
+      phoneNumber: user.phoneNumber || '', // Phone number is optional now
       specialRequirements: '',
       notes: '',
       termsAccepted: true,
       eventId: this.eventId
     };
+    
+    console.log('Performing quick registration with data:', registrationData);
     
     this.eventService.registerWithDetails(this.eventId, registrationData).pipe(
       tap(() => {
@@ -342,6 +298,7 @@ export class EventRegistrationComponent implements OnInit {
       }),
       finalize(() => {
         this.isSubmitting = false;
+        this.processingQuickRegistration = false;
       })
     ).subscribe();
   }
@@ -357,7 +314,14 @@ export class EventRegistrationComponent implements OnInit {
     if (this.currentUser) {
       this.volunteerService.getVolunteerProfile().subscribe({
         next: (volunteerProfile) => {
-          if (volunteerProfile.approvalStatus !== 'APPROVED') {
+          if (!volunteerProfile) {
+            this.snackBar.open(
+              'You need to create a volunteer profile before registering for events.',
+              'Close',
+              { duration: 5000, panelClass: ['warning-snackbar'] }
+            );
+            return;
+          } else if (volunteerProfile.approvalStatus !== 'APPROVED') {
             this.snackBar.open(
               'Your volunteer profile is not approved yet. Please wait for admin approval before registering for events.',
               'Close',
@@ -511,7 +475,7 @@ export class EventRegistrationComponent implements OnInit {
       eventId: this.eventId!
     };
     
-    console.log('Submitting registration data:', registrationData);
+    console.log('Submitting registration data with phone:', registrationData.phoneNumber || 'not provided');
     
     // Ensure we have at least an email
     if (!registrationData.email && token?.sub) {
@@ -535,6 +499,11 @@ export class EventRegistrationComponent implements OnInit {
             duration: 3000,
             panelClass: ['success-snackbar']
           });
+          
+          // Navigate to event details page after short delay
+          setTimeout(() => {
+            this.router.navigate(['/events', this.eventId]);
+          }, 1500);
         },
         error: (error: any) => {
           console.error('Error registering for event:', error);
@@ -601,7 +570,200 @@ export class EventRegistrationComponent implements OnInit {
     if (!this.validateQuickRegistration()) {
       return;
     }
-    this.registerForQuickEvent();
+    
+    // Check volunteer profile status before proceeding
+    if (this.currentUser) {
+      this.volunteerService.getVolunteerProfile().subscribe({
+        next: (volunteerProfile) => {
+          if (!volunteerProfile) {
+            this.snackBar.open(
+              'You need to create a volunteer profile before registering for events.',
+              'Close',
+              { duration: 5000, panelClass: ['warning-snackbar'] }
+            );
+            return;
+          } else if (volunteerProfile.approvalStatus !== 'APPROVED') {
+            this.snackBar.open(
+              'Your volunteer profile is not approved yet. Please wait for admin approval before registering for events.',
+              'Close',
+              { duration: 5000, panelClass: ['warning-snackbar'] }
+            );
+            return;
+          } else if (volunteerProfile.banned) {
+            this.snackBar.open(
+              'Your account has been banned. You cannot register for events.',
+              'Close',
+              { duration: 5000, panelClass: ['error-snackbar'] }
+            );
+            return;
+          }
+          
+          // Proceed with registration if the volunteer is approved
+          this.registerForQuickEvent();
+        },
+        error: (error) => {
+          console.error('Error checking volunteer status:', error);
+          this.snackBar.open(
+            'Could not verify your volunteer status. Please try again later.',
+            'Close',
+            { duration: 5000, panelClass: ['error-snackbar'] }
+          );
+        }
+      });
+    }
+  }
+
+  /** Submits the registration form data */
+  onSubmit(): void {
+    console.log('Form submission attempted');
+    
+    // Ensure the user is logged in
+    if (!this.authService.isLoggedIn()) {
+      this.snackBar.open('Please log in to register for this event', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      this.router.navigate(['/auth/login'], { 
+        queryParams: { 
+          returnUrl: this.router.url,
+          message: 'Please log in to register for this event'
+        } 
+      });
+      return;
+    }
+    
+    // Validate form
+    if (this.registrationForm.invalid) {
+      this.markAllAsTouched();
+      this.snackBar.open('Please complete all required fields', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+    
+    // Check if event is full
+    if (this.eventIsFull) {
+      this.snackBar.open('This event has reached maximum capacity. Registration is closed.', 'Close', { 
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+    
+    // Verify volunteer profile approval status before proceeding
+    if (this.currentUser) {
+      this.volunteerService.getVolunteerProfile().subscribe({
+        next: (volunteerProfile) => {
+          if (!volunteerProfile) {
+            this.snackBar.open(
+              'You need to create a volunteer profile before registering for events.',
+              'Close',
+              { duration: 5000, panelClass: ['warning-snackbar'] }
+            );
+            return;
+          } else if (volunteerProfile.approvalStatus !== 'APPROVED') {
+            this.snackBar.open(
+              'Your volunteer profile is not approved yet. Please wait for admin approval before registering for events.',
+              'Close',
+              { duration: 5000, panelClass: ['warning-snackbar'] }
+            );
+            return;
+          } else if (volunteerProfile.banned) {
+            this.snackBar.open(
+              'Your account has been banned. You cannot register for events.',
+              'Close',
+              { duration: 5000, panelClass: ['error-snackbar'] }
+            );
+            return;
+          }
+          
+          // Proceed with form submission if volunteer is approved
+          this.submitRegistrationForm();
+        },
+        error: (error) => {
+          console.error('Error checking volunteer status:', error);
+          this.snackBar.open(
+            'Could not verify your volunteer status. Please try again later.',
+            'Close',
+            { duration: 5000, panelClass: ['error-snackbar'] }
+          );
+        }
+      });
+    }
+  }
+  
+  // New method containing the registration submission logic extracted from onSubmit
+  private submitRegistrationForm(): void {
+    this.isSubmitting = true;
+    
+    // Get raw form values including disabled fields
+    const formValues = this.registrationForm.getRawValue();
+    
+    // Create a safely typed token object with default empty values
+    const token = this.authService.getDecodedToken();
+    const userId = this.authService.getCurrentUserId();
+    
+    console.log('Using userId for registration:', userId);
+    
+    // Prepare registration data, ensuring userId is included and all required fields are set
+    const registrationData: IEventRegistrationRequest = {
+      // Use current user data directly for required fields
+      firstName: this.currentUser?.firstName || '',
+      lastName: this.currentUser?.lastName || '',
+      email: this.currentUser?.email || '',
+      // Other fields from form
+      phoneNumber: formValues.phoneNumber || (this.currentUser?.phoneNumber || ''),
+      specialRequirements: formValues.specialRequirements || '',
+      notes: formValues.notes || '',
+      termsAccepted: formValues.termsAccepted,
+      userId: userId,
+      eventId: this.eventId!
+    };
+    
+    console.log('Submitting registration data:', registrationData);
+    
+    // Validation check for required fields
+    if (!registrationData.firstName || !registrationData.lastName || !registrationData.email) {
+      this.snackBar.open('Missing required information. Please ensure your profile information is complete.', 'Close', { 
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      this.isSubmitting = false;
+      return;
+    }
+    
+    this.eventService.registerWithDetails(this.eventId!, registrationData)
+      .pipe(
+        finalize(() => {
+          this.isSubmitting = false;
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          console.log('Registration successful:', response);
+          this.isRegistered = true;
+          this.registrationSuccess = true;
+          
+          // Set registration data with status if available
+          this.registrationData = {
+            ...registrationData,
+            status: response.status || (this.event?.requiresApproval ? 'PENDING' : 'APPROVED')
+          };
+          
+          this.snackBar.open('Registration successful!', 'Close', { 
+            duration: 5000,
+            panelClass: ['success-snackbar']
+          });
+          
+          // Navigate to event details page
+          this.router.navigate(['/events', this.eventId]);
+        },
+        error: (error) => {
+          console.error('Registration error', error);
+          this.handleRegistrationError(error, registrationData);
+        }
+      });
   }
 
   // Method specifically for quick registration with minimal data
@@ -610,12 +772,31 @@ export class EventRegistrationComponent implements OnInit {
     
     const userId = this.authService.getCurrentUserId();
     
-    // Create minimal registration data
+    // Complete quick registration directly (no phone number checks)
+    this.completeQuickRegistration(userId);
+  }
+
+  // Helper method to complete quick registration after phone number check
+  private completeQuickRegistration(userId: string): void {
+    // Validate that we have the current user data
+    if (!this.currentUser) {
+      this.snackBar.open('User profile information not available. Please try again.', 'Close', { 
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      this.isSubmitting = false;
+      this.processingQuickRegistration = false;
+      return;
+    }
+    
+    // Create minimal registration data with required fields directly from the user data
     const registrationData: IEventRegistrationRequest = {
-      firstName: this.currentUser?.firstName || '',
-      lastName: this.currentUser?.lastName || '',
-      email: this.currentUser?.email || '',
-      phoneNumber: this.currentUser?.phoneNumber || '',
+      firstName: this.currentUser.firstName || '',
+      lastName: this.currentUser.lastName || '',
+      email: this.currentUser.email || '',
+      phoneNumber: this.currentUser.phoneNumber || '',
+      specialRequirements: '',
+      notes: '',
       termsAccepted: true,
       userId: userId,
       eventId: this.eventId!
@@ -623,11 +804,23 @@ export class EventRegistrationComponent implements OnInit {
     
     console.log('Quick registering with data:', registrationData);
     
+    // Validation check for required fields
+    if (!registrationData.firstName || !registrationData.lastName || !registrationData.email) {
+      this.snackBar.open('Missing required information. Please ensure your profile information is complete.', 'Close', { 
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+      this.isSubmitting = false;
+      this.processingQuickRegistration = false;
+      return;
+    }
+    
     // Use the same method as the normal registration
     this.eventService.registerWithDetails(this.eventId!, registrationData)
       .pipe(
         finalize(() => {
           this.isSubmitting = false;
+          this.processingQuickRegistration = false;
         })
       )
       .subscribe({
@@ -646,8 +839,10 @@ export class EventRegistrationComponent implements OnInit {
             panelClass: ['success-snackbar']
           });
           
-          // Remove navigation to allow user to see success UI
-          // this.router.navigate(['/events', this.eventId]);
+          // Navigate to event details after short delay
+          setTimeout(() => {
+            this.router.navigate(['/events', this.eventId]);
+          }, 1500);
         },
         error: (error) => {
           console.error('Quick registration error', error);
@@ -690,104 +885,5 @@ export class EventRegistrationComponent implements OnInit {
       duration: 5000,
       panelClass: ['error-snackbar']
     });
-  }
-
-  /** Submits the registration form data */
-  onSubmit(): void {
-    console.log('Form submission attempted');
-    
-    // Ensure the user is logged in
-    if (!this.authService.isLoggedIn()) {
-      this.snackBar.open('Please log in to register for this event', 'Close', {
-        duration: 5000,
-        panelClass: ['error-snackbar']
-      });
-      this.router.navigate(['/auth/login'], { 
-        queryParams: { 
-          returnUrl: this.router.url,
-          message: 'Please log in to register for this event'
-        } 
-      });
-      return;
-    }
-    
-    // Validate form
-    if (this.registrationForm.invalid) {
-      this.markAllAsTouched();
-      this.snackBar.open('Please complete all required fields', 'Close', {
-        duration: 5000,
-        panelClass: ['error-snackbar']
-      });
-      return;
-    }
-    
-    // Check if event is full without waitlist
-    if (this.event && this.event.currentParticipants >= this.event.maxParticipants && 
-       !this.event.waitlistEnabled) {
-      this.snackBar.open('This event is full and does not have a waitlist', 'Close', { duration: 3000 });
-      return;
-    }
-    
-    this.isSubmitting = true;
-    
-    // Get raw form values including disabled fields
-    const formValues = this.registrationForm.getRawValue();
-    
-    // Create a safely typed token object with default empty values
-    const token = this.authService.getDecodedToken();
-    const userId = this.authService.getCurrentUserId();
-    
-    console.log('Using userId for registration:', userId);
-    console.log('Token info:', {
-      user_id: token?.user_id || 'not available',
-      sub: token?.sub || 'not available'
-    });
-    
-    // Prepare registration data, ensuring userId is included
-    const registrationData: IEventRegistrationRequest = {
-      ...formValues,
-      userId: userId,
-      email: formValues.email || (token?.sub as string) || '',
-      eventId: this.eventId!
-    };
-    
-    console.log('Submitting registration data:', registrationData);
-    
-    // Ensure we have at least an email
-    if (!registrationData.email && token?.sub) {
-      registrationData.email = token.sub as string;
-    }
-    
-    this.eventService.registerWithDetails(this.eventId!, registrationData)
-      .pipe(
-        finalize(() => {
-          this.isSubmitting = false;
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          console.log('Registration successful:', response);
-          this.isRegistered = true;
-          this.registrationSuccess = true;
-          
-          // Set registration data with status if available
-          this.registrationData = {
-            ...registrationData,
-            status: response.status || (this.event?.requiresApproval ? 'PENDING' : 'APPROVED')
-          };
-          
-          this.snackBar.open('Registration successful!', 'Close', { 
-            duration: 5000,
-            panelClass: ['success-snackbar']
-          });
-          
-          // Navigate to event details page
-          this.router.navigate(['/events', this.eventId]);
-        },
-        error: (error) => {
-          console.error('Registration error', error);
-          this.handleRegistrationError(error, registrationData);
-        }
-      });
   }
 } 

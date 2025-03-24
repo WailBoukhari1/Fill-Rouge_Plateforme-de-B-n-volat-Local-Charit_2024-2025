@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '../../core/guards/auth.guard';
 import { QuestionnaireCompletedGuard } from '../auth/guards/questionnaire-completed.guard';
+import { ProfileCompletedGuard } from '../auth/guards/profile-completed.guard';
 import { PrivateLayoutComponent } from '../../layouts/private-layout/private-layout.component';
 import { RoleGuard } from '../../core/guards/role.guard';
 import { EmailVerificationGuard } from '../../core/guards/email-verification.guard';
@@ -9,7 +10,7 @@ export const PRIVATE_ROUTES: Routes = [
   {
     path: '',
     component: PrivateLayoutComponent,
-    canActivate: [AuthGuard, EmailVerificationGuard, QuestionnaireCompletedGuard],
+    canActivate: [AuthGuard, EmailVerificationGuard, QuestionnaireCompletedGuard, ProfileCompletedGuard],
     children: [
       {
         path: 'dashboard',

@@ -20,13 +20,6 @@ export const ADMIN_ROUTES: Routes = [
         canActivate: [AuthGuard]
       },
       {
-        path: 'users/create',
-        loadComponent: () => import('./user-management/user-add.component')
-          .then(m => m.UserAddComponent),
-        canActivate: [AuthGuard],
-        title: 'Add User'
-      },
-      {
         path: 'organizations',
         loadComponent: () => import('./organization-management/organization-management.component')
           .then(m => m.OrganizationManagementComponent),
@@ -49,14 +42,8 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => 
           import('./volunteer-management/volunteer-approval.component').then(c => c.VolunteerApprovalComponent),
         title: 'Volunteer Approval'
-      },
-
-      {
-        path: 'event-approval',
-        loadComponent: () => 
-          import('./event-management/event-approval.component').then(c => c.EventApprovalComponent),
-        title: 'Event Approval'
       }
+
     ]
   }
 ]; 

@@ -95,10 +95,21 @@ public interface EventRepository extends MongoRepository<Event, String> {
     @Query("{'status': ?0}")
     Long countByStatus(String status);
     
+    // Add a more robust method that handles potential BSON conversion issues
+    @Query(value = "{'status': ?0}", count = true)
+    Long countEventsByStatus(String status);
+    
     // Methods for automatic status updates
     @Query("{'status': ?0, 'startDate': {$lt: ?1}}")
     List<Event> findByStatusAndStartDateBefore(String status, LocalDateTime date);
     
     @Query("{'status': ?0, 'endDate': {$lt: ?1}}")
     List<Event> findByStatusAndEndDateBefore(String status, LocalDateTime date);
+    
+    // Add more robust methods using count=true
+    @Query(value = "{'status': ?0, 'endDate': {$gt: ?1}}", count = true)
+    Long countEventsByStatusAndEndDateAfter(String status, LocalDateTime date);
+    
+    @Query(value = "{'status': ?0, 'endDate': {$lt: ?1}}", count = true)
+    Long countEventsByStatusAndEndDateBefore(String status, LocalDateTime date);
 }

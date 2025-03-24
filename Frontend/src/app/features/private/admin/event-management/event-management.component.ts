@@ -39,156 +39,217 @@ import { EventStatus } from '../../../../core/models/event.types';
     RouterModule
   ],
   template: `
-    <div class="container mx-auto p-4">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Event Management</h1>
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Event Management</h1>
+            <p class="mt-2 text-gray-600 text-lg">Manage and moderate all events across the platform</p>
+          </div>
+          <button mat-raised-button 
+                  color="primary" 
+                  (click)="loadEvents()"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2">
+            <mat-icon class="text-xl">refresh</mat-icon>
+            <span class="font-medium">Refresh Events</span>
+          </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+          <!-- Loading State -->
+          <div *ngIf="loading" class="flex justify-center items-center py-16">
+            <mat-spinner diameter="48" class="text-blue-600"></mat-spinner>
+          </div>
+
+          <!-- Error State -->
+          <div *ngIf="error" class="p-6 text-center">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-6 inline-flex flex-col items-center">
+              <mat-icon class="text-red-500 text-4xl mb-4">error_outline</mat-icon>
+              <p class="text-red-600 text-lg">{{ error }}</p>
+              <button 
+                mat-raised-button 
+                color="primary" 
+                (click)="loadEvents()" 
+                class="mt-4 flex items-center gap-2">
+                <mat-icon>refresh</mat-icon>
+                Retry
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div *ngIf="!loading && !error" class="overflow-x-auto">
+            <table mat-table [dataSource]="dataSource" class="w-full">
+              <!-- Image Column -->
+              <ng-container matColumnDef="image">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Image</th>
+                <td mat-cell *matCellDef="let event" class="px-6 py-4">
+                  <img [src]="getEventImageUrl(event)" 
+                       alt="Event image"
+                       class="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100">
+                </td>
+              </ng-container>
+
+              <!-- Title Column -->
+              <ng-container matColumnDef="title">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Title</th>
+                <td mat-cell *matCellDef="let event" class="px-6 py-4">
+                  <div class="font-medium text-gray-900">{{event.title}}</div>
+                  <div class="text-sm text-gray-500 line-clamp-2">{{event.description}}</div>
+                </td>
+              </ng-container>
+
+              <!-- Organization Column -->
+              <ng-container matColumnDef="organization">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Organization</th>
+                <td mat-cell *matCellDef="let event" class="px-6 py-4">
+                  <div class="flex items-center text-gray-600">
+                    <mat-icon class="text-gray-400 mr-2">business</mat-icon>
+                    {{event.organizationName || 'N/A'}}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Date Column -->
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Date</th>
+                <td mat-cell *matCellDef="let event" class="px-6 py-4">
+                  <div class="flex items-center text-gray-600">
+                    <mat-icon class="text-gray-400 mr-2">calendar_today</mat-icon>
+                    {{event.startDate | date: 'MMM d, y'}}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Status</th>
+                <td mat-cell *matCellDef="let event" class="px-6 py-4">
+                  <span
+                    [class]="'inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium bg-' +
+                    getStatusInfo(event.status).color + '-100 text-' +
+                    getStatusInfo(event.status).color + '-800'"
+                  >
+                    <mat-icon class="h-4 w-4 mr-1">{{ getStatusInfo(event.status).icon }}</mat-icon>
+                    {{ getStatusInfo(event.status).displayName }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Participants Column -->
+              <ng-container matColumnDef="participants">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4">Participants</th>
+                <td mat-cell *matCellDef="let event" class="px-6 py-4">
+                  <div class="flex items-center text-gray-600">
+                    <mat-icon class="text-gray-400 mr-2">people</mat-icon>
+                    {{ event.currentParticipants || 0 }}/{{ event.maxParticipants || 0 }}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-600 font-medium px-6 py-4 text-right">Actions</th>
+                <td mat-cell *matCellDef="let event" class="px-6 py-4 text-right">
+                  <button mat-icon-button 
+                          [matMenuTriggerFor]="menu"
+                          class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #menu="matMenu" class="rounded-xl shadow-lg">
+                    <button mat-menu-item (click)="viewDetails(event)" class="hover:bg-gray-50">
+                      <mat-icon class="text-blue-500">visibility</mat-icon>
+                      <span class="ml-2">View Details</span>
+                    </button>
+                    
+                    <div *ngIf="event.status === 'PENDING'">
+                      <button mat-menu-item (click)="approveEvent(event)" class="hover:bg-gray-50">
+                        <mat-icon class="text-green-500">check_circle</mat-icon>
+                        <span class="ml-2">Approve</span>
+                      </button>
+                      <button mat-menu-item (click)="rejectEvent(event)" class="hover:bg-gray-50">
+                        <mat-icon class="text-red-500">cancel</mat-icon>
+                        <span class="ml-2">Reject</span>
+                      </button>
+                    </div>
+                    
+                    <div *ngIf="event.status === 'ACTIVE' || event.status === 'FULL'">
+                      <button mat-menu-item (click)="changeStatus(event, 'PENDING')" class="hover:bg-gray-50">
+                        <mat-icon class="text-yellow-500">pending</mat-icon>
+                        <span class="ml-2">Set to Pending</span>
+                      </button>
+                      <button mat-menu-item (click)="changeStatus(event, 'CANCELLED')" class="hover:bg-gray-50">
+                        <mat-icon class="text-red-500">cancel</mat-icon>
+                        <span class="ml-2">Cancel Event</span>
+                      </button>
+                    </div>
+                    
+                    <div *ngIf="event.status === 'ONGOING'">
+                      <button mat-menu-item (click)="changeStatus(event, 'COMPLETED')" class="hover:bg-gray-50">
+                        <mat-icon class="text-purple-500">done_all</mat-icon>
+                        <span class="ml-2">Mark as Completed</span>
+                      </button>
+                      <button mat-menu-item (click)="changeStatus(event, 'CANCELLED')" class="hover:bg-gray-50">
+                        <mat-icon class="text-red-500">cancel</mat-icon>
+                        <span class="ml-2">Cancel Event</span>
+                      </button>
+                    </div>
+                    
+                    <div *ngIf="event.status === 'CANCELLED'">
+                      <button mat-menu-item (click)="changeStatus(event, 'ACTIVE')" class="hover:bg-gray-50">
+                        <mat-icon class="text-blue-500">restore</mat-icon>
+                        <span class="ml-2">Restore Event</span>
+                      </button>
+                    </div>
+                    
+                    <div *ngIf="event.status === 'REJECTED'">
+                      <button mat-menu-item (click)="approveEvent(event)" class="hover:bg-gray-50">
+                        <mat-icon class="text-green-500">check_circle</mat-icon>
+                        <span class="ml-2">Approve Now</span>
+                      </button>
+                    </div>
+                    
+                    <button mat-menu-item (click)="deleteEvent(event)" class="hover:bg-gray-50">
+                      <mat-icon class="text-red-500">delete</mat-icon>
+                      <span class="ml-2 text-red-500">Delete</span>
+                    </button>
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+                  class="hover:bg-gray-50 transition-colors duration-200"></tr>
+            </table>
+          </div>
+
+          <!-- No Data State -->
+          <div *ngIf="!loading && !error && dataSource.data.length === 0" class="flex flex-col items-center justify-center py-16">
+            <mat-icon class="text-gray-400 text-5xl mb-4">event_busy</mat-icon>
+            <p class="text-lg text-gray-600">No events found</p>
+            <button 
+              mat-raised-button 
+              color="primary" 
+              (click)="loadEvents()" 
+              class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-sm">
+              Refresh Events
+            </button>
+          </div>
+
+          <!-- Paginator -->
+          <mat-paginator
+            *ngIf="!loading && !error && dataSource.data.length > 0"
+            [length]="totalCount"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[5, 10, 25, 100]"
+            [pageIndex]="pageIndex"
+            (page)="onPageChange($event)"
+            class="border-t border-gray-200">
+          </mat-paginator>
+        </div>
       </div>
-
-      <mat-card>
-        <div *ngIf="loading" class="flex justify-center p-4">
-          <mat-spinner diameter="40"></mat-spinner>
-        </div>
-        
-        <div *ngIf="!loading" class="overflow-x-auto">
-          <table mat-table [dataSource]="dataSource" class="w-full">
-            <!-- Image Column -->
-            <ng-container matColumnDef="image">
-              <th mat-header-cell *matHeaderCellDef>Image</th>
-              <td mat-cell *matCellDef="let event">
-                <img [src]="getEventImageUrl(event)" 
-                     alt="Event image"
-                     class="w-10 h-10 rounded-full object-cover">
-              </td>
-            </ng-container>
-
-            <!-- Title Column -->
-            <ng-container matColumnDef="title">
-              <th mat-header-cell *matHeaderCellDef>Title</th>
-              <td mat-cell *matCellDef="let event" class="py-3">
-                {{ event.title }}
-              </td>
-            </ng-container>
-
-            <!-- Organization Column -->
-            <ng-container matColumnDef="organization">
-              <th mat-header-cell *matHeaderCellDef>Organization</th>
-              <td mat-cell *matCellDef="let event" class="py-3">
-                {{ event.organizationName || 'N/A' }}
-              </td>
-            </ng-container>
-
-            <!-- Date Column -->
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let event" class="py-3">
-                {{ event.startDate | date: 'MMM d, y' }}
-              </td>
-            </ng-container>
-
-            <!-- Status Column -->
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let event" class="py-3">
-                <mat-chip [color]="getStatusInfo(event.status).color" selected>
-                  <mat-icon>{{ getStatusInfo(event.status).icon }}</mat-icon>
-                  {{ getStatusInfo(event.status).displayName }}
-                </mat-chip>
-              </td>
-            </ng-container>
-
-            <!-- Participants Column -->
-            <ng-container matColumnDef="participants">
-              <th mat-header-cell *matHeaderCellDef>Participants</th>
-              <td mat-cell *matCellDef="let event" class="py-3">
-                {{ event.currentParticipants || 0 }}/{{ event.maxParticipants || 0 }}
-              </td>
-            </ng-container>
-
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="w-1/5">Actions</th>
-              <td mat-cell *matCellDef="let event" class="py-3">
-                <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Event actions">
-                  <mat-icon>more_vert</mat-icon>
-                </button>
-                <mat-menu #menu="matMenu">
-                  <button mat-menu-item (click)="viewDetails(event)">
-                    <mat-icon>visibility</mat-icon>
-                    <span>View Details</span>
-                  </button>
-                  
-                  <div *ngIf="event.status === 'PENDING'">
-                    <button mat-menu-item (click)="approveEvent(event)">
-                      <mat-icon>check_circle</mat-icon>
-                      <span>Approve</span>
-                    </button>
-                    <button mat-menu-item (click)="rejectEvent(event)">
-                      <mat-icon>cancel</mat-icon>
-                      <span>Reject</span>
-                    </button>
-                  </div>
-                  
-                  <div *ngIf="event.status === 'ACTIVE' || event.status === 'FULL'">
-                    <button mat-menu-item (click)="changeStatus(event, 'PENDING')">
-                      <mat-icon>pending</mat-icon>
-                      <span>Set to Pending</span>
-                    </button>
-                    <button mat-menu-item (click)="changeStatus(event, 'CANCELLED')">
-                      <mat-icon>cancel</mat-icon>
-                      <span>Cancel Event</span>
-                    </button>
-                  </div>
-                  
-                  <div *ngIf="event.status === 'ONGOING'">
-                    <button mat-menu-item (click)="changeStatus(event, 'COMPLETED')">
-                      <mat-icon>done_all</mat-icon>
-                      <span>Mark as Completed</span>
-                    </button>
-                    <button mat-menu-item (click)="changeStatus(event, 'CANCELLED')">
-                      <mat-icon>cancel</mat-icon>
-                      <span>Cancel Event</span>
-                    </button>
-                  </div>
-                  
-                  <div *ngIf="event.status === 'CANCELLED'">
-                    <button mat-menu-item (click)="changeStatus(event, 'ACTIVE')">
-                      <mat-icon>restore</mat-icon>
-                      <span>Restore Event</span>
-                    </button>
-                  </div>
-                  
-                  <div *ngIf="event.status === 'REJECTED'">
-                    <button mat-menu-item (click)="approveEvent(event)">
-                      <mat-icon>check_circle</mat-icon>
-                      <span>Approve Now</span>
-                    </button>
-                  </div>
-                  
-                  <button mat-menu-item (click)="deleteEvent(event)" class="text-red-600">
-                    <mat-icon class="text-red-600">delete</mat-icon>
-                    <span>Delete</span>
-                  </button>
-                </mat-menu>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
-        </div>
-
-        <div *ngIf="error" class="p-4 text-red-600 text-center">
-          {{ error }}
-        </div>
-
-        <mat-paginator
-          [length]="totalCount"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="[5, 10, 25, 100]"
-          [pageIndex]="pageIndex"
-          (page)="onPageChange($event)">
-        </mat-paginator>
-      </mat-card>
     </div>
   `
 })
@@ -328,12 +389,19 @@ export class EventManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Changes the status of an event
+   * @param event The event to update
+   * @param newStatus The new status as a string
+   */
   changeStatus(event: any, newStatus: string): void {
+    const displayName = this.getStatusInfo(newStatus).displayName;
+    
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
         title: 'Update Event Status',
-        message: `Are you sure you want to update "${event.title}" to "${newStatus}"?`,
+        message: `Are you sure you want to update "${event.title}" to "${displayName}"?`,
         confirmText: 'Update',
         cancelText: 'Cancel'
       }
@@ -344,7 +412,7 @@ export class EventManagementComponent implements OnInit, OnDestroy {
         this.adminService.updateEventStatus(event.id, newStatus)
           .subscribe({
             next: () => {
-              this.notificationService.success(`Event "${event.title}" status changed to ${newStatus}`);
+              this.notificationService.success(`Event "${event.title}" status changed to ${displayName}`);
               this.loadEvents();
             },
             error: (err) => {

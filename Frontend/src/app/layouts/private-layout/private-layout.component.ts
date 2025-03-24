@@ -64,7 +64,7 @@ import { UserRole } from '../../core/models/auth.models';
               <mat-icon matListItemIcon>event</mat-icon>
               <span matListItemTitle>My Events</span>
             </a>
-            <a mat-list-item routerLink="/volunteer/hours" routerLinkActive="active">
+            <!-- <a mat-list-item routerLink="/volunteer/hours" routerLinkActive="active">
               <mat-icon matListItemIcon>schedule</mat-icon>
               <span matListItemTitle>My Hours</span>
             </a>
@@ -75,7 +75,7 @@ import { UserRole } from '../../core/models/auth.models';
               <a mat-list-item routerLink="/volunteer/waitlist" routerLinkActive="active">
               <mat-icon matListItemIcon>hourglass_empty</mat-icon>
               <span matListItemTitle>Waitlist</span>
-            </a>
+            </a> -->
           </ng-container>
 
           @if (userRole === UserRole.ORGANIZATION) {

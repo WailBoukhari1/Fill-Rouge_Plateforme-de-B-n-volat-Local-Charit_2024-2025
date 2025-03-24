@@ -22,6 +22,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 import com.fill_rouge.backend.constant.ValidationConstants;
 import com.fill_rouge.backend.dto.request.OrganizationRequest;
 import com.fill_rouge.backend.dto.request.DocumentUrlRequest;
@@ -32,8 +40,6 @@ import com.fill_rouge.backend.constant.OrganizationStatus;
 import com.fill_rouge.backend.domain.Organization;
 import com.fill_rouge.backend.dto.response.ApiResponse;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -51,14 +57,18 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Organizations", description = "Organization management APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class OrganizationController {
 
     private final OrganizationService organizationService;
 
     @PostMapping
     @Operation(summary = "Create organization", description = "Create a new organization profile")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Organization created successfully")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Organization created successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+    })
     public ResponseEntity<OrganizationResponse> createOrganization(
             @RequestHeader("X-User-ID") String userId,
             @Valid @RequestBody OrganizationRequest request) {
@@ -69,8 +79,12 @@ public class OrganizationController {
     @PutMapping("/{organizationId}")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Update organization", description = "Update an existing organization profile")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organization updated successfully")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organization updated successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Organization role required"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    })
     public ResponseEntity<OrganizationResponse> updateOrganization(
             @PathVariable String organizationId,
             @Valid @RequestBody OrganizationRequest request) {
@@ -79,16 +93,20 @@ public class OrganizationController {
 
     @GetMapping("/{organizationId}")
     @Operation(summary = "Get organization", description = "Retrieve organization details by ID")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organization retrieved successfully")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organization retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    })
     public ResponseEntity<OrganizationResponse> getOrganization(@PathVariable String organizationId) {
         return ResponseEntity.ok(organizationService.getOrganization(organizationId));
     }
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get organization by user ID", description = "Retrieve organization details by user ID")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organization retrieved successfully")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organization retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    })
     public ResponseEntity<OrganizationResponse> getOrganizationByUserId(@PathVariable String userId) {
         return ResponseEntity.ok(organizationService.getOrganizationByUserId(userId));
     }
@@ -96,8 +114,11 @@ public class OrganizationController {
     @DeleteMapping("/{organizationId}")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Delete organization", description = "Delete an organization profile")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Organization deleted successfully")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Organization deleted successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Organization role required"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Organization not found")
+    })
     public ResponseEntity<Void> deleteOrganization(@PathVariable String organizationId) {
         organizationService.deleteOrganization(organizationId);
         return ResponseEntity.noContent().build();
@@ -105,7 +126,9 @@ public class OrganizationController {
 
     @GetMapping("/search")
     @Operation(summary = "Search organizations", description = "Search organizations by query string")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Search completed successfully")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Search completed successfully")
+    })
     public ResponseEntity<List<OrganizationResponse>> searchOrganizations(
             @RequestParam(required = false, defaultValue = "") String query) {
         return ResponseEntity.ok(organizationService.searchOrganizations(query));
@@ -113,7 +136,10 @@ public class OrganizationController {
 
     @GetMapping("/focus-areas")
     @Operation(summary = "Find by focus areas", description = "Find organizations by their focus areas")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organizations retrieved successfully")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organizations retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid focus areas")
+    })
     public ResponseEntity<List<OrganizationResponse>> findByFocusAreas(
             @RequestParam @NotEmpty(message = "At least one focus area is required") List<String> areas) {
         return ResponseEntity.ok(organizationService.findByFocusAreas(areas));
@@ -121,7 +147,10 @@ public class OrganizationController {
 
     @GetMapping("/nearby")
     @Operation(summary = "Find nearby organizations", description = "Find organizations within specified radius")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organizations retrieved successfully")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Organizations retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid coordinates or radius")
+    })
     public ResponseEntity<List<OrganizationResponse>> findNearbyOrganizations(
             @RequestParam @DecimalMin(value = "-90.0") @DecimalMax(value = "90.0") double latitude,
             @RequestParam @DecimalMin(value = "-180.0") @DecimalMax(value = "180.0") double longitude,

@@ -24,10 +24,15 @@ import com.fill_rouge.backend.dto.response.VolunteerProfileResponse;
 import com.fill_rouge.backend.service.storage.GridFsService;
 import com.fill_rouge.backend.service.volunteer.VolunteerProfileService;
 import com.fill_rouge.backend.constant.VolunteerStatus;
+import com.fill_rouge.backend.dto.response.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -40,7 +45,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RestController
 @RequestMapping("/volunteers")
 @RequiredArgsConstructor
-@Tag(name = "Volunteer Profile", description = "Volunteer profile management endpoints")
+@Tag(name = "Volunteer Profiles", description = "Volunteer profile management APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class VolunteerProfileController {
     private final VolunteerProfileService profileService;
     private final GridFsService gridFsService;
@@ -48,90 +54,119 @@ public class VolunteerProfileController {
     @PostMapping("/profile")
     @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Create volunteer profile", description = "Create a new volunteer profile")
-    @ApiResponse(responseCode = "201", description = "Profile created successfully")
-    public ResponseEntity<VolunteerProfileResponse> createProfile(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Volunteer profile created successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Volunteer role required")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> createProfile(
             @RequestHeader("X-User-ID") String volunteerId,
             @Valid @RequestBody VolunteerProfileRequest request) {
+        VolunteerProfileResponse profile = profileService.createProfile(volunteerId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(profileService.createProfile(volunteerId, request));
+                .body(ApiResponse.success(profile, "Volunteer profile created successfully"));
     }
 
     @PutMapping("/profile")
     @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Update volunteer profile", description = "Update an existing volunteer profile")
-    @ApiResponse(responseCode = "200", description = "Profile updated successfully")
-    public ResponseEntity<VolunteerProfileResponse> updateProfile(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Volunteer profile updated successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request data"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Volunteer role required"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Volunteer profile not found")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> updateProfile(
             @RequestHeader("X-User-ID") String volunteerId,
             @Valid @RequestBody VolunteerProfileRequest request) {
-        return ResponseEntity.ok(profileService.updateProfile(volunteerId, request));
+        VolunteerProfileResponse profile = profileService.updateProfile(volunteerId, request);
+        return ResponseEntity.ok(ApiResponse.success(profile, "Volunteer profile updated successfully"));
     }
 
     @GetMapping("/profile")
     @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Get volunteer profile", description = "Retrieve a volunteer profile")
-    @ApiResponse(responseCode = "200", description = "Profile retrieved successfully")
-    @ApiResponse(responseCode = "404", description = "Profile not found")
-    public ResponseEntity<VolunteerProfileResponse> getProfile(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Volunteer profile retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Volunteer profile not found")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> getProfile(
             @RequestHeader("X-User-ID") String volunteerId) {
-        return ResponseEntity.ok(profileService.getProfile(volunteerId));
+        VolunteerProfileResponse profile = profileService.getProfile(volunteerId);
+        return ResponseEntity.ok(ApiResponse.success(profile));
     }
 
     @DeleteMapping("/profile")
     @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Delete volunteer profile", description = "Delete a volunteer profile")
-    @ApiResponse(responseCode = "204", description = "Profile deleted successfully")
-    public ResponseEntity<Void> deleteProfile(@RequestHeader("X-User-ID") String volunteerId) {
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Volunteer profile deleted successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Volunteer role required"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Volunteer profile not found")
+    })
+    public ResponseEntity<ApiResponse<Void>> deleteProfile(@RequestHeader("X-User-ID") String volunteerId) {
         profileService.deleteProfile(volunteerId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/search")
     @Operation(summary = "Search volunteers", description = "Search volunteers by query string")
-    @ApiResponse(responseCode = "200", description = "Search completed successfully")
-    public ResponseEntity<List<VolunteerProfileResponse>> searchVolunteers(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Search completed successfully")
+    })
+    public ResponseEntity<ApiResponse<List<VolunteerProfileResponse>>> searchVolunteers(
             @RequestParam(required = false, defaultValue = "") String query) {
-        return ResponseEntity.ok(profileService.searchVolunteers(query));
+        List<VolunteerProfileResponse> profiles = profileService.searchVolunteers(query);
+        return ResponseEntity.ok(ApiResponse.success(profiles));
     }
 
     @PostMapping("/stats")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Update volunteer stats", description = "Update volunteer statistics")
-    @ApiResponse(responseCode = "200", description = "Stats updated successfully")
-    public ResponseEntity<Void> updateStats(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Stats updated successfully")
+    })
+    public ResponseEntity<ApiResponse<Void>> updateStats(
             @RequestHeader("X-User-ID") String volunteerId,
             @RequestParam @Positive int hoursVolunteered,
             @RequestParam @DecimalMin("0.0") @DecimalMax("5.0") double rating) {
         profileService.updateVolunteerStats(volunteerId, hoursVolunteered, rating);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Stats updated successfully"));
     }
 
     @PostMapping("/badges")
     @PreAuthorize("hasRole('ORGANIZATION')")
     @Operation(summary = "Award badge", description = "Award a badge to a volunteer")
-    @ApiResponse(responseCode = "200", description = "Badge awarded successfully")
-    public ResponseEntity<Void> awardBadge(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Badge awarded successfully")
+    })
+    public ResponseEntity<ApiResponse<Void>> awardBadge(
             @RequestHeader("X-User-ID") String volunteerId,
             @RequestParam @NotBlank String badge) {
         profileService.awardBadge(volunteerId, badge);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Badge awarded successfully"));
     }
 
     @PutMapping("/background-check")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update background check", description = "Update volunteer background check status")
-    @ApiResponse(responseCode = "200", description = "Background check status updated successfully")
-    public ResponseEntity<Void> updateBackgroundCheckStatus(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Background check status updated successfully")
+    })
+    public ResponseEntity<ApiResponse<Void>> updateBackgroundCheckStatus(
             @RequestHeader("X-User-ID") String volunteerId,
             @RequestParam @Pattern(regexp = "^(PENDING|APPROVED|REJECTED)$") String status) {
         profileService.updateBackgroundCheckStatus(volunteerId, status);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Background check status updated successfully"));
     }
 
     @PostMapping("/profile/picture")
     @PreAuthorize("hasRole('VOLUNTEER')")
     @Operation(summary = "Upload profile picture", description = "Upload a profile picture for the volunteer")
-    @ApiResponse(responseCode = "200", description = "Profile picture uploaded successfully")
-    public ResponseEntity<VolunteerProfileResponse> uploadProfilePicture(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile picture uploaded successfully")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> uploadProfilePicture(
             @RequestHeader("X-User-ID") String volunteerId,
             @RequestParam("file") MultipartFile file) throws IOException {
         // Validate file type
@@ -175,46 +210,59 @@ public class VolunteerProfileController {
             .build();
 
         // Update profile and return response
-        return ResponseEntity.ok(profileService.updateProfile(volunteerId, request));
+        VolunteerProfileResponse profile = profileService.updateProfile(volunteerId, request);
+        return ResponseEntity.ok(ApiResponse.success(profile, "Profile picture uploaded successfully"));
     }
 
     @PatchMapping("/{volunteerId}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Approve volunteer", description = "Approve a volunteer's profile")
-    @ApiResponse(responseCode = "200", description = "Volunteer approved successfully")
-    @ApiResponse(responseCode = "404", description = "Volunteer not found")
-    public ResponseEntity<VolunteerProfileResponse> approveVolunteer(@PathVariable String volunteerId) {
-        return ResponseEntity.ok(profileService.updateVolunteerApprovalStatus(volunteerId, VolunteerStatus.APPROVED.name(), null));
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Volunteer approved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Volunteer not found")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> approveVolunteer(@PathVariable String volunteerId) {
+        VolunteerProfileResponse profile = profileService.updateVolunteerApprovalStatus(volunteerId, VolunteerStatus.APPROVED.name(), null);
+        return ResponseEntity.ok(ApiResponse.success(profile, "Volunteer approved successfully"));
     }
 
     @PatchMapping("/{volunteerId}/reject")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Reject volunteer", description = "Reject a volunteer's profile")
-    @ApiResponse(responseCode = "200", description = "Volunteer rejected successfully")
-    @ApiResponse(responseCode = "404", description = "Volunteer not found")
-    public ResponseEntity<VolunteerProfileResponse> rejectVolunteer(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Volunteer rejected successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Volunteer not found")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> rejectVolunteer(
             @PathVariable String volunteerId,
             @RequestParam String reason) {
-        return ResponseEntity.ok(profileService.updateVolunteerApprovalStatus(volunteerId, VolunteerStatus.REJECTED.name(), reason));
+        VolunteerProfileResponse profile = profileService.updateVolunteerApprovalStatus(volunteerId, VolunteerStatus.REJECTED.name(), reason);
+        return ResponseEntity.ok(ApiResponse.success(profile, "Volunteer rejected successfully"));
     }
 
     @PatchMapping("/{volunteerId}/ban")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Ban volunteer", description = "Ban a volunteer from using the platform")
-    @ApiResponse(responseCode = "200", description = "Volunteer banned successfully")
-    @ApiResponse(responseCode = "404", description = "Volunteer not found")
-    public ResponseEntity<VolunteerProfileResponse> banVolunteer(
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Volunteer banned successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Volunteer not found")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> banVolunteer(
             @PathVariable String volunteerId,
             @RequestParam String reason) {
-        return ResponseEntity.ok(profileService.updateVolunteerBanStatus(volunteerId, true, reason));
+        VolunteerProfileResponse profile = profileService.updateVolunteerBanStatus(volunteerId, true, reason);
+        return ResponseEntity.ok(ApiResponse.success(profile, "Volunteer banned successfully"));
     }
 
     @PatchMapping("/{volunteerId}/unban")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Unban volunteer", description = "Unban a previously banned volunteer")
-    @ApiResponse(responseCode = "200", description = "Volunteer unbanned successfully")
-    @ApiResponse(responseCode = "404", description = "Volunteer not found")
-    public ResponseEntity<VolunteerProfileResponse> unbanVolunteer(@PathVariable String volunteerId) {
-        return ResponseEntity.ok(profileService.updateVolunteerBanStatus(volunteerId, false, null));
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Volunteer unbanned successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Volunteer not found")
+    })
+    public ResponseEntity<ApiResponse<VolunteerProfileResponse>> unbanVolunteer(@PathVariable String volunteerId) {
+        VolunteerProfileResponse profile = profileService.updateVolunteerBanStatus(volunteerId, false, null);
+        return ResponseEntity.ok(ApiResponse.success(profile, "Volunteer unbanned successfully"));
     }
 } 
